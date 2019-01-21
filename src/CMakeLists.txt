@@ -4,10 +4,11 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_Types.hpp
+  Harlow_Version.hpp
   )
 
 set(SOURCES
-  Harlow_Types.cpp
+  Harlow_Version.cpp
   )
 
 #-----------------------------------------------------------------------------
@@ -17,7 +18,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Harlow_config.hpp DESTINATION ${CMAKE_
 
 #-----------------------------------------------------------------------------
 
-add_library(harlow ${SOURCES_IMPL})
+add_library(harlow ${SOURCES})
 target_include_directories(harlow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(harlow Kokkos::kokkos)
 target_link_libraries(harlow MPI::MPI_CXX)
