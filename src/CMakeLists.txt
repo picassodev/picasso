@@ -3,12 +3,15 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
+  Harlow_CartesianGridBlock.hpp
+  Harlow_StructuredGridBlock.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
   )
 
 set(SOURCES
   Harlow_Version.cpp
+  Harlow_CartesianGridBlock.cpp
   )
 
 #-----------------------------------------------------------------------------
@@ -23,3 +26,7 @@ target_include_directories(harlow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CUR
 target_link_libraries(harlow Kokkos::kokkos)
 target_link_libraries(harlow MPI::MPI_CXX)
 install(TARGETS harlow LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+#-----------------------------------------------------------------------------
+
+add_subdirectory(unit_test)

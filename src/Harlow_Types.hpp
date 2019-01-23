@@ -5,18 +5,55 @@ namespace Harlow
 {
 
 // Particle order
-enum ParticleOrder
+struct ParticleOrder
 {
-    CONSTANT = 0, // PIC
-    LINEAR = 1,   // APIC
-    BILINEAR = 2  // PolyPIC
+    enum Values {
+        Constant = 0, // PIC
+        Linear = 1,   // APIC
+        Bilinear = 2  // PolyPIC
+    };
 };
 
 // Grid spline order
-enum SplineOrder
+struct SplineOrder
 {
-    LINEAR = 0,
-    QUADRATIC = 1
+    enum Values {
+        Linear = 0,
+        Quadratic = 1
+    };
+};
+
+// Logical dimension index.
+struct Dim
+{
+    enum Values {
+        I = 0,
+        J = 1,
+        K = 2
+    };
+};
+
+// Physical boundary
+struct PhysicalBoundary
+{
+    enum Values {
+        LowX = 0,
+        HighX = 1,
+        LowY = 2,
+        HighY = 3,
+        LowZ = 4,
+        HighZ = 5
+    };
+};
+
+// Logical boundary.
+struct LogicalBoundary
+{
+    enum Values {
+        Negative = 0,
+        Zero = 1,
+        Positive = 2,
+    };
 };
 
 } // end namespace Harlow
