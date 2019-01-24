@@ -1,11 +1,7 @@
 #include <Harlow_Types.hpp>
-#include <Harlow_CartesianGridBlock.hpp>
-
-#include <Kokkos_Core.hpp>
+#include <Harlow_GridBlock.hpp>
 
 #include <gtest/gtest.h>
-
-#include <type_traits>
 
 using namespace Harlow;
 
@@ -13,13 +9,13 @@ namespace Test
 {
 //---------------------------------------------------------------------------//
 // Fixture
-class harlow_cartesian_grid_block : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-  }
+class harlow_grid_block : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+    }
 
-  static void TearDownTestCase() {
-  }
+    static void TearDownTestCase() {
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -40,8 +36,8 @@ void apiTest()
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
                                         local_cell_end[2] };
-    CartesianGridBlock grid( low_corner, input_num_cell, boundary_location,
-                             cell_size, halo_width );
+    GridBlock grid( low_corner, input_num_cell, boundary_location,
+                    cell_size, halo_width );
 
     // Test the API.
     EXPECT_EQ( low_corner[0], grid.lowCorner(Dim::I) );
@@ -94,11 +90,11 @@ void assignTest()
     std::vector<bool> boundary_location = { true, true, true, true, false, false};
     double cell_size = 0.53;
     int halo_width = 2;
-    CartesianGridBlock grid( low_corner, input_num_cell, boundary_location,
-                             cell_size, halo_width );
+    GridBlock grid( low_corner, input_num_cell, boundary_location,
+                    cell_size, halo_width );
 
     // Create a new grid and assign the old one with a different halo.
-    CartesianGridBlock block_2;
+    GridBlock block_2;
     int halo_width_2 = 4;
     block_2.assign( grid, halo_width_2 );
 
@@ -156,13 +152,13 @@ void assignTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( harlow_cartesian_grid_block, api_test )
+TEST_F( harlow_grid_block, api_test )
 {
     apiTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( harlow_cartesian_grid_block, assign_test )
+TEST_F( harlow_grid_block, assign_test )
 {
     assignTest();
 }

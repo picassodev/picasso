@@ -3,15 +3,17 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
-  Harlow_CartesianGridBlock.hpp
-  Harlow_StructuredGridBlock.hpp
+  Harlow_GridBlock.hpp
+  Harlow_GridExecPolicy.hpp
+  Harlow_GridField.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
   )
 
 set(SOURCES
+  Harlow_GlobalGrid.cpp
+  Harlow_GridBlock.cpp
   Harlow_Version.cpp
-  Harlow_CartesianGridBlock.cpp
   )
 
 #-----------------------------------------------------------------------------

@@ -1,7 +1,5 @@
-#ifndef HARLOW_CARTESIANGRIDBLOCK_HPP
-#define HARLOW_CARTESIANGRIDBLOCK_HPP
-
-#include <Harlow_StructuredGridBlock.hpp>
+#ifndef HARLOW_GRIDBLOCK_HPP
+#define HARLOW_GRIDBLOCK_HPP
 
 #include <vector>
 
@@ -10,12 +8,12 @@ namespace Harlow
 //---------------------------------------------------------------------------//
 // Local Cartesian grid block representation.
 //---------------------------------------------------------------------------//
-class CartesianGridBlock : public StructuredGridBlock
+class GridBlock
 {
   public:
 
     // Default constructor.
-    CartesianGridBlock();
+    GridBlock();
 
     /*!
       \brief Constructor.
@@ -29,57 +27,57 @@ class CartesianGridBlock : public StructuredGridBlock
       \param halo_cell_width The number of halo cells surrounding the locally
       owned cells.
     */
-    CartesianGridBlock( const std::vector<double>& local_low_corner,
-                        const std::vector<int>& local_num_cell,
-                        const std::vector<bool>& boundary_location,
-                        const double cell_size,
-                        const int halo_cell_width );
+    GridBlock( const std::vector<double>& local_low_corner,
+               const std::vector<int>& local_num_cell,
+               const std::vector<bool>& boundary_location,
+               const double cell_size,
+               const int halo_cell_width );
 
     // Assign the local state of a cartesian grid block with a new halo size.
-    void assign( const CartesianGridBlock& rhs, const int halo_cell_width );
+    void assign( const GridBlock& rhs, const int halo_cell_width );
 
     // Get the physical coordinates of the low corner of the grid in a given
     // dimension. This low corner includes the halo region.
-    double lowCorner( const int dim ) const override;
+    double lowCorner( const int dim ) const;
 
     // Given a physical boundary id return if this grid is on that boundary.
-    bool onBoundary( const int boundary_id ) const override;
+    bool onBoundary( const int boundary_id ) const;
 
     // Get the cell size.
-    double cellSize() const override;
+    double cellSize() const;
 
     // Get the inverse cell size.
-    double inverseCellSize() const override;
+    double inverseCellSize() const;
 
     // Get the halo size.
-    int haloSize() const override;
+    int haloSize() const;
 
     // Get the total number of cells in a given dimension including the halo.
-    int numCell( const int dim ) const override;
+    int numCell( const int dim ) const;
 
     // Get the total number of nodes in a given dimension including the halo.
-    int numNode( const int dim ) const override;
+    int numNode( const int dim ) const;
 
     // Get the beginning local cell index in a given direction. The local
     // cells do not include the halo. Logical boundaries that are also on
     // physical boundaries do not have a halo region.
-    int localCellBegin( const int dim ) const override;
+    int localCellBegin( const int dim ) const;
 
     // Get the ending local cell index in a given direction. The local cells
     // do not include the halo. Logical boundaries that are also on physical
     // boundaries do not have a halo region.
-    int localCellEnd( const int dim ) const override;
+    int localCellEnd( const int dim ) const;
 
     // Get the beginning local node index in a given direction. The local
     // nodes do not include the halo. A local grid block always "owns" the
     // node on the negative logical boundary.
-    int localNodeBegin( const int dim ) const override;
+    int localNodeBegin( const int dim ) const;
 
     // Get the ending local node index in a given direction. The local nodes
     // do not include the halo. The local grid block does not "own" the node
     // on the high logical boundary unless the high logical boundary is also a
     // physical boundary.
-    int localNodeEnd( const int dim ) const override;
+    int localNodeEnd( const int dim ) const;
 
   private:
 
@@ -101,4 +99,4 @@ class CartesianGridBlock : public StructuredGridBlock
 
 } // end namespace Harlow
 
-#endif // end HARLOW_CARTESIANGRIDBLOCK_HPP
+#endif // end HARLOW_GRIDBLOCK_HPP
