@@ -1,149 +1,23 @@
-#ifndef HARLOW_STRUCTUREDGRIDBLOCK_HPP
-#define HARLOW_STRUCTUREDGRIDBLOCK_HPP
+#ifndef HARLOW_GRIDEXECPOLICY_HPP
+#define HARLOW_GRIDEXECPOLICY_HPP
 
+#include <Harlow_GridBlock.hpp>
 #include <Harlow_Types.hpp>
 
 #include <Kokkos_Core.hpp>
 
 #include <vector>
-#include <type_traits>
 #include <exception>
 
 namespace Harlow
 {
-//---------------------------------------------------------------------------//
-// Local structured grid interface.
-//---------------------------------------------------------------------------//
-class StructuredGridBlock
-{
-  public:
-
-    // Get the physical coordinates of the low corner of the grid in a given
-    // dimension. This low corner includes the halo region.
-    virtual double lowCorner( const int dim ) const = 0;
-
-    // Given a physical boundary id return if this grid is on that boundary.
-    virtual bool onBoundary( const int boundary_id ) const = 0;
-
-    // Get the cell size.
-    virtual double cellSize() const = 0;
-
-    // Get the inverse cell size.
-    virtual double inverseCellSize() const = 0;
-
-    // Get the halo size.
-    virtual int haloSize() const = 0;
-
-    // Get the number of nodes in a given dimension including the halo.
-    virtual int numCell( const int dim ) const = 0;
-
-    // Get the number of nodes in a given dimension including the halo.
-    virtual int numNode( const int dim ) const = 0;
-
-    // Get the beginning local cell index in a given direction. The local
-    // cells do not include the halo.
-    virtual int localCellBegin( const int dim ) const = 0;
-
-    // Get the ending local cell index in a given direction. The local cells
-    // do not include the halo.
-    virtual int localCellEnd( const int dim ) const = 0;
-
-    // Get the beginning local node index in a given direction. The local
-    // nodes do not include the halo.
-    virtual int localNodeBegin( const int dim ) const = 0;
-
-    // Get the ending local node index in a given direction. The local nodes
-    // do not include the halo.
-    virtual int localNodeEnd( const int dim ) const = 0;
-};
-
-//---------------------------------------------------------------------------//
-// Structured grid field type traits.
-//---------------------------------------------------------------------------//
-template<typename DataType,int Rank>
-struct StructuredGridBlockFieldDataTypeImpl;
-
-template<typename DataType>
-struct StructuredGridBlockFieldDataTypeImpl<DataType,0>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    using type = value_type***;
-};
-
-template<typename DataType>
-struct StructuredGridBlockFieldDataTypeImpl<DataType,1>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    using type = value_type***[extent_0];
-};
-
-template<typename DataType>
-struct StructuredGridBlockFieldDataTypeImpl<DataType,2>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    static constexpr unsigned extent_1 = std::extent<DataType,1>::value;
-    using type = value_type***[extent_0][extent_1];
-};
-
-template<typename DataType>
-struct StructuredGridBlockFieldDataTypeImpl<DataType,3>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    static constexpr unsigned extent_1 = std::extent<DataType,1>::value;
-    static constexpr unsigned extent_2 = std::extent<DataType,2>::value;
-    using type = value_type***[extent_0][extent_1][extent_2];
-};
-
-template<typename DataType>
-struct StructuredGridBlockFieldDataType
-{
-    static constexpr unsigned rank = std::rank<DataType>::value;
-    using type =
-        typename StructuredGridBlockFieldDataTypeImpl<DataType,rank>::type;
-};
-
-//---------------------------------------------------------------------------//
-// Field creators
-//---------------------------------------------------------------------------//
-// Given a grid create a view of cell data with ijk indexing.
-template<class DataType, class DeviceType>
-Kokkos::View<typename StructuredGridBlockFieldDataType<DataType>::type,DeviceType>
-createCellField( const StructuredGridBlock& grid,
-                 const std::string& field_name = "" )
-{
-    return Kokkos::View<
-        typename StructuredGridBlockFieldDataType<DataType>::type,DeviceType>(
-            field_name,
-            grid.numCell(Dim::I),
-            grid.numCell(Dim::J),
-            grid.numCell(Dim::K) );
-}
-
-//---------------------------------------------------------------------------//
-// Given a grid create a view of node data with ijk indexing.
-template<class DataType, class DeviceType>
-Kokkos::View<typename StructuredGridBlockFieldDataType<DataType>::type,DeviceType>
-createNodeField( const StructuredGridBlock& grid,
-                 const std::string& field_name = "" )
-{
-    return Kokkos::View<
-        typename StructuredGridBlockFieldDataType<DataType>::type,DeviceType>(
-            field_name,
-            grid.numNode(Dim::I),
-            grid.numNode(Dim::J),
-            grid.numNode(Dim::K) );
-}
-
 //---------------------------------------------------------------------------//
 // Execution policy creators.
 //---------------------------------------------------------------------------//
 // Create a grid execution policy over all of the cells including the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createCellExecPolicy( const StructuredGridBlock& grid )
+createCellExecPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -158,7 +32,7 @@ createCellExecPolicy( const StructuredGridBlock& grid )
 // Create a grid execution policy over all of the nodes including the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createNodeExecPolicy( const StructuredGridBlock& grid )
+createNodeExecPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -174,7 +48,7 @@ createNodeExecPolicy( const StructuredGridBlock& grid )
 // halo).
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalCellExecPolicy( const StructuredGridBlock& grid )
+createLocalCellExecPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -192,7 +66,7 @@ createLocalCellExecPolicy( const StructuredGridBlock& grid )
 // halo).
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalNodeExecPolicy( const StructuredGridBlock& grid )
+createLocalNodeExecPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -210,14 +84,14 @@ createLocalNodeExecPolicy( const StructuredGridBlock& grid )
 // cells in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createCellBoundaryExecPolicy( const StructuredGridBlock& grid,
+createCellBoundaryExecPolicy( const GridBlock& grid,
                               const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
 
     if ( !grid.onBoundary(boundary_id) )
-        throw std::invalid_argument(" not on given physical boundary");
+        throw std::invalid_argument("Block not on given physical boundary");
 
     point_type begin = {{0,0,0}};
     point_type end = {{ grid.numCell(Dim::I),
@@ -262,14 +136,14 @@ createCellBoundaryExecPolicy( const StructuredGridBlock& grid,
 // nodes in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createNodeBoundaryExecPolicy( const StructuredGridBlock& grid,
+createNodeBoundaryExecPolicy( const GridBlock& grid,
                               const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
 
     if ( !grid.onBoundary(boundary_id) )
-        throw std::invalid_argument(" not on given physical boundary");
+        throw std::invalid_argument("Block not on given physical boundary");
 
     point_type begin = {{0,0,0}};
     point_type end = {{ grid.numNode(Dim::I),
@@ -314,14 +188,14 @@ createNodeBoundaryExecPolicy( const StructuredGridBlock& grid,
 // include the cells in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalCellBoundaryExecPolicy( const StructuredGridBlock& grid,
+createLocalCellBoundaryExecPolicy( const GridBlock& grid,
                                    const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
 
     if ( !grid.onBoundary(boundary_id) )
-        throw std::invalid_argument(" not on given physical boundary");
+        throw std::invalid_argument("Block not on given physical boundary");
 
     point_type begin = {{ grid.localCellBegin(Dim::I),
                           grid.localCellBegin(Dim::J),
@@ -374,14 +248,14 @@ createLocalCellBoundaryExecPolicy( const StructuredGridBlock& grid,
 // include the nodes in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalNodeBoundaryExecPolicy( const StructuredGridBlock& grid,
+createLocalNodeBoundaryExecPolicy( const GridBlock& grid,
                                    const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
 
     if ( !grid.onBoundary(boundary_id) )
-        throw std::invalid_argument(" not on given physical boundary");
+        throw std::invalid_argument("Block not on given physical boundary");
 
     point_type begin = {{ grid.localNodeBegin(Dim::I),
                           grid.localNodeBegin(Dim::J),
@@ -434,7 +308,7 @@ createLocalNodeBoundaryExecPolicy( const StructuredGridBlock& grid,
 // in the logical space of the global grid.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createHaloCellExecPolicy( const StructuredGridBlock& grid,
+createHaloCellExecPolicy( const GridBlock& grid,
                           const std::vector<int>& neighbor_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
@@ -470,7 +344,7 @@ createHaloCellExecPolicy( const StructuredGridBlock& grid,
 // in logical space of the global grid.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createHaloNodeExecPolicy( const StructuredGridBlock& grid,
+createHaloNodeExecPolicy( const GridBlock& grid,
                           const std::vector<int>& neighbor_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
@@ -505,4 +379,4 @@ createHaloNodeExecPolicy( const StructuredGridBlock& grid,
 
 } // end namespace Harlow
 
-#endif // end HARLOW_STRUCTUREDGRIDBLOCK_HPP
+#endif // end HARLOW_GRIDEXECPOLICY_HPP

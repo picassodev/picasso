@@ -1,0 +1,248 @@
+#include <Harlow_Types.hpp>
+#include <Harlow_GlobalGrid.hpp>
+
+#include <gtest/gtest.h>
+
+#include <mpi.h>
+
+#include <numeric>
+
+using namespace Harlow;
+
+namespace Test
+{
+//---------------------------------------------------------------------------//
+// Fixture
+class harlow_global_grid : public ::testing::Test {
+  protected:
+    static void SetUpTestCase() {
+    }
+
+    static void TearDownTestCase() {
+    }
+};
+
+//---------------------------------------------------------------------------//
+void gridTest()
+{
+    // Let MPI compute the partitioning for this test.
+    int comm_size;
+    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
+    std::vector<int> ranks_per_dim( 3 );
+    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+
+    // Create the global grid.
+    double cell_size = 0.23;
+    std::vector<int> global_num_cell = { 101, 85, 99 };
+    std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
+    std::vector<double> global_high_corner =
+        { global_low_corner[0] + cell_size * global_num_cell[0],
+          global_low_corner[1] + cell_size * global_num_cell[1],
+          global_low_corner[2] + cell_size * global_num_cell[2] };
+    GlobalGrid global_grid( MPI_COMM_WORLD,
+                            ranks_per_dim,
+                            global_low_corner,
+                            global_high_corner,
+                            cell_size );
+
+    // Check the sizes.
+    for ( int d = 0; d < 3; ++d )
+    {
+        EXPECT_EQ( global_num_cell[d], global_grid.numCell(d) );
+        EXPECT_EQ( global_num_cell[d] + 1, global_grid.numNode(d) );
+        EXPECT_EQ( global_low_corner[d], global_grid.lowCorner(d) );
+    }
+
+    // Check the communicator. The grid communicator has a Cartesian topology.
+    auto grid_comm = global_grid.comm();
+    int grid_comm_size;
+    MPI_Comm_size( grid_comm, &grid_comm_size );
+    EXPECT_EQ( grid_comm_size, comm_size );
+
+    std::vector<int> cart_dims( 3 );
+    std::vector<int> cart_period( 3 );
+    std::vector<int> cart_rank( 3 );
+    MPI_Cart_get(
+        grid_comm, 3, cart_dims.data(), cart_period.data(), cart_rank.data() );
+    for ( int d = 0; d < 3; ++d )
+    {
+        EXPECT_EQ( cart_dims[d], ranks_per_dim[d] );
+        EXPECT_EQ( cart_period[d], 0 );
+    }
+
+    // Get the grid block.
+    int halo_width = 2;
+    auto grid_block = global_grid.block( halo_width );
+
+    // Check sizes
+    EXPECT_EQ( grid_block.haloSize(), halo_width );
+    EXPECT_EQ( grid_block.cellSize(), cell_size );
+    EXPECT_EQ( grid_block.inverseCellSize(), 1.0 / cell_size );
+
+    // Get the local number of cells.
+    std::vector<int> local_num_cells =
+        { grid_block.localCellEnd(Dim::I) - grid_block.localCellBegin(Dim::I),
+          grid_block.localCellEnd(Dim::J) - grid_block.localCellBegin(Dim::J),
+          grid_block.localCellEnd(Dim::K) - grid_block.localCellBegin(Dim::K) };
+
+    // Compute a global set of local cell size arrays.
+    std::vector<int> local_num_cell_i( ranks_per_dim[Dim::I], 0 );
+    std::vector<int> local_num_cell_j( ranks_per_dim[Dim::J], 0 );
+    std::vector<int> local_num_cell_k( ranks_per_dim[Dim::K], 0 );
+    local_num_cell_i[ cart_rank[Dim::I] ] = local_num_cells[Dim::I];
+    local_num_cell_j[ cart_rank[Dim::J] ] = local_num_cells[Dim::J];
+    local_num_cell_k[ cart_rank[Dim::K] ] = local_num_cells[Dim::K];
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_i.data(), ranks_per_dim[Dim::I],
+                   MPI_INT, MPI_MAX, grid_comm );
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_j.data(), ranks_per_dim[Dim::J],
+                   MPI_INT, MPI_MAX, grid_comm );
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_k.data(), ranks_per_dim[Dim::K],
+                   MPI_INT, MPI_MAX, grid_comm );
+
+    // Check to make sure we got the right number of total cells in each
+    // dimension.
+    EXPECT_EQ( global_num_cell[0],
+               std::accumulate(
+                   local_num_cell_i.begin(), local_num_cell_i.end(), 0 ) );
+    EXPECT_EQ( global_num_cell[1],
+               std::accumulate(
+                   local_num_cell_j.begin(), local_num_cell_j.end(), 0 ) );
+    EXPECT_EQ( global_num_cell[2],
+               std::accumulate(
+                   local_num_cell_k.begin(), local_num_cell_k.end(), 0 ) );
+
+    // Get the local number of nodes.
+    std::vector<int> local_num_nodes =
+        { grid_block.localNodeEnd(Dim::I) - grid_block.localNodeBegin(Dim::I),
+          grid_block.localNodeEnd(Dim::J) - grid_block.localNodeBegin(Dim::J),
+          grid_block.localNodeEnd(Dim::K) - grid_block.localNodeBegin(Dim::K) };
+
+    // Compute a global set of local node size arrays.
+    std::vector<int> local_num_node_i( ranks_per_dim[Dim::I], 0 );
+    std::vector<int> local_num_node_j( ranks_per_dim[Dim::J], 0 );
+    std::vector<int> local_num_node_k( ranks_per_dim[Dim::K], 0 );
+    local_num_node_i[ cart_rank[Dim::I] ] = local_num_nodes[Dim::I];
+    local_num_node_j[ cart_rank[Dim::J] ] = local_num_nodes[Dim::J];
+    local_num_node_k[ cart_rank[Dim::K] ] = local_num_nodes[Dim::K];
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_i.data(), ranks_per_dim[Dim::I],
+                   MPI_INT, MPI_MAX, grid_comm );
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_j.data(), ranks_per_dim[Dim::J],
+                   MPI_INT, MPI_MAX, grid_comm );
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_k.data(), ranks_per_dim[Dim::K],
+                   MPI_INT, MPI_MAX, grid_comm );
+
+    // Check to make sure we got the right number of total nodes in each
+    // dimension.
+    EXPECT_EQ( global_num_cell[0] + 1,
+               std::accumulate(
+                   local_num_node_i.begin(), local_num_node_i.end(), 0 ) );
+    EXPECT_EQ( global_num_cell[1] + 1,
+               std::accumulate(
+                   local_num_node_j.begin(), local_num_node_j.end(), 0 ) );
+    EXPECT_EQ( global_num_cell[2] + 1,
+               std::accumulate(
+                   local_num_node_k.begin(), local_num_node_k.end(), 0 ) );
+
+    // Check boundary status.
+    if ( cart_rank[Dim::I] == 0 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowX) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowX) );
+
+    if ( cart_rank[Dim::I] == ranks_per_dim[Dim::I] - 1 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighX) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighX) );
+
+    if ( cart_rank[Dim::J] == 0 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowY) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowY) );
+
+    if ( cart_rank[Dim::J] == ranks_per_dim[Dim::J] - 1 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighY) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighY) );
+
+    if ( cart_rank[Dim::K] == 0 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowZ) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowZ) );
+
+    if ( cart_rank[Dim::K] == ranks_per_dim[Dim::K] - 1 )
+        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighZ) );
+    else
+        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighZ) );
+
+    // Check the local cell bounds.
+    if ( grid_block.onBoundary(PhysicalBoundary::LowX) )
+        EXPECT_EQ( grid_block.localCellBegin(Dim::I), 0 );
+    else
+        EXPECT_EQ( grid_block.localCellBegin(Dim::I), halo_width );
+
+    if ( grid_block.onBoundary(PhysicalBoundary::HighX) )
+        EXPECT_EQ( grid_block.localCellEnd(Dim::I),
+                   grid_block.numCell(Dim::I) );
+    else
+        EXPECT_EQ( grid_block.localCellEnd(Dim::I),
+                   grid_block.numCell(Dim::I) - halo_width );
+
+    if ( grid_block.onBoundary(PhysicalBoundary::LowY) )
+        EXPECT_EQ( grid_block.localCellBegin(Dim::J), 0 );
+    else
+        EXPECT_EQ( grid_block.localCellBegin(Dim::J), halo_width );
+
+    if ( grid_block.onBoundary(PhysicalBoundary::HighY) )
+        EXPECT_EQ( grid_block.localCellEnd(Dim::J),
+                   grid_block.numCell(Dim::J) );
+    else
+        EXPECT_EQ( grid_block.localCellEnd(Dim::J),
+                   grid_block.numCell(Dim::J) - halo_width );
+
+    if ( grid_block.onBoundary(PhysicalBoundary::LowZ) )
+        EXPECT_EQ( grid_block.localCellBegin(Dim::K), 0 );
+    else
+        EXPECT_EQ( grid_block.localCellBegin(Dim::K), halo_width );
+
+    if ( grid_block.onBoundary(PhysicalBoundary::HighZ) )
+        EXPECT_EQ( grid_block.localCellEnd(Dim::K),
+                   grid_block.numCell(Dim::K) );
+    else
+        EXPECT_EQ( grid_block.localCellEnd(Dim::K),
+                   grid_block.numCell(Dim::K) - halo_width );
+
+    // Get another block without a halo and check the local low corner. Do an
+    // exclusive scan of sizes to get the local cell offset.
+    auto grid_block_2 = global_grid.block( 0 );
+    int i_offset =
+        std::accumulate( local_num_cell_i.begin(),
+                         local_num_cell_i.begin() + cart_rank[Dim::I],
+                         0 );
+    int j_offset =
+        std::accumulate( local_num_cell_j.begin(),
+                         local_num_cell_j.begin() + cart_rank[Dim::J],
+                         0 );
+    int k_offset =
+        std::accumulate( local_num_cell_k.begin(),
+                         local_num_cell_k.begin() + cart_rank[Dim::K],
+                         0 );
+
+    EXPECT_EQ( grid_block_2.lowCorner(Dim::I),
+               i_offset * cell_size + global_low_corner[Dim::I] );
+    EXPECT_EQ( grid_block_2.lowCorner(Dim::J),
+               j_offset * cell_size + global_low_corner[Dim::J] );
+    EXPECT_EQ( grid_block_2.lowCorner(Dim::K),
+               k_offset * cell_size + global_low_corner[Dim::K] );
+}
+
+//---------------------------------------------------------------------------//
+// RUN TESTS
+//---------------------------------------------------------------------------//
+TEST_F( harlow_global_grid, grid_test )
+{
+    gridTest();
+}
+
+//---------------------------------------------------------------------------//
+
+} // end namespace Test

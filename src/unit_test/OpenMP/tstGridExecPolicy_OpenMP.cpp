@@ -1,2 +1,2 @@
 #include <OpenMP/TestOpenMP_Category.hpp>
-#include <tstStructuredGridBlock.hpp>
+#include <tstGridExecPolicy.hpp>

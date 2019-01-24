@@ -20,7 +20,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
-foreach(_test Version CartesianGridBlock )
+foreach(_test Version GridBlock)
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
   target_link_libraries(${_test}_test harlow harlow_gtest)
   add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)
@@ -31,7 +31,7 @@ endforeach()
 ##--------------------------------------------------------------------------##
 foreach(_device ${HARLOW_SUPPORTED_DEVICES})
   if(Harlow_ENABLE_${_device})
-    foreach(_test StructuredGridBlock)
+    foreach(_test GridField GridExecPolicy)
       add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
       target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
       if(_device STREQUAL Pthread OR _device STREQUAL OpenMP)
@@ -47,7 +47,19 @@ foreach(_device ${HARLOW_SUPPORTED_DEVICES})
 endforeach()
 
 ##--------------------------------------------------------------------------##
-## MPI tests.
+## MPI-only tests.
+##--------------------------------------------------------------------------##
+foreach(_test GlobalGrid)
+  add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
+  target_link_libraries(${_test}_test harlow harlow_gtest)
+  foreach(_np 1 ${MPIEXEC_MAX_NUMPROCS})
+    add_test(NAME ${_test}_test_${_np} COMMAND
+      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test --gtest_color=yes)
+  endforeach()
+endforeach()
+
+##--------------------------------------------------------------------------##
+## MPI+Kokkos tests.
 ##--------------------------------------------------------------------------##
 # foreach(_device ${HARLOW_SUPPORTED_DEVICES})
 #   if(Harlow_ENABLE_${_device})
