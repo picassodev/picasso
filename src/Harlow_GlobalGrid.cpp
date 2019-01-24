@@ -9,10 +9,12 @@ namespace Harlow
 // Constructor.
 GlobalGrid::GlobalGrid( MPI_Comm comm,
                         const std::vector<int>& ranks_per_dim,
+                        const std::vector<bool>& is_dim_periodic,
                         const std::vector<double>& global_low_corner,
                         const std::vector<double>& global_high_corner,
                         const double cell_size )
     : _global_low_corner( global_low_corner )
+    , _periodic( is_dim_periodic )
 {
     // Compute how many cells are in each dimension.
     _global_num_cell.resize( 3 );
@@ -26,10 +28,8 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
              global_high_corner[d] )
             throw std::invalid_argument("Dimension not divisible by cell size");
 
-    // Currently we do not support periodic boundaries. When we do, change
-    // this to be an input parameter to reflect those dimensions that are
-    // periodic.
-    std::vector<int> periodic_dims = {0,0,0};
+    // Extract the periodicity of the boundary as integers.
+    std::vector<int> periodic_dims = {_periodic[0],_periodic[1],_periodic[2]};
 
     // Generate a communicator with a Cartesian topology.
     int reorder_ranks = 1;

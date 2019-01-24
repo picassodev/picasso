@@ -34,6 +34,7 @@ void gridTest()
     // Create the global grid.
     double cell_size = 0.23;
     std::vector<int> global_num_cell = { 101, 85, 99 };
+    std::vector<bool> is_dim_periodic = {false,false,false};
     std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
     std::vector<double> global_high_corner =
         { global_low_corner[0] + cell_size * global_num_cell[0],
@@ -41,16 +42,18 @@ void gridTest()
           global_low_corner[2] + cell_size * global_num_cell[2] };
     GlobalGrid global_grid( MPI_COMM_WORLD,
                             ranks_per_dim,
+                            is_dim_periodic,
                             global_low_corner,
                             global_high_corner,
                             cell_size );
 
-    // Check the sizes.
+    // Check the dimension data.
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( global_num_cell[d], global_grid.numCell(d) );
         EXPECT_EQ( global_num_cell[d] + 1, global_grid.numNode(d) );
         EXPECT_EQ( global_low_corner[d], global_grid.lowCorner(d) );
+        EXPECT_FALSE( global_grid.isPeriodic(d) );
     }
 
     // Check the communicator. The grid communicator has a Cartesian topology.
