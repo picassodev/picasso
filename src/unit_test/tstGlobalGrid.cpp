@@ -48,6 +48,7 @@ void gridTest()
                             cell_size );
 
     // Check the dimension data.
+    EXPECT_EQ( global_grid.cellSize(), cell_size );
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( global_num_cell[d], global_grid.numCell(d) );

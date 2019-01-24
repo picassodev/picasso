@@ -40,6 +40,10 @@ class GlobalGrid
     // Get a grid block on this rank with a given halo cell width.
     GridBlock block( const int halo_cell_width ) const;
 
+    // Get whether a given logical dimension is periodic.
+    bool isPeriodic( const int dim ) const
+    { return _periodic[dim]; }
+
     // Get the global number of cells in a given dimension.
     int numCell( const int dim ) const
     { return _global_num_cell[dim]; }
@@ -52,9 +56,9 @@ class GlobalGrid
     double lowCorner( const int dim ) const
     { return _global_low_corner[dim]; }
 
-    // Get whether a given logical dimension is periodic.
-    bool isPeriodic( const int dim ) const
-    { return _periodic[dim]; }
+    // Get the cell size.
+    double cellSize() const
+    { return _grid_block.cellSize(); }
 
   private:
 
