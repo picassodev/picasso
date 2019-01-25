@@ -20,6 +20,7 @@ void parallelTest()
     std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
     std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
     std::vector<bool> boundary_location = { true, true, true, true, false, false};
+    std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
     std::vector<int> local_cell_begin = { 0, 0, halo_width };
@@ -30,7 +31,7 @@ void parallelTest()
                                         local_cell_end[1] + 1,
                                         local_cell_end[2] };
     GridBlock grid( low_corner, input_num_cell, boundary_location,
-                    cell_size, halo_width );
+                    periodic, cell_size, halo_width );
 
     // Make a cell field and a node field.
     auto cell_field = createCellField<double,TEST_MEMSPACE>( grid );
@@ -136,6 +137,7 @@ void boundaryTest()
     std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
     std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
     std::vector<bool> boundary_location = { true, true, true, true, true, true};
+    std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
     std::vector<int> local_cell_begin = { 0, 0, 0 };
@@ -145,14 +147,14 @@ void boundaryTest()
                                         local_cell_end[1] + 1,
                                         local_cell_end[2] + 1};
     GridBlock grid( low_corner, input_num_cell, boundary_location,
-                    cell_size, halo_width );
+                    periodic, cell_size, halo_width );
 
     // -------
     // Check the boundary execution policies.
 
     // -X
     auto xm_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowX );
+        grid, DomainBoundary::LowX );
     EXPECT_EQ( xm_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( xm_bnd_cell_policy.m_upper[0], 1 );
     EXPECT_EQ( xm_bnd_cell_policy.m_lower[1], 0 );
@@ -161,7 +163,7 @@ void boundaryTest()
     EXPECT_EQ( xm_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto xm_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowX );
+        grid, DomainBoundary::LowX );
     EXPECT_EQ( xm_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( xm_bnd_node_policy.m_upper[0], 1 );
     EXPECT_EQ( xm_bnd_node_policy.m_lower[1], 0 );
@@ -171,7 +173,7 @@ void boundaryTest()
 
     // +X
     auto xp_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighX );
+        grid, DomainBoundary::HighX );
     EXPECT_EQ( xp_bnd_cell_policy.m_lower[0], num_cell[0] - 1 );
     EXPECT_EQ( xp_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( xp_bnd_cell_policy.m_lower[1], 0 );
@@ -180,7 +182,7 @@ void boundaryTest()
     EXPECT_EQ( xp_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto xp_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighX );
+        grid, DomainBoundary::HighX );
     EXPECT_EQ( xp_bnd_node_policy.m_lower[0], num_node[0] - 1 );
     EXPECT_EQ( xp_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( xp_bnd_node_policy.m_lower[1], 0 );
@@ -190,7 +192,7 @@ void boundaryTest()
 
     // -Y
     auto ym_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowY );
+        grid, DomainBoundary::LowY );
     EXPECT_EQ( ym_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( ym_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( ym_bnd_cell_policy.m_lower[1], 0 );
@@ -199,7 +201,7 @@ void boundaryTest()
     EXPECT_EQ( ym_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto ym_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowY );
+        grid, DomainBoundary::LowY );
     EXPECT_EQ( ym_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( ym_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( ym_bnd_node_policy.m_lower[1], 0 );
@@ -209,7 +211,7 @@ void boundaryTest()
 
     // +Y
     auto yp_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighY );
+        grid, DomainBoundary::HighY );
     EXPECT_EQ( yp_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( yp_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( yp_bnd_cell_policy.m_lower[1], num_cell[1] - 1 );
@@ -218,7 +220,7 @@ void boundaryTest()
     EXPECT_EQ( yp_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto yp_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighY );
+        grid, DomainBoundary::HighY );
     EXPECT_EQ( yp_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( yp_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( yp_bnd_node_policy.m_lower[1], num_node[1] - 1 );
@@ -228,7 +230,7 @@ void boundaryTest()
 
     // -Z
     auto zm_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowZ );
+        grid, DomainBoundary::LowZ );
     EXPECT_EQ( zm_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( zm_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( zm_bnd_cell_policy.m_lower[1], 0 );
@@ -237,7 +239,7 @@ void boundaryTest()
     EXPECT_EQ( zm_bnd_cell_policy.m_upper[2], 1 );
 
     auto zm_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowZ );
+        grid, DomainBoundary::LowZ );
     EXPECT_EQ( zm_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( zm_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( zm_bnd_node_policy.m_lower[1], 0 );
@@ -247,7 +249,7 @@ void boundaryTest()
 
     // +Z
     auto zp_bnd_cell_policy = createCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighZ );
+        grid, DomainBoundary::HighZ );
     EXPECT_EQ( zp_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( zp_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( zp_bnd_cell_policy.m_lower[1], 0 );
@@ -256,7 +258,7 @@ void boundaryTest()
     EXPECT_EQ( zp_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto zp_bnd_node_policy = createNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighZ );
+        grid, DomainBoundary::HighZ );
     EXPECT_EQ( zp_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( zp_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( zp_bnd_node_policy.m_lower[1], 0 );
@@ -269,7 +271,7 @@ void boundaryTest()
 
     // -X
     auto xm_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowX );
+        grid, DomainBoundary::LowX );
     EXPECT_EQ( xm_local_bnd_cell_policy.m_lower[0], 0 );
     EXPECT_EQ( xm_local_bnd_cell_policy.m_upper[0], 1 );
     EXPECT_EQ( xm_local_bnd_cell_policy.m_lower[1], local_cell_begin[1] );
@@ -278,7 +280,7 @@ void boundaryTest()
     EXPECT_EQ( xm_local_bnd_cell_policy.m_upper[2], local_cell_end[2] );
 
     auto xm_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowX );
+        grid, DomainBoundary::LowX );
     EXPECT_EQ( xm_local_bnd_node_policy.m_lower[0], 0 );
     EXPECT_EQ( xm_local_bnd_node_policy.m_upper[0], 1 );
     EXPECT_EQ( xm_local_bnd_node_policy.m_lower[1], local_node_begin[1] );
@@ -288,7 +290,7 @@ void boundaryTest()
 
     // +X
     auto xp_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighX );
+        grid, DomainBoundary::HighX );
     EXPECT_EQ( xp_local_bnd_cell_policy.m_lower[0], num_cell[0] - 1 );
     EXPECT_EQ( xp_local_bnd_cell_policy.m_upper[0], num_cell[0] );
     EXPECT_EQ( xp_local_bnd_cell_policy.m_lower[1], local_cell_begin[1] );
@@ -297,7 +299,7 @@ void boundaryTest()
     EXPECT_EQ( xp_local_bnd_cell_policy.m_upper[2], local_cell_end[2] );
 
     auto xp_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighX );
+        grid, DomainBoundary::HighX );
     EXPECT_EQ( xp_local_bnd_node_policy.m_lower[0], num_node[0] - 1 );
     EXPECT_EQ( xp_local_bnd_node_policy.m_upper[0], num_node[0] );
     EXPECT_EQ( xp_local_bnd_node_policy.m_lower[1], local_node_begin[1] );
@@ -307,7 +309,7 @@ void boundaryTest()
 
     // -Y
     auto ym_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowY );
+        grid, DomainBoundary::LowY );
     EXPECT_EQ( ym_local_bnd_cell_policy.m_lower[0], local_cell_begin[0] );
     EXPECT_EQ( ym_local_bnd_cell_policy.m_upper[0], local_cell_end[0] );
     EXPECT_EQ( ym_local_bnd_cell_policy.m_lower[1], 0 );
@@ -316,7 +318,7 @@ void boundaryTest()
     EXPECT_EQ( ym_local_bnd_cell_policy.m_upper[2], local_cell_end[2] );
 
     auto ym_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowY );
+        grid, DomainBoundary::LowY );
     EXPECT_EQ( ym_local_bnd_node_policy.m_lower[0], local_node_begin[0] );
     EXPECT_EQ( ym_local_bnd_node_policy.m_upper[0], local_node_end[0] );
     EXPECT_EQ( ym_local_bnd_node_policy.m_lower[1], 0 );
@@ -326,7 +328,7 @@ void boundaryTest()
 
     // +Y
     auto yp_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighY );
+        grid, DomainBoundary::HighY );
     EXPECT_EQ( yp_local_bnd_cell_policy.m_lower[0], local_cell_begin[0] );
     EXPECT_EQ( yp_local_bnd_cell_policy.m_upper[0], local_cell_end[0] );
     EXPECT_EQ( yp_local_bnd_cell_policy.m_lower[1], num_cell[1] - 1 );
@@ -335,7 +337,7 @@ void boundaryTest()
     EXPECT_EQ( yp_local_bnd_cell_policy.m_upper[2], local_cell_end[2] );
 
     auto yp_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighY );
+        grid, DomainBoundary::HighY );
     EXPECT_EQ( yp_local_bnd_node_policy.m_lower[0], local_node_begin[0] );
     EXPECT_EQ( yp_local_bnd_node_policy.m_upper[0], local_node_end[0] );
     EXPECT_EQ( yp_local_bnd_node_policy.m_lower[1], num_node[1] - 1 );
@@ -345,7 +347,7 @@ void boundaryTest()
 
     // -Z
     auto zm_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowZ );
+        grid, DomainBoundary::LowZ );
     EXPECT_EQ( zm_local_bnd_cell_policy.m_lower[0], local_cell_begin[0] );
     EXPECT_EQ( zm_local_bnd_cell_policy.m_upper[0], local_cell_end[0] );
     EXPECT_EQ( zm_local_bnd_cell_policy.m_lower[1], local_cell_begin[1] );
@@ -354,7 +356,7 @@ void boundaryTest()
     EXPECT_EQ( zm_local_bnd_cell_policy.m_upper[2], 1 );
 
     auto zm_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::LowZ );
+        grid, DomainBoundary::LowZ );
     EXPECT_EQ( zm_local_bnd_node_policy.m_lower[0], local_node_begin[0] );
     EXPECT_EQ( zm_local_bnd_node_policy.m_upper[0], local_node_end[0] );
     EXPECT_EQ( zm_local_bnd_node_policy.m_lower[1], local_node_begin[1] );
@@ -364,7 +366,7 @@ void boundaryTest()
 
     // +Z
     auto zp_local_bnd_cell_policy = createLocalCellBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighZ );
+        grid, DomainBoundary::HighZ );
     EXPECT_EQ( zp_local_bnd_cell_policy.m_lower[0], local_cell_begin[0] );
     EXPECT_EQ( zp_local_bnd_cell_policy.m_upper[0], local_cell_end[0] );
     EXPECT_EQ( zp_local_bnd_cell_policy.m_lower[1], local_cell_begin[1] );
@@ -373,74 +375,13 @@ void boundaryTest()
     EXPECT_EQ( zp_local_bnd_cell_policy.m_upper[2], num_cell[2] );
 
     auto zp_local_bnd_node_policy = createLocalNodeBoundaryExecPolicy<TEST_EXECSPACE>(
-        grid, PhysicalBoundary::HighZ );
+        grid, DomainBoundary::HighZ );
     EXPECT_EQ( zp_local_bnd_node_policy.m_lower[0], local_node_begin[0] );
     EXPECT_EQ( zp_local_bnd_node_policy.m_upper[0], local_node_end[0] );
     EXPECT_EQ( zp_local_bnd_node_policy.m_lower[1], local_node_begin[1] );
     EXPECT_EQ( zp_local_bnd_node_policy.m_upper[1], local_node_end[1] );
     EXPECT_EQ( zp_local_bnd_node_policy.m_lower[2], num_node[2] - 1 );
     EXPECT_EQ( zp_local_bnd_node_policy.m_upper[2], num_node[2] );
-}
-
-//---------------------------------------------------------------------------//
-void haloTest()
-{
-    // Make a cartesian grid.
-    std::vector<int> input_num_cell = { 9, 17, 10 };
-    std::vector<int> num_cell = { 13, 21, 14 };
-    std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
-    std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
-    std::vector<bool> boundary_location = { false, false, false, false, false, false};
-    double cell_size = 0.53;
-    int halo_width = 2;
-    std::vector<int> local_cell_begin = { halo_width, halo_width, halo_width };
-    std::vector<int> local_cell_end =
-        { num_cell[0] - halo_width, num_cell[1] - halo_width, num_cell[2] - halo_width };
-    std::vector<int> local_node_begin = local_cell_begin;
-    std::vector<int> local_node_end = local_cell_end;
-    GridBlock grid( low_corner, input_num_cell, boundary_location,
-                    cell_size, halo_width );
-
-    // -------
-    // Check the halo execution policies.
-    for ( int i = 0; i < 3; ++i )
-        for ( int j = 0; j < 3; ++j )
-            for ( int k = 0; k < 3; ++k )
-            {
-                std::vector<int> neighbor_id = {i,j,k};
-                auto halo_cell_policy =
-                    createHaloCellExecPolicy<TEST_EXECSPACE>( grid, neighbor_id );
-                auto halo_node_policy =
-                    createHaloNodeExecPolicy<TEST_EXECSPACE>( grid, neighbor_id );
-
-                for ( int d = 0; d < 3; ++d )
-                {
-                    if ( LogicalBoundary::Negative == neighbor_id[d] )
-                    {
-                        EXPECT_EQ( halo_cell_policy.m_lower[d], 0 );
-                        EXPECT_EQ( halo_cell_policy.m_upper[d], local_cell_begin[d] );
-
-                        EXPECT_EQ( halo_node_policy.m_lower[d], 0 );
-                        EXPECT_EQ( halo_node_policy.m_upper[d], local_node_begin[d] );
-                    }
-                    else if ( LogicalBoundary::Zero == neighbor_id[d] )
-                    {
-                        EXPECT_EQ( halo_cell_policy.m_lower[d], local_cell_begin[d] );
-                        EXPECT_EQ( halo_cell_policy.m_upper[d], local_cell_end[d] );
-
-                        EXPECT_EQ( halo_node_policy.m_lower[d], local_node_begin[d] );
-                        EXPECT_EQ( halo_node_policy.m_upper[d], local_node_end[d] );
-                    }
-                    else if ( LogicalBoundary::Positive == neighbor_id[d] )
-                    {
-                        EXPECT_EQ( halo_cell_policy.m_lower[d], local_cell_end[d] );
-                        EXPECT_EQ( halo_cell_policy.m_upper[d], num_cell[d] );
-
-                        EXPECT_EQ( halo_node_policy.m_lower[d], local_node_end[d] );
-                        EXPECT_EQ( halo_node_policy.m_upper[d], num_node[d] );
-                    }
-                }
-            }
 }
 
 //---------------------------------------------------------------------------//
@@ -455,12 +396,6 @@ TEST_F( TEST_CATEGORY, parallel_test )
 TEST_F( TEST_CATEGORY, boundary_test )
 {
     boundaryTest();
-}
-
-//---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, halo_test )
-{
-    haloTest();
 }
 
 //---------------------------------------------------------------------------//

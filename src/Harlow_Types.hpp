@@ -33,8 +33,8 @@ struct Dim
     };
 };
 
-// Physical boundary
-struct PhysicalBoundary
+// Domain boundary
+struct DomainBoundary
 {
     enum Values {
         LowX = 0,
@@ -46,13 +46,13 @@ struct PhysicalBoundary
     };
 };
 
-// Logical boundary.
-struct LogicalBoundary
+// Field location.
+struct FieldLocation
 {
     enum Values {
-        Negative = 0,
-        Zero = 1,
-        Positive = 2,
+        Node = 0,
+        Cell = 1,
+        Face = 2
     };
 };
 

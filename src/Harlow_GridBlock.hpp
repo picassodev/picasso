@@ -23,6 +23,7 @@ class GridBlock
       owned by the block.
       \param boundary_location Boolean indicating if the block is on any of
       the 6 physical boundaries {-x,+x,-y,+y,-z,+z}.
+      \param is_dim_periodic Whether each logical dimension is periodic.
       \param cell_size The size of the cells in the mesh. The cells are cubes.
       \param halo_cell_width The number of halo cells surrounding the locally
       owned cells.
@@ -30,6 +31,7 @@ class GridBlock
     GridBlock( const std::vector<double>& local_low_corner,
                const std::vector<int>& local_num_cell,
                const std::vector<bool>& boundary_location,
+               const std::vector<bool>& is_dim_periodic,
                const double cell_size,
                const int halo_cell_width );
 
@@ -42,6 +44,9 @@ class GridBlock
 
     // Given a physical boundary id return if this grid is on that boundary.
     bool onBoundary( const int boundary_id ) const;
+
+    // Get whether a given logical dimension is periodic.
+    bool isPeriodic( const int dim ) const;
 
     // Get the cell size.
     double cellSize() const;
@@ -60,12 +65,14 @@ class GridBlock
 
     // Get the beginning local cell index in a given direction. The local
     // cells do not include the halo. Logical boundaries that are also on
-    // physical boundaries do not have a halo region.
+    // physical boundaries do not have a halo region unless the physical
+    // boundary is periodic.
     int localCellBegin( const int dim ) const;
 
     // Get the ending local cell index in a given direction. The local cells
     // do not include the halo. Logical boundaries that are also on physical
-    // boundaries do not have a halo region.
+    // boundaries do not have a halo region unless the physical boundary is
+    // periodic.
     int localCellEnd( const int dim ) const;
 
     // Get the beginning local node index in a given direction. The local
@@ -76,8 +83,14 @@ class GridBlock
     // Get the ending local node index in a given direction. The local nodes
     // do not include the halo. The local grid block does not "own" the node
     // on the high logical boundary unless the high logical boundary is also a
-    // physical boundary.
+    // physical boundary that is not periodic.
     int localNodeEnd( const int dim ) const;
+
+    // Get the local number of cells in a given dimension.
+    int localNumCell( const int dim ) const;
+
+    // Get the local number of nodes in a given dimension.
+    int localNumNode( const int dim ) const;
 
   private:
 
@@ -91,6 +104,7 @@ class GridBlock
     std::vector<int> _local_num_cell;
     std::vector<int> _total_num_cell;
     std::vector<bool> _boundary_location;
+    std::vector<bool> _periodic;
     double _cell_size;
     int _halo_cell_width;
 };
