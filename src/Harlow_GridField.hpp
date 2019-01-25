@@ -1,12 +1,12 @@
 #ifndef HARLOW_GRIDFIELD_HPP
 #define HARLOW_GRIDFIELD_HPP
 
-#include <Harlow_GridBlock.hpp>
-#include <Harlow_Types.hpp>
+#include <Harlow_GlobalGrid.hpp>
 
 #include <Kokkos_Core.hpp>
 
 #include <type_traits>
+#include <memory>
 
 namespace Harlow
 {
@@ -89,6 +89,63 @@ createNodeField( const GridBlock& grid,
             grid.numNode(Dim::J),
             grid.numNode(Dim::K) );
 }
+
+//---------------------------------------------------------------------------//
+// Parallel grid field container.
+//---------------------------------------------------------------------------//
+template<class DataType, class DeviceType>
+class GridField
+{
+  public:
+
+    using device_type = DeviceType;
+    using memory_space = typename device_type::memory_space;
+    using execution_space = typename device_type::execution_space;
+    using field_data_type = typename GridBlockFieldDataType<DataType>::type;
+    using view_type = Kokkos::View<field_data_type,device_type>;
+
+    GridField( const std::shared_ptr<GlobalGrid>& global_grid,
+               const int field_location,
+               const int halo_cell_width,
+               const std::string& field_name = "" )
+        : _global_grid( global_grid )
+        , _field_location( field_location )
+    {
+        _block.assign( _global_grid->block(), halo_cell_width );
+
+        if ( FieldLocation::Node == field_location )
+            _data = createNodeField<DataType,DeviceType>( _block, field_name );
+        else if ( FieldLocation::Cell == field_location )
+            _data = createCellField<DataType,DeviceType>( _block, field_name );
+        else if ( FieldLocation::Face == field_location )
+            _data = createNodeField<DataType,DeviceType>( _block, field_name );
+        else
+            throw std::invalid_argument("Bad field location");
+    }
+
+    // Get the grid communicator. This communicator has a Cartesian topology.
+    MPI_Comm comm() const
+    { return _global_grid->comm(); }
+
+    // Get the grid.
+    const GridBlock& block() const
+    { return _block; }
+
+    // Get the local field data.
+    view_type data() const
+    { return _data; }
+
+    // Get the field location.
+    int location() const
+    { return _field_location; }
+
+  private:
+
+    std::shared_ptr<GlobalGrid> _global_grid;
+    GridBlock _block;
+    view_type _data;
+    int _field_location;
+};
 
 //---------------------------------------------------------------------------//
 

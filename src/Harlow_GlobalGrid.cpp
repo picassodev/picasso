@@ -1,6 +1,5 @@
 #include <Harlow_GlobalGrid.hpp>
 
-#include <exception>
 #include <algorithm>
 
 namespace Harlow
@@ -14,7 +13,6 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                         const std::vector<double>& global_high_corner,
                         const double cell_size )
     : _global_low_corner( global_low_corner )
-    , _periodic( is_dim_periodic )
 {
     // Compute how many cells are in each dimension.
     _global_num_cell.resize( 3 );
@@ -29,7 +27,8 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
             throw std::invalid_argument("Dimension not divisible by cell size");
 
     // Extract the periodicity of the boundary as integers.
-    std::vector<int> periodic_dims = {_periodic[0],_periodic[1],_periodic[2]};
+    std::vector<int> periodic_dims =
+        {is_dim_periodic[0],is_dim_periodic[1],is_dim_periodic[2]};
 
     // Generate a communicator with a Cartesian topology.
     int reorder_ranks = 1;
@@ -91,17 +90,43 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
 
     // Create the local grid block.
     _grid_block = GridBlock( local_low_corner, local_num_cell,
-                             boundary_location, cell_size, 0 );
+                             boundary_location, is_dim_periodic, cell_size, 0 );
 }
 
 //---------------------------------------------------------------------------//
+// Get the grid communicator. This communicator has a Cartesian topology.
+MPI_Comm GlobalGrid::comm() const
+{ return _cart_comm; }
+
+//---------------------------------------------------------------------------//
 // Get a grid block on this rank with a given halo cell width.
-GridBlock GlobalGrid::block( const int halo_cell_width ) const
-{
-    GridBlock block;
-    block.assign( _grid_block, halo_cell_width );
-    return block;
-}
+const GridBlock& GlobalGrid::block() const
+{ return _grid_block; }
+
+//---------------------------------------------------------------------------//
+// Get whether a given logical dimension is periodic.
+bool GlobalGrid::isPeriodic( const int dim ) const
+{ return _grid_block.isPeriodic(dim); }
+
+//---------------------------------------------------------------------------//
+// Get the global number of cells in a given dimension.
+int GlobalGrid::numCell( const int dim ) const
+{ return _global_num_cell[dim]; }
+
+//---------------------------------------------------------------------------//
+// Get the global number of nodes in a given dimension.
+int GlobalGrid::numNode( const int dim ) const
+{ return _global_num_cell[dim] + 1; }
+
+//---------------------------------------------------------------------------//
+// Get the global low corner.
+double GlobalGrid::lowCorner( const int dim ) const
+{ return _global_low_corner[dim]; }
+
+//---------------------------------------------------------------------------//
+// Get the cell size.
+double GlobalGrid::cellSize() const
+{ return _grid_block.cellSize(); }
 
 //---------------------------------------------------------------------------//
 

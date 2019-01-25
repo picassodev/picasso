@@ -4,8 +4,10 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_GridBlock.hpp
+  Harlow_GridCommunication.hpp
   Harlow_GridExecPolicy.hpp
   Harlow_GridField.hpp
+  Harlow_MpiTraits.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
   )

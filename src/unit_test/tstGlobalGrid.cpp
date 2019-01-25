@@ -76,7 +76,8 @@ void gridTest()
 
     // Get the grid block.
     int halo_width = 2;
-    auto grid_block = global_grid.block( halo_width );
+    GridBlock grid_block;
+    grid_block.assign( global_grid.block(), halo_width );
 
     // Check sizes
     EXPECT_EQ( grid_block.haloSize(), halo_width );
@@ -149,66 +150,66 @@ void gridTest()
 
     // Check boundary status.
     if ( cart_rank[Dim::I] == 0 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowX) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::LowX) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowX) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowX) );
 
     if ( cart_rank[Dim::I] == ranks_per_dim[Dim::I] - 1 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighX) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighX) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighX) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighX) );
 
     if ( cart_rank[Dim::J] == 0 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowY) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::LowY) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowY) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowY) );
 
     if ( cart_rank[Dim::J] == ranks_per_dim[Dim::J] - 1 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighY) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighY) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighY) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighY) );
 
     if ( cart_rank[Dim::K] == 0 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::LowZ) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::LowZ) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::LowZ) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowZ) );
 
     if ( cart_rank[Dim::K] == ranks_per_dim[Dim::K] - 1 )
-        EXPECT_TRUE( grid_block.onBoundary(PhysicalBoundary::HighZ) );
+        EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighZ) );
     else
-        EXPECT_FALSE( grid_block.onBoundary(PhysicalBoundary::HighZ) );
+        EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighZ) );
 
     // Check the local cell bounds.
-    if ( grid_block.onBoundary(PhysicalBoundary::LowX) )
+    if ( grid_block.onBoundary(DomainBoundary::LowX) )
         EXPECT_EQ( grid_block.localCellBegin(Dim::I), 0 );
     else
         EXPECT_EQ( grid_block.localCellBegin(Dim::I), halo_width );
 
-    if ( grid_block.onBoundary(PhysicalBoundary::HighX) )
+    if ( grid_block.onBoundary(DomainBoundary::HighX) )
         EXPECT_EQ( grid_block.localCellEnd(Dim::I),
                    grid_block.numCell(Dim::I) );
     else
         EXPECT_EQ( grid_block.localCellEnd(Dim::I),
                    grid_block.numCell(Dim::I) - halo_width );
 
-    if ( grid_block.onBoundary(PhysicalBoundary::LowY) )
+    if ( grid_block.onBoundary(DomainBoundary::LowY) )
         EXPECT_EQ( grid_block.localCellBegin(Dim::J), 0 );
     else
         EXPECT_EQ( grid_block.localCellBegin(Dim::J), halo_width );
 
-    if ( grid_block.onBoundary(PhysicalBoundary::HighY) )
+    if ( grid_block.onBoundary(DomainBoundary::HighY) )
         EXPECT_EQ( grid_block.localCellEnd(Dim::J),
                    grid_block.numCell(Dim::J) );
     else
         EXPECT_EQ( grid_block.localCellEnd(Dim::J),
                    grid_block.numCell(Dim::J) - halo_width );
 
-    if ( grid_block.onBoundary(PhysicalBoundary::LowZ) )
+    if ( grid_block.onBoundary(DomainBoundary::LowZ) )
         EXPECT_EQ( grid_block.localCellBegin(Dim::K), 0 );
     else
         EXPECT_EQ( grid_block.localCellBegin(Dim::K), halo_width );
 
-    if ( grid_block.onBoundary(PhysicalBoundary::HighZ) )
+    if ( grid_block.onBoundary(DomainBoundary::HighZ) )
         EXPECT_EQ( grid_block.localCellEnd(Dim::K),
                    grid_block.numCell(Dim::K) );
     else
@@ -217,7 +218,8 @@ void gridTest()
 
     // Get another block without a halo and check the local low corner. Do an
     // exclusive scan of sizes to get the local cell offset.
-    auto grid_block_2 = global_grid.block( 0 );
+    GridBlock grid_block_2;
+    grid_block_2.assign( grid_block, 0 );
     int i_offset =
         std::accumulate( local_num_cell_i.begin(),
                          local_num_cell_i.begin() + cart_rank[Dim::I],

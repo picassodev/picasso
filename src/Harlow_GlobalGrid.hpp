@@ -34,31 +34,25 @@ class GlobalGrid
                 const double cell_size );
 
     // Get the grid communicator. This communicator has a Cartesian topology.
-    MPI_Comm comm() const
-    { return _cart_comm; }
+    MPI_Comm comm() const;
 
-    // Get a grid block on this rank with a given halo cell width.
-    GridBlock block( const int halo_cell_width ) const;
+    // Get the locally owned grid block for this rank.
+    const GridBlock& block() const;
 
     // Get whether a given logical dimension is periodic.
-    bool isPeriodic( const int dim ) const
-    { return _periodic[dim]; }
+    bool isPeriodic( const int dim ) const;
 
     // Get the global number of cells in a given dimension.
-    int numCell( const int dim ) const
-    { return _global_num_cell[dim]; }
+    int numCell( const int dim ) const;
 
     // Get the global number of nodes in a given dimension.
-    int numNode( const int dim ) const
-    { return _global_num_cell[dim] + 1; }
+    int numNode( const int dim ) const;
 
     // Get the global low corner.
-    double lowCorner( const int dim ) const
-    { return _global_low_corner[dim]; }
+    double lowCorner( const int dim ) const;
 
     // Get the cell size.
-    double cellSize() const
-    { return _grid_block.cellSize(); }
+    double cellSize() const;
 
   private:
 
@@ -66,7 +60,6 @@ class GlobalGrid
     GridBlock _grid_block;
     std::vector<double> _global_low_corner;
     std::vector<int> _global_num_cell;
-    std::vector<bool> _periodic;
 };
 
 //---------------------------------------------------------------------------//
