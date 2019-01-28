@@ -15,7 +15,7 @@
 
 namespace Harlow
 {
-namespace GridVectorOp
+namespace GridFieldVectorOp
 {
 //---------------------------------------------------------------------------//
 // Given a grid field get a local execution policy.
@@ -51,7 +51,7 @@ typename GridFieldType::value_type normInf( const GridFieldType& grid_field )
     auto data = grid_field.data();
     Kokkos::Max<value_type> reducer( max );
     Kokkos::parallel_reduce(
-        "GridVectorOp::normInf",
+        "GridFieldVectorOp::normInf",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
         { if ( fabs(data(i,j,k)) > result ) result = fabs(data(i,j,k)); },
@@ -75,7 +75,7 @@ typename GridFieldType::value_type norm1( const GridFieldType& grid_field )
     // Local reduction.
     auto data = grid_field.data();
     Kokkos::parallel_reduce(
-        "GridVectorOp::norm1",
+        "GridFieldVectorOp::norm1",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
         { result += fabs(data(i,j,k)); },
@@ -99,7 +99,7 @@ typename GridFieldType::value_type norm2( const GridFieldType& grid_field )
     // Local reduction.
     auto data = grid_field.data();
     Kokkos::parallel_reduce(
-        "GridVectorOp::norm2",
+        "GridFieldVectorOp::norm2",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
         { result += data(i,j,k) * data(i,j,k); },
@@ -125,7 +125,7 @@ typename GridFieldType::value_type dot( const GridFieldType& vec_a,
     auto data_a = vec_a.data();
     auto data_b = vec_b.data();
     Kokkos::parallel_reduce(
-        "GridVectorOp::dot",
+        "GridFieldVectorOp::dot",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
         { result += data_a(i,j,k) * data_b(i,j,k); },
@@ -160,7 +160,7 @@ void scale(
 {
     auto data = grid_field.data();
     Kokkos::parallel_for(
-        "GridVectorOp::scale",
+        "GridFieldVectorOp::scale",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         { data(i,j,k) *= alpha; } );
@@ -177,7 +177,7 @@ void scale(
     auto data = grid_field.data();
     auto e0 = data.extent(3);
     Kokkos::parallel_for(
-        "GridVectorOp::scale",
+        "GridFieldVectorOp::scale",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -198,7 +198,7 @@ void scale(
     int e0 = data.extent(3);
     int e1 = data.extent(4);
     Kokkos::parallel_for(
-        "GridVectorOp::scale",
+        "GridFieldVectorOp::scale",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -221,7 +221,7 @@ void scale(
     int e1 = data.extent(4);
     int e2 = data.extent(4);
     Kokkos::parallel_for(
-        "GridVectorOp::scale",
+        "GridFieldVectorOp::scale",
         createVectorOpExecPolicy( grid_field ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -250,7 +250,7 @@ void update(
     auto data_b = vec_b.data();
     auto data_c = vec_c.data();
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         { data_c(i,j,k) = alpha * data_a(i,j,k) + beta * data_b(i,j,k); } );
@@ -272,7 +272,7 @@ void update(
     auto data_c = vec_c.data();
     int e0 = data_a.extent(3);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -299,7 +299,7 @@ void update(
     int e0 = data_a.extent(3);
     int e1 = data_a.extent(4);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -328,7 +328,7 @@ void update(
     int e1 = data_a.extent(4);
     int e2 = data_a.extent(5);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -362,7 +362,7 @@ void update(
     auto data_c = vec_c.data();
     auto data_d = vec_d.data();
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -391,7 +391,7 @@ void update(
     auto data_d = vec_d.data();
     int e0 = data_a.extent(3);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -422,7 +422,7 @@ void update(
     int e0 = data_a.extent(3);
     int e1 = data_a.extent(4);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -455,7 +455,7 @@ void update(
     int e1 = data_a.extent(4);
     int e2 = data_a.extent(5);
     Kokkos::parallel_for(
-        "GridVectorOp::update",
+        "GridFieldVectorOp::update",
         createVectorOpExecPolicy( vec_a ),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
@@ -470,7 +470,7 @@ void update(
 
 //---------------------------------------------------------------------------//
 
-} // end namespace GridVectorOp
+} // end namespace GridFieldVectorOp
 } // end namespace Harlow
 
 #endif // end HARLOW_GRIDFIELDVECTOROPS_HPP
