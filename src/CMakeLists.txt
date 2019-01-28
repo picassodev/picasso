@@ -7,6 +7,7 @@ set(HEADERS
   Harlow_GridCommunication.hpp
   Harlow_GridExecPolicy.hpp
   Harlow_GridField.hpp
+  Harlow_GridFieldVectorOps.hpp
   Harlow_MpiTraits.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
