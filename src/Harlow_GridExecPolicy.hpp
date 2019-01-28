@@ -44,6 +44,15 @@ createNodeExecPolicy( const GridBlock& grid )
 }
 
 //---------------------------------------------------------------------------//
+// Create a grid execution policy over all of the faces including the halo.
+template<class ExecutionSpace>
+Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
+createFaceExecPolicy( const GridBlock& grid )
+{
+    return createNodeExecPolicy<ExecutionSpace>( grid );
+}
+
+//---------------------------------------------------------------------------//
 // Create a grid execution policy over the local cells (does not include the
 // halo).
 template<class ExecutionSpace>
@@ -77,6 +86,16 @@ createLocalNodeExecPolicy( const GridBlock& grid )
                         grid.localNodeEnd(Dim::J),
                         grid.localNodeEnd(Dim::K) }};
     return Policy( begin, end );
+}
+
+//---------------------------------------------------------------------------//
+// Create a grid execution policy over the local faces (does not include the
+// halo).
+template<class ExecutionSpace>
+Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
+createLocalFaceExecPolicy( const GridBlock& grid )
+{
+    return createLocalNodeExecPolicy<ExecutionSpace>( grid );
 }
 
 //---------------------------------------------------------------------------//
@@ -181,6 +200,17 @@ createNodeBoundaryExecPolicy( const GridBlock& grid,
     }
 
     return Policy( begin, end );
+}
+
+//---------------------------------------------------------------------------//
+// Create a grid execution policy over faces on a physical boundary including
+// faces in the halo.
+template<class ExecutionSpace>
+Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
+createFaceBoundaryExecPolicy( const GridBlock& grid,
+                              const int boundary_id )
+{
+    return createNodeBoundaryExecPolicy<ExecutionSpace>( grid, boundary_id );
 }
 
 //---------------------------------------------------------------------------//
@@ -301,6 +331,17 @@ createLocalNodeBoundaryExecPolicy( const GridBlock& grid,
     }
 
     return Policy( begin, end );
+}
+
+//---------------------------------------------------------------------------//
+// Create a grid execution policy over faces on a physical boundary. Does not
+// include the faces in the halo.
+template<class ExecutionSpace>
+Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
+createLocalFaceBoundaryExecPolicy( const GridBlock& grid,
+                                   const int boundary_id )
+{
+    createLocalNodeBoundaryExecPolicy<ExecutionSpace>( grid, boundary_id );
 }
 
 //---------------------------------------------------------------------------//

@@ -60,8 +60,9 @@ struct GridBlockFieldDataType
 
 //---------------------------------------------------------------------------//
 // Field creators
-//---------------------------------------------------------------------------//
-// Given a grid create a view of cell data with ijk indexing.
+// ---------------------------------------------------------------------------//
+// Given a grid create a view of cell data with ijk indexing. The view is
+// uninitialized.
 template<class DataType, class DeviceType>
 Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
 createCellField( const GridBlock& grid,
@@ -69,14 +70,15 @@ createCellField( const GridBlock& grid,
 {
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
-            field_name,
+            Kokkos::ViewAllocateWithoutInitializing(field_name),
             grid.numCell(Dim::I),
             grid.numCell(Dim::J),
             grid.numCell(Dim::K) );
 }
 
 //---------------------------------------------------------------------------//
-// Given a grid create a view of node data with ijk indexing.
+// Given a grid create a view of node data with ijk indexing. The view is
+// uninitialized.
 template<class DataType, class DeviceType>
 Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
 createNodeField( const GridBlock& grid,
@@ -84,7 +86,7 @@ createNodeField( const GridBlock& grid,
 {
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
-            field_name,
+            Kokkos::ViewAllocateWithoutInitializing(field_name),
             grid.numNode(Dim::I),
             grid.numNode(Dim::J),
             grid.numNode(Dim::K) );
@@ -98,11 +100,13 @@ class GridField
 {
   public:
 
+    using data_type = DataType;
     using device_type = DeviceType;
     using memory_space = typename device_type::memory_space;
     using execution_space = typename device_type::execution_space;
-    using field_data_type = typename GridBlockFieldDataType<DataType>::type;
-    using view_type = Kokkos::View<field_data_type,device_type>;
+    using view_data_type = typename GridBlockFieldDataType<DataType>::type;
+    using view_type = Kokkos::View<view_data_type,device_type>;
+    using value_type = typename view_type::value_type;
 
     GridField( const std::shared_ptr<GlobalGrid>& global_grid,
                const int field_location,
@@ -146,6 +150,19 @@ class GridField
     view_type _data;
     int _field_location;
 };
+
+//---------------------------------------------------------------------------//
+// Static type checker.
+template<class >
+class is_grid_field : public std::false_type {};
+
+template<class DataType, class DeviceType>
+class is_grid_field<GridField<DataType,DeviceType> >
+    : public std::true_type {};
+
+template<class DataType, class DeviceType>
+class is_grid_field<GridField<const DataType,DeviceType> >
+    : public std::true_type {};
 
 //---------------------------------------------------------------------------//
 
