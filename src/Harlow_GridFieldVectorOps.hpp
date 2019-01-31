@@ -27,10 +27,10 @@ createVectorOpExecPolicy( const GridFieldType& grid_field )
     using execution_space = typename GridFieldType::execution_space;
 
     if ( FieldLocation::Node == grid_field.location() )
-        return createLocalNodeExecPolicy<execution_space>(
+        return GridExecution::createLocalNodePolicy<execution_space>(
             grid_field.block() );
     else if ( FieldLocation::Cell == grid_field.location() )
-        return createLocalCellExecPolicy<execution_space>(
+        return GridExecution::createLocalCellPolicy<execution_space>(
             grid_field.block() );
     else
         throw std::invalid_argument("Undefined field location");

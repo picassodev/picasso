@@ -59,7 +59,7 @@ void checkGather( const GridBlock& block,
               i < block.localCellEnd(Dim::I); ++i )
         for ( int j = block.localCellBegin(Dim::J);
               j < block.localCellEnd(Dim::J); ++j )
-                EXPECT_EQ( field(i,j,0), data_val );
+            EXPECT_EQ( field(i,j,0), data_val );
 
     // +K face.
     if ( !block.onBoundary(DomainBoundary::HighZ) || block.isPeriodic(Dim::K) )
@@ -129,8 +129,8 @@ void checkScatter( const GridBlock& block,
     if ( !block.onBoundary(DomainBoundary::LowZ) || block.isPeriodic(Dim::K) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
-        for ( int j = block.localCellBegin(Dim::J) + 1;
-              j < block.localCellEnd(Dim::J) - 1; ++j )
+            for ( int j = block.localCellBegin(Dim::J) + 1;
+                  j < block.localCellEnd(Dim::J) - 1; ++j )
             {
                 int k = 1;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
@@ -181,7 +181,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
     auto field = grid_field.data();
     Kokkos::parallel_for(
         "test field fill",
-        createLocalCellExecPolicy<TEST_EXECSPACE>(grid_field.block()),
+        GridExecution::createLocalCellPolicy<TEST_EXECSPACE>(grid_field.block()),
         KOKKOS_LAMBDA(const int i, const int j, const int k){
             field(i,j,k) = data_val; }
         );

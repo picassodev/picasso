@@ -11,13 +11,15 @@
 
 namespace Harlow
 {
+namespace GridExecution
+{
 //---------------------------------------------------------------------------//
 // Execution policy creators.
 //---------------------------------------------------------------------------//
 // Create a grid execution policy over all of the cells including the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createCellExecPolicy( const GridBlock& grid )
+createCellPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -32,7 +34,7 @@ createCellExecPolicy( const GridBlock& grid )
 // Create a grid execution policy over all of the nodes including the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createNodeExecPolicy( const GridBlock& grid )
+createNodePolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -48,7 +50,7 @@ createNodeExecPolicy( const GridBlock& grid )
 // halo).
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalCellExecPolicy( const GridBlock& grid )
+createLocalCellPolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -66,7 +68,7 @@ createLocalCellExecPolicy( const GridBlock& grid )
 // halo).
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalNodeExecPolicy( const GridBlock& grid )
+createLocalNodePolicy( const GridBlock& grid )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -84,8 +86,8 @@ createLocalNodeExecPolicy( const GridBlock& grid )
 // cells in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createCellBoundaryExecPolicy( const GridBlock& grid,
-                              const int boundary_id )
+createBoundaryCellPolicy( const GridBlock& grid,
+                          const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -136,8 +138,8 @@ createCellBoundaryExecPolicy( const GridBlock& grid,
 // nodes in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createNodeBoundaryExecPolicy( const GridBlock& grid,
-                              const int boundary_id )
+createBoundaryNodePolicy( const GridBlock& grid,
+                          const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -188,8 +190,8 @@ createNodeBoundaryExecPolicy( const GridBlock& grid,
 // include the cells in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalCellBoundaryExecPolicy( const GridBlock& grid,
-                                   const int boundary_id )
+createLocalBoundaryCellPolicy( const GridBlock& grid,
+                               const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -248,8 +250,8 @@ createLocalCellBoundaryExecPolicy( const GridBlock& grid,
 // include the nodes in the halo.
 template<class ExecutionSpace>
 Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >
-createLocalNodeBoundaryExecPolicy( const GridBlock& grid,
-                                   const int boundary_id )
+createLocalBoundaryNodePolicy( const GridBlock& grid,
+                               const int boundary_id )
 {
     using Policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3> >;
     using point_type = typename Policy::point_type;
@@ -305,6 +307,7 @@ createLocalNodeBoundaryExecPolicy( const GridBlock& grid,
 
 //---------------------------------------------------------------------------//
 
+} // end namespace GridExecution
 } // end namespace Harlow
 
 #endif // end HARLOW_GRIDEXECPOLICY_HPP
