@@ -20,17 +20,20 @@ namespace GridCommunication
 //---------------------------------------------------------------------------//
 // Communication pattern tags.
 //---------------------------------------------------------------------------//
-// Tag for doing the 6-neighbor Cartesian communication.
-struct CartesianCommTag {};
+// Tag for doing the 6-neighbor Cartesian topology communication.
+struct CartesianTag {};
 
-// Tag for doing the 26-neighbor graph communication.
-struct GraphCommTag {};
+// Tag for doing the 26-neighbor graph topology communication.
+struct GraphTag {};
+
 
 //---------------------------------------------------------------------------//
-// Given a grid block calculate the counts to send/receive from each halo
-// neighbor. Neighbors are ordered as {-i,+i,-j,+j,-k,+k}. Blocks on physical
-// boundaries that are not periodic have a count of 0.
-std::vector<int> neighborCounts( const GridBlock& grid )
+// Neighbor counts.
+//---------------------------------------------------------------------------//
+// Given a grid block calculate the counts to send/receive from each Cartesian
+// halo neighbor. Neighbors are ordered as {-i,+i,-j,+j,-k,+k}. Blocks on
+// physical boundaries that are not periodic have a count of 0.
+std::vector<int> neighborCounts( const GridBlock& grid, CartesianTag )
 {
     std::vector<int> counts( 6, 0 );
 
@@ -67,6 +70,8 @@ std::vector<int> neighborCounts( const GridBlock& grid )
     return counts;
 }
 
+//---------------------------------------------------------------------------//
+// Serialization
 //---------------------------------------------------------------------------//
 // Pack a neighbor into a send buffer.
 template<typename ViewType,typename BufferType, typename PackRange>
@@ -174,8 +179,11 @@ void scatterNeighbor( const PackRange& unpack_range,
 }
 
 //---------------------------------------------------------------------------//
+// Gather
+//---------------------------------------------------------------------------//
 /*!
-  \brief Gather field data from owning ranks into the halo.
+  \brief Gather field data from owning ranks into the halo using a Cartesian
+  communication pattern.
 
   This operation is specifically for implementing grid operators on scalar
   cell fields for the solve during the projection phase of the algorithm. The
@@ -184,7 +192,7 @@ void scatterNeighbor( const PackRange& unpack_range,
   only need to send to our 6 neighbors.
 */
 template<class GridFieldType>
-void gather( GridFieldType& grid_field )
+void gather( GridFieldType& grid_field, CartesianTag tag )
 {
     if ( grid_field.location() != FieldLocation::Cell )
         throw std::invalid_argument("Gather only for cell fields");
@@ -202,7 +210,7 @@ void gather( GridFieldType& grid_field )
             "Gather only for fields with halo size of 1");
 
     // Count the number of cells we are sending to each neighbor.
-    std::vector<int> counts = neighborCounts( block );
+    std::vector<int> counts = neighborCounts( block, tag );
 
     // Compute the total sends and offsets view exclusive scan.
     int total_elements = 0;
@@ -269,7 +277,7 @@ void gather( GridFieldType& grid_field )
         MpiTraits<typename view_type::value_type>::type(),
         receive_buffer.data(), counts.data(), offsets.data(),
         MpiTraits<typename view_type::value_type>::type(),
-        grid_field.comm() );
+        grid_field.cartesianComm() );
 
     // Unpack the receive buffer.
     for ( int d = 0; d < 3; ++d )
@@ -311,8 +319,11 @@ void gather( GridFieldType& grid_field )
 }
 
 //---------------------------------------------------------------------------//
+// Scatter
+//---------------------------------------------------------------------------//
 /*!
-  \brief Scatter the data from the halo back to their owning rank.
+  \brief Scatter the data from the halo back to their owning rank using a
+  Cartesian communication pattern.
 
   This operation is specifically for implementing grid operators on scalar
   cell fields for the solve during the projection phase of the algorithm. The
@@ -321,7 +332,7 @@ void gather( GridFieldType& grid_field )
   only need to send to our 6 neighbors.
 */
 template<class GridFieldType>
-void scatter( GridFieldType& grid_field )
+void scatter( GridFieldType& grid_field, CartesianTag tag )
 {
     if ( grid_field.location() != FieldLocation::Cell )
         throw std::invalid_argument("Scatter only for cell fields");
@@ -339,7 +350,7 @@ void scatter( GridFieldType& grid_field )
             "Scatter only for fields with halo size of 1");
 
     // Count the number of cells we are sending to each neighbor.
-    std::vector<int> counts = neighborCounts( block );
+    std::vector<int> counts = neighborCounts( block, tag );
 
     // Compute the total sends and offsets view exclusive scan.
     int total_elements = 0;
@@ -404,7 +415,7 @@ void scatter( GridFieldType& grid_field )
         MpiTraits<typename view_type::value_type>::type(),
         receive_buffer.data(), counts.data(), offsets.data(),
         MpiTraits<typename view_type::value_type>::type(),
-        grid_field.comm() );
+        grid_field.cartesianComm() );
 
     // Unpack the receive buffer.
     for ( int d = 0; d < 3; ++d )

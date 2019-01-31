@@ -125,9 +125,21 @@ class GridField
             throw std::invalid_argument("Bad field location");
     }
 
-    // Get the grid communicator. This communicator has a Cartesian topology.
+    // Get the grid communicator.
     MPI_Comm comm() const
     { return _global_grid->comm(); }
+
+    // Get the grid communicator with a 6-neighbor Cartesian
+    // topology. Neighbors are ordered in this topology as
+    // {-I,+I,-J,+J,-K,+K}.
+    MPI_Comm cartesianComm() const
+    { return _global_grid->cartesianComm(); }
+
+    // Get the grid communicator with a 26-neighbor graph topology. Neighbors
+    // are logically ordered in the 3x3 grid about centered on the local rank
+    // with the I index moving the fastest and the K index moving the slowest.
+    MPI_Comm graphComm() const
+    { return _global_grid->graphComm(); }
 
     // Get the grid.
     const GridBlock& block() const

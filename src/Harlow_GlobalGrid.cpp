@@ -1,4 +1,5 @@
 #include <Harlow_GlobalGrid.hpp>
+#include <Harlow_Types.hpp>
 
 #include <algorithm>
 
@@ -31,12 +32,12 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
         {is_dim_periodic[0],is_dim_periodic[1],is_dim_periodic[2]};
 
     // Generate a communicator with a Cartesian topology.
-    int reorder_ranks = 1;
+    int reorder_cart_ranks = 1;
     MPI_Cart_create( comm,
                      3,
                      ranks_per_dim.data(),
                      periodic_dims.data(),
-                     reorder_ranks,
+                     reorder_cart_ranks,
                      &_cart_comm );
 
     // Get the Cartesian topology index of this rank.
@@ -91,12 +92,68 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     // Create the local grid block.
     _grid_block = GridBlock( local_low_corner, local_num_cell,
                              boundary_location, is_dim_periodic, cell_size, 0 );
+
+    // Create the graph communicator. Start by getting the neighbors we will
+    // communicatioe with.
+    std::vector<int> neighbors;
+    neighbors.reserve( 26 );
+    for ( int k = -1; k < 2; ++k )
+        for ( int j = -1; j < 2; ++j )
+            for ( int i = -1; i < 2; ++i )
+                if ( !(i==0 && j==0 && k==0) )
+                {
+                    // Set the Cartesian rank of this neighbor.
+                    std::vector<int> ncr = { cart_rank[Dim::I] + i,
+                                             cart_rank[Dim::J] + j,
+                                             cart_rank[Dim::K] + k };
+
+                    // Check for being outside of a non-periodic dimension.
+                    bool is_null = false;
+                    for ( int d = 0; d < 3; ++d )
+                        if ( ncr[d] < 0 || ncr[d] >= ranks_per_dim[d] )
+                            if ( !_grid_block.isPeriodic(d) )
+                                is_null = true;
+
+                    // If we were outside of a non-periodic dimension this
+                    // rank is null.
+                    if ( is_null )
+                    {
+                        neighbors.push_back( MPI_PROC_NULL );
+                    }
+
+                    // Otherwise get our real neighbor. The periodic case
+                    // should wrap around when out of bounds.
+                    else
+                    {
+                        int nr;
+                        MPI_Cart_rank( _cart_comm, ncr.data(), &nr );
+                        neighbors.push_back( nr );
+                    }
+                }
+
+    // Build the new topology for the graph communicator.
+    int reorder_graph_ranks = 1;
+    MPI_Dist_graph_create_adjacent( _cart_comm,
+                                    26, neighbors.data(), MPI_UNWEIGHTED,
+                                    26, neighbors.data(), MPI_UNWEIGHTED,
+                                    MPI_INFO_NULL,
+                                    reorder_graph_ranks, &_graph_comm );
 }
 
 //---------------------------------------------------------------------------//
-// Get the grid communicator. This communicator has a Cartesian topology.
+// Get the grid communicator.
 MPI_Comm GlobalGrid::comm() const
 { return _cart_comm; }
+
+//---------------------------------------------------------------------------//
+// Get the grid communicator with a Cartesian topology.
+MPI_Comm GlobalGrid::cartesianComm() const
+{ return _cart_comm; }
+
+//---------------------------------------------------------------------------//
+// Get the grid communicator with a Graph topology.
+MPI_Comm GlobalGrid::graphComm() const
+{ return _graph_comm; }
 
 //---------------------------------------------------------------------------//
 // Get a grid block on this rank with a given halo cell width.

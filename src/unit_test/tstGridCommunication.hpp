@@ -187,7 +187,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
         );
 
     // Gather into the halo.
-    GridCommunication::gather( grid_field );
+    GridCommunication::gather( grid_field, GridCommunication::CartesianTag() );
 
     // Check the gather. The halo should have received the data value if its
     // not on a physical boundary or if it is on a periodic boundary.
@@ -196,7 +196,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
     checkGather( grid_field.block(), data_val, field_mirror );
 
     // Now scatter back.
-    GridCommunication::scatter( grid_field );
+    GridCommunication::scatter( grid_field, GridCommunication::CartesianTag() );
 
     // Check the scatter. The interior nodes on the boundary should now have
     // 2x the data value if not on a physical boundary or if the boundary is
