@@ -19,7 +19,8 @@ struct SplineOrder
 {
     enum Values {
         Linear = 0,
-        Quadratic = 1
+        Quadratic = 1,
+        Cubic = 2
     };
 };
 
@@ -52,7 +53,6 @@ struct FieldLocation
     enum Values {
         Node = 0,
         Cell = 1,
-        Face = 2
     };
 };
 

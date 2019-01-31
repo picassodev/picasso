@@ -9,6 +9,8 @@ set(HEADERS
   Harlow_GridField.hpp
   Harlow_GridFieldVectorOps.hpp
   Harlow_MpiTraits.hpp
+  Harlow_ParticleInterpolation.hpp
+  Harlow_Splines.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
   )
