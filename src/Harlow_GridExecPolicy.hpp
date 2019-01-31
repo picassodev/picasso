@@ -102,32 +102,38 @@ createBoundaryCellPolicy( const GridBlock& grid,
 
     if ( DomainBoundary::LowX == boundary_id )
     {
-        end[0] = 1;
+        begin[0] = grid.localCellBegin(Dim::I);
+        end[0] = grid.localCellBegin(Dim::I) + 1;
     }
 
     else if ( DomainBoundary::HighX == boundary_id )
     {
-        begin[0] = grid.numCell(Dim::I) - 1;
+        begin[0] = grid.localCellEnd(Dim::I) - 1;
+        end[0] = grid.localCellEnd(Dim::I);
     }
 
     else if ( DomainBoundary::LowY == boundary_id )
     {
-        end[1] = 1;
+        begin[1] = grid.localCellBegin(Dim::J);
+        end[1] = grid.localCellBegin(Dim::J) + 1;
     }
 
     else if ( DomainBoundary::HighY == boundary_id )
     {
-        begin[1] = grid.numCell(Dim::J) - 1;
+        begin[1] = grid.localCellEnd(Dim::J) - 1;
+        end[1] = grid.localCellEnd(Dim::J);
     }
 
     else if ( DomainBoundary::LowZ == boundary_id )
     {
-        end[2] = 1;
+        begin[2] = grid.localCellBegin(Dim::K);
+        end[2] = grid.localCellBegin(Dim::K) + 1;
     }
 
     else if ( DomainBoundary::HighZ == boundary_id )
     {
-        begin[2] = grid.numCell(Dim::K) - 1;
+        begin[2] = grid.localCellEnd(Dim::K) - 1;
+        end[2] = grid.localCellEnd(Dim::K);
     }
 
     return Policy( begin, end );
@@ -154,32 +160,38 @@ createBoundaryNodePolicy( const GridBlock& grid,
 
     if ( DomainBoundary::LowX == boundary_id )
     {
-        end[0] = 1;
+        begin[0] = grid.localNodeBegin(Dim::I);
+        end[0] = grid.localNodeBegin(Dim::I) + 1;
     }
 
     else if ( DomainBoundary::HighX == boundary_id )
     {
-        begin[0] = grid.numNode(Dim::I) - 1;
+        begin[0] = grid.localNodeEnd(Dim::I) - 1;
+        end[0] = grid.localNodeEnd(Dim::I);
     }
 
     else if ( DomainBoundary::LowY == boundary_id )
     {
-        end[1] = 1;
+        begin[1] = grid.localNodeBegin(Dim::J);
+        end[1] = grid.localNodeBegin(Dim::J) + 1;
     }
 
     else if ( DomainBoundary::HighY == boundary_id )
     {
-        begin[1] = grid.numNode(Dim::J) - 1;
+        begin[1] = grid.localNodeEnd(Dim::J) - 1;
+        end[1] = grid.localNodeEnd(Dim::J);
     }
 
     else if ( DomainBoundary::LowZ == boundary_id )
     {
-        end[2] = 1;
+        begin[2] = grid.localNodeBegin(Dim::K);
+        end[2] = grid.localNodeBegin(Dim::K) + 1;
     }
 
     else if ( DomainBoundary::HighZ == boundary_id )
     {
-        begin[2] = grid.numNode(Dim::K) - 1;
+        begin[2] = grid.localNodeEnd(Dim::K) - 1;
+        end[2] = grid.localNodeEnd(Dim::K);
     }
 
     return Policy( begin, end );
@@ -208,38 +220,38 @@ createLocalBoundaryCellPolicy( const GridBlock& grid,
 
     if ( DomainBoundary::LowX == boundary_id )
     {
-        begin[0] = 0;
-        end[0] = 1;
+        begin[0] = grid.localCellBegin(Dim::I);
+        end[0] = grid.localCellBegin(Dim::I) + 1;
     }
 
     else if ( DomainBoundary::HighX == boundary_id )
     {
-        begin[0] = grid.numCell(Dim::I) - 1;
-        end[0] = grid.numCell(Dim::I);
+        begin[0] = grid.localCellEnd(Dim::I) - 1;
+        end[0] = grid.localCellEnd(Dim::I);
     }
 
     else if ( DomainBoundary::LowY == boundary_id )
     {
-        begin[1] = 0;
-        end[1] = 1;
+        begin[1] = grid.localCellBegin(Dim::J);
+        end[1] = grid.localCellBegin(Dim::J) + 1;
     }
 
     else if ( DomainBoundary::HighY == boundary_id )
     {
-        begin[1] = grid.numCell(Dim::J) - 1;
-        end[1] = grid.numCell(Dim::J);
+        begin[1] = grid.localCellEnd(Dim::J) - 1;
+        end[1] = grid.localCellEnd(Dim::J);
     }
 
     else if ( DomainBoundary::LowZ == boundary_id )
     {
-        begin[2] = 0;
-        end[2] = 1;
+        begin[2] = grid.localCellBegin(Dim::K);
+        end[2] = grid.localCellBegin(Dim::K) + 1;
     }
 
     else if ( DomainBoundary::HighZ == boundary_id )
     {
-        begin[2] = grid.numCell(Dim::K) - 1;
-        end[2] = grid.numCell(Dim::K);
+        begin[2] = grid.localCellEnd(Dim::K) - 1;
+        end[2] = grid.localCellEnd(Dim::K);
     }
 
     return Policy( begin, end );
@@ -268,38 +280,38 @@ createLocalBoundaryNodePolicy( const GridBlock& grid,
 
     if ( DomainBoundary::LowX == boundary_id )
     {
-        begin[0] = 0;
-        end[0] = 1;
+        begin[0] = grid.localNodeBegin(Dim::I);
+        end[0] = grid.localNodeBegin(Dim::I) + 1;
     }
 
     else if ( DomainBoundary::HighX == boundary_id )
     {
-        begin[0] = grid.numNode(Dim::I) - 1;
-        end[0] = grid.numNode(Dim::I);
+        begin[0] = grid.localNodeEnd(Dim::I) - 1;
+        end[0] = grid.localNodeEnd(Dim::I);
     }
 
     else if ( DomainBoundary::LowY == boundary_id )
     {
-        begin[1] = 0;
-        end[1] = 1;
+        begin[1] = grid.localNodeBegin(Dim::J);
+        end[1] = grid.localNodeBegin(Dim::J) + 1;
     }
 
     else if ( DomainBoundary::HighY == boundary_id )
     {
-        begin[1] = grid.numNode(Dim::J) - 1;
-        end[1] = grid.numNode(Dim::J);
+        begin[1] = grid.localNodeEnd(Dim::J) - 1;
+        end[1] = grid.localNodeEnd(Dim::J);
     }
 
     else if ( DomainBoundary::LowZ == boundary_id )
     {
-        begin[2] = 0;
-        end[2] = 1;
+        begin[2] = grid.localNodeBegin(Dim::K);
+        end[2] = grid.localNodeBegin(Dim::K) + 1;
     }
 
     else if ( DomainBoundary::HighZ == boundary_id )
     {
-        begin[2] = grid.numNode(Dim::K) - 1;
-        end[2] = grid.numNode(Dim::K);
+        begin[2] = grid.localNodeEnd(Dim::K) - 1;
+        end[2] = grid.localNodeEnd(Dim::K);
     }
 
     return Policy( begin, end );

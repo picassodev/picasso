@@ -180,41 +180,12 @@ void gridTest()
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighZ) );
 
     // Check the local cell bounds.
-    if ( grid_block.onBoundary(DomainBoundary::LowX) )
-        EXPECT_EQ( grid_block.localCellBegin(Dim::I), 0 );
-    else
-        EXPECT_EQ( grid_block.localCellBegin(Dim::I), halo_width );
-
-    if ( grid_block.onBoundary(DomainBoundary::HighX) )
-        EXPECT_EQ( grid_block.localCellEnd(Dim::I),
-                   grid_block.numCell(Dim::I) );
-    else
-        EXPECT_EQ( grid_block.localCellEnd(Dim::I),
-                   grid_block.numCell(Dim::I) - halo_width );
-
-    if ( grid_block.onBoundary(DomainBoundary::LowY) )
-        EXPECT_EQ( grid_block.localCellBegin(Dim::J), 0 );
-    else
-        EXPECT_EQ( grid_block.localCellBegin(Dim::J), halo_width );
-
-    if ( grid_block.onBoundary(DomainBoundary::HighY) )
-        EXPECT_EQ( grid_block.localCellEnd(Dim::J),
-                   grid_block.numCell(Dim::J) );
-    else
-        EXPECT_EQ( grid_block.localCellEnd(Dim::J),
-                   grid_block.numCell(Dim::J) - halo_width );
-
-    if ( grid_block.onBoundary(DomainBoundary::LowZ) )
-        EXPECT_EQ( grid_block.localCellBegin(Dim::K), 0 );
-    else
-        EXPECT_EQ( grid_block.localCellBegin(Dim::K), halo_width );
-
-    if ( grid_block.onBoundary(DomainBoundary::HighZ) )
-        EXPECT_EQ( grid_block.localCellEnd(Dim::K),
-                   grid_block.numCell(Dim::K) );
-    else
-        EXPECT_EQ( grid_block.localCellEnd(Dim::K),
-                   grid_block.numCell(Dim::K) - halo_width );
+    EXPECT_EQ( grid_block.localCellBegin(Dim::I), halo_width );
+    EXPECT_EQ( grid_block.localCellEnd(Dim::I), local_num_cells[Dim::I] + halo_width );
+    EXPECT_EQ( grid_block.localCellBegin(Dim::J), halo_width );
+    EXPECT_EQ( grid_block.localCellEnd(Dim::J), local_num_cells[Dim::J] + halo_width );
+    EXPECT_EQ( grid_block.localCellBegin(Dim::K), halo_width );
+    EXPECT_EQ( grid_block.localCellEnd(Dim::K), local_num_cells[Dim::K] + halo_width );
 
     // Get another block without a halo and check the local low corner. Do an
     // exclusive scan of sizes to get the local cell offset.

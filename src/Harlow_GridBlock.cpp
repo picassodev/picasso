@@ -87,23 +87,19 @@ int GridBlock::numNode( const int dim ) const
 
 //---------------------------------------------------------------------------//
 // Get the beginning local cell index in a given direction. The local cells do
-// not include the halo. Logical boundaries that are also physical boundaries
-// do not have a halo region unless the physical boundary is periodic.
+// not include the halo.
 int GridBlock::localCellBegin( const int dim ) const
 {
-    return ( _boundary_location[2*dim] && !_periodic[dim] )
-        ? 0 : _halo_cell_width;
+    std::ignore = dim;
+    return _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//
 // Get the ending local cell index in a given direction. The local cells do
-// not include the halo. Logical boundaries that are also on physical
-// boundaries do not have a halo region unless the physical boundary is
-// periodic.
+// not include the halo.
 int GridBlock::localCellEnd( const int dim ) const
 {
-    return ( _boundary_location[2*dim+1] && !_periodic[dim] ) ?
-        _total_num_cell[dim] : _total_num_cell[dim] - _halo_cell_width;
+    return _total_num_cell[dim] - _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//
@@ -145,23 +141,13 @@ void GridBlock::setHalo()
     // Calculate the low corner of the local block including the halo.
     _low_corner.resize( 3 );
     for ( int d = 0; d < 3; ++d )
-    {
-        if ( _boundary_location[2*d] && !_periodic[d])
-            _low_corner[d] = _local_low_corner[d];
-        else
-            _low_corner[d] =
-                _local_low_corner[d] - _halo_cell_width * _cell_size;
-    }
+        _low_corner[d] =
+            _local_low_corner[d] - _halo_cell_width * _cell_size;
 
-    // Add halo cells to the total counts if not on a physical boundary or if
-    // we are on a periodic boundary.
+    // Add halo cells to the total counts. Note that we always create a halo,
+    // even if on a physical boundary.
     for ( int d = 0; d < 3; ++d )
-    {
-        if ( !_boundary_location[2*d] || _periodic[d] )
-            _total_num_cell[d] += _halo_cell_width;
-        if ( !_boundary_location[2*d+1] || _periodic[d] )
-            _total_num_cell[d] += _halo_cell_width;
-    }
+        _total_num_cell[d] += 2 * _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//

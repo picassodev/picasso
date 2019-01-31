@@ -23,16 +23,16 @@ void apiTest()
 {
     // Make a cartesian grid.
     std::vector<int> input_num_cell = { 13, 21, 10 };
-    std::vector<int> num_cell = { 13, 21, 14 };
+    std::vector<int> num_cell = { 17, 25, 14 };
     std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
     std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
     std::vector<bool> boundary_location = { true, true, true, true, false, false};
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
-    std::vector<int> local_cell_begin = { 0, 0, halo_width };
+    std::vector<int> local_cell_begin = { halo_width, halo_width, halo_width };
     std::vector<int> local_cell_end =
-        { num_cell[0], num_cell[1], num_cell[2] - halo_width };
+        { num_cell[0] - halo_width, num_cell[1] - halo_width, num_cell[2] - halo_width };
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
@@ -41,8 +41,10 @@ void apiTest()
                     periodic, cell_size, halo_width );
 
     // Test the API.
-    EXPECT_EQ( low_corner[0], grid.lowCorner(Dim::I) );
-    EXPECT_EQ( low_corner[1], grid.lowCorner(Dim::J) );
+    EXPECT_EQ( low_corner[0] - halo_width * cell_size,
+               grid.lowCorner(Dim::I) );
+    EXPECT_EQ( low_corner[1] - halo_width * cell_size,
+               grid.lowCorner(Dim::J) );
     EXPECT_EQ( low_corner[2] - halo_width * cell_size,
                grid.lowCorner(Dim::K) );
 
@@ -92,18 +94,21 @@ void assignTest()
     int halo_width_2 = 4;
     block_2.assign( grid, halo_width_2 );
 
-    std::vector<int> num_cell = { 13, 21, 18 };
+    std::vector<int> num_cell = { 21, 29, 18 };
     std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
-    std::vector<int> local_cell_begin = { 0, 0, halo_width_2 };
-    std::vector<int> local_cell_end =
-        { num_cell[0], num_cell[1], num_cell[2] - halo_width_2 };
+    std::vector<int> local_cell_begin = { halo_width_2, halo_width_2, halo_width_2 };
+    std::vector<int> local_cell_end = { num_cell[0] - halo_width_2,
+                                        num_cell[1] - halo_width_2,
+                                        num_cell[2] - halo_width_2 };
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
                                         local_cell_end[2] };
 
-    EXPECT_EQ( low_corner[0], block_2.lowCorner(Dim::I) );
-    EXPECT_EQ( low_corner[1], block_2.lowCorner(Dim::J) );
+    EXPECT_EQ( low_corner[0] - halo_width_2 * cell_size,
+               block_2.lowCorner(Dim::I) );
+    EXPECT_EQ( low_corner[1] - halo_width_2 * cell_size,
+               block_2.lowCorner(Dim::J) );
     EXPECT_EQ( low_corner[2] - halo_width_2 * cell_size,
                block_2.lowCorner(Dim::K) );
 

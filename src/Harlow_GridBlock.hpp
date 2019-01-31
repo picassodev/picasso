@@ -7,6 +7,14 @@ namespace Harlow
 {
 //---------------------------------------------------------------------------//
 // Local Cartesian grid block representation.
+//
+// Note that a block always has a halo - even if it is on a physical
+// boundary that is not periodic. We do this to facilitate particle deposition
+// at boundaries.
+//
+// As a result, the boundary node/cell on a physical boundary that is not
+// periodic is the first/last local node/cell depending on whether the low or
+// high boundary is chosen.
 //---------------------------------------------------------------------------//
 class GridBlock
 {
@@ -64,15 +72,11 @@ class GridBlock
     int numNode( const int dim ) const;
 
     // Get the beginning local cell index in a given direction. The local
-    // cells do not include the halo. Logical boundaries that are also on
-    // physical boundaries do not have a halo region unless the physical
-    // boundary is periodic.
+    // cells do not include the halo.
     int localCellBegin( const int dim ) const;
 
     // Get the ending local cell index in a given direction. The local cells
-    // do not include the halo. Logical boundaries that are also on physical
-    // boundaries do not have a halo region unless the physical boundary is
-    // periodic.
+    // do not include the halo.
     int localCellEnd( const int dim ) const;
 
     // Get the beginning local node index in a given direction. The local

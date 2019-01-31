@@ -18,29 +18,53 @@ namespace Harlow
 namespace GridCommunication
 {
 //---------------------------------------------------------------------------//
+// Communication pattern tags.
+//---------------------------------------------------------------------------//
+// Tag for doing the 6-neighbor Cartesian communication.
+struct CartesianCommTag {};
+
+// Tag for doing the 26-neighbor graph communication.
+struct GraphCommTag {};
+
+//---------------------------------------------------------------------------//
 // Given a grid block calculate the counts to send/receive from each halo
-// neighbor. Neighbors are ordered as {-i,+i,-j,+j,-k,+k}
+// neighbor. Neighbors are ordered as {-i,+i,-j,+j,-k,+k}. Blocks on physical
+// boundaries that are not periodic have a count of 0.
 std::vector<int> neighborCounts( const GridBlock& grid )
 {
-    return {
-        grid.localCellBegin(Dim::I) *
-        grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K),
+    std::vector<int> counts( 6, 0 );
 
-        (grid.numCell(Dim::I) - grid.localCellEnd(Dim::I)) *
-        grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K),
+    // I- neighbor
+    if ( !grid.onBoundary(DomainBoundary::LowX) || grid.isPeriodic(Dim::I) )
+         counts[0] = grid.haloSize() *
+                     grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
 
-        grid.localCellBegin(Dim::J) *
-        grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K),
+    // I+ neighbor
+    if ( !grid.onBoundary(DomainBoundary::HighX) || grid.isPeriodic(Dim::I) )
+        counts[1] = grid.haloSize() *
+                    grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
 
-        (grid.numCell(Dim::J) - grid.localCellEnd(Dim::J)) *
-        grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K),
+    // J- neighbor
+    if ( !grid.onBoundary(DomainBoundary::LowY) || grid.isPeriodic(Dim::J) )
+        counts[2] = grid.haloSize() *
+                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
 
-        grid.localCellBegin(Dim::K) *
-        grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J),
+    // J+ neighbor
+    if ( !grid.onBoundary(DomainBoundary::HighY) || grid.isPeriodic(Dim::J) )
+        counts[3] = grid.haloSize() *
+                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
 
-        (grid.numCell(Dim::K) - grid.localCellEnd(Dim::K)) *
-        grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J)
-    };
+    // K- neighbor
+    if ( !grid.onBoundary(DomainBoundary::LowZ) || grid.isPeriodic(Dim::K) )
+        counts[4] = grid.haloSize() *
+                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+
+    // K+ neighbor
+    if ( !grid.onBoundary(DomainBoundary::HighZ) || grid.isPeriodic(Dim::K) )
+        counts[5] = grid.haloSize() *
+                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+
+    return counts;
 }
 
 //---------------------------------------------------------------------------//

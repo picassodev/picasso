@@ -17,16 +17,17 @@ void fieldTest()
 {
     // Make a cartesian grid.
     std::vector<int> input_num_cell = { 13, 21, 10 };
-    std::vector<int> num_cell = { 13, 21, 14 };
+    std::vector<int> num_cell = { 17, 25, 14 };
     std::vector<int> num_node = { num_cell[0]+1, num_cell[1]+1, num_cell[2]+1 };
     std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
     std::vector<bool> boundary_location = { true, true, true, true, false, false};
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
-    std::vector<int> local_cell_begin = { 0, 0, halo_width };
-    std::vector<int> local_cell_end =
-        { num_cell[0], num_cell[1], num_cell[2] - halo_width };
+    std::vector<int> local_cell_begin = { halo_width, halo_width, halo_width };
+    std::vector<int> local_cell_end = { num_cell[0] - halo_width,
+                                        num_cell[1] - halo_width,
+                                        num_cell[2] - halo_width };
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
