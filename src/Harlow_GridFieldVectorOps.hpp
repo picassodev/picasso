@@ -32,9 +32,6 @@ createVectorOpExecPolicy( const GridFieldType& grid_field )
     else if ( FieldLocation::Cell == grid_field.location() )
         return createLocalCellExecPolicy<execution_space>(
             grid_field.block() );
-    else if ( FieldLocation::Face == grid_field.location() )
-        return createLocalFaceExecPolicy<execution_space>(
-            grid_field.block() );
     else
         throw std::invalid_argument("Undefined field location");
 }

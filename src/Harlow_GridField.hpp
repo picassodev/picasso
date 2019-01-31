@@ -60,7 +60,7 @@ struct GridBlockFieldDataType
 
 //---------------------------------------------------------------------------//
 // Field creators
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 // Given a grid create a view of cell data with ijk indexing. The view is
 // uninitialized.
 template<class DataType, class DeviceType>
@@ -121,8 +121,6 @@ class GridField
             _data = createNodeField<DataType,DeviceType>( _block, field_name );
         else if ( FieldLocation::Cell == field_location )
             _data = createCellField<DataType,DeviceType>( _block, field_name );
-        else if ( FieldLocation::Face == field_location )
-            _data = createNodeField<DataType,DeviceType>( _block, field_name );
         else
             throw std::invalid_argument("Bad field location");
     }
