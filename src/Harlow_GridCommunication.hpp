@@ -37,35 +37,61 @@ std::vector<int> neighborCounts( const GridBlock& grid, CartesianTag )
 {
     std::vector<int> counts( 6, 0 );
 
-    // I- neighbor
-    if ( !grid.onBoundary(DomainBoundary::LowX) || grid.isPeriodic(Dim::I) )
-         counts[0] = grid.haloSize() *
-                     grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
+    // Compute the size of a neighbor face in a given dimension.
+    auto face_size =
+        [&]( const int dim ){
+            int size = -1;
+            if ( Dim::I == dim )
+                size = grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
+            else if ( Dim::J == dim )
+                size = grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
+            else if ( Dim::K == dim )
+                size = grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+            return size;
+        };
 
-    // I+ neighbor
-    if ( !grid.onBoundary(DomainBoundary::HighX) || grid.isPeriodic(Dim::I) )
-        counts[1] = grid.haloSize() *
-                    grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
+    // If we are not on a physical boundary or if that boundary is periodic
+    // then we send data.
+    for ( int n = 0; n < 6; ++n )
+        if ( !grid.onBoundary(n) || grid.isPeriodic(n/2) )
+            counts[n] = grid.haloSize() * face_size(n/2);
 
-    // J- neighbor
-    if ( !grid.onBoundary(DomainBoundary::LowY) || grid.isPeriodic(Dim::J) )
-        counts[2] = grid.haloSize() *
-                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
+    return counts;
+}
 
-    // J+ neighbor
-    if ( !grid.onBoundary(DomainBoundary::HighY) || grid.isPeriodic(Dim::J) )
-        counts[3] = grid.haloSize() *
-                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
+//---------------------------------------------------------------------------//
+// Given a grid block calculate the counts to send/receive from each graph
+// halo neighbor. Neighbors are ordered as with I moving the fastest and K
+// moving the slowest in the 3x3 grid about the local rank. Blocks on physical
+// boundaries that are not periodic have a count of 0.
+std::vector<int> neighborCounts( const GridBlock& grid, GraphTag )
+{
+    std::vector<int> counts;
+    counts.reserve(26);
 
-    // K- neighbor
-    if ( !grid.onBoundary(DomainBoundary::LowZ) || grid.isPeriodic(Dim::K) )
-        counts[4] = grid.haloSize() *
-                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+    // Compute the number of cells in a given dimension for a neighbor at the
+    // given logical index in the 3x3 grid.
+    auto num_cell =
+        [&]( const int dim, const int logical_index ){
+            int nc = -1;
+            if ( -1 == logical_index )
+                nc = grid.haloSize();
+            else if ( 0 == logical_index )
+                nc = grid.localNumCell(dim);
+            else if ( 1 == logical_index )
+                nc = grid.haloSize();
+            return nc;
+        };
 
-    // K+ neighbor
-    if ( !grid.onBoundary(DomainBoundary::HighZ) || grid.isPeriodic(Dim::K) )
-        counts[5] = grid.haloSize() *
-                    grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+    // Compute the size of each neighbor. Note that we do not send to
+    // ourselves (when each index is 0).
+    for ( int k = -1; k < 2; ++k )
+        for ( int j = -1; j < 2; ++j )
+            for ( int i = -1; i < 2; ++i )
+                if ( !(i==0 && j==0 && k==0) )
+                    counts.push_back( num_cell( Dim::I, i ) *
+                                      num_cell( Dim::J, j ) *
+                                      num_cell( Dim::K, k ) );
 
     return counts;
 }
@@ -74,11 +100,15 @@ std::vector<int> neighborCounts( const GridBlock& grid, CartesianTag )
 // Serialization
 //---------------------------------------------------------------------------//
 // Pack a neighbor into a send buffer.
+
+// Rank 0 fields
 template<typename ViewType,typename BufferType, typename PackRange>
-void packNeighbor( const PackRange& pack_range,
-                   const ViewType field,
-                   const int offset,
-                   BufferType send_buffer )
+void packNeighbor(
+    const PackRange& pack_range,
+    const ViewType field,
+    const int offset,
+    BufferType send_buffer,
+    typename std::enable_if<3==ViewType::traits::dimension::rank,int*>::type = 0 )
 {
     // Define an offset view type.
     using NeighborBuffer =
@@ -102,13 +132,49 @@ void packNeighbor( const PackRange& pack_range,
     Kokkos::deep_copy( send_buffer_subview, field_subview );
 }
 
+// Rank 1 fields
+template<typename ViewType,typename BufferType, typename PackRange>
+void packNeighbor(
+    const PackRange& pack_range,
+    const ViewType field,
+    const int offset,
+    BufferType send_buffer,
+    typename std::enable_if<4==ViewType::traits::dimension::rank,int*>::type = 0 )
+{
+    // Define an offset view type.
+    using NeighborBuffer =
+        Kokkos::View<typename ViewType::data_type,
+                     typename ViewType::memory_space,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+    // Get the offset view into the send buffer for the neighbor.
+    NeighborBuffer send_buffer_subview(
+        send_buffer.data() + offset,
+        pack_range[Dim::I].second - pack_range[Dim::I].first,
+        pack_range[Dim::J].second - pack_range[Dim::J].first,
+        pack_range[Dim::K].second - pack_range[Dim::K].first,
+        field.extent(3) );
+
+    // Get a view of the layer we are sending.
+    auto field_subview = Kokkos::subview(
+        field,
+        pack_range[Dim::I], pack_range[Dim::J], pack_range[Dim::K], Kokkos::ALL );
+
+    // Copy to the send buffer.
+    Kokkos::deep_copy( send_buffer_subview, field_subview );
+}
+
 //---------------------------------------------------------------------------//
 // Gather a neighbor from a receive buffer.
+
+// Rank 0 fields.
 template<typename ViewType,typename BufferType, typename PackRange>
-void gatherNeighbor( const PackRange& unpack_range,
-                     const BufferType receive_buffer,
-                     const int offset,
-                     ViewType field )
+void gatherNeighbor(
+    const PackRange& unpack_range,
+    const BufferType receive_buffer,
+    const int offset,
+    ViewType field,
+    typename std::enable_if<3==ViewType::traits::dimension::rank,int*>::type = 0 )
 {
     // Define an offset view type.
     using NeighborBuffer =
@@ -133,13 +199,51 @@ void gatherNeighbor( const PackRange& unpack_range,
     Kokkos::deep_copy( field_subview, receive_buffer_subview );
 }
 
+// Rank 1 fields.
+template<typename ViewType,typename BufferType, typename PackRange>
+void gatherNeighbor(
+    const PackRange& unpack_range,
+    const BufferType receive_buffer,
+    const int offset,
+    ViewType field,
+    typename std::enable_if<4==ViewType::traits::dimension::rank,int*>::type = 0 )
+{
+    // Define an offset view type.
+    using NeighborBuffer =
+        Kokkos::View<typename ViewType::data_type,
+                     typename ViewType::memory_space,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+    // Get the offset view into the receive buffer for the neighbor.
+    NeighborBuffer receive_buffer_subview(
+        receive_buffer.data() + offset,
+        unpack_range[Dim::I].second - unpack_range[Dim::I].first,
+        unpack_range[Dim::J].second - unpack_range[Dim::J].first,
+        unpack_range[Dim::K].second - unpack_range[Dim::K].first,
+        field.extent(3) );
+
+    // Get a view of the layer we are receiving.
+    auto field_subview = Kokkos::subview( field,
+                                          unpack_range[Dim::I],
+                                          unpack_range[Dim::J],
+                                          unpack_range[Dim::K],
+                                          Kokkos::ALL );
+
+    // Copy into the halo.
+    Kokkos::deep_copy( field_subview, receive_buffer_subview );
+}
+
 //---------------------------------------------------------------------------//
 // Scatter a neighbor from a receive buffer.
+
+// Rank 0 fields.
 template<typename ViewType,typename BufferType, typename PackRange>
-void scatterNeighbor( const PackRange& unpack_range,
-                      const BufferType receive_buffer,
-                      const int offset,
-                      ViewType field )
+void scatterNeighbor(
+    const PackRange& unpack_range,
+    const BufferType receive_buffer,
+    const int offset,
+    ViewType field,
+    typename std::enable_if<3==ViewType::traits::dimension::rank,int*>::type = 0 )
 {
     // Declare an execution policy for the scatter update.
     using ExecPolicy =
@@ -178,6 +282,55 @@ void scatterNeighbor( const PackRange& unpack_range,
         } );
 }
 
+// Rank 1 fields.
+template<typename ViewType,typename BufferType, typename PackRange>
+void scatterNeighbor(
+    const PackRange& unpack_range,
+    const BufferType receive_buffer,
+    const int offset,
+    ViewType field,
+    typename std::enable_if<4==ViewType::traits::dimension::rank,int*>::type = 0 )
+{
+    // Declare an execution policy for the scatter update.
+    using ExecPolicy =
+        Kokkos::MDRangePolicy<typename ViewType::execution_space,
+                              Kokkos::Rank<4> >;
+
+    // Define an offset view type.
+    using NeighborBuffer =
+        Kokkos::View<typename ViewType::data_type,
+                     typename ViewType::memory_space,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
+    // Get the offset view into the receive buffer for the neighbor.
+    NeighborBuffer receive_buffer_subview(
+        receive_buffer.data() + offset,
+        unpack_range[Dim::I].second - unpack_range[Dim::I].first,
+        unpack_range[Dim::J].second - unpack_range[Dim::J].first,
+        unpack_range[Dim::K].second - unpack_range[Dim::K].first,
+        field.extent(3) );
+
+    // Get a view of the layer we are receiving.
+    auto field_subview = Kokkos::subview( field,
+                                          unpack_range[Dim::I],
+                                          unpack_range[Dim::J],
+                                          unpack_range[Dim::K],
+                                          Kokkos::ALL );
+
+    // Add the halo contribution into the local cells.
+    Kokkos::parallel_for(
+        "Scatter negative neighbor update",
+        ExecPolicy(
+            {{0,0,0,0}},
+            {{unpack_range[Dim::I].second - unpack_range[Dim::I].first,
+              unpack_range[Dim::J].second - unpack_range[Dim::J].first,
+              unpack_range[Dim::K].second - unpack_range[Dim::K].first,
+              field.extent(3) }} ),
+        KOKKOS_LAMBDA( const int i, const int j, const int k, const int d0 ) {
+            field_subview(i,j,k,d0) += receive_buffer_subview(i,j,k,d0);
+        } );
+}
+
 //---------------------------------------------------------------------------//
 // Gather
 //---------------------------------------------------------------------------//
@@ -199,8 +352,6 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
 
     // Get the field.
     auto field = grid_field.data();
-    if ( field.Rank != 3 )
-        throw std::invalid_argument("Gather only for scalar fields");
     using view_type = decltype(field);
 
     // Get the local grid.
@@ -211,6 +362,14 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
 
     // Count the number of cells we are sending to each neighbor.
     std::vector<int> counts = neighborCounts( block, tag );
+
+    // Compute the number of multidimensional elements in at each cell.
+    int md_size = 1;
+    for ( int d = 3; d < field.Rank; ++d )
+        md_size *= field.extent(d);
+
+    // Scale the counts by the number of elements in each cell.
+    for ( auto& c : counts ) c *= md_size;
 
     // Compute the total sends and offsets view exclusive scan.
     int total_elements = 0;
@@ -339,8 +498,6 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
 
     // Get the field.
     auto field = grid_field.data();
-    if ( field.Rank != 3 )
-        throw std::invalid_argument("Scatter only for scalar fields");
     using view_type = decltype(field);
 
     // Get the local grid block.
@@ -351,6 +508,14 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
 
     // Count the number of cells we are sending to each neighbor.
     std::vector<int> counts = neighborCounts( block, tag );
+
+    // Compute the number of multidimensional elements in at each cell.
+    int md_size = 1;
+    for ( int d = 3; d < field.Rank; ++d )
+        md_size *= field.extent(d);
+
+    // Scale the counts by the number of elements in each cell.
+    for ( auto& c : counts ) c *= md_size;
 
     // Compute the total sends and offsets view exclusive scan.
     int total_elements = 0;

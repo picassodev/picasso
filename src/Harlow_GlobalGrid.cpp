@@ -94,7 +94,9 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                              boundary_location, is_dim_periodic, cell_size, 0 );
 
     // Create the graph communicator. Start by getting the neighbors we will
-    // communicatioe with.
+    // communicatioe with. Note the ordering of the ijk loop here - I moves
+    // the fastest and K moves the slowest. Note that we do not send to
+    // ourselves (when each index is 0).
     std::vector<int> neighbors;
     neighbors.reserve( 26 );
     for ( int k = -1; k < 2; ++k )
