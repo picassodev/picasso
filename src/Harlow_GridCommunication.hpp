@@ -323,6 +323,7 @@ void scatterNeighbor(
     using ExecPolicy =
         Kokkos::MDRangePolicy<typename ViewType::execution_space,
                               Kokkos::Rank<4> >;
+    using point_type = typename ExecPolicy::point_type;
 
     // Define an offset view type.
     using NeighborBuffer =
@@ -346,14 +347,14 @@ void scatterNeighbor(
                                           Kokkos::ALL );
 
     // Add the halo contribution into the local entities.
+    point_type begin = {{0,0,0,0}};
+    point_type end = {{unpack_range[Dim::I].second - unpack_range[Dim::I].first,
+                       unpack_range[Dim::J].second - unpack_range[Dim::J].first,
+                       unpack_range[Dim::K].second - unpack_range[Dim::K].first,
+                       typename point_type::value_type (field.extent(3)) }};
     Kokkos::parallel_for(
         "Scatter negative neighbor update",
-        ExecPolicy(
-            {{0,0,0,0}},
-            {{unpack_range[Dim::I].second - unpack_range[Dim::I].first,
-              unpack_range[Dim::J].second - unpack_range[Dim::J].first,
-              unpack_range[Dim::K].second - unpack_range[Dim::K].first,
-              field.extent(3) }} ),
+        ExecPolicy( begin, end ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int d0 ) {
             field_subview(i,j,k,d0) += receive_buffer_subview(i,j,k,d0);
         } );
