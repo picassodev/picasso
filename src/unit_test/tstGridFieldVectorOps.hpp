@@ -51,7 +51,7 @@ void vectorOpTest()
     // TEST SCALAR FIELDS
     //-------------------
     GridField<double,TEST_EXECSPACE> scalar_A(
-        global_grid, FieldLocation::Cell, 0, "scalar_A" );
+        global_grid, MeshEntity::Cell, 0, "scalar_A" );
 
     // Assign some data.
     double a_val = -3.23;
@@ -92,7 +92,7 @@ void vectorOpTest()
     // Check the dot product.
     double b_val = 4.33;
     GridField<double,TEST_EXECSPACE> scalar_B(
-        global_grid, FieldLocation::Cell, 0, "scalar_B" );
+        global_grid, MeshEntity::Cell, 0, "scalar_B" );
     GridFieldVectorOp::assign( b_val, scalar_B );
     auto dot_product = GridFieldVectorOp::dot( scalar_A, scalar_B );
     double expected_dot = total_num_cell * a_val * b_val;
@@ -118,7 +118,7 @@ void vectorOpTest()
 
     // Check the 2 vector update.
     GridField<double,TEST_EXECSPACE> scalar_C(
-        global_grid, FieldLocation::Cell, 0, "scalar_C" );
+        global_grid, MeshEntity::Cell, 0, "scalar_C" );
     GridFieldVectorOp::update( 1.0 / alpha,
                                scalar_A,
                                1.0 / beta,
@@ -133,7 +133,7 @@ void vectorOpTest()
 
     // Check the 3 vector update.
     GridField<double,TEST_EXECSPACE> scalar_D(
-        global_grid, FieldLocation::Cell, 0, "scalar_D" );
+        global_grid, MeshEntity::Cell, 0, "scalar_D" );
     double gamma = -12.1;
     GridFieldVectorOp::update( 1.0 / alpha,
                                scalar_A,
@@ -154,18 +154,18 @@ void vectorOpTest()
     // TEST Rank-1 FIELDS
     //-------------------
     GridField<double[3],TEST_EXECSPACE> rank_1_A(
-        global_grid, FieldLocation::Cell, 0, "rank_1_A" );
+        global_grid, MeshEntity::Cell, 0, "rank_1_A" );
     GridFieldVectorOp::assign( a_val, rank_1_A );
 
     GridField<double[3],TEST_EXECSPACE> rank_1_B(
-        global_grid, FieldLocation::Cell, 0, "rank_1_B" );
+        global_grid, MeshEntity::Cell, 0, "rank_1_B" );
     GridFieldVectorOp::assign( b_val, rank_1_B );
 
     GridField<double[3],TEST_EXECSPACE> rank_1_C(
-        global_grid, FieldLocation::Cell, 0, "rank_1_C" );
+        global_grid, MeshEntity::Cell, 0, "rank_1_C" );
 
     GridField<double[3],TEST_EXECSPACE> rank_1_D(
-        global_grid, FieldLocation::Cell, 0, "rank_1_D" );
+        global_grid, MeshEntity::Cell, 0, "rank_1_D" );
 
     // Check the 2 vector update.
     GridFieldVectorOp::update( alpha,
@@ -203,18 +203,18 @@ void vectorOpTest()
     // TEST Rank-2 FIELDS
     //-------------------
     GridField<double[3][2],TEST_EXECSPACE> rank_2_A(
-        global_grid, FieldLocation::Cell, 0, "rank_2_A" );
+        global_grid, MeshEntity::Cell, 0, "rank_2_A" );
     GridFieldVectorOp::assign( a_val, rank_2_A );
 
     GridField<double[3][2],TEST_EXECSPACE> rank_2_B(
-        global_grid, FieldLocation::Cell, 0, "rank_2_B" );
+        global_grid, MeshEntity::Cell, 0, "rank_2_B" );
     GridFieldVectorOp::assign( b_val, rank_2_B );
 
     GridField<double[3][2],TEST_EXECSPACE> rank_2_C(
-        global_grid, FieldLocation::Cell, 0, "rank_2_C" );
+        global_grid, MeshEntity::Cell, 0, "rank_2_C" );
 
     GridField<double[3][2],TEST_EXECSPACE> rank_2_D(
-        global_grid, FieldLocation::Cell, 0, "rank_2_D" );
+        global_grid, MeshEntity::Cell, 0, "rank_2_D" );
 
     // Check the 2 vector update.
     GridFieldVectorOp::update( alpha,
@@ -253,18 +253,18 @@ void vectorOpTest()
     // TEST Rank-3 FIELDS
     //-------------------
     GridField<double[3][2][4],TEST_EXECSPACE> rank_3_A(
-        global_grid, FieldLocation::Cell, 0, "rank_3_A" );
+        global_grid, MeshEntity::Cell, 0, "rank_3_A" );
     GridFieldVectorOp::assign( a_val, rank_3_A );
 
     GridField<double[3][2][4],TEST_EXECSPACE> rank_3_B(
-        global_grid, FieldLocation::Cell, 0, "rank_3_B" );
+        global_grid, MeshEntity::Cell, 0, "rank_3_B" );
     GridFieldVectorOp::assign( b_val, rank_3_B );
 
     GridField<double[3][2][4],TEST_EXECSPACE> rank_3_C(
-        global_grid, FieldLocation::Cell, 0, "rank_3_C" );
+        global_grid, MeshEntity::Cell, 0, "rank_3_C" );
 
     GridField<double[3][2][4],TEST_EXECSPACE> rank_3_D(
-        global_grid, FieldLocation::Cell, 0, "rank_3_D" );
+        global_grid, MeshEntity::Cell, 0, "rank_3_D" );
 
     // Check the 2 vector update.
     GridFieldVectorOp::update( alpha,

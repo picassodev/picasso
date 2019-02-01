@@ -26,10 +26,10 @@ createVectorOpExecPolicy( const GridFieldType& grid_field )
 {
     using execution_space = typename GridFieldType::execution_space;
 
-    if ( FieldLocation::Node == grid_field.location() )
+    if ( MeshEntity::Node == grid_field.location() )
         return GridExecution::createLocalNodePolicy<execution_space>(
             grid_field.block() );
-    else if ( FieldLocation::Cell == grid_field.location() )
+    else if ( MeshEntity::Cell == grid_field.location() )
         return GridExecution::createLocalCellPolicy<execution_space>(
             grid_field.block() );
     else

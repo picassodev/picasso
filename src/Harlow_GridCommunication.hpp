@@ -26,7 +26,6 @@ struct CartesianTag {};
 // Tag for doing the 26-neighbor graph topology communication.
 struct GraphTag {};
 
-
 //---------------------------------------------------------------------------//
 // Neighbor counts.
 //---------------------------------------------------------------------------//
@@ -348,7 +347,7 @@ void scatterNeighbor(
 template<class GridFieldType>
 void gather( GridFieldType& grid_field, CartesianTag tag )
 {
-    if ( grid_field.location() != FieldLocation::Cell )
+    if ( grid_field.location() != MeshEntity::Cell )
         throw std::invalid_argument("Gather only for cell fields");
 
     // Get the field.
@@ -494,7 +493,7 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
 template<class GridFieldType>
 void scatter( GridFieldType& grid_field, CartesianTag tag )
 {
-    if ( grid_field.location() != FieldLocation::Cell )
+    if ( grid_field.location() != MeshEntity::Cell )
         throw std::invalid_argument("Scatter only for cell fields");
 
     // Get the field.

@@ -318,7 +318,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
     int halo_width = 1;
     GridField<double,TEST_MEMSPACE> grid_field(
         global_grid,
-        FieldLocation::Cell,
+        MeshEntity::Cell,
         halo_width,
         "TestField" );
 
@@ -383,7 +383,7 @@ void vectorFieldTest()
     int halo_width = 1;
     GridField<double[3],TEST_MEMSPACE> grid_field(
         global_grid,
-        FieldLocation::Cell,
+        MeshEntity::Cell,
         halo_width,
         "TestField" );
 

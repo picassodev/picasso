@@ -117,9 +117,9 @@ class GridField
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
-        if ( FieldLocation::Node == field_location )
+        if ( MeshEntity::Node == field_location )
             _data = createNodeField<DataType,DeviceType>( _block, field_name );
-        else if ( FieldLocation::Cell == field_location )
+        else if ( MeshEntity::Cell == field_location )
             _data = createCellField<DataType,DeviceType>( _block, field_name );
         else
             throw std::invalid_argument("Bad field location");
