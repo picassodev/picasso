@@ -51,8 +51,8 @@ void gridTest()
     EXPECT_EQ( global_grid.cellSize(), cell_size );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( global_num_cell[d], global_grid.numCell(d) );
-        EXPECT_EQ( global_num_cell[d] + 1, global_grid.numNode(d) );
+        EXPECT_EQ( global_num_cell[d], global_grid.numEntity(MeshEntity::Cell,d) );
+        EXPECT_EQ( global_num_cell[d] + 1, global_grid.numEntity(MeshEntity::Node,d) );
         EXPECT_EQ( global_low_corner[d], global_grid.lowCorner(d) );
         EXPECT_FALSE( global_grid.isPeriodic(d) );
     }

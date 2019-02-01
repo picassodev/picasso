@@ -52,11 +52,8 @@ class GlobalGrid
     // Get whether a given logical dimension is periodic.
     bool isPeriodic( const int dim ) const;
 
-    // Get the global number of cells in a given dimension.
-    int numCell( const int dim ) const;
-
-    // Get the global number of nodes in a given dimension.
-    int numNode( const int dim ) const;
+    // Get the global number of entities in a given dimension.
+    int numEntity( const int entity_type, const int dim ) const;
 
     // Get the global low corner.
     double lowCorner( const int dim ) const;

@@ -168,14 +168,16 @@ bool GlobalGrid::isPeriodic( const int dim ) const
 { return _grid_block.isPeriodic(dim); }
 
 //---------------------------------------------------------------------------//
-// Get the global number of cells in a given dimension.
-int GlobalGrid::numCell( const int dim ) const
-{ return _global_num_cell[dim]; }
-
-//---------------------------------------------------------------------------//
-// Get the global number of nodes in a given dimension.
-int GlobalGrid::numNode( const int dim ) const
-{ return _global_num_cell[dim] + 1; }
+// Get the global number of entities in a given dimension.
+int GlobalGrid::numEntity( const int entity_type, const int dim ) const
+{
+    if ( MeshEntity::Cell == entity_type )
+        return _global_num_cell[dim];
+    else if ( MeshEntity::Node == entity_type )
+        return _global_num_cell[dim] + 1;
+    else
+        throw std::invalid_argument("Invalid entity type");
+}
 
 //---------------------------------------------------------------------------//
 // Get the global low corner.

@@ -77,9 +77,9 @@ void vectorOpTest()
     GridFieldVectorOp::assign( a_val, scalar_A );
 
     // Check the 1-norm.
-    int total_num_cell = global_grid->numCell(Dim::I) *
-                         global_grid->numCell(Dim::J) *
-                         global_grid->numCell(Dim::K);
+    int total_num_cell = global_grid->numEntity(MeshEntity::Cell,Dim::I) *
+                         global_grid->numEntity(MeshEntity::Cell,Dim::J) *
+                         global_grid->numEntity(MeshEntity::Cell,Dim::K);
     auto norm_1 = GridFieldVectorOp::norm1( scalar_A );
     double expected_norm_1 = total_num_cell * std::abs(a_val);
     EXPECT_FLOAT_EQ( norm_1, expected_norm_1 );
