@@ -59,37 +59,22 @@ struct GridBlockFieldDataType
 };
 
 //---------------------------------------------------------------------------//
-// Field creators
-//---------------------------------------------------------------------------//
-// Given a grid create a view of cell data with ijk indexing. The view is
-// uninitialized.
+// Field creator
+// ---------------------------------------------------------------------------//
+// Given a grid create a view of data with ijk indexing over the given entity
+// type. The view is uninitialized.
 template<class DataType, class DeviceType>
 Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
-createCellField( const GridBlock& grid,
-                 const std::string& field_name = "" )
+createField( const GridBlock& grid,
+             const int field_location,
+             const std::string& field_name = "" )
 {
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
             Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numCell(Dim::I),
-            grid.numCell(Dim::J),
-            grid.numCell(Dim::K) );
-}
-
-//---------------------------------------------------------------------------//
-// Given a grid create a view of node data with ijk indexing. The view is
-// uninitialized.
-template<class DataType, class DeviceType>
-Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
-createNodeField( const GridBlock& grid,
-                 const std::string& field_name = "" )
-{
-    return Kokkos::View<
-        typename GridBlockFieldDataType<DataType>::type,DeviceType>(
-            Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numNode(Dim::I),
-            grid.numNode(Dim::J),
-            grid.numNode(Dim::K) );
+            grid.numEntity(field_location,Dim::I),
+            grid.numEntity(field_location,Dim::J),
+            grid.numEntity(field_location,Dim::K) );
 }
 
 //---------------------------------------------------------------------------//
@@ -117,17 +102,24 @@ class GridField
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
-        if ( FieldLocation::Node == field_location )
-            _data = createNodeField<DataType,DeviceType>( _block, field_name );
-        else if ( FieldLocation::Cell == field_location )
-            _data = createCellField<DataType,DeviceType>( _block, field_name );
-        else
-            throw std::invalid_argument("Bad field location");
+        _data = createField<DataType,DeviceType>( _block, field_location, field_name );
     }
 
-    // Get the grid communicator. This communicator has a Cartesian topology.
+    // Get the grid communicator.
     MPI_Comm comm() const
     { return _global_grid->comm(); }
+
+    // Get the grid communicator with a 6-neighbor Cartesian
+    // topology. Neighbors are ordered in this topology as
+    // {-I,+I,-J,+J,-K,+K}.
+    MPI_Comm cartesianComm() const
+    { return _global_grid->cartesianComm(); }
+
+    // Get the grid communicator with a 26-neighbor graph topology. Neighbors
+    // are logically ordered in the 3x3 grid about centered on the local rank
+    // with the I index moving the fastest and the K index moving the slowest.
+    MPI_Comm graphComm() const
+    { return _global_grid->graphComm(); }
 
     // Get the grid.
     const GridBlock& block() const

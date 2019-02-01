@@ -33,8 +33,18 @@ class GlobalGrid
                 const std::vector<double>& global_high_corner,
                 const double cell_size );
 
-    // Get the grid communicator. This communicator has a Cartesian topology.
+    // Get the grid communicator.
     MPI_Comm comm() const;
+
+    // Get the grid communicator with a 6-neighbor Cartesian
+    // topology. Neighbors are ordered in this topology as
+    // {-I,+I,-J,+J,-K,+K}.
+    MPI_Comm cartesianComm() const;
+
+    // Get the grid communicator with a 26-neighbor graph topology. Neighbors
+    // are logically ordered in the 3x3 grid about centered on the local rank
+    // with the I index moving the fastest and the K index moving the slowest.
+    MPI_Comm graphComm() const;
 
     // Get the locally owned grid block for this rank.
     const GridBlock& block() const;
@@ -42,11 +52,8 @@ class GlobalGrid
     // Get whether a given logical dimension is periodic.
     bool isPeriodic( const int dim ) const;
 
-    // Get the global number of cells in a given dimension.
-    int numCell( const int dim ) const;
-
-    // Get the global number of nodes in a given dimension.
-    int numNode( const int dim ) const;
+    // Get the global number of entities in a given dimension.
+    int numEntity( const int entity_type, const int dim ) const;
 
     // Get the global low corner.
     double lowCorner( const int dim ) const;
@@ -57,6 +64,7 @@ class GlobalGrid
   private:
 
     MPI_Comm _cart_comm;
+    MPI_Comm _graph_comm;
     GridBlock _grid_block;
     std::vector<double> _global_low_corner;
     std::vector<int> _global_num_cell;

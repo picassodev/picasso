@@ -47,8 +47,8 @@ struct DomainBoundary
     };
 };
 
-// Field location.
-struct FieldLocation
+// Mesh entity type.
+struct MeshEntity
 {
     enum Values {
         Node = 0,

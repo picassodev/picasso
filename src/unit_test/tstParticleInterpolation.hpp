@@ -49,7 +49,8 @@ void fillTest()
     Kokkos::deep_copy( position, position_mirror );
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -69,9 +70,9 @@ void fillTest()
     // Linear case:
     if ( SplineOrder::Linear == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width || j < halo_width || k < halo_width )
@@ -79,9 +80,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i >= grid.numNode(Dim::I) - halo_width ||
-                              j >= grid.numNode(Dim::J) - halo_width ||
-                              k >= grid.numNode(Dim::K) - halo_width )
+                    else if ( i >= grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j >= grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k >= grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.
@@ -93,9 +94,9 @@ void fillTest()
     // Quadratic:
     if ( SplineOrder::Quadratic == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width - 1 || j < halo_width - 1 || k < halo_width - 1 )
@@ -103,9 +104,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i >= grid.numNode(Dim::I) - halo_width ||
-                              j >= grid.numNode(Dim::J) - halo_width ||
-                              k >= grid.numNode(Dim::K) - halo_width )
+                    else if ( i >= grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j >= grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k >= grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.
@@ -117,9 +118,9 @@ void fillTest()
     // Cubic:
     if ( SplineOrder::Cubic == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width - 1 || j < halo_width - 1 || k < halo_width - 1 )
@@ -127,9 +128,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i > grid.numNode(Dim::I) - halo_width ||
-                              j > grid.numNode(Dim::J) - halo_width ||
-                              k > grid.numNode(Dim::K) - halo_width )
+                    else if ( i > grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j > grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k > grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.
@@ -190,7 +191,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -216,7 +218,7 @@ void particleToGridTest()
     double scalar_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "scalar grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += scalar_node_field(i,j,k);
@@ -228,7 +230,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto vector_node_field = createNodeField<double[2],TEST_MEMSPACE>( grid );
+    auto vector_node_field =
+        createField<double[2],TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using VectorViewType = Kokkos::View<float*[2],TEST_MEMSPACE>;
@@ -252,7 +255,7 @@ void particleToGridTest()
     double vector_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "vector grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += vector_node_field(i,j,k,0);
@@ -265,7 +268,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto matrix_node_field = createNodeField<double[3][2],TEST_MEMSPACE>( grid );
+    auto matrix_node_field =
+        createField<double[3][2],TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using MatrixViewType = Kokkos::View<float*[3][2],TEST_MEMSPACE>;
@@ -290,7 +294,7 @@ void particleToGridTest()
     double matrix_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "matrix grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             for ( int d0 = 0; d0 < 3; ++d0 )
@@ -352,11 +356,12 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<float,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<float,TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_0 = 1.2303;
     Kokkos::parallel_for(
         "scalar grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             scalar_node_field(i,j,k) = grid_value_0;
@@ -382,11 +387,12 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto vector_node_field = createNodeField<float[2],TEST_MEMSPACE>( grid );
+    auto vector_node_field =
+        createField<float[2],TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_1 = -34.32;
     Kokkos::parallel_for(
         "vector grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             vector_node_field(i,j,k,0) = grid_value_0;
@@ -416,14 +422,15 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto matrix_node_field = createNodeField<float[2][3],TEST_MEMSPACE>( grid );
+    auto matrix_node_field =
+        createField<float[2][3],TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_2 = 85.36;
     double grid_value_3 = -0.00257;
     double grid_value_4 = -12.22;
     double grid_value_5 = 1.2256;
     Kokkos::parallel_for(
         "matrix grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             matrix_node_field(i,j,k,0,0) = grid_value_0;

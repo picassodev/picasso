@@ -1,4 +1,5 @@
 #include <Harlow_GridBlock.hpp>
+#include <Harlow_Types.hpp>
 
 namespace Harlow
 {
@@ -61,6 +62,11 @@ bool GridBlock::isPeriodic( const int dim ) const
 { return _periodic[dim]; }
 
 //---------------------------------------------------------------------------//
+// Given a boundary id return if this has a halo on that boundary.
+bool GridBlock::hasHalo( const int boundary_id ) const
+{ return ( !onBoundary(boundary_id) || isPeriodic(boundary_id/2) ); }
+
+//---------------------------------------------------------------------------//
 // Get the cell size.
 double GridBlock::cellSize() const
 { return _cell_size; }
@@ -76,66 +82,57 @@ int GridBlock::haloSize() const
 { return _halo_cell_width; }
 
 //---------------------------------------------------------------------------//
-// Get the total number of cells in a given dimension including the halo.
-int GridBlock::numCell( const int dim ) const
-{ return _total_num_cell[dim]; }
-
-//---------------------------------------------------------------------------//
-// Get the total number of nodes in a given dimension including the halo.
-int GridBlock::numNode( const int dim ) const
-{ return _total_num_cell[dim] + 1; }
-
-//---------------------------------------------------------------------------//
-// Get the beginning local cell index in a given direction. The local cells do
-// not include the halo. Logical boundaries that are also physical boundaries
-// do not have a halo region unless the physical boundary is periodic.
-int GridBlock::localCellBegin( const int dim ) const
+// Get the total number of mesh entities in a given dimension including
+// the halo.
+int GridBlock::numEntity( const int entity_type, const int dim ) const
 {
-    return ( _boundary_location[2*dim] && !_periodic[dim] )
-        ? 0 : _halo_cell_width;
+    if ( MeshEntity::Cell == entity_type )
+        return _total_num_cell[dim];
+
+    else if ( MeshEntity::Node == entity_type )
+        return _total_num_cell[dim] + 1;
+
+    else
+        throw std::invalid_argument("Bad mesh entity type");
 }
 
 //---------------------------------------------------------------------------//
-// Get the ending local cell index in a given direction. The local cells do
-// not include the halo. Logical boundaries that are also on physical
-// boundaries do not have a halo region unless the physical boundary is
-// periodic.
-int GridBlock::localCellEnd( const int dim ) const
+// Get the beginning local entity index in a given direction. The local
+// entities do not include the halo.
+int GridBlock::localEntityBegin( const int entity_type, const int dim ) const
 {
-    return ( _boundary_location[2*dim+1] && !_periodic[dim] ) ?
-        _total_num_cell[dim] : _total_num_cell[dim] - _halo_cell_width;
+    std::ignore = entity_type;
+    std::ignore = dim;
+    return _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//
-// Get the beginning local node index in a given direction. The local
-// nodes do not include the halo. A local grid block always "owns" the
-// node on the low logical boundary.
-int GridBlock::localNodeBegin( const int dim ) const
-{ return localCellBegin(dim); }
-
-//---------------------------------------------------------------------------//
-// Get the ending local node index in a given direction. The local nodes
-// do not include the halo. The block neighbor "owns" the node on the high
-// logical boundary (unless the high logical boundary is also a physical
-// boundary that is not periodic).
-int GridBlock::localNodeEnd( const int dim ) const
+// Get the end local entity index in a given direction. The local
+// entities do not include the halo.
+//
+// Node case; The local nodes do not include the halo. The local grid
+// block does not "own" the node on the high logical boundary unless the
+// high logical boundary is also a physical boundary that is not periodic.
+int GridBlock::localEntityEnd( const int entity_type, const int dim ) const
 {
-    return ( _boundary_location[2*dim+1] && !_periodic[dim] )
-        ? localCellEnd(dim) + 1 : localCellEnd(dim);
+    if ( MeshEntity::Cell == entity_type )
+        return _total_num_cell[dim] - _halo_cell_width;
+
+    else if ( MeshEntity::Node == entity_type )
+        return ( _boundary_location[2*dim+1] && !_periodic[dim] )
+            ? _total_num_cell[dim] - _halo_cell_width + 1 :
+            _total_num_cell[dim] - _halo_cell_width;
+
+    else
+        throw std::invalid_argument("Bad mesh entity type");
 }
 
 //---------------------------------------------------------------------------//
-// Get the local number of cells in a given dimension.
-int GridBlock::localNumCell( const int dim ) const
+// Get the local number of entities in a given dimension.
+int GridBlock::localNumEntity( const int entity_type, const int dim ) const
 {
-    return _local_num_cell[dim];
-}
-
-//---------------------------------------------------------------------------//
-// Get the local number of nodes in a given dimension.
-int GridBlock::localNumNode( const int dim ) const
-{
-    return localNodeEnd(dim) - localNodeBegin(dim);
+    return localEntityEnd( entity_type, dim ) -
+        localEntityBegin( entity_type, dim );
 }
 
 //---------------------------------------------------------------------------//
@@ -145,23 +142,13 @@ void GridBlock::setHalo()
     // Calculate the low corner of the local block including the halo.
     _low_corner.resize( 3 );
     for ( int d = 0; d < 3; ++d )
-    {
-        if ( _boundary_location[2*d] && !_periodic[d])
-            _low_corner[d] = _local_low_corner[d];
-        else
-            _low_corner[d] =
-                _local_low_corner[d] - _halo_cell_width * _cell_size;
-    }
+        _low_corner[d] =
+            _local_low_corner[d] - _halo_cell_width * _cell_size;
 
-    // Add halo cells to the total counts if not on a physical boundary or if
-    // we are on a periodic boundary.
+    // Add halo cells to the total counts. Note that we always create a halo,
+    // even if on a physical boundary.
     for ( int d = 0; d < 3; ++d )
-    {
-        if ( !_boundary_location[2*d] || _periodic[d] )
-            _total_num_cell[d] += _halo_cell_width;
-        if ( !_boundary_location[2*d+1] || _periodic[d] )
-            _total_num_cell[d] += _halo_cell_width;
-    }
+        _total_num_cell[d] += 2 * _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//

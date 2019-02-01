@@ -7,6 +7,14 @@ namespace Harlow
 {
 //---------------------------------------------------------------------------//
 // Local Cartesian grid block representation.
+//
+// Note that a block always has a halo - even if it is on a physical
+// boundary that is not periodic. We do this to facilitate particle deposition
+// at boundaries.
+//
+// As a result, the boundary node/cell on a physical boundary that is not
+// periodic is the first/last local node/cell depending on whether the low or
+// high boundary is chosen.
 //---------------------------------------------------------------------------//
 class GridBlock
 {
@@ -48,6 +56,11 @@ class GridBlock
     // Get whether a given logical dimension is periodic.
     bool isPeriodic( const int dim ) const;
 
+    // Given a boundary id return if this has a halo on that boundary. This
+    // will be true when this block is not on the domain boundary or, if it
+    // is, that boundary is periodic.
+    bool hasHalo( const int boundary_id ) const;
+
     // Get the cell size.
     double cellSize() const;
 
@@ -57,40 +70,24 @@ class GridBlock
     // Get the halo size.
     int haloSize() const;
 
-    // Get the total number of cells in a given dimension including the halo.
-    int numCell( const int dim ) const;
+    // Get the total number of mesh entities in a given dimension including
+    // the halo.
+    int numEntity( const int entity_type, const int dim ) const;
 
-    // Get the total number of nodes in a given dimension including the halo.
-    int numNode( const int dim ) const;
+    // Get the beginning local entity index in a given direction. The local
+    // entities do not include the halo.
+    int localEntityBegin( const int entity_type, const int dim ) const;
 
-    // Get the beginning local cell index in a given direction. The local
-    // cells do not include the halo. Logical boundaries that are also on
-    // physical boundaries do not have a halo region unless the physical
-    // boundary is periodic.
-    int localCellBegin( const int dim ) const;
+    // Get the end local entity index in a given direction. The local
+    // entities do not include the halo.
+    //
+    // Node case; The local nodes do not include the halo. The local grid
+    // block does not "own" the node on the high logical boundary unless the
+    // high logical boundary is also a physical boundary that is not periodic.
+    int localEntityEnd( const int entity_type, const int dim ) const;
 
-    // Get the ending local cell index in a given direction. The local cells
-    // do not include the halo. Logical boundaries that are also on physical
-    // boundaries do not have a halo region unless the physical boundary is
-    // periodic.
-    int localCellEnd( const int dim ) const;
-
-    // Get the beginning local node index in a given direction. The local
-    // nodes do not include the halo. A local grid block always "owns" the
-    // node on the negative logical boundary.
-    int localNodeBegin( const int dim ) const;
-
-    // Get the ending local node index in a given direction. The local nodes
-    // do not include the halo. The local grid block does not "own" the node
-    // on the high logical boundary unless the high logical boundary is also a
-    // physical boundary that is not periodic.
-    int localNodeEnd( const int dim ) const;
-
-    // Get the local number of cells in a given dimension.
-    int localNumCell( const int dim ) const;
-
-    // Get the local number of nodes in a given dimension.
-    int localNumNode( const int dim ) const;
+    // Get the local number of entities in a given dimension.
+    int localNumEntity( const int entity_type, const int dim ) const;
 
   private:
 
