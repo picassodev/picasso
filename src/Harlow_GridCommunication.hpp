@@ -112,6 +112,19 @@ std::vector<int> neighborCounts( const GridBlock& grid,
 }
 
 //---------------------------------------------------------------------------//
+// Multidimensional element count.
+//---------------------------------------------------------------------------//
+// Count the product of the extents at an individual entity in a grid field
+template<class ViewType>
+unsigned elementsPerEntity( const ViewType& view )
+{
+    int count = 1;
+    for ( int d = 3; d < view.Rank; ++d )
+        count *= view.extent(d);
+    return count;
+}
+
+//---------------------------------------------------------------------------//
 // Serialization
 //---------------------------------------------------------------------------//
 // Pack a neighbor into a send buffer.
@@ -383,9 +396,7 @@ void gather( GridFieldType& grid_field, const int halo_size, CartesianTag tag )
         neighborCounts( block, halo_size, location, tag );
 
     // Compute the number of multidimensional elements in at each entity.
-    int md_size = 1;
-    for ( int d = 3; d < field.Rank; ++d )
-        md_size *= field.extent(d);
+    int md_size = elementsPerEntity( field );
 
     // Scale the counts by the number of elements in each entity.
     for ( auto& c : counts ) c *= md_size;
@@ -535,9 +546,7 @@ void scatter( GridFieldType& grid_field, const int halo_size, CartesianTag tag )
         neighborCounts( block, halo_size, location, tag );
 
     // Compute the number of multidimensional elements in at each entity.
-    int md_size = 1;
-    for ( int d = 3; d < field.Rank; ++d )
-        md_size *= field.extent(d);
+    int md_size = elementsPerEntity( field );
 
     // Scale the counts by the number of elements in each entity.
     for ( auto& c : counts ) c *= md_size;
