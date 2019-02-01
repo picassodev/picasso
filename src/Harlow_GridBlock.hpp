@@ -56,6 +56,11 @@ class GridBlock
     // Get whether a given logical dimension is periodic.
     bool isPeriodic( const int dim ) const;
 
+    // Given a boundary id return if this has a halo on that boundary. This
+    // will be true when this block is not on the domain boundary or, if it
+    // is, that boundary is periodic.
+    bool hasHalo( const int boundary_id ) const;
+
     // Get the cell size.
     double cellSize() const;
 

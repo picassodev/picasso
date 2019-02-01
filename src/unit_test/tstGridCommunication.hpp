@@ -22,7 +22,7 @@ void checkGather( const GridBlock& block,
                   ViewType field )
 {
     // -I face.
-    if ( !block.onBoundary(DomainBoundary::LowX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::LowX) )
         for ( int j = block.localCellBegin(Dim::J);
               j < block.localCellEnd(Dim::J); ++j )
             for ( int k = block.localCellBegin(Dim::K);
@@ -30,7 +30,7 @@ void checkGather( const GridBlock& block,
                 EXPECT_EQ( field(0,j,k), data_val );
 
     // +I face.
-    if ( !block.onBoundary(DomainBoundary::HighX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::HighX) )
         for ( int j = block.localCellBegin(Dim::J);
               j < block.localCellEnd(Dim::J); ++j )
             for ( int k = block.localCellBegin(Dim::K);
@@ -38,7 +38,7 @@ void checkGather( const GridBlock& block,
                 EXPECT_EQ( field(block.numCell(Dim::I)-1,j,k), data_val );
 
     // -J face.
-    if ( !block.onBoundary(DomainBoundary::LowY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::LowY) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int k = block.localCellBegin(Dim::K);
@@ -46,7 +46,7 @@ void checkGather( const GridBlock& block,
                 EXPECT_EQ( field(i,0,k), data_val );
 
     // +J face.
-    if ( !block.onBoundary(DomainBoundary::HighY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::HighY) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int k = block.localCellBegin(Dim::K);
@@ -54,7 +54,7 @@ void checkGather( const GridBlock& block,
                 EXPECT_EQ( field(i,block.numCell(Dim::J)-1,k), data_val );
 
     // -K face.
-    if ( !block.onBoundary(DomainBoundary::LowZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::LowZ) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
         for ( int j = block.localCellBegin(Dim::J);
@@ -62,7 +62,7 @@ void checkGather( const GridBlock& block,
             EXPECT_EQ( field(i,j,0), data_val );
 
     // +K face.
-    if ( !block.onBoundary(DomainBoundary::HighZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::HighZ) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int j = block.localCellBegin(Dim::J);
@@ -78,7 +78,7 @@ void checkVectorGather( const GridBlock& block,
                         ViewType field )
 {
     // -I face.
-    if ( !block.onBoundary(DomainBoundary::LowX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::LowX) )
         for ( int j = block.localCellBegin(Dim::J);
               j < block.localCellEnd(Dim::J); ++j )
             for ( int k = block.localCellBegin(Dim::K);
@@ -87,7 +87,7 @@ void checkVectorGather( const GridBlock& block,
                     EXPECT_EQ( field(0,j,k,d), data_val );
 
     // +I face.
-    if ( !block.onBoundary(DomainBoundary::HighX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::HighX) )
         for ( int j = block.localCellBegin(Dim::J);
               j < block.localCellEnd(Dim::J); ++j )
             for ( int k = block.localCellBegin(Dim::K);
@@ -96,7 +96,7 @@ void checkVectorGather( const GridBlock& block,
                     EXPECT_EQ( field(block.numCell(Dim::I)-1,j,k,d), data_val );
 
     // -J face.
-    if ( !block.onBoundary(DomainBoundary::LowY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::LowY) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int k = block.localCellBegin(Dim::K);
@@ -105,7 +105,7 @@ void checkVectorGather( const GridBlock& block,
                     EXPECT_EQ( field(i,0,k,d), data_val );
 
     // +J face.
-    if ( !block.onBoundary(DomainBoundary::HighY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::HighY) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int k = block.localCellBegin(Dim::K);
@@ -114,7 +114,7 @@ void checkVectorGather( const GridBlock& block,
                     EXPECT_EQ( field(i,block.numCell(Dim::J)-1,k,d), data_val );
 
     // -K face.
-    if ( !block.onBoundary(DomainBoundary::LowZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::LowZ) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
         for ( int j = block.localCellBegin(Dim::J);
@@ -123,7 +123,7 @@ void checkVectorGather( const GridBlock& block,
                 EXPECT_EQ( field(i,j,0,d), data_val );
 
     // +K face.
-    if ( !block.onBoundary(DomainBoundary::HighZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::HighZ) )
         for ( int i = block.localCellBegin(Dim::I);
               i < block.localCellEnd(Dim::I); ++i )
             for ( int j = block.localCellBegin(Dim::J);
@@ -144,7 +144,7 @@ void checkScatter( const GridBlock& block,
     // received a contribution from only one neighbor.
 
     // -I face.
-    if ( !block.onBoundary(DomainBoundary::LowX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::LowX) )
         for ( int j = block.localCellBegin(Dim::J) + 1;
               j < block.localCellEnd(Dim::J) - 1; ++j )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -155,7 +155,7 @@ void checkScatter( const GridBlock& block,
             }
 
     // +I face.
-    if ( !block.onBoundary(DomainBoundary::HighX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::HighX) )
         for ( int j = block.localCellBegin(Dim::J) + 1;
               j < block.localCellEnd(Dim::J) - 1; ++j)
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -166,7 +166,7 @@ void checkScatter( const GridBlock& block,
             }
 
     // -J face.
-    if ( !block.onBoundary(DomainBoundary::LowY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::LowY) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -177,7 +177,7 @@ void checkScatter( const GridBlock& block,
             }
 
     // +J face.
-    if ( !block.onBoundary(DomainBoundary::HighY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::HighY) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -188,7 +188,7 @@ void checkScatter( const GridBlock& block,
             }
 
     // -K face.
-    if ( !block.onBoundary(DomainBoundary::LowZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::LowZ) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int j = block.localCellBegin(Dim::J) + 1;
@@ -199,7 +199,7 @@ void checkScatter( const GridBlock& block,
             }
 
     // +K face.
-    if ( !block.onBoundary(DomainBoundary::HighZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::HighZ) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int j = block.localCellBegin(Dim::J) + 1;
@@ -222,7 +222,7 @@ void checkVectorScatter( const GridBlock& block,
     // received a contribution from only one neighbor.
 
     // -I face.
-    if ( !block.onBoundary(DomainBoundary::LowX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::LowX) )
         for ( int j = block.localCellBegin(Dim::J) + 1;
               j < block.localCellEnd(Dim::J) - 1; ++j )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -234,7 +234,7 @@ void checkVectorScatter( const GridBlock& block,
                 }
 
     // +I face.
-    if ( !block.onBoundary(DomainBoundary::HighX) || block.isPeriodic(Dim::I) )
+    if ( block.hasHalo(DomainBoundary::HighX) )
         for ( int j = block.localCellBegin(Dim::J) + 1;
               j < block.localCellEnd(Dim::J) - 1; ++j)
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -246,7 +246,7 @@ void checkVectorScatter( const GridBlock& block,
                 }
 
     // -J face.
-    if ( !block.onBoundary(DomainBoundary::LowY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::LowY) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -258,7 +258,7 @@ void checkVectorScatter( const GridBlock& block,
                 }
 
     // +J face.
-    if ( !block.onBoundary(DomainBoundary::HighY) || block.isPeriodic(Dim::J) )
+    if ( block.hasHalo(DomainBoundary::HighY) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int k = block.localCellBegin(Dim::K) + 1;
@@ -270,7 +270,7 @@ void checkVectorScatter( const GridBlock& block,
                 }
 
     // -K face.
-    if ( !block.onBoundary(DomainBoundary::LowZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::LowZ) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int j = block.localCellBegin(Dim::J) + 1;
@@ -282,7 +282,7 @@ void checkVectorScatter( const GridBlock& block,
                 }
 
     // +K face.
-    if ( !block.onBoundary(DomainBoundary::HighZ) || block.isPeriodic(Dim::K) )
+    if ( block.hasHalo(DomainBoundary::HighZ) )
         for ( int i = block.localCellBegin(Dim::I) + 1;
               i < block.localCellEnd(Dim::I) - 1; ++i )
             for ( int j = block.localCellBegin(Dim::J) + 1;

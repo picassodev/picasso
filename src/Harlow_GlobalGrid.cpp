@@ -113,7 +113,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                     bool is_null = false;
                     for ( int d = 0; d < 3; ++d )
                         if ( ncr[d] < 0 || ncr[d] >= ranks_per_dim[d] )
-                            if ( !_grid_block.isPeriodic(d) )
+                            if ( !is_dim_periodic[d] )
                                 is_null = true;
 
                     // If we were outside of a non-periodic dimension this

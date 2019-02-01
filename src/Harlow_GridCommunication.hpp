@@ -53,7 +53,7 @@ std::vector<int> neighborCounts( const GridBlock& grid, CartesianTag )
     // If we are not on a physical boundary or if that boundary is periodic
     // then we send data.
     for ( int n = 0; n < 6; ++n )
-        if ( !grid.onBoundary(n) || grid.isPeriodic(n/2) )
+        if ( grid.hasHalo(n) )
             counts[n] = grid.haloSize() * face_size(n/2);
 
     return counts;
@@ -70,16 +70,17 @@ std::vector<int> neighborCounts( const GridBlock& grid, GraphTag )
     counts.reserve(26);
 
     // Compute the number of cells in a given dimension for a neighbor at the
-    // given logical index in the 3x3 grid.
+    // given logical index in the 3x3 grid. If we are not on a physical
+    // boundary or if that boundary is periodic then we send data.
     auto num_cell =
         [&]( const int dim, const int logical_index ){
             int nc = -1;
             if ( -1 == logical_index )
-                nc = grid.haloSize();
+                nc = grid.hasHalo(2*dim) ? grid.haloSize() : 0;
             else if ( 0 == logical_index )
                 nc = grid.localNumCell(dim);
             else if ( 1 == logical_index )
-                nc = grid.haloSize();
+                nc = grid.hasHalo(2*dim+1) ? grid.haloSize() : 0;
             return nc;
         };
 

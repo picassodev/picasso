@@ -61,6 +61,11 @@ bool GridBlock::isPeriodic( const int dim ) const
 { return _periodic[dim]; }
 
 //---------------------------------------------------------------------------//
+// Given a boundary id return if this has a halo on that boundary.
+bool GridBlock::hasHalo( const int boundary_id ) const
+{ return ( !onBoundary(boundary_id) || isPeriodic(boundary_id/2) ); }
+
+//---------------------------------------------------------------------------//
 // Get the cell size.
 double GridBlock::cellSize() const
 { return _cell_size; }
