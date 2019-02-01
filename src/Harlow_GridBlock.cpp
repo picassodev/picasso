@@ -1,4 +1,5 @@
 #include <Harlow_GridBlock.hpp>
+#include <Harlow_Types.hpp>
 
 namespace Harlow
 {
@@ -81,62 +82,57 @@ int GridBlock::haloSize() const
 { return _halo_cell_width; }
 
 //---------------------------------------------------------------------------//
-// Get the total number of cells in a given dimension including the halo.
-int GridBlock::numCell( const int dim ) const
-{ return _total_num_cell[dim]; }
-
-//---------------------------------------------------------------------------//
-// Get the total number of nodes in a given dimension including the halo.
-int GridBlock::numNode( const int dim ) const
-{ return _total_num_cell[dim] + 1; }
-
-//---------------------------------------------------------------------------//
-// Get the beginning local cell index in a given direction. The local cells do
-// not include the halo.
-int GridBlock::localCellBegin( const int dim ) const
+// Get the total number of mesh entities in a given dimension including
+// the halo.
+int GridBlock::numEntity( const int entity_type, const int dim ) const
 {
+    if ( MeshEntity::Cell == entity_type )
+        return _total_num_cell[dim];
+
+    else if ( MeshEntity::Node == entity_type )
+        return _total_num_cell[dim] + 1;
+
+    else
+        throw std::invalid_argument("Bad mesh entity type");
+}
+
+//---------------------------------------------------------------------------//
+// Get the beginning local entity index in a given direction. The local
+// entities do not include the halo.
+int GridBlock::localEntityBegin( const int entity_type, const int dim ) const
+{
+    std::ignore = entity_type;
     std::ignore = dim;
     return _halo_cell_width;
 }
 
 //---------------------------------------------------------------------------//
-// Get the ending local cell index in a given direction. The local cells do
-// not include the halo.
-int GridBlock::localCellEnd( const int dim ) const
+// Get the end local entity index in a given direction. The local
+// entities do not include the halo.
+//
+// Node case; The local nodes do not include the halo. The local grid
+// block does not "own" the node on the high logical boundary unless the
+// high logical boundary is also a physical boundary that is not periodic.
+int GridBlock::localEntityEnd( const int entity_type, const int dim ) const
 {
-    return _total_num_cell[dim] - _halo_cell_width;
+    if ( MeshEntity::Cell == entity_type )
+        return _total_num_cell[dim] - _halo_cell_width;
+
+    else if ( MeshEntity::Node == entity_type )
+        return ( _boundary_location[2*dim+1] && !_periodic[dim] )
+            ? _total_num_cell[dim] - _halo_cell_width + 1 :
+            _total_num_cell[dim] - _halo_cell_width;
+
+    else
+        throw std::invalid_argument("Bad mesh entity type");
 }
 
 //---------------------------------------------------------------------------//
-// Get the beginning local node index in a given direction. The local
-// nodes do not include the halo. A local grid block always "owns" the
-// node on the low logical boundary.
-int GridBlock::localNodeBegin( const int dim ) const
-{ return localCellBegin(dim); }
-
-//---------------------------------------------------------------------------//
-// Get the ending local node index in a given direction. The local nodes
-// do not include the halo. The block neighbor "owns" the node on the high
-// logical boundary (unless the high logical boundary is also a physical
-// boundary that is not periodic).
-int GridBlock::localNodeEnd( const int dim ) const
+// Get the local number of entities in a given dimension.
+int GridBlock::localNumEntity( const int entity_type, const int dim ) const
 {
-    return ( _boundary_location[2*dim+1] && !_periodic[dim] )
-        ? localCellEnd(dim) + 1 : localCellEnd(dim);
-}
-
-//---------------------------------------------------------------------------//
-// Get the local number of cells in a given dimension.
-int GridBlock::localNumCell( const int dim ) const
-{
-    return _local_num_cell[dim];
-}
-
-//---------------------------------------------------------------------------//
-// Get the local number of nodes in a given dimension.
-int GridBlock::localNumNode( const int dim ) const
-{
-    return localNodeEnd(dim) - localNodeBegin(dim);
+    return localEntityEnd( entity_type, dim ) -
+        localEntityBegin( entity_type, dim );
 }
 
 //---------------------------------------------------------------------------//

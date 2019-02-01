@@ -86,9 +86,12 @@ void gridTest()
 
     // Get the local number of cells.
     std::vector<int> local_num_cells =
-        { grid_block.localCellEnd(Dim::I) - grid_block.localCellBegin(Dim::I),
-          grid_block.localCellEnd(Dim::J) - grid_block.localCellBegin(Dim::J),
-          grid_block.localCellEnd(Dim::K) - grid_block.localCellBegin(Dim::K) };
+        { grid_block.localEntityEnd(MeshEntity::Cell,Dim::I) -
+          grid_block.localEntityBegin(MeshEntity::Cell,Dim::I),
+          grid_block.localEntityEnd(MeshEntity::Cell,Dim::J) -
+          grid_block.localEntityBegin(MeshEntity::Cell,Dim::J),
+          grid_block.localEntityEnd(MeshEntity::Cell,Dim::K) -
+          grid_block.localEntityBegin(MeshEntity::Cell,Dim::K) };
 
     // Compute a global set of local cell size arrays.
     std::vector<int> local_num_cell_i( ranks_per_dim[Dim::I], 0 );
@@ -118,9 +121,12 @@ void gridTest()
 
     // Get the local number of nodes.
     std::vector<int> local_num_nodes =
-        { grid_block.localNodeEnd(Dim::I) - grid_block.localNodeBegin(Dim::I),
-          grid_block.localNodeEnd(Dim::J) - grid_block.localNodeBegin(Dim::J),
-          grid_block.localNodeEnd(Dim::K) - grid_block.localNodeBegin(Dim::K) };
+        { grid_block.localEntityEnd(MeshEntity::Node,Dim::I) -
+          grid_block.localEntityBegin(MeshEntity::Node,Dim::I),
+          grid_block.localEntityEnd(MeshEntity::Node,Dim::J) -
+          grid_block.localEntityBegin(MeshEntity::Node,Dim::J),
+          grid_block.localEntityEnd(MeshEntity::Node,Dim::K) -
+          grid_block.localEntityBegin(MeshEntity::Node,Dim::K) };
 
     // Compute a global set of local node size arrays.
     std::vector<int> local_num_node_i( ranks_per_dim[Dim::I], 0 );
@@ -180,12 +186,15 @@ void gridTest()
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighZ) );
 
     // Check the local cell bounds.
-    EXPECT_EQ( grid_block.localCellBegin(Dim::I), halo_width );
-    EXPECT_EQ( grid_block.localCellEnd(Dim::I), local_num_cells[Dim::I] + halo_width );
-    EXPECT_EQ( grid_block.localCellBegin(Dim::J), halo_width );
-    EXPECT_EQ( grid_block.localCellEnd(Dim::J), local_num_cells[Dim::J] + halo_width );
-    EXPECT_EQ( grid_block.localCellBegin(Dim::K), halo_width );
-    EXPECT_EQ( grid_block.localCellEnd(Dim::K), local_num_cells[Dim::K] + halo_width );
+    EXPECT_EQ( grid_block.localEntityBegin(MeshEntity::Cell,Dim::I), halo_width );
+    EXPECT_EQ( grid_block.localEntityEnd(MeshEntity::Cell,Dim::I),
+               local_num_cells[Dim::I] + halo_width );
+    EXPECT_EQ( grid_block.localEntityBegin(MeshEntity::Cell,Dim::J), halo_width );
+    EXPECT_EQ( grid_block.localEntityEnd(MeshEntity::Cell,Dim::J),
+               local_num_cells[Dim::J] + halo_width );
+    EXPECT_EQ( grid_block.localEntityBegin(MeshEntity::Cell,Dim::K), halo_width );
+    EXPECT_EQ( grid_block.localEntityEnd(MeshEntity::Cell,Dim::K),
+               local_num_cells[Dim::K] + halo_width );
 
     // Get another block without a halo and check the local low corner. Do an
     // exclusive scan of sizes to get the local cell offset.

@@ -71,9 +71,9 @@ createCellField( const GridBlock& grid,
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
             Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numCell(Dim::I),
-            grid.numCell(Dim::J),
-            grid.numCell(Dim::K) );
+            grid.numEntity(MeshEntity::Cell,Dim::I),
+            grid.numEntity(MeshEntity::Cell,Dim::J),
+            grid.numEntity(MeshEntity::Cell,Dim::K) );
 }
 
 //---------------------------------------------------------------------------//
@@ -87,9 +87,9 @@ createNodeField( const GridBlock& grid,
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
             Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numNode(Dim::I),
-            grid.numNode(Dim::J),
-            grid.numNode(Dim::K) );
+            grid.numEntity(MeshEntity::Node,Dim::I),
+            grid.numEntity(MeshEntity::Node,Dim::J),
+            grid.numEntity(MeshEntity::Node,Dim::K) );
 }
 
 //---------------------------------------------------------------------------//

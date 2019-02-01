@@ -70,36 +70,24 @@ class GridBlock
     // Get the halo size.
     int haloSize() const;
 
-    // Get the total number of cells in a given dimension including the halo.
-    int numCell( const int dim ) const;
+    // Get the total number of mesh entities in a given dimension including
+    // the halo.
+    int numEntity( const int entity_type, const int dim ) const;
 
-    // Get the total number of nodes in a given dimension including the halo.
-    int numNode( const int dim ) const;
+    // Get the beginning local entity index in a given direction. The local
+    // entities do not include the halo.
+    int localEntityBegin( const int entity_type, const int dim ) const;
 
-    // Get the beginning local cell index in a given direction. The local
-    // cells do not include the halo.
-    int localCellBegin( const int dim ) const;
+    // Get the end local entity index in a given direction. The local
+    // entities do not include the halo.
+    //
+    // Node case; The local nodes do not include the halo. The local grid
+    // block does not "own" the node on the high logical boundary unless the
+    // high logical boundary is also a physical boundary that is not periodic.
+    int localEntityEnd( const int entity_type, const int dim ) const;
 
-    // Get the ending local cell index in a given direction. The local cells
-    // do not include the halo.
-    int localCellEnd( const int dim ) const;
-
-    // Get the beginning local node index in a given direction. The local
-    // nodes do not include the halo. A local grid block always "owns" the
-    // node on the negative logical boundary.
-    int localNodeBegin( const int dim ) const;
-
-    // Get the ending local node index in a given direction. The local nodes
-    // do not include the halo. The local grid block does not "own" the node
-    // on the high logical boundary unless the high logical boundary is also a
-    // physical boundary that is not periodic.
-    int localNodeEnd( const int dim ) const;
-
-    // Get the local number of cells in a given dimension.
-    int localNumCell( const int dim ) const;
-
-    // Get the local number of nodes in a given dimension.
-    int localNumNode( const int dim ) const;
+    // Get the local number of entities in a given dimension.
+    int localNumEntity( const int entity_type, const int dim ) const;
 
   private:
 

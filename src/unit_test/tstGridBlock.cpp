@@ -64,15 +64,15 @@ void apiTest()
 
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( num_cell[d], grid.numCell(d) );
-        EXPECT_EQ( num_node[d], grid.numNode(d) );
-        EXPECT_EQ( local_cell_begin[d], grid.localCellBegin(d) );
-        EXPECT_EQ( local_cell_end[d], grid.localCellEnd(d) );
-        EXPECT_EQ( local_node_begin[d], grid.localNodeBegin(d) );
-        EXPECT_EQ( local_node_end[d], grid.localNodeEnd(d) );
-        EXPECT_EQ( input_num_cell[d], grid.localNumCell(d) );
+        EXPECT_EQ( num_cell[d], grid.numEntity(MeshEntity::Cell,d) );
+        EXPECT_EQ( num_node[d], grid.numEntity(MeshEntity::Node,d) );
+        EXPECT_EQ( local_cell_begin[d], grid.localEntityBegin(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_cell_end[d], grid.localEntityEnd(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_node_begin[d], grid.localEntityBegin(MeshEntity::Node,d) );
+        EXPECT_EQ( local_node_end[d], grid.localEntityEnd(MeshEntity::Node,d) );
+        EXPECT_EQ( input_num_cell[d], grid.localNumEntity(MeshEntity::Cell,d) );
         EXPECT_EQ( local_node_end[d] - local_node_begin[d],
-                   grid.localNumNode(d) );
+                   grid.localNumEntity(MeshEntity::Node,d) );
     }
 }
 
@@ -128,12 +128,12 @@ void assignTest()
 
     for ( int d = 0; d < 3; ++ d)
     {
-        EXPECT_EQ( num_cell[d], block_2.numCell(d) );
-        EXPECT_EQ( num_node[d], block_2.numNode(d) );
-        EXPECT_EQ( local_cell_begin[d], block_2.localCellBegin(d) );
-        EXPECT_EQ( local_cell_end[d], block_2.localCellEnd(d) );
-        EXPECT_EQ( local_node_begin[d], block_2.localNodeBegin(d) );
-        EXPECT_EQ( local_node_end[d], block_2.localNodeEnd(d) );
+        EXPECT_EQ( num_cell[d], block_2.numEntity(MeshEntity::Cell,d) );
+        EXPECT_EQ( num_node[d], block_2.numEntity(MeshEntity::Node,d) );
+        EXPECT_EQ( local_cell_begin[d], block_2.localEntityBegin(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_cell_end[d], block_2.localEntityEnd(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_node_begin[d], block_2.localEntityBegin(MeshEntity::Node,d) );
+        EXPECT_EQ( local_node_end[d], block_2.localEntityEnd(MeshEntity::Node,d) );
     }
 }
 
@@ -179,12 +179,12 @@ void periodicTest()
 
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( num_cell[d], grid.numCell(d) );
-        EXPECT_EQ( num_node[d], grid.numNode(d) );
-        EXPECT_EQ( local_cell_begin[d], grid.localCellBegin(d) );
-        EXPECT_EQ( local_cell_end[d], grid.localCellEnd(d) );
-        EXPECT_EQ( local_node_begin[d], grid.localNodeBegin(d) );
-        EXPECT_EQ( local_node_end[d], grid.localNodeEnd(d) );
+        EXPECT_EQ( num_cell[d], grid.numEntity(MeshEntity::Cell,d) );
+        EXPECT_EQ( num_node[d], grid.numEntity(MeshEntity::Node,d) );
+        EXPECT_EQ( local_cell_begin[d], grid.localEntityBegin(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_cell_end[d], grid.localEntityEnd(MeshEntity::Cell,d) );
+        EXPECT_EQ( local_node_begin[d], grid.localEntityBegin(MeshEntity::Node,d) );
+        EXPECT_EQ( local_node_end[d], grid.localEntityEnd(MeshEntity::Node,d) );
     }
 }
 

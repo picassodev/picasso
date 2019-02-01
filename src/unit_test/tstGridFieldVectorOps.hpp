@@ -40,12 +40,12 @@ void vectorOpTest()
                                                      global_high_corner,
                                                      cell_size );
 
-    int i_begin = global_grid->block().localCellBegin(Dim::I);
-    int i_end = global_grid->block().localCellEnd(Dim::I);
-    int j_begin = global_grid->block().localCellBegin(Dim::J);
-    int j_end = global_grid->block().localCellEnd(Dim::J);
-    int k_begin = global_grid->block().localCellBegin(Dim::K);
-    int k_end = global_grid->block().localCellEnd(Dim::K);
+    int i_begin = global_grid->block().localEntityBegin(MeshEntity::Cell,Dim::I);
+    int i_end = global_grid->block().localEntityEnd(MeshEntity::Cell,Dim::I);
+    int j_begin = global_grid->block().localEntityBegin(MeshEntity::Cell,Dim::J);
+    int j_end = global_grid->block().localEntityEnd(MeshEntity::Cell,Dim::J);
+    int k_begin = global_grid->block().localEntityBegin(MeshEntity::Cell,Dim::K);
+    int k_end = global_grid->block().localEntityEnd(MeshEntity::Cell,Dim::K);
 
 
     // TEST SCALAR FIELDS

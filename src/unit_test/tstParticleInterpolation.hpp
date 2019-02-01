@@ -69,9 +69,9 @@ void fillTest()
     // Linear case:
     if ( SplineOrder::Linear == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width || j < halo_width || k < halo_width )
@@ -79,9 +79,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i >= grid.numNode(Dim::I) - halo_width ||
-                              j >= grid.numNode(Dim::J) - halo_width ||
-                              k >= grid.numNode(Dim::K) - halo_width )
+                    else if ( i >= grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j >= grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k >= grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.
@@ -93,9 +93,9 @@ void fillTest()
     // Quadratic:
     if ( SplineOrder::Quadratic == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width - 1 || j < halo_width - 1 || k < halo_width - 1 )
@@ -103,9 +103,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i >= grid.numNode(Dim::I) - halo_width ||
-                              j >= grid.numNode(Dim::J) - halo_width ||
-                              k >= grid.numNode(Dim::K) - halo_width )
+                    else if ( i >= grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j >= grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k >= grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.
@@ -117,9 +117,9 @@ void fillTest()
     // Cubic:
     if ( SplineOrder::Cubic == InterpolationOrder )
     {
-        for ( int i = 0; i < grid.numNode(Dim::I); ++i )
-            for ( int j = 0; j < grid.numNode(Dim::J); ++j )
-                for ( int k = 0; k < grid.numNode(Dim::K); ++k )
+        for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
+                for ( int k = 0; k < grid.numEntity(MeshEntity::Node,Dim::K); ++k )
                 {
                     // Negative halo nodes should be zero.
                     if ( i < halo_width - 1 || j < halo_width - 1 || k < halo_width - 1 )
@@ -127,9 +127,9 @@ void fillTest()
 
                     // Positive halo nodes not attached to a local cell should be
                     // zero.
-                    else if ( i > grid.numNode(Dim::I) - halo_width ||
-                              j > grid.numNode(Dim::J) - halo_width ||
-                              k > grid.numNode(Dim::K) - halo_width )
+                    else if ( i > grid.numEntity(MeshEntity::Node,Dim::I) - halo_width ||
+                              j > grid.numEntity(MeshEntity::Node,Dim::J) - halo_width ||
+                              k > grid.numEntity(MeshEntity::Node,Dim::K) - halo_width )
                         EXPECT_FLOAT_EQ( scalar_node_field_mirror(i,j,k), 0.0 );
 
                     // Otherwise we should have gotten some data.

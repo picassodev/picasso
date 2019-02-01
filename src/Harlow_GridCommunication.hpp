@@ -41,11 +41,14 @@ std::vector<int> neighborCounts( const GridBlock& grid, CartesianTag )
         [&]( const int dim ){
             int size = -1;
             if ( Dim::I == dim )
-                size = grid.localNumCell(Dim::J) * grid.localNumCell(Dim::K);
+                size = grid.localNumEntity(MeshEntity::Cell,Dim::J) *
+                       grid.localNumEntity(MeshEntity::Cell,Dim::K);
             else if ( Dim::J == dim )
-                size = grid.localNumCell(Dim::I) * grid.localNumCell(Dim::K);
+                size = grid.localNumEntity(MeshEntity::Cell,Dim::I) *
+                       grid.localNumEntity(MeshEntity::Cell,Dim::K);
             else if ( Dim::K == dim )
-                size = grid.localNumCell(Dim::I) * grid.localNumCell(Dim::J);
+                size = grid.localNumEntity(MeshEntity::Cell,Dim::I) *
+                       grid.localNumEntity(MeshEntity::Cell,Dim::J);
             return size;
         };
 
@@ -77,7 +80,7 @@ std::vector<int> neighborCounts( const GridBlock& grid, GraphTag )
             if ( -1 == logical_index )
                 nc = grid.hasHalo(2*dim) ? grid.haloSize() : 0;
             else if ( 0 == logical_index )
-                nc = grid.localNumCell(dim);
+                nc = grid.localNumEntity(MeshEntity::Cell,dim);
             else if ( 1 == logical_index )
                 nc = grid.hasHalo(2*dim+1) ? grid.haloSize() : 0;
             return nc;
@@ -390,22 +393,22 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
     {
         std::array<Kokkos::pair<int,int>,3> pack_range;
         pack_range[Dim::I] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::I),
-                                  block.localCellEnd(Dim::I));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::I),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::I));
         pack_range[Dim::J] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::J),
-                                  block.localCellEnd(Dim::J));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::J),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::J));
         pack_range[Dim::K] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::K),
-                                  block.localCellEnd(Dim::K));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::K),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::K));
 
         // Negative Neighbor
         if ( counts[2*d] > 0 )
         {
             // We send our layer of local cells.
             pack_range[d] = Kokkos::pair<int,int>(
-                block.localCellBegin(d),
-                block.localCellBegin(d) + block.haloSize() );
+                block.localEntityBegin(MeshEntity::Cell,d),
+                block.localEntityBegin(MeshEntity::Cell,d) + block.haloSize() );
 
             // Pack
             packNeighbor( pack_range, field, offsets[2*d], send_buffer );
@@ -416,8 +419,8 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
         {
             // We send our layer of local cells.
             pack_range[d] = Kokkos::pair<int,int>(
-                block.localCellEnd(d) - block.haloSize(),
-                block.localCellEnd(d) );
+                block.localEntityEnd(MeshEntity::Cell,d) - block.haloSize(),
+                block.localEntityEnd(MeshEntity::Cell,d) );
 
             // Pack
             packNeighbor( pack_range, field, offsets[2*d+1], send_buffer );
@@ -443,21 +446,21 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
     {
         std::array<Kokkos::pair<int,int>,3> unpack_range;
         unpack_range[Dim::I] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::I),
-                                  block.localCellEnd(Dim::I));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::I),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::I));
         unpack_range[Dim::J] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::J),
-                                  block.localCellEnd(Dim::J));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::J),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::J));
         unpack_range[Dim::K] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::K),
-                                  block.localCellEnd(Dim::K));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::K),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::K));
 
         // Negative Neighbor.
         if ( counts[2*d] > 0 )
         {
             // We receive in our halo cells.
             unpack_range[d] = Kokkos::pair<int,int>(
-                0, block.localCellBegin(d) );
+                0, block.localEntityBegin(MeshEntity::Cell,d) );
 
             // Unpack
             gatherNeighbor( unpack_range, receive_buffer, offsets[2*d], field );
@@ -468,7 +471,7 @@ void gather( GridFieldType& grid_field, CartesianTag tag )
         {
             // We receive in our halo cells.
             unpack_range[d] = Kokkos::pair<int,int>(
-                block.localCellEnd(d), block.numCell(d) );
+                block.localEntityEnd(MeshEntity::Cell,d), block.numEntity(MeshEntity::Cell,d) );
 
             // Unpack
             gatherNeighbor(
@@ -536,21 +539,21 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
     {
         std::array<Kokkos::pair<int,int>,3> pack_range;
         pack_range[Dim::I] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::I),
-                                  block.localCellEnd(Dim::I));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::I),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::I));
         pack_range[Dim::J] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::J),
-                                  block.localCellEnd(Dim::J));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::J),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::J));
         pack_range[Dim::K] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::K),
-                                  block.localCellEnd(Dim::K));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::K),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::K));
 
         // Negative Neighbor
         if ( counts[2*d] > 0 )
         {
             // We send our ghost cells.
             pack_range[d] = Kokkos::pair<int,int>(
-                0, block.localCellBegin(d) );
+                0, block.localEntityBegin(MeshEntity::Cell,d) );
 
             // Pack
             packNeighbor( pack_range, field, offsets[2*d], send_buffer );
@@ -561,7 +564,7 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
         {
             // We send our ghost cells.
             pack_range[d] = Kokkos::pair<int,int>(
-                block.localCellEnd(d), block.numCell(d) );
+                block.localEntityEnd(MeshEntity::Cell,d), block.numEntity(MeshEntity::Cell,d) );
 
             // Pack
             packNeighbor( pack_range, field, offsets[2*d+1], send_buffer );
@@ -587,22 +590,22 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
     {
         std::array<Kokkos::pair<int,int>,3> unpack_range;
         unpack_range[Dim::I] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::I),
-                                  block.localCellEnd(Dim::I));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::I),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::I));
         unpack_range[Dim::J] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::J),
-                                  block.localCellEnd(Dim::J));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::J),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::J));
         unpack_range[Dim::K] =
-            Kokkos::pair<int,int>(block.localCellBegin(Dim::K),
-                                  block.localCellEnd(Dim::K));
+            Kokkos::pair<int,int>(block.localEntityBegin(MeshEntity::Cell,Dim::K),
+                                  block.localEntityEnd(MeshEntity::Cell,Dim::K));
 
         // Negative Neighbor.
         if ( counts[2*d] > 0 )
         {
             // We receive in our local cells.
             unpack_range[d] = Kokkos::pair<int,int>(
-                block.localCellBegin(d),
-                block.localCellBegin(d) + block.haloSize() );
+                block.localEntityBegin(MeshEntity::Cell,d),
+                block.localEntityBegin(MeshEntity::Cell,d) + block.haloSize() );
 
             // Unpack
             scatterNeighbor(
@@ -614,8 +617,8 @@ void scatter( GridFieldType& grid_field, CartesianTag tag )
         {
             // We receive in our local cells.
             unpack_range[d] = Kokkos::pair<int,int>(
-                block.localCellEnd(d) - block.haloSize(),
-                block.localCellEnd(d) );
+                block.localEntityEnd(MeshEntity::Cell,d) - block.haloSize(),
+                block.localEntityEnd(MeshEntity::Cell,d) );
 
             // Unpack
             scatterNeighbor(
