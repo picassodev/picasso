@@ -327,7 +327,8 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
     auto field = grid_field.data();
     Kokkos::parallel_for(
         "test field fill",
-        GridExecution::createLocalCellPolicy<TEST_EXECSPACE>(grid_field.block()),
+        GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
+            grid_field.block(),grid_field.location()),
         KOKKOS_LAMBDA(const int i, const int j, const int k){
             field(i,j,k) = data_val; }
         );
@@ -392,7 +393,8 @@ void vectorFieldTest()
     auto field = grid_field.data();
     Kokkos::parallel_for(
         "test field fill",
-        GridExecution::createLocalCellPolicy<TEST_EXECSPACE>(grid_field.block()),
+        GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
+            grid_field.block(),grid_field.location()),
         KOKKOS_LAMBDA(const int i, const int j, const int k){
             for ( int d = 0; d < 3; ++d )
                 field(i,j,k,d) = data_val; }

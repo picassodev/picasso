@@ -218,7 +218,7 @@ void particleToGridTest()
     double scalar_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "scalar grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += scalar_node_field(i,j,k);
@@ -255,7 +255,7 @@ void particleToGridTest()
     double vector_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "vector grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += vector_node_field(i,j,k,0);
@@ -294,7 +294,7 @@ void particleToGridTest()
     double matrix_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "matrix grid sum",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             for ( int d0 = 0; d0 < 3; ++d0 )
@@ -361,7 +361,7 @@ void gridToParticleTest()
     double grid_value_0 = 1.2303;
     Kokkos::parallel_for(
         "scalar grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             scalar_node_field(i,j,k) = grid_value_0;
@@ -392,7 +392,7 @@ void gridToParticleTest()
     double grid_value_1 = -34.32;
     Kokkos::parallel_for(
         "vector grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             vector_node_field(i,j,k,0) = grid_value_0;
@@ -430,7 +430,7 @@ void gridToParticleTest()
     double grid_value_5 = 1.2256;
     Kokkos::parallel_for(
         "matrix grid fill",
-        GridExecution::createNodePolicy<TEST_EXECSPACE>(grid),
+        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             matrix_node_field(i,j,k,0,0) = grid_value_0;
