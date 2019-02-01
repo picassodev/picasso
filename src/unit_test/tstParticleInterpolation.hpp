@@ -49,7 +49,8 @@ void fillTest()
     Kokkos::deep_copy( position, position_mirror );
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -190,7 +191,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -228,7 +230,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto vector_node_field = createNodeField<double[2],TEST_MEMSPACE>( grid );
+    auto vector_node_field =
+        createField<double[2],TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using VectorViewType = Kokkos::View<float*[2],TEST_MEMSPACE>;
@@ -265,7 +268,8 @@ void particleToGridTest()
     // --------------
 
     // Make a node field.
-    auto matrix_node_field = createNodeField<double[3][2],TEST_MEMSPACE>( grid );
+    auto matrix_node_field =
+        createField<double[3][2],TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Make a particle field.
     using MatrixViewType = Kokkos::View<float*[3][2],TEST_MEMSPACE>;
@@ -352,7 +356,8 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto scalar_node_field = createNodeField<float,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<float,TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_0 = 1.2303;
     Kokkos::parallel_for(
         "scalar grid fill",
@@ -382,7 +387,8 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto vector_node_field = createNodeField<float[2],TEST_MEMSPACE>( grid );
+    auto vector_node_field =
+        createField<float[2],TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_1 = -34.32;
     Kokkos::parallel_for(
         "vector grid fill",
@@ -416,7 +422,8 @@ void gridToParticleTest()
     // --------------
 
     // Make a node field.
-    auto matrix_node_field = createNodeField<float[2][3],TEST_MEMSPACE>( grid );
+    auto matrix_node_field =
+        createField<float[2][3],TEST_MEMSPACE>( grid, MeshEntity::Node );
     double grid_value_2 = 85.36;
     double grid_value_3 = -0.00257;
     double grid_value_4 = -12.22;

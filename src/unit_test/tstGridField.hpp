@@ -36,7 +36,8 @@ void fieldTest()
                     periodic, cell_size, halo_width );
 
     // Make some cell fields.
-    auto scalar_cell_field = createCellField<double,TEST_MEMSPACE>( grid );
+    auto scalar_cell_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Cell );
     EXPECT_EQ( scalar_cell_field.Rank, 3 );
     EXPECT_EQ( scalar_cell_field.extent(0), num_cell[0] );
     EXPECT_EQ( scalar_cell_field.extent(1), num_cell[1] );
@@ -46,7 +47,8 @@ void fieldTest()
                      typename decltype(scalar_cell_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
-    auto vector_cell_field = createCellField<double[5],TEST_MEMSPACE>( grid );
+    auto vector_cell_field =
+        createField<double[5],TEST_MEMSPACE>( grid, MeshEntity::Cell );
     EXPECT_EQ( vector_cell_field.Rank, 4 );
     EXPECT_EQ( vector_cell_field.extent(0), num_cell[0] );
     EXPECT_EQ( vector_cell_field.extent(1), num_cell[1] );
@@ -57,7 +59,8 @@ void fieldTest()
                      typename decltype(vector_cell_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
-    auto tensor_cell_field = createCellField<double[2][4],TEST_MEMSPACE>( grid );
+    auto tensor_cell_field =
+        createField<double[2][4],TEST_MEMSPACE>( grid, MeshEntity::Cell );
     EXPECT_EQ( tensor_cell_field.Rank, 5 );
     EXPECT_EQ( tensor_cell_field.extent(0), num_cell[0] );
     EXPECT_EQ( tensor_cell_field.extent(1), num_cell[1] );
@@ -70,7 +73,8 @@ void fieldTest()
     EXPECT_TRUE( correct_value_type );
 
     // Make some node fields.
-    auto scalar_node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto scalar_node_field =
+        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
     EXPECT_EQ( scalar_node_field.Rank, 3 );
     EXPECT_EQ( scalar_node_field.extent(0), num_node[0] );
     EXPECT_EQ( scalar_node_field.extent(1), num_node[1] );
@@ -80,7 +84,8 @@ void fieldTest()
                      typename decltype(scalar_node_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
-    auto vector_node_field = createNodeField<double[5],TEST_MEMSPACE>( grid );
+    auto vector_node_field =
+        createField<double[5],TEST_MEMSPACE>( grid, MeshEntity::Node );
     EXPECT_EQ( vector_node_field.Rank, 4 );
     EXPECT_EQ( vector_node_field.extent(0), num_node[0] );
     EXPECT_EQ( vector_node_field.extent(1), num_node[1] );
@@ -91,7 +96,8 @@ void fieldTest()
                      typename decltype(vector_node_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
-    auto tensor_node_field = createNodeField<double[2][4],TEST_MEMSPACE>( grid );
+    auto tensor_node_field =
+        createField<double[2][4],TEST_MEMSPACE>( grid, MeshEntity::Node );
     EXPECT_EQ( tensor_node_field.Rank, 5 );
     EXPECT_EQ( tensor_node_field.extent(0), num_node[0] );
     EXPECT_EQ( tensor_node_field.extent(1), num_node[1] );

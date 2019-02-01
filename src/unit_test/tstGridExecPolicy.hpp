@@ -34,8 +34,8 @@ void parallelTest()
                     periodic, cell_size, halo_width );
 
     // Make a cell field and a node field.
-    auto cell_field = createCellField<double,TEST_MEMSPACE>( grid );
-    auto node_field = createNodeField<double,TEST_MEMSPACE>( grid );
+    auto cell_field = createField<double,TEST_MEMSPACE>( grid, MeshEntity::Cell );
+    auto node_field = createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
 
     // Change every value to 1 in both fields.
     auto cell_policy = GridExecution::createCellPolicy<TEST_EXECSPACE>( grid );

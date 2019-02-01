@@ -59,37 +59,22 @@ struct GridBlockFieldDataType
 };
 
 //---------------------------------------------------------------------------//
-// Field creators
-//---------------------------------------------------------------------------//
-// Given a grid create a view of cell data with ijk indexing. The view is
-// uninitialized.
+// Field creator
+// ---------------------------------------------------------------------------//
+// Given a grid create a view of data with ijk indexing over the given entity
+// type. The view is uninitialized.
 template<class DataType, class DeviceType>
 Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
-createCellField( const GridBlock& grid,
-                 const std::string& field_name = "" )
+createField( const GridBlock& grid,
+             const int field_location,
+             const std::string& field_name = "" )
 {
     return Kokkos::View<
         typename GridBlockFieldDataType<DataType>::type,DeviceType>(
             Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numEntity(MeshEntity::Cell,Dim::I),
-            grid.numEntity(MeshEntity::Cell,Dim::J),
-            grid.numEntity(MeshEntity::Cell,Dim::K) );
-}
-
-//---------------------------------------------------------------------------//
-// Given a grid create a view of node data with ijk indexing. The view is
-// uninitialized.
-template<class DataType, class DeviceType>
-Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
-createNodeField( const GridBlock& grid,
-                 const std::string& field_name = "" )
-{
-    return Kokkos::View<
-        typename GridBlockFieldDataType<DataType>::type,DeviceType>(
-            Kokkos::ViewAllocateWithoutInitializing(field_name),
-            grid.numEntity(MeshEntity::Node,Dim::I),
-            grid.numEntity(MeshEntity::Node,Dim::J),
-            grid.numEntity(MeshEntity::Node,Dim::K) );
+            grid.numEntity(field_location,Dim::I),
+            grid.numEntity(field_location,Dim::J),
+            grid.numEntity(field_location,Dim::K) );
 }
 
 //---------------------------------------------------------------------------//
@@ -117,12 +102,7 @@ class GridField
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
-        if ( MeshEntity::Node == field_location )
-            _data = createNodeField<DataType,DeviceType>( _block, field_name );
-        else if ( MeshEntity::Cell == field_location )
-            _data = createCellField<DataType,DeviceType>( _block, field_name );
-        else
-            throw std::invalid_argument("Bad field location");
+        _data = createField<DataType,DeviceType>( _block, field_location, field_name );
     }
 
     // Get the grid communicator.
