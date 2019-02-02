@@ -142,18 +142,6 @@ void gridTest()
     MPI_Allreduce( MPI_IN_PLACE, local_num_node_k.data(), ranks_per_dim[Dim::K],
                    MPI_INT, MPI_MAX, grid_comm );
 
-    // Check to make sure we got the right number of total nodes in each
-    // dimension.
-    EXPECT_EQ( global_num_cell[0] + 1,
-               std::accumulate(
-                   local_num_node_i.begin(), local_num_node_i.end(), 0 ) );
-    EXPECT_EQ( global_num_cell[1] + 1,
-               std::accumulate(
-                   local_num_node_j.begin(), local_num_node_j.end(), 0 ) );
-    EXPECT_EQ( global_num_cell[2] + 1,
-               std::accumulate(
-                   local_num_node_k.begin(), local_num_node_k.end(), 0 ) );
-
     // Check boundary status.
     if ( cart_rank[Dim::I] == 0 )
         EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::LowX) );

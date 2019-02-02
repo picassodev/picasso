@@ -102,7 +102,8 @@ class GridField
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
-        _data = createField<DataType,DeviceType>( _block, field_location, field_name );
+        _data = createField<DataType,DeviceType>(
+            _block, field_location, field_name );
     }
 
     // Get the grid communicator.
