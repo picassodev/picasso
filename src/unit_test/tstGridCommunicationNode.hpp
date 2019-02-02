@@ -23,51 +23,51 @@ void checkGather( const GridBlock& block,
 {
     // -I face.
     if ( block.hasHalo(DomainBoundary::LowX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 EXPECT_EQ( field(0,j,k), data_val );
 
     // +I face.
     if ( block.hasHalo(DomainBoundary::HighX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(block.numEntity(MeshEntity::Cell,Dim::I)-1,j,k), data_val );
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
+                EXPECT_EQ( field(block.numEntity(MeshEntity::Node,Dim::I)-1,j,k), data_val );
 
     // -J face.
     if ( block.hasHalo(DomainBoundary::LowY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 EXPECT_EQ( field(i,0,k), data_val );
 
     // +J face.
     if ( block.hasHalo(DomainBoundary::HighY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(i,block.numEntity(MeshEntity::Cell,Dim::J)-1,k), data_val );
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
+                EXPECT_EQ( field(i,block.numEntity(MeshEntity::Node,Dim::J)-1,k), data_val );
 
     // -K face.
     if ( block.hasHalo(DomainBoundary::LowZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
             EXPECT_EQ( field(i,j,0), data_val );
 
     // +K face.
     if ( block.hasHalo(DomainBoundary::HighZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-                EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Cell,Dim::K)-1), data_val );
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
+                EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Node,Dim::K)-1), data_val );
 }
 
 //---------------------------------------------------------------------------//
@@ -79,61 +79,61 @@ void checkVectorGather( const GridBlock& block,
 {
     // -I face.
     if ( block.hasHalo(DomainBoundary::LowX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                     EXPECT_EQ( field(0,j,k,d), data_val );
 
     // +I face.
     if ( block.hasHalo(DomainBoundary::HighX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
-                    EXPECT_EQ( field(block.numEntity(MeshEntity::Cell,Dim::I)-1,j,k,d), data_val );
+                    EXPECT_EQ( field(block.numEntity(MeshEntity::Node,Dim::I)-1,j,k,d), data_val );
 
     // -J face.
     if ( block.hasHalo(DomainBoundary::LowY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                     EXPECT_EQ( field(i,0,k,d), data_val );
 
     // +J face.
     if ( block.hasHalo(DomainBoundary::HighY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K);
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K); ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
-                    EXPECT_EQ( field(i,block.numEntity(MeshEntity::Cell,Dim::J)-1,k,d), data_val );
+                    EXPECT_EQ( field(i,block.numEntity(MeshEntity::Node,Dim::J)-1,k,d), data_val );
 
     // -K face.
     if ( block.hasHalo(DomainBoundary::LowZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
             for ( unsigned d = 0; d < field.extent(3); ++d)
                 EXPECT_EQ( field(i,j,0,d), data_val );
 
     // +K face.
     if ( block.hasHalo(DomainBoundary::HighZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I);
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I); ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J);
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J); ++j )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
-                    EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Cell,Dim::K)-1,d), data_val );
+                    EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Node,Dim::K)-1,d), data_val );
 }
 
 //---------------------------------------------------------------------------//
-// Check the scatter for a scalar field. Note that some halo cells go to
+// Check the scatter for a scalar field. Note that some halo nodes go to
 // multiple neighbors so these will get multiple contributions.
 template<class ViewType>
 void checkScatter( const GridBlock& block,
@@ -145,73 +145,73 @@ void checkScatter( const GridBlock& block,
 
     // -I face.
     if ( block.hasHalo(DomainBoundary::LowX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
             {
-                int i = 1;
+                int i = 2;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 
     // +I face.
     if ( block.hasHalo(DomainBoundary::HighX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j)
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j)
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
             {
-                int i = block.numEntity(MeshEntity::Cell,Dim::I)-2;
+                int i = block.numEntity(MeshEntity::Node,Dim::I)-3;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 
     // -J face.
     if ( block.hasHalo(DomainBoundary::LowY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
             {
-                int j = 1;
+                int j = 2;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 
     // +J face.
     if ( block.hasHalo(DomainBoundary::HighY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
             {
-                int j = block.numEntity(MeshEntity::Cell,Dim::J)-2;
+                int j = block.numEntity(MeshEntity::Node,Dim::J)-3;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 
     // -K face.
     if ( block.hasHalo(DomainBoundary::LowZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
             {
-                int k = 1;
+                int k = 2;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 
     // +K face.
     if ( block.hasHalo(DomainBoundary::HighZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
             {
-                int k = block.numEntity(MeshEntity::Cell,Dim::K)-2;
+                int k = block.numEntity(MeshEntity::Node,Dim::K)-3;
                 EXPECT_EQ( field(i,j,k), 2*data_val );
             }
 }
 
 //---------------------------------------------------------------------------//
-// Check the scatter for a vector field. Note that some halo cells go to
+// Check the scatter for a vector field. Note that some halo nodes go to
 // multiple neighbors so these will get multiple contributions.
 template<class ViewType>
 void checkVectorScatter( const GridBlock& block,
@@ -223,73 +223,73 @@ void checkVectorScatter( const GridBlock& block,
 
     // -I face.
     if ( block.hasHalo(DomainBoundary::LowX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int i = 1;
+                    int i = 2;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 
     // +I face.
     if ( block.hasHalo(DomainBoundary::HighX) )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j)
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+              j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j)
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int i = block.numEntity(MeshEntity::Cell,Dim::I)-2;
+                    int i = block.numEntity(MeshEntity::Node,Dim::I)-3;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 
     // -J face.
     if ( block.hasHalo(DomainBoundary::LowY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int j = 1;
+                    int j = 2;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 
     // +J face.
     if ( block.hasHalo(DomainBoundary::HighY) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K) + 1;
-                  k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int k = block.localEntityBegin(MeshEntity::Node,Dim::K) + 2;
+                  k < block.localEntityEnd(MeshEntity::Node,Dim::K) - 2; ++k )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int j = block.numEntity(MeshEntity::Cell,Dim::J)-2;
+                    int j = block.numEntity(MeshEntity::Node,Dim::J)-3;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 
     // -K face.
     if ( block.hasHalo(DomainBoundary::LowZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int k = 1;
+                    int k = 2;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 
     // +K face.
     if ( block.hasHalo(DomainBoundary::HighZ) )
-        for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I) + 1;
-              i < block.localEntityEnd(MeshEntity::Cell,Dim::I) - 1; ++i )
-            for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J) + 1;
-                  j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
+        for ( int i = block.localEntityBegin(MeshEntity::Node,Dim::I) + 2;
+              i < block.localEntityEnd(MeshEntity::Node,Dim::I) - 2; ++i )
+            for ( int j = block.localEntityBegin(MeshEntity::Node,Dim::J) + 2;
+                  j < block.localEntityEnd(MeshEntity::Node,Dim::J) - 2; ++j )
                 for ( unsigned d = 0; d < field.extent(3); ++d)
                 {
-                    int k = block.numEntity(MeshEntity::Cell,Dim::K)-2;
+                    int k = block.numEntity(MeshEntity::Node,Dim::K)-3;
                     EXPECT_EQ( field(i,j,k,d), 2*data_val );
                 }
 }
@@ -314,17 +314,18 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
         global_high_corner,
         cell_size );
 
-    // Create a scalar cell field on the grid.
+    // Create a scalar node field on the grid.
     int halo_width = 1;
     GridField<double,TEST_MEMSPACE> grid_field(
         global_grid,
-        MeshEntity::Cell,
+        MeshEntity::Node,
         halo_width,
         "TestField" );
 
     // Fill the locally owned field with data.
     double data_val = 2.3;
     auto field = grid_field.data();
+    Kokkos::deep_copy( field, 0.0 );
     Kokkos::parallel_for(
         "test field fill",
         GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
@@ -335,7 +336,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
 
     // Gather into the halo.
     GridCommunication::gather(
-        grid_field, halo_width, GridCommunication::CartesianTag() );
+        grid_field, halo_width, GridCommunication::GraphCommNodeTag() );
 
     // Check the gather. The halo should have received the data value if its
     // not on a physical boundary or if it is on a periodic boundary.
@@ -345,7 +346,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
 
     // Now scatter back.
     GridCommunication::scatter(
-        grid_field, halo_width, GridCommunication::CartesianTag() );
+        grid_field, halo_width, GridCommunication::GraphCommNodeTag() );
 
     // Check the scatter. The interior nodes on the boundary should now have
     // 2x the data value if not on a physical boundary or if the boundary is
@@ -382,17 +383,18 @@ void vectorFieldTest()
         global_high_corner,
         cell_size );
 
-    // Create a vector cell field on the grid.
+    // Create a vector node field on the grid.
     int halo_width = 1;
     GridField<double[3],TEST_MEMSPACE> grid_field(
         global_grid,
-        MeshEntity::Cell,
+        MeshEntity::Node,
         halo_width,
         "TestField" );
 
     // Fill the locally owned field with data.
     double data_val = 2.3;
     auto field = grid_field.data();
+    Kokkos::deep_copy( field, 0.0 );
     Kokkos::parallel_for(
         "test field fill",
         GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
@@ -404,7 +406,7 @@ void vectorFieldTest()
 
     // Gather into the halo.
     GridCommunication::gather(
-        grid_field, halo_width, GridCommunication::CartesianTag() );
+        grid_field, halo_width, GridCommunication::GraphCommNodeTag() );
 
     // Check the gather. The halo should have received the data value if its
     // not on a physical boundary or if it is on a periodic boundary.
@@ -414,7 +416,7 @@ void vectorFieldTest()
 
     // Now scatter back.
     GridCommunication::scatter(
-        grid_field, halo_width, GridCommunication::CartesianTag() );
+        grid_field, halo_width, GridCommunication::GraphCommNodeTag() );
 
     // Check the scatter. The interior nodes on the boundary should now have
     // 2x the data value if not on a physical boundary or if the boundary is
@@ -426,7 +428,7 @@ void vectorFieldTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, not_periodic_test )
+TEST_F( TEST_CATEGORY, graph_not_periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -451,7 +453,7 @@ TEST_F( TEST_CATEGORY, not_periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, periodic_test )
+TEST_F( TEST_CATEGORY, graph_periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -476,7 +478,7 @@ TEST_F( TEST_CATEGORY, periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, vector_field_test )
+TEST_F( TEST_CATEGORY, graph_vector_field_test )
 {
     vectorFieldTest();
 }

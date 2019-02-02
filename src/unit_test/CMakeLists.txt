@@ -63,7 +63,7 @@ endforeach()
 ##--------------------------------------------------------------------------##
 foreach(_device ${HARLOW_SUPPORTED_DEVICES})
   if(Harlow_ENABLE_${_device})
-    foreach(_test GridCommunication GridFieldVectorOps)
+    foreach(_test GridCommunicationFace GridCommunicationNode GridFieldVectorOps)
       add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
       target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
       foreach(_np 1 ${MPIEXEC_MAX_NUMPROCS})

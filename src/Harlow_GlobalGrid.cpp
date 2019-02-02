@@ -94,11 +94,21 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                              boundary_location, is_dim_periodic, cell_size, 0 );
 
     // Create the graph communicator. Start by getting the neighbors we will
-    // communicatioe with. Note the ordering of the ijk loop here - I moves
-    // the fastest and K moves the slowest. Note that we do not send to
-    // ourselves (when each index is 0).
+    // communicate with. Note the ordering of the ijk loop here - I moves the
+    // fastest and K moves the slowest. Note that we do not send to ourselves
+    // (when each index is 0).
+    //
+    // There has been a lot of discussion recently on whether or not
+    // MPI_PROC_NULL should be allowed as a neighbor in the creation of the
+    // distributed graph topology. The way I read it is that it should be
+    // allowed and this would make things a lot easier. However, some
+    // implementations seem to not have the same interpretation and therefore
+    // it will not work. Therefore, we can't just add MPI_PROC_NULL here and
+    // always assume we have 26 neighbors - we only work with the neighbors
+    // that we know are valid. So these neighbors are generated in the same
+    // IJK order, but we only save them if they are things we will actually
+    // send to.
     std::vector<int> neighbors;
-    neighbors.reserve( 26 );
     for ( int k = -1; k < 2; ++k )
         for ( int j = -1; j < 2; ++j )
             for ( int i = -1; i < 2; ++i )
@@ -116,16 +126,9 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                             if ( !is_dim_periodic[d] )
                                 is_null = true;
 
-                    // If we were outside of a non-periodic dimension this
-                    // rank is null.
-                    if ( is_null )
-                    {
-                        neighbors.push_back( MPI_PROC_NULL );
-                    }
-
-                    // Otherwise get our real neighbor. The periodic case
-                    // should wrap around when out of bounds.
-                    else
+                    // Get our neighbor. The periodic case should wrap around
+                    // when out of bounds.
+                    if ( !is_null )
                     {
                         int nr;
                         MPI_Cart_rank( _cart_comm, ncr.data(), &nr );
@@ -133,13 +136,16 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                     }
                 }
 
-    // Build the new topology for the graph communicator.
-    int reorder_graph_ranks = 1;
-    MPI_Dist_graph_create_adjacent( _cart_comm,
-                                    26, neighbors.data(), MPI_UNWEIGHTED,
-                                    26, neighbors.data(), MPI_UNWEIGHTED,
-                                    MPI_INFO_NULL,
-                                    reorder_graph_ranks, &_graph_comm );
+    // Build the new topology for the graph communicator. Choose not to
+    // reorder the ranks here - the Cartesian topology ordering is probably
+    // already near optimal for this case.
+    int reorder_graph_ranks = 0;
+    MPI_Dist_graph_create_adjacent(
+        _cart_comm,
+        neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+        neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
+        MPI_INFO_NULL,
+        reorder_graph_ranks, &_graph_comm );
 }
 
 //---------------------------------------------------------------------------//

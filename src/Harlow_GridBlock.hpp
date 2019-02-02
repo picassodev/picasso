@@ -67,7 +67,7 @@ class GridBlock
     // Get the inverse cell size.
     double inverseCellSize() const;
 
-    // Get the halo size.
+    // Get the number of cells in the halo.
     int haloSize() const;
 
     // Get the total number of mesh entities in a given dimension including
@@ -76,18 +76,50 @@ class GridBlock
 
     // Get the beginning local entity index in a given direction. The local
     // entities do not include the halo.
+    //
+    // Note that true local ownership is only defined in terms of cells in
+    // this partitioning.
     int localEntityBegin( const int entity_type, const int dim ) const;
 
-    // Get the end local entity index in a given direction. The local
-    // entities do not include the halo.
+    // Get the end local entity index in a given direction.
     //
-    // Node case; The local nodes do not include the halo. The local grid
-    // block does not "own" the node on the high logical boundary unless the
-    // high logical boundary is also a physical boundary that is not periodic.
+    // Note that true local ownership is only defined in terms of cells in
+    // this partitioning.
     int localEntityEnd( const int entity_type, const int dim ) const;
 
     // Get the local number of entities in a given dimension.
     int localNumEntity( const int entity_type, const int dim ) const;
+
+    // Get the beginning entity index in a given direction in the halo for a
+    // neighbor of the given logical index for a requested halo size.
+    //
+    // Note that nodes on the cells that are at the edges of the local domain
+    // are in the halo.
+    int haloEntityBegin( const int entity_type,
+                         const int dim,
+                         const int logical_index,
+                         const int halo_num_cell ) const;
+
+    // Get the end entity index in a given direction in the halo for a
+    // neighbor of the given logical index for a requested halo size.
+    //
+    // Note that nodes on the cells that are at the edges of the local domain
+    // are in the halo.
+    int haloEntityEnd( const int entity_type,
+                       const int dim,
+                       const int logical_index,
+                       const int halo_num_cell ) const;
+
+
+    // Get the number of entities in a given direction in the halo for a
+    // neighbor of a given logical index for a requested halo size.
+    //
+    // Note that nodes on the cells that are at the edges of the local domain
+    // are in the halo.
+    int haloNumEntity( const int entity_type,
+                       const int dim,
+                       const int logical_index,
+                       const int halo_num_cell ) const;
 
   private:
 

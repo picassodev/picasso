@@ -29,7 +29,7 @@ void parallelTest()
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
-                                        local_cell_end[2] };
+                                        local_cell_end[2] + 1};
     GridBlock grid( low_corner, input_num_cell, boundary_location,
                     periodic, cell_size, halo_width );
 

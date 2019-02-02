@@ -93,7 +93,7 @@ int GridBlock::numEntity( const int entity_type, const int dim ) const
         return _total_num_cell[dim] + 1;
 
     else
-        throw std::invalid_argument("Bad mesh entity type");
+        throw std::invalid_argument("Invalid mesh entity type");
 }
 
 //---------------------------------------------------------------------------//
@@ -107,24 +107,20 @@ int GridBlock::localEntityBegin( const int entity_type, const int dim ) const
 }
 
 //---------------------------------------------------------------------------//
-// Get the end local entity index in a given direction. The local
-// entities do not include the halo.
+// Get the end local entity index in a given direction.
 //
-// Node case; The local nodes do not include the halo. The local grid
-// block does not "own" the node on the high logical boundary unless the
-// high logical boundary is also a physical boundary that is not periodic.
+// Note that true local ownership is only defined in terms of cells in
+// this partitioning.
 int GridBlock::localEntityEnd( const int entity_type, const int dim ) const
 {
     if ( MeshEntity::Cell == entity_type )
         return _total_num_cell[dim] - _halo_cell_width;
 
     else if ( MeshEntity::Node == entity_type )
-        return ( _boundary_location[2*dim+1] && !_periodic[dim] )
-            ? _total_num_cell[dim] - _halo_cell_width + 1 :
-            _total_num_cell[dim] - _halo_cell_width;
+        return _total_num_cell[dim] - _halo_cell_width + 1;
 
     else
-        throw std::invalid_argument("Bad mesh entity type");
+        throw std::invalid_argument("Invalid mesh entity type");
 }
 
 //---------------------------------------------------------------------------//
@@ -133,6 +129,95 @@ int GridBlock::localNumEntity( const int entity_type, const int dim ) const
 {
     return localEntityEnd( entity_type, dim ) -
         localEntityBegin( entity_type, dim );
+}
+
+//---------------------------------------------------------------------------//
+// Get the beginning entity index in a given direction in the halo for a
+// neighbor of the given logical index for a requested halo size.
+//
+// Note that nodes on the cells that are at the edges of the local domain
+// are in the halo.
+int GridBlock::haloEntityBegin( const int entity_type,
+                                const int dim,
+                                const int logical_index,
+                                const int halo_num_cell ) const
+{
+    if ( MeshEntity::Cell == entity_type )
+    {
+        if ( -1 == logical_index )
+            return localEntityBegin(MeshEntity::Cell,dim) - halo_num_cell;
+        else if ( 0 == logical_index )
+            return localEntityBegin(MeshEntity::Cell,dim);
+        else if ( 1 == logical_index )
+            return localEntityEnd(MeshEntity::Cell,dim);
+    }
+
+    else if ( MeshEntity::Node == entity_type )
+    {
+        if ( -1 == logical_index )
+            return localEntityBegin(MeshEntity::Node,dim) - halo_num_cell;
+        else if ( 0 == logical_index )
+            return localEntityBegin(MeshEntity::Node,dim);
+        else if ( 1 == logical_index )
+            return localEntityEnd(MeshEntity::Node,dim) - 1;
+    }
+
+    else
+        throw std::invalid_argument("Invalid mesh entity type");
+
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
+// Get the end entity index in a given direction in the halo for a
+// neighbor of the given logical index for a requested halo size.
+//
+// Note that nodes on the cells that are at the edges of the local domain
+// are in the halo.
+int GridBlock::haloEntityEnd( const int entity_type,
+                              const int dim,
+                              const int logical_index,
+                              const int halo_num_cell ) const
+{
+    if ( MeshEntity::Cell == entity_type )
+    {
+        if ( -1 == logical_index )
+            return localEntityBegin(MeshEntity::Cell,dim);
+        else if ( 0 == logical_index )
+            return localEntityEnd(MeshEntity::Cell,dim);
+        else if ( 1 == logical_index )
+            return localEntityEnd(MeshEntity::Cell,dim) + halo_num_cell;
+    }
+
+    else if ( MeshEntity::Node == entity_type )
+    {
+        if ( -1 == logical_index )
+            return localEntityBegin(MeshEntity::Node,dim) + 1;
+        else if ( 0 == logical_index )
+            return localEntityEnd(MeshEntity::Node,dim);
+        else if ( 1 == logical_index )
+            return localEntityEnd(MeshEntity::Node,dim) + halo_num_cell;
+    }
+
+    else
+        throw std::invalid_argument("Invalid mesh entity type");
+
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
+// Get the number of entities in a given direction in the halo for a
+// neighbor of a given logical index for a requested halo size.
+//
+// Note that nodes on the cells that are at the edges of the local domain
+// are in the halo.
+int GridBlock::haloNumEntity( const int entity_type,
+                              const int dim,
+                              const int logical_index,
+                              const int halo_num_cell ) const
+{
+    return haloEntityEnd(entity_type,dim,logical_index,halo_num_cell) -
+        haloEntityBegin(entity_type,dim,logical_index,halo_num_cell);
 }
 
 //---------------------------------------------------------------------------//

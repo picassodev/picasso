@@ -36,7 +36,7 @@ void apiTest()
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
-                                        local_cell_end[2] };
+                                        local_cell_end[2] + 1};
     GridBlock grid( low_corner, input_num_cell, boundary_location,
                     periodic, cell_size, halo_width );
 
@@ -103,7 +103,7 @@ void assignTest()
     std::vector<int> local_node_begin = local_cell_begin;
     std::vector<int> local_node_end = { local_cell_end[0] + 1,
                                         local_cell_end[1] + 1,
-                                        local_cell_end[2] };
+                                        local_cell_end[2] + 1};
 
     EXPECT_EQ( low_corner[0] - halo_width_2 * cell_size,
                block_2.lowCorner(Dim::I) );
@@ -154,9 +154,9 @@ void periodicTest()
                                         num_cell[1] - halo_width,
                                         num_cell[2] - halo_width };
     std::vector<int> local_node_begin = local_cell_begin;
-    std::vector<int> local_node_end = { local_cell_end[0],
-                                        local_cell_end[1],
-                                        local_cell_end[2] };
+    std::vector<int> local_node_end = { local_cell_end[0] + 1,
+                                        local_cell_end[1] + 1,
+                                        local_cell_end[2] + 1};
     GridBlock grid( low_corner, input_num_cell, boundary_location,
                     periodic, cell_size, halo_width );
 
