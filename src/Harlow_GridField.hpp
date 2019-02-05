@@ -7,6 +7,7 @@
 
 #include <type_traits>
 #include <memory>
+#include <string>
 
 namespace Harlow
 {
@@ -99,12 +100,17 @@ class GridField
                const std::string& field_name = "" )
         : _global_grid( global_grid )
         , _field_location( field_location )
+        , _name( field_name )
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
         _data = createField<DataType,DeviceType>(
             _block, field_location, field_name );
     }
+
+    // Get the global grid.
+    const GlobalGrid& globalGrid() const
+    { return *_global_grid; }
 
     // Get the grid communicator.
     MPI_Comm comm() const
@@ -134,12 +140,17 @@ class GridField
     int location() const
     { return _field_location; }
 
+    // Get the field name.
+    const std::string& name() const
+    { return _name; }
+
   private:
 
     std::shared_ptr<GlobalGrid> _global_grid;
     GridBlock _block;
     view_type _data;
     int _field_location;
+    std::string _name;
 };
 
 //---------------------------------------------------------------------------//

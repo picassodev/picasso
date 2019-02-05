@@ -3,12 +3,16 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
+  Harlow_BovGridFieldWriter.hpp
+  Harlow_GlobalGrid.hpp
   Harlow_GridBlock.hpp
   Harlow_GridCommunication.hpp
   Harlow_GridExecPolicy.hpp
   Harlow_GridField.hpp
   Harlow_GridFieldVectorOps.hpp
   Harlow_MpiTraits.hpp
+  Harlow_ParticleCommunication.hpp
+  Harlow_ParticleFieldOps.hpp
   Harlow_ParticleInterpolation.hpp
   Harlow_Splines.hpp
   Harlow_Types.hpp
