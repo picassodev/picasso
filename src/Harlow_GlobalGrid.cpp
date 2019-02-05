@@ -2,6 +2,8 @@
 #include <Harlow_Types.hpp>
 
 #include <algorithm>
+#include <limits>
+#include <cmath>
 
 namespace Harlow
 {
@@ -19,12 +21,12 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     _global_num_cell.resize( 3 );
     for ( int d = 0; d < 3; ++d )
         _global_num_cell[d] =
-            (global_high_corner[d] - _global_low_corner[d]) / cell_size;
+            std::rint((global_high_corner[d] - _global_low_corner[d]) / cell_size);
 
     // Check the cell size.
     for ( int d = 0; d < 3; ++d )
-        if ( _global_num_cell[d] * cell_size + _global_low_corner[d] !=
-             global_high_corner[d] )
+        if ( std::abs(_global_num_cell[d] * cell_size + _global_low_corner[d] -
+                      global_high_corner[d]) > std::numeric_limits<double>::epsilon() )
             throw std::invalid_argument("Dimension not divisible by cell size");
 
     // Extract the periodicity of the boundary as integers.
@@ -109,6 +111,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     // IJK order, but we only save them if they are things we will actually
     // send to.
     std::vector<int> neighbors;
+    neighbors.reserve(26);
     for ( int k = -1; k < 2; ++k )
         for ( int j = -1; j < 2; ++j )
             for ( int i = -1; i < 2; ++i )

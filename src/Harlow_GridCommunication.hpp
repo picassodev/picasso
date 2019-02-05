@@ -12,7 +12,6 @@
 
 #include <vector>
 #include <array>
-#include <algorithm>
 
 namespace Harlow
 {
@@ -95,6 +94,7 @@ std::vector<int> neighborCounts( const GridBlock& grid,
             "Requested halo size larger than grid halo");
 
     std::vector<int> counts;
+    counts.reserve( 26 );
 
     // Compute the number of entities in a given dimension for a neighbor at
     // the given logical index in the 3x3 grid. If we are not on a physical
