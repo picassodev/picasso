@@ -26,7 +26,7 @@ void vectorOpTest()
 
     // Create the global grid.
     double cell_size = 0.23;
-    std::vector<int> global_num_cell = { 101, 85, 99 };
+    std::vector<int> global_num_cell = { 23, 17, 21 };
     std::vector<bool> is_dim_periodic = {false,false,false};
     std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
     std::vector<double> global_high_corner =
@@ -63,7 +63,7 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_EQ( scalar_A_mirror(i,j,k), a_val );
+                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k), a_val );
 
     // Check infinity norm.
     double expected_norm_inf = 1347.5;
@@ -71,7 +71,7 @@ void vectorOpTest()
         scalar_A_mirror( 3, 2, 1 ) = expected_norm_inf;
     Kokkos::deep_copy( scalar_A.data(), scalar_A_mirror );
     auto norm_inf = GridFieldVectorOp::normInf( scalar_A );
-    EXPECT_EQ( norm_inf, expected_norm_inf );
+    EXPECT_DOUBLE_EQ( norm_inf, expected_norm_inf );
 
     // Reset the vector.
     GridFieldVectorOp::assign( a_val, scalar_A );
@@ -105,7 +105,7 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_EQ( scalar_A_mirror(i,j,k), a_val * alpha );
+                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k), a_val * alpha );
 
     double beta = 12.2;
     GridFieldVectorOp::scale( beta, scalar_B );
@@ -114,7 +114,7 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_EQ( scalar_B_mirror(i,j,k), b_val * beta );
+                EXPECT_DOUBLE_EQ( scalar_B_mirror(i,j,k), b_val * beta );
 
     // Check the 2 vector update.
     GridField<double,TEST_EXECSPACE> scalar_C(
@@ -129,7 +129,7 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_EQ( scalar_C_mirror(i,j,k), a_val + b_val );
+                EXPECT_DOUBLE_EQ( scalar_C_mirror(i,j,k), a_val + b_val );
 
     // Check the 3 vector update.
     GridField<double,TEST_EXECSPACE> scalar_D(
@@ -147,8 +147,8 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_EQ( scalar_D_mirror(i,j,k),
-                           (1.0 + gamma ) * (a_val + b_val) );
+                EXPECT_DOUBLE_EQ( scalar_D_mirror(i,j,k),
+                                  (1.0 + gamma ) * (a_val + b_val) );
 
 
     // TEST Rank-1 FIELDS
@@ -179,8 +179,8 @@ void vectorOpTest()
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
                 for ( int n0 = 0; n0 < 3; ++n0 )
-                    EXPECT_EQ( rank_1_C_mirror(i,j,k,n0),
-                               alpha * a_val + beta * b_val );
+                    EXPECT_DOUBLE_EQ( rank_1_C_mirror(i,j,k,n0),
+                                      alpha * a_val + beta * b_val );
 
     // Check the 3 vector update.
     GridFieldVectorOp::update( alpha,
@@ -196,8 +196,8 @@ void vectorOpTest()
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
                 for ( int n0 = 0; n0 < 3; ++n0 )
-                    EXPECT_EQ( rank_1_D_mirror(i,j,k,n0),
-                               (1.0 + gamma) * (alpha * a_val + beta * b_val) );
+                    EXPECT_DOUBLE_EQ( rank_1_D_mirror(i,j,k,n0),
+                                      (1.0 + gamma) * (alpha * a_val + beta * b_val) );
 
 
     // TEST Rank-2 FIELDS
@@ -229,8 +229,8 @@ void vectorOpTest()
             for ( int k = k_begin; k < k_end; ++k )
                 for ( int n0 = 0; n0 < 3; ++n0 )
                     for ( int n1 = 0; n1 < 2; ++n1 )
-                        EXPECT_EQ( rank_2_C_mirror(i,j,k,n0,n1),
-                                   alpha * a_val + beta * b_val );
+                        EXPECT_DOUBLE_EQ( rank_2_C_mirror(i,j,k,n0,n1),
+                                          alpha * a_val + beta * b_val );
 
     // Check the 3 vector update.
     GridFieldVectorOp::update( alpha,
@@ -247,8 +247,8 @@ void vectorOpTest()
             for ( int k = k_begin; k < k_end; ++k )
                 for ( int n0 = 0; n0 < 3; ++n0 )
                     for ( int n1 = 0; n1 < 2; ++n1 )
-                        EXPECT_EQ( rank_2_D_mirror(i,j,k,n0,n1),
-                                   (1.0 + gamma) * (alpha * a_val + beta * b_val) );
+                        EXPECT_DOUBLE_EQ( rank_2_D_mirror(i,j,k,n0,n1),
+                                          (1.0 + gamma) * (alpha * a_val + beta * b_val) );
 
     // TEST Rank-3 FIELDS
     //-------------------
@@ -280,8 +280,8 @@ void vectorOpTest()
                 for ( int n0 = 0; n0 < 3; ++n0 )
                     for ( int n1 = 0; n1 < 2; ++n1 )
                         for ( int n2 = 0; n2 < 4; ++n2 )
-                            EXPECT_EQ( rank_3_C_mirror(i,j,k,n0,n1,n2),
-                                       alpha * a_val + beta * b_val );
+                            EXPECT_DOUBLE_EQ( rank_3_C_mirror(i,j,k,n0,n1,n2),
+                                              alpha * a_val + beta * b_val );
 
     // Check the 3 vector update.
     GridFieldVectorOp::update( alpha,
@@ -299,8 +299,8 @@ void vectorOpTest()
                 for ( int n0 = 0; n0 < 3; ++n0 )
                     for ( int n1 = 0; n1 < 2; ++n1 )
                         for ( int n2 = 0; n2 < 4; ++n2 )
-                            EXPECT_EQ( rank_3_D_mirror(i,j,k,n0,n1,n2),
-                                       (1.0 + gamma) * (alpha * a_val + beta * b_val) );
+                            EXPECT_DOUBLE_EQ( rank_3_D_mirror(i,j,k,n0,n1,n2),
+                                              (1.0 + gamma) * (alpha * a_val + beta * b_val) );
 }
 
 //---------------------------------------------------------------------------//

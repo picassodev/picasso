@@ -31,7 +31,7 @@ endforeach()
 ##--------------------------------------------------------------------------##
 foreach(_device ${HARLOW_SUPPORTED_DEVICES})
   if(Harlow_ENABLE_${_device})
-    foreach(_test GridField GridExecPolicy ParticleInterpolation)
+    foreach(_test GridField GridExecPolicy ParticleFieldOps ParticleInterpolation)
       add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
       target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
       if(_device STREQUAL Pthread OR _device STREQUAL OpenMP)
@@ -49,10 +49,16 @@ endforeach()
 ##--------------------------------------------------------------------------##
 ## MPI-only tests.
 ##--------------------------------------------------------------------------##
+if( ${MPIEXEC_MAX_NUMPROCS} GREATER 4 )
+  set(MPI_TEST_NUM_PROC 4)
+else()
+  set(MPI_TEST_NUM_PROC ${MPIEXEC_MAX_NUMPROCS})
+endif()
+
 foreach(_test GlobalGrid)
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
   target_link_libraries(${_test}_test harlow harlow_gtest)
-  foreach(_np 1 ${MPIEXEC_MAX_NUMPROCS})
+  foreach(_np 1 ${MPI_TEST_NUM_PROC})
     add_test(NAME ${_test}_test_${_np} COMMAND
       ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test --gtest_color=yes)
   endforeach()
@@ -63,10 +69,10 @@ endforeach()
 ##--------------------------------------------------------------------------##
 foreach(_device ${HARLOW_SUPPORTED_DEVICES})
   if(Harlow_ENABLE_${_device})
-    foreach(_test GridCommunicationFace GridCommunicationNode GridFieldVectorOps)
+    foreach(_test GridCommunicationFace GridCommunicationNode GridFieldVectorOps ParticleCommunication)
       add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
       target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
-      foreach(_np 1 ${MPIEXEC_MAX_NUMPROCS})
+      foreach(_np 1 ${MPI_TEST_NUM_PROC})
         add_test(NAME ${_test}_test_${_device}_${_np} COMMAND
           ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test_${_device} --gtest_color=yes)
       endforeach()
