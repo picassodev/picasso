@@ -10,7 +10,8 @@ struct ParticleOrder
     enum Values {
         Constant = 0, // PIC
         Linear = 1,   // APIC
-        Bilinear = 2  // PolyPIC
+        Bilinear = 2, // PolyPIC
+        Quadratic = 3 // Higher order
     };
 };
 

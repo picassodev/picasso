@@ -55,6 +55,10 @@ class GlobalGrid
     // Get the global number of entities in a given dimension.
     int numEntity( const int entity_type, const int dim ) const;
 
+    // Get the global offset in a given dimension. This is where our block
+    // starts in the global indexing scheme.
+    int globalOffset( const int dim ) const;
+
     // Get the global low corner.
     double lowCorner( const int dim ) const;
 
@@ -68,6 +72,7 @@ class GlobalGrid
     GridBlock _grid_block;
     std::vector<double> _global_low_corner;
     std::vector<int> _global_num_cell;
+    std::vector<int> _global_cell_offset;
 };
 
 //---------------------------------------------------------------------------//

@@ -57,19 +57,20 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
         dim_remainder[d] = _global_num_cell[d] % ranks_per_dim[d];
     }
 
-    // Compute the local low corner on this rank by computing the starting
-    // global cell index via exclusive scan.
+    // Compute the global cell offset and the local low corner on this rank by
+    // computing the starting global cell index via exclusive scan.
+    _global_cell_offset.assign( 3, 0 );
     std::vector<double> local_low_corner( 3 );
     for ( int d = 0; d < 3; ++d )
     {
-        int dim_offset = 0;
         for ( int r = 0; r < cart_rank[d]; ++r )
         {
-            dim_offset += cells_per_dim[d];
+            _global_cell_offset[d] += cells_per_dim[d];
             if ( dim_remainder[d] > r )
-                ++dim_offset;
+                ++_global_cell_offset[d];
         }
-        local_low_corner[d] = dim_offset * cell_size + _global_low_corner[d];
+        local_low_corner[d] =
+            _global_cell_offset[d] * cell_size + _global_low_corner[d];
     }
 
     // Compute the number of local cells in this rank in each dimension.
@@ -186,6 +187,14 @@ int GlobalGrid::numEntity( const int entity_type, const int dim ) const
         return _global_num_cell[dim] + 1;
     else
         throw std::invalid_argument("Invalid entity type");
+}
+
+//---------------------------------------------------------------------------//
+// Get the global offset in a given dimension for the entity of a given
+// type. This is where our block starts in the global indexing scheme.
+int GlobalGrid::globalOffset( const int dim ) const
+{
+    return _global_cell_offset[dim];
 }
 
 //---------------------------------------------------------------------------//
