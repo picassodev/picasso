@@ -15,7 +15,8 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                         const std::vector<double>& global_low_corner,
                         const std::vector<double>& global_high_corner,
                         const double cell_size )
-    : _global_low_corner( global_low_corner )
+    : _ranks_per_dim( ranks_per_dim )
+    , _global_low_corner( global_low_corner )
 {
     // Compute how many cells are in each dimension.
     _global_num_cell.resize( 3 );
@@ -37,7 +38,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     int reorder_cart_ranks = 1;
     MPI_Cart_create( comm,
                      3,
-                     ranks_per_dim.data(),
+                     _ranks_per_dim.data(),
                      periodic_dims.data(),
                      reorder_cart_ranks,
                      &_cart_comm );
@@ -45,16 +46,16 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     // Get the Cartesian topology index of this rank.
     int linear_rank;
     MPI_Comm_rank( _cart_comm, &linear_rank );
-    std::vector<int> cart_rank( 3 );
-    MPI_Cart_coords( _cart_comm, linear_rank, 3, cart_rank.data() );
+    _cart_rank.resize( 3 );
+    MPI_Cart_coords( _cart_comm, linear_rank, 3, _cart_rank.data() );
 
     // Get the cells per dimension and the remainder.
     std::vector<int> cells_per_dim( 3 );
     std::vector<int> dim_remainder( 3 );
     for ( int d = 0; d < 3; ++d )
     {
-        cells_per_dim[d] = _global_num_cell[d] / ranks_per_dim[d];
-        dim_remainder[d] = _global_num_cell[d] % ranks_per_dim[d];
+        cells_per_dim[d] = _global_num_cell[d] / _ranks_per_dim[d];
+        dim_remainder[d] = _global_num_cell[d] % _ranks_per_dim[d];
     }
 
     // Compute the global cell offset and the local low corner on this rank by
@@ -63,7 +64,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     std::vector<double> local_low_corner( 3 );
     for ( int d = 0; d < 3; ++d )
     {
-        for ( int r = 0; r < cart_rank[d]; ++r )
+        for ( int r = 0; r < _cart_rank[d]; ++r )
         {
             _global_cell_offset[d] += cells_per_dim[d];
             if ( dim_remainder[d] > r )
@@ -78,7 +79,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     for ( int d = 0; d < 3; ++d )
     {
         local_num_cell[d] = cells_per_dim[d];
-        if ( dim_remainder[d] > cart_rank[d] )
+        if ( dim_remainder[d] > _cart_rank[d] )
             ++local_num_cell[d];
     }
 
@@ -86,9 +87,9 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     std::vector<bool> boundary_location( 6, false );
     for ( int d = 0; d < 3; ++d )
     {
-        if ( 0 == cart_rank[d] )
+        if ( 0 == _cart_rank[d] )
             boundary_location[2*d] = true;
-        if ( ranks_per_dim[d] - 1 == cart_rank[d] )
+        if ( _ranks_per_dim[d] - 1 == _cart_rank[d] )
             boundary_location[2*d+1] = true;
     }
 
@@ -119,14 +120,14 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
                 if ( !(i==0 && j==0 && k==0) )
                 {
                     // Set the Cartesian rank of this neighbor.
-                    std::vector<int> ncr = { cart_rank[Dim::I] + i,
-                                             cart_rank[Dim::J] + j,
-                                             cart_rank[Dim::K] + k };
+                    std::vector<int> ncr = { _cart_rank[Dim::I] + i,
+                                             _cart_rank[Dim::J] + j,
+                                             _cart_rank[Dim::K] + k };
 
                     // Check for being outside of a non-periodic dimension.
                     bool is_null = false;
                     for ( int d = 0; d < 3; ++d )
-                        if ( ncr[d] < 0 || ncr[d] >= ranks_per_dim[d] )
+                        if ( ncr[d] < 0 || ncr[d] >= _ranks_per_dim[d] )
                             if ( !is_dim_periodic[d] )
                                 is_null = true;
 
@@ -171,6 +172,20 @@ MPI_Comm GlobalGrid::graphComm() const
 // Get a grid block on this rank with a given halo cell width.
 const GridBlock& GlobalGrid::block() const
 { return _grid_block; }
+
+//---------------------------------------------------------------------------//
+// Get the number of blocks in each dimension in the global mesh.
+int GlobalGrid::numBlock( const int dim ) const
+{
+    return _ranks_per_dim[dim];
+}
+
+//---------------------------------------------------------------------------//
+// Get the id of this block in a given dimension.
+int GlobalGrid::blockId( const int dim ) const
+{
+    return _cart_rank[dim];
+}
 
 //---------------------------------------------------------------------------//
 // Get whether a given logical dimension is periodic.

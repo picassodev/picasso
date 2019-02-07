@@ -23,6 +23,7 @@ find_package(MPI REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(KOKKOS REQUIRED)
+find_package(Silo REQUIRED)
 
 option(Harlow_ENABLE_Serial "Build Harlow with Serial support" ON)
 
