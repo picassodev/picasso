@@ -14,6 +14,7 @@ set(HEADERS
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleFieldOps.hpp
   Harlow_ParticleInterpolation.hpp
+  Harlow_SiloParticleFieldWriter.hpp
   Harlow_Splines.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
@@ -36,6 +37,7 @@ add_library(harlow ${SOURCES})
 target_include_directories(harlow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(harlow Kokkos::kokkos)
 target_link_libraries(harlow MPI::MPI_CXX)
+target_link_libraries(harlow Silo::silo)
 install(TARGETS harlow LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 #-----------------------------------------------------------------------------

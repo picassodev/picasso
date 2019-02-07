@@ -49,6 +49,12 @@ class GlobalGrid
     // Get the locally owned grid block for this rank.
     const GridBlock& block() const;
 
+    // Get the number of blocks in each dimension in the global mesh.
+    int numBlock( const int dim ) const;
+
+    // Get the id of this block in a given dimension.
+    int blockId( const int dim ) const;
+
     // Get whether a given logical dimension is periodic.
     bool isPeriodic( const int dim ) const;
 
@@ -70,6 +76,8 @@ class GlobalGrid
     MPI_Comm _cart_comm;
     MPI_Comm _graph_comm;
     GridBlock _grid_block;
+    std::vector<int> _ranks_per_dim;
+    std::vector<int> _cart_rank;
     std::vector<double> _global_low_corner;
     std::vector<int> _global_num_cell;
     std::vector<int> _global_cell_offset;
