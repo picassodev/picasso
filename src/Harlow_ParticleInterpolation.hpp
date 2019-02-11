@@ -7,6 +7,7 @@
 #include <Kokkos_ScatterView.hpp>
 
 #include <type_traits>
+#include <cmath>
 
 namespace Harlow
 {
@@ -389,7 +390,7 @@ void interpolateParticleValue(
   view. This will do particle-to-grid or grid-to-particle depending on the
   accessor type.
 
-  \param Position view of particle positions.
+  \param particle_position view of particle positions.
 
   \param low_corner The physical location of the low corner of the primal grid
   used for the interpolation. For a node field use the low corner of the grid
@@ -411,12 +412,12 @@ void interpolateParticleValue(
   a destination. Analogously, if a grid accessor is provided as the source, a
   particle view must be provided as the destination.
 */
-template<int InterpolationOrder,
+template<int SplineOrder,
          class PositionViewType,
          class FieldAccessor,
          class DataViewType>
 void interpolate(
-    const PositionViewType& position,
+    const PositionViewType& particle_position,
     const std::vector<typename PositionViewType::value_type>& low_corner,
     const typename PositionViewType::value_type rdx,
     const FieldAccessor& src,
@@ -427,7 +428,7 @@ void interpolate(
     using Real = typename PositionViewType::value_type;
 
     // Get the spline.
-    using Basis = Spline<InterpolationOrder>;
+    using Basis = Spline<SplineOrder>;
 
     // Reset the destination view if necessary.
     if ( reset_dst_to_zero ) Kokkos::deep_copy( dst, 0.0 );
@@ -437,6 +438,9 @@ void interpolate(
     auto low_y = low_corner[Dim::J];
     auto low_z = low_corner[Dim::K];
 
+    // Get the stencil size.
+    const int ns = Basis::num_knot;
+
     // Create a scatter-view of the destination data.
     auto dst_sv = Kokkos::Experimental::create_scatter_view( dst );
 
@@ -444,19 +448,18 @@ void interpolate(
     Kokkos::parallel_for(
         "interpolate",
         Kokkos::RangePolicy<typename DataViewType::execution_space>(
-            0, position.extent(0) ),
+            0, particle_position.extent(0) ),
         KOKKOS_LAMBDA( const int p )
         {
             // Create the interpolation stencil.
-            const int ns = Basis::num_knot;
             int offsets[ns];
             Basis::stencil( offsets );
 
             // Compute the logical space coordinates of the particle.
             Real plx[3] =
-                { Basis::mapToLogicalGrid( position(p,Dim::I), rdx, low_x ),
-                  Basis::mapToLogicalGrid( position(p,Dim::J), rdx, low_y ),
-                  Basis::mapToLogicalGrid( position(p,Dim::K), rdx, low_z ) };
+                { Basis::mapToLogicalGrid( particle_position(p,Dim::I), rdx, low_x ),
+                  Basis::mapToLogicalGrid( particle_position(p,Dim::J), rdx, low_y ),
+                  Basis::mapToLogicalGrid( particle_position(p,Dim::K), rdx, low_z ) };
 
             // Get the logical index of the particle.
             int pli[3] = { int(plx[0]), int(plx[1]), int(plx[2]) };

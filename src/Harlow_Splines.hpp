@@ -18,7 +18,7 @@ struct Spline;
 //---------------------------------------------------------------------------//
 // Linear. Defined on the primal grid.
 template<>
-struct Spline<SplineOrder::Linear>
+struct Spline<FunctionOrder::Linear>
 {
     // The number of non-zero knots in the spline.
     static constexpr int num_knot = 2;
@@ -101,7 +101,7 @@ struct Spline<SplineOrder::Linear>
 //---------------------------------------------------------------------------//
 // Quadratic. Defined on the dual grid.
 template<>
-struct Spline<SplineOrder::Quadratic>
+struct Spline<FunctionOrder::Quadratic>
 {
     // The number of non-zero knots in the spline.
     static constexpr int num_knot = 3;
@@ -163,22 +163,22 @@ struct Spline<SplineOrder::Quadratic>
     }
 
     /*
-      \brief Given a grid cell size get the weight matrix inverse which is
-      used as the gradient scaling factor for the MLS-MPM reconstruction.
-      \param dx The physical distance between grid locations.
+      \brief Given a grid cell size get the reciprocal of the weight matrix
+      inverse which is used as the gradient scaling factor for the MLS-MPM
+      reconstruction.  \param dx The physical distance between grid locations.
     */
     template<typename Real>
     KOKKOS_INLINE_FUNCTION
-    static Real weightMatrixInverse( const Real dx )
+    static Real reciprocalWeightMatrixInverse( const Real rdx )
     {
-        return dx * dx / 4.0;
+        return 4.0 * rdx * rdx;
     }
 };
 
 //---------------------------------------------------------------------------//
 // Cubic. Defined on the primal grid.
 template<>
-struct Spline<SplineOrder::Cubic>
+struct Spline<FunctionOrder::Cubic>
 {
     // The number of non-zero knots in the spline.
     static constexpr int num_knot = 4;
@@ -230,31 +230,35 @@ struct Spline<SplineOrder::Cubic>
     {
         // Knot at i - 1
         Real xn = x0 - int(x0) + 1.0;
-        values[0] = -fabs(xn) * xn * xn / 6.0 + xn * xn - 2 * fabs(xn) + 4.0 / 3.0;
+        Real xn2 = xn * xn;
+        values[0] = -xn * xn2 / 6.0 + xn2 - 2.0 * xn + 4.0 / 3.0;
 
         // Knot at i
         xn -= 1.0;
-        values[1] = 0.5 * fabs(xn) * xn * xn - xn * xn + 2.0 / 3.0;
+        xn2 = xn * xn;
+        values[1] = 0.5 * xn * xn2 - xn2 + 2.0 / 3.0;
 
         // Knot at i + 1
         xn -= 1.0;
-        values[2] = 0.5 * fabs(xn) * xn * xn - xn * xn + 2.0 / 3.0;
+        xn2 = xn * xn;
+        values[2] = - 0.5 * xn * xn2 - xn2 + 2.0 / 3.0;
 
         // Knot at i + 2
         xn -= 1.0;
-        values[3] = -fabs(xn) * xn * xn / 6.0 + xn * xn - 2 * fabs(xn) + 4.0 / 3.0;
+        xn2 = xn * xn;
+        values[3] = xn * xn2 / 6.0 + xn2 + 2.0 * xn + 4.0 / 3.0;
     }
 
     /*
-      \brief Given a grid cell size get the weight matrix inverse which is
-      used as the gradient scaling factor for the MLS-MPM reconstruction.
-      \param dx The physical distance between grid locations.
+      \brief Given a grid cell size get the reciprocal of the weight matrix
+      inverse which is used as the gradient scaling factor for the MLS-MPM
+      reconstruction.  \param dx The physical distance between grid locations.
     */
     template<typename Real>
     KOKKOS_INLINE_FUNCTION
-    static Real weightMatrixInverse( const Real dx )
+    static Real weightMatrixInverse( const Real rdx )
     {
-        return dx * dx / 3.0;
+        return 3.0 * rdx * rdx;
     }
 };
 

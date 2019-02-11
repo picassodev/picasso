@@ -30,22 +30,22 @@ TEST_F( harlow_splines, linear_spline_test )
     double rdx = 1.0 / dx;
     double values[2];
 
-    double x0 = Spline<SplineOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Linear>::value( x0, values );
+    double x0 = Spline<FunctionOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Linear>::value( x0, values );
     double sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = 2.1789;
-    x0 = Spline<SplineOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Linear>::value( x0, values );
+    x0 = Spline<FunctionOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Linear>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = low_x + 5 * dx;
-    x0 = Spline<SplineOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Linear>::value( x0, values );
+    x0 = Spline<FunctionOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Linear>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
@@ -53,9 +53,9 @@ TEST_F( harlow_splines, linear_spline_test )
     // Check the stencil by putting a point in the center of a primal cell.
     int cell_id = 4;
     xp = low_x + (cell_id + 0.5) * dx;
-    x0 = Spline<SplineOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
+    x0 = Spline<FunctionOrder::Linear>::mapToLogicalGrid( xp, rdx, low_x );
     int offsets[2];
-    Spline<SplineOrder::Linear>::stencil( offsets );
+    Spline<FunctionOrder::Linear>::stencil( offsets );
     EXPECT_EQ( int(x0) + offsets[0], cell_id );
     EXPECT_EQ( int(x0) + offsets[1], cell_id + 1);
 }
@@ -69,22 +69,22 @@ TEST_F( harlow_splines, quadratic_spline_test )
     double rdx = 1.0 / dx;
     double values[3];
 
-    double x0 = Spline<SplineOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Quadratic>::value( x0, values );
+    double x0 = Spline<FunctionOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Quadratic>::value( x0, values );
     double sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = 2.1789;
-    x0 = Spline<SplineOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Quadratic>::value( x0, values );
+    x0 = Spline<FunctionOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Quadratic>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = low_x + 5 * dx;
-    x0 = Spline<SplineOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Quadratic>::value( x0, values );
+    x0 = Spline<FunctionOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Quadratic>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
@@ -93,9 +93,9 @@ TEST_F( harlow_splines, quadratic_spline_test )
     // node).
     int node_id = 4;
     xp = low_x + node_id * dx;
-    x0 = Spline<SplineOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
+    x0 = Spline<FunctionOrder::Quadratic>::mapToLogicalGrid( xp, rdx, low_x );
     int offsets[3];
-    Spline<SplineOrder::Quadratic>::stencil( offsets );
+    Spline<FunctionOrder::Quadratic>::stencil( offsets );
     EXPECT_EQ( int(x0) + offsets[0], node_id - 1);
     EXPECT_EQ( int(x0) + offsets[1], node_id);
     EXPECT_EQ( int(x0) + offsets[2], node_id + 1);
@@ -110,22 +110,22 @@ TEST_F( harlow_splines, cubic_spline_test )
     double rdx = 1.0 / dx;
     double values[4];
 
-    double x0 = Spline<SplineOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Cubic>::value( x0, values );
+    double x0 = Spline<FunctionOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Cubic>::value( x0, values );
     double sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = 2.1789;
-    x0 = Spline<SplineOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Cubic>::value( x0, values );
+    x0 = Spline<FunctionOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Cubic>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
 
     xp = low_x + 5 * dx;
-    x0 = Spline<SplineOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
-    Spline<SplineOrder::Cubic>::value( x0, values );
+    x0 = Spline<FunctionOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
+    Spline<FunctionOrder::Cubic>::value( x0, values );
     sum = 0.0;
     for ( auto x : values ) sum += x;
     EXPECT_DOUBLE_EQ( sum, 1.0 );
@@ -133,9 +133,9 @@ TEST_F( harlow_splines, cubic_spline_test )
     // Check the stencil by putting a point in the center of a primal cell.
     int cell_id = 4;
     xp = low_x + (cell_id + 0.5) * dx;
-    x0 = Spline<SplineOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
+    x0 = Spline<FunctionOrder::Cubic>::mapToLogicalGrid( xp, rdx, low_x );
     int offsets[4];
-    Spline<SplineOrder::Cubic>::stencil( offsets );
+    Spline<FunctionOrder::Cubic>::stencil( offsets );
     EXPECT_EQ( int(x0) + offsets[0], cell_id - 1 );
     EXPECT_EQ( int(x0) + offsets[1], cell_id );
     EXPECT_EQ( int(x0) + offsets[2], cell_id + 1 );
