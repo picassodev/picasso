@@ -4,24 +4,16 @@
 namespace Harlow
 {
 
-// Particle order
-struct ParticleOrder
+// Function order. Note that bilinear is ahead of linear - we only use
+// bilinear for particle shape function orders while linear can be used for
+// both particles and splines.
+struct FunctionOrder
 {
     enum Values {
-        Constant = 0, // PIC
-        Linear = 1,   // APIC
-        Bilinear = 2, // PolyPIC
-        Quadratic = 3 // Higher order
-    };
-};
-
-// Grid spline order
-struct SplineOrder
-{
-    enum Values {
-        Linear = 0,
-        Quadratic = 1,
-        Cubic = 2
+        Bilinear = 1,
+        Linear = 2,
+        Quadratic = 3,
+        Cubic = 4
     };
 };
 

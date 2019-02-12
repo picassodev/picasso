@@ -14,7 +14,7 @@ using namespace Harlow;
 namespace Test
 {
 //---------------------------------------------------------------------------//
-template<int InterpolationOrder>
+template<int SplineOrder>
 void fillTest()
 {
     // Make a cartesian grid.
@@ -59,7 +59,7 @@ void fillTest()
 
     // Interpolate to the nodes.
     auto scalar_p_accessor = ParticleGrid::createParticleViewAccessor( scalar_p );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         scalar_p_accessor, scalar_node_field );
 
@@ -68,7 +68,7 @@ void fillTest()
         Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), scalar_node_field );
 
     // Linear case:
-    if ( SplineOrder::Linear == InterpolationOrder )
+    if ( FunctionOrder::Linear == SplineOrder )
     {
         for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
             for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
@@ -92,7 +92,7 @@ void fillTest()
     }
 
     // Quadratic:
-    if ( SplineOrder::Quadratic == InterpolationOrder )
+    if ( FunctionOrder::Quadratic == SplineOrder )
     {
         for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
             for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
@@ -116,7 +116,7 @@ void fillTest()
     }
 
     // Cubic:
-    if ( SplineOrder::Cubic == InterpolationOrder )
+    if ( FunctionOrder::Cubic == SplineOrder )
     {
         for ( int i = 0; i < grid.numEntity(MeshEntity::Node,Dim::I); ++i )
             for ( int j = 0; j < grid.numEntity(MeshEntity::Node,Dim::J); ++j )
@@ -141,7 +141,7 @@ void fillTest()
 }
 
 //---------------------------------------------------------------------------//
-template<int InterpolationOrder>
+template<int SplineOrder>
 void particleToGridTest()
 {
     // Make a cartesian grid.
@@ -210,7 +210,7 @@ void particleToGridTest()
 
     // Interpolate to the nodes.
     auto scalar_p_accessor = ParticleGrid::createParticleViewAccessor( scalar_p );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         scalar_p_accessor, scalar_node_field );
 
@@ -247,7 +247,7 @@ void particleToGridTest()
 
     // Interpolate to the nodes.
     auto vector_p_accessor = ParticleGrid::createParticleViewAccessor( vector_p );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         vector_p_accessor, vector_node_field );
 
@@ -286,7 +286,7 @@ void particleToGridTest()
 
     // Interpolate to the nodes.
     auto matrix_p_accessor = ParticleGrid::createParticleViewAccessor( matrix_p );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         matrix_p_accessor, matrix_node_field );
 
@@ -306,7 +306,7 @@ void particleToGridTest()
 }
 
 //---------------------------------------------------------------------------//
-template<int InterpolationOrder>
+template<int SplineOrder>
 void gridToParticleTest()
 {
     // Make a cartesian grid.
@@ -373,7 +373,7 @@ void gridToParticleTest()
 
     // Interpolate to the nodes.
     auto scalar_g_accessor = ParticleGrid::createGridViewAccessor( scalar_node_field );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         scalar_g_accessor, scalar_p );
 
@@ -405,7 +405,7 @@ void gridToParticleTest()
 
     // Interpolate to the nodes.
     auto vector_g_accessor = ParticleGrid::createGridViewAccessor( vector_node_field );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         vector_g_accessor, vector_p );
 
@@ -447,7 +447,7 @@ void gridToParticleTest()
 
     // Interpolate to the nodes.
     auto matrix_g_accessor = ParticleGrid::createGridViewAccessor( matrix_node_field );
-    ParticleGrid::interpolate<InterpolationOrder>(
+    ParticleGrid::interpolate<SplineOrder>(
         position, node_low_corner, grid.inverseCellSize(),
         matrix_g_accessor, matrix_p );
 
@@ -470,25 +470,25 @@ void gridToParticleTest()
 //---------------------------------------------------------------------------//
 TEST_F( TEST_CATEGORY, linear_test )
 {
-    fillTest<SplineOrder::Linear>();
-    particleToGridTest<SplineOrder::Linear>();
-    gridToParticleTest<SplineOrder::Linear>();
+    fillTest<FunctionOrder::Linear>();
+    particleToGridTest<FunctionOrder::Linear>();
+    gridToParticleTest<FunctionOrder::Linear>();
 }
 
 //---------------------------------------------------------------------------//
 TEST_F( TEST_CATEGORY, quadratic_test )
 {
-    fillTest<SplineOrder::Quadratic>();
-    particleToGridTest<SplineOrder::Quadratic>();
-    gridToParticleTest<SplineOrder::Quadratic>();
+    fillTest<FunctionOrder::Quadratic>();
+    particleToGridTest<FunctionOrder::Quadratic>();
+    gridToParticleTest<FunctionOrder::Quadratic>();
 }
 
 //---------------------------------------------------------------------------//
 TEST_F( TEST_CATEGORY, cubic_test )
 {
-    fillTest<SplineOrder::Cubic>();
-    particleToGridTest<SplineOrder::Cubic>();
-    gridToParticleTest<SplineOrder::Cubic>();
+    fillTest<FunctionOrder::Cubic>();
+    particleToGridTest<FunctionOrder::Cubic>();
+    gridToParticleTest<FunctionOrder::Cubic>();
 }
 
 //---------------------------------------------------------------------------//
