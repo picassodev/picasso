@@ -4,6 +4,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_BovGridFieldWriter.hpp
+  Harlow_DeformationGradient.hpp
   Harlow_DenseLinearAlgebra.hpp
   Harlow_GlobalGrid.hpp
   Harlow_GridBlock.hpp
@@ -12,6 +13,7 @@ set(HEADERS
   Harlow_GridField.hpp
   Harlow_GridFieldVectorOps.hpp
   Harlow_MpiTraits.hpp
+  Harlow_ParticleAdvection.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleFieldOps.hpp
   Harlow_ParticleInterpolation.hpp
