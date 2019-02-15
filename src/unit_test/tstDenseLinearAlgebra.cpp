@@ -34,6 +34,7 @@ void svdTest()
 
     DenseLinearAlgebra::eigen(A, eigen_value, X);
 
+    // compare to  Matlab result
     EXPECT_FLOAT_EQ( 79.742519722959429, eigen_value[0]);
     EXPECT_FLOAT_EQ( 18.493780325096871, eigen_value[1]);
     EXPECT_FLOAT_EQ(  1.763699951943707, eigen_value[2]);
@@ -51,12 +52,13 @@ void svdTest()
     EXPECT_FLOAT_EQ(  0.240895713199397, X[2][2]);
 
     // SVD by U S V
-    double S[3][3];
+    double S[3];
     double U[3][3];
     double V[3][3];
 
     DenseLinearAlgebra::svd(A, U, S, V);
     
+    // compare to  Matlab result
     EXPECT_FLOAT_EQ( 0.627750144535749 , U[0][0]);
     EXPECT_FLOAT_EQ( 0.580440082644498 , U[1][0]);
     EXPECT_FLOAT_EQ( 0.518670479683388 , U[2][0]);
@@ -90,19 +92,6 @@ TEST_F( harlow_dense_linear_algebra, svd_test )
 {
     svdTest();
 }
-
-////---------------------------------------------------------------------------//
-//TEST_F( harlow_grid_block, assign_test )
-//{
-//    assignTest();
-//}
-//
-////---------------------------------------------------------------------------//
-//TEST_F( harlow_grid_block, periodic_test )
-//{
-//    periodicTest();
-//}
-
 //---------------------------------------------------------------------------//
 
 } // end namespace Test

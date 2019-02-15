@@ -111,7 +111,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    Real pi = atan(1.0)*4.0;
    
    Real A[3][3];
-   // intialize X with I and cppy a into A
+   // intialize X with I and copy a into A
    for(int i=0; i<3; i++)
    {
       for(int j=0; j<3; j++)
@@ -122,11 +122,14 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    }
 
    Real theta;
+   Real R[3][3];
+   Real RT[3][3];   // R^T
+   Real RTA[3][3];  // R^T * A
    // iterate until theta < 1.0e-10
    do{
-        // find the biggist values among  A_ij except diagonal element 
+        // find the biggest values among  A_ij except diagonal element 
         // record the index i,j into r,s
-        Real temp_big = abs(A[0][1]);
+        Real temp_big = fabs(A[0][1]);
         int r = 0;  // row
         int c = 1;  // column
         for(int i=0; i<3; i++)
@@ -143,8 +146,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
            }
         }
        
-        // initlal Rotational Matrix R = I
-        Real R[3][3];
+        // initial Rotational Matrix R = I
         for(int i=0; i<3; i++)
         {
            for(int j=0; j<3; j++)
@@ -161,12 +163,9 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
         R[c][c] = cos(theta);
         
         // rotate by computing R^(T) * A *  R
-        Real transpose_R[3][3];
-        transpose( R, transpose_R);
-        
-        Real RtA[3][3];
-        multiply_AB( transpose_R, A, RtA );
-        multiply_AB( RtA, R, A );
+        transpose( R, RT);
+        multiply_AB( RT, A, RTA );
+        multiply_AB( RTA, R, A );
  
         // calculate X*R
         Real XR[3][3];
@@ -177,51 +176,51 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
               X[i][j] = XR[i][j];
         }
  
-    } while(abs(theta) >= 1.0e-10);
+    } while(fabs(theta) >= 1.0e-10);
 
-   // Descending order for eigenvalue and corresponding eigenvecor
+   // Descending order for eigenvalue and corresponding eigenvector
    Real temp;
    Real temp_vec[3];
    
    if(A[0][0] < A[1][1])
    {
-      temp     = A[0][0];
-      A[0][0]  = A[1][1];
-      A[1][1]  = temp;
+      temp    = A[0][0];
+      A[0][0] = A[1][1];
+      A[1][1] = temp;
       
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][0];
-         X[i][0]         = X[i][1];
-         X[i][1]         = temp_vec[i];
+         X[i][0]     = X[i][1];
+         X[i][1]     = temp_vec[i];
       }
    }
   
    if(A[1][1] < A[2][2])
    {
-      temp     = A[1][1];
-      A[1][1]  = A[2][2];
-      A[2][2]  = temp;
+      temp    = A[1][1];
+      A[1][1] = A[2][2];
+      A[2][2] = temp;
       
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][1];
-         X[i][1]         = X[i][2];
-         X[i][2]         = temp_vec[i];
+         X[i][1]     = X[i][2];
+         X[i][2]     = temp_vec[i];
       }
    }
 
    if(A[0][0] < A[1][1])
    {
-      temp     = A[0][0];
-      A[0][0]  = A[1][1];
-      A[1][1]  = temp;
+      temp    = A[0][0];
+      A[0][0] = A[1][1];
+      A[1][1] = temp;
       
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][0];
-         X[i][0]         = X[i][1];
-         X[i][1]         = temp_vec[i];
+         X[i][0]     = X[i][1];
+         X[i][1]     = temp_vec[i];
       }
    }
   
@@ -236,27 +235,25 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
 // 3 by 3 matrix SVD
 template<class Real>
 KOKKOS_INLINE_FUNCTION
-void svd( const Real A[3][3], Real U[3][3], Real S[3][3], Real V[3][3])
+void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
 {
-   // a^T
+   // A^T
    Real AT[3][3];
    transpose(A, AT);
 
-   // calculate a^T * a;
+   // calculate A^T * A;
    Real ATA[3][3];
    multiply_AB( AT, A, ATA);
 
-   // eigenvalue matirix S and eigenvector matrix  V from A = a^T * a
+   // eigenvalue matrix S and eigenvector matrix  V from A = A^T * A
    Real eigen_value[3];
    eigen( ATA, eigen_value, V);
    
    for(int i=0; i<3; i++)
    {
-      for(int j=0; j<3; j++)
-         S[i][j] = (i==j) ? sqrt(eigen_value[i]) : 0.0;
+         S[i]= sqrt(eigen_value[i]);
    }
 
-  
    // calculate U from U = a*V*inv(S);
    Real AV[3][3];
    multiply_AB(A, V, AV);
@@ -264,7 +261,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3][3], Real V[3][3])
    for(int i=0; i<3; i++)
    {
       for(int j=0; j<3; j++)
-         U[i][j] = AV[i][j]/S[j][j];
+         U[i][j] = AV[i][j]/S[j];
    } 
 }   
    
