@@ -20,7 +20,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
-foreach(_test Version GridBlock Splines)
+foreach(_test Version GridBlock Splines DenseLinearAlgebra)
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
   target_link_libraries(${_test}_test harlow harlow_gtest)
   add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)

@@ -3,6 +3,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <cmath>
+
 namespace Harlow
 {
 namespace DenseLinearAlgebra
@@ -66,6 +68,206 @@ void multiply( const Real a[3][3], const Real x[3], Real y[3] )
             y[i] += a[i][j] * x[j];
     }
 }
+
+//---------------------------------------------------------------------------//
+// Matrix Matrix  multiply. A*B = C
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+void multiply_AB( const Real a[3][3], const Real b[3][3], Real c[3][3] )
+{
+   for ( int i = 0; i < 3; ++i )
+   {
+        for ( int j = 0; j < 3; ++j )
+        {
+            c[i][j] = 0.0;    
+            for ( int k = 0; k < 3; ++k )
+                c[i][j] += a[i][k] * b[k][j];
+        }
+   }
+}
+
+//---------------------------------------------------------------------------//
+// Transpose Matrix A^{T}
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+void transpose( const Real a[3][3], Real transpose_a[3][3] )
+{
+   for ( int i = 0; i < 3; ++i )
+   {
+       for ( int j = 0; j < 3; ++j )
+           transpose_a[i][j] = a[j][i];
+   }
+}
+
+//---------------------------------------------------------------------------//
+// s: 3 eignenvalues returned by A[0][0], A[1][1], A[2][2] in the end
+// x: 3 eigenvectors
+// Jacobi Method is applied with 1.oe-10 for theta convergence
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
+{
+   // pi
+   Real pi = atan(1.0)*4.0;
+   
+   Real A[3][3];
+   // intialize X with I and cppy a into A
+   for(int i=0; i<3; i++)
+   {
+      for(int j=0; j<3; j++)
+      {
+         X[i][j] = ( i == j) ? 1.0 : 0.0;
+         A[i][j] = a[i][j];
+      }
+   }
+
+   Real theta;
+   // iterate until theta < 1.0e-10
+   do{
+        // find the biggist values among  A_ij except diagonal element 
+        // record the index i,j into r,s
+        Real temp_big = abs(A[0][1]);
+        int r = 0;  // row
+        int c = 1;  // column
+        for(int i=0; i<3; i++)
+        {
+           for(int j=1; j<3; j++)
+           {
+              if(i == j) continue;
+              if( temp_big < abs( A[i][j] ) )
+              {
+                 temp_big =  abs( A[i][j] );
+                 r = i;
+                 c = j;
+              }
+           }
+        }
+       
+        // initlal Rotational Matrix R = I
+        Real R[3][3];
+        for(int i=0; i<3; i++)
+        {
+           for(int j=0; j<3; j++)
+              R[i][j] = ( i == j) ? 1.0 : 0.0;
+        }
+ 
+        // determine angle theta that make the A_rc  = 0
+        theta = (A[r][r] == A[c][c]) ? pi/4.0 : atan( 2.0*A[r][c]/(A[r][r]-A[c][c]) )/2.0;
+
+        // construct Rotational Matrix R by replacing component rr, rc, cr, cc only
+        R[r][r] = cos(theta);
+        R[r][c] = -sin(theta);
+        R[c][r] = sin(theta);
+        R[c][c] = cos(theta);
+        
+        // rotate by computing R^(T) * A *  R
+        Real transpose_R[3][3];
+        transpose( R, transpose_R);
+        
+        Real RtA[3][3];
+        multiply_AB( transpose_R, A, RtA );
+        multiply_AB( RtA, R, A );
+ 
+        // calculate X*R
+        Real XR[3][3];
+        multiply_AB( X, R, XR);
+        for(int i=0; i<3; i++)
+        {
+           for(int j=0; j<3; j++)
+              X[i][j] = XR[i][j];
+        }
+ 
+    } while(abs(theta) >= 1.0e-10);
+
+   // Descending order for eigenvalue and corresponding eigenvecor
+   Real temp;
+   Real temp_vec[3];
+   
+   if(A[0][0] < A[1][1])
+   {
+      temp     = A[0][0];
+      A[0][0]  = A[1][1];
+      A[1][1]  = temp;
+      
+      for(int i=0; i<3; i++)
+      {
+         temp_vec[i] = X[i][0];
+         X[i][0]         = X[i][1];
+         X[i][1]         = temp_vec[i];
+      }
+   }
+  
+   if(A[1][1] < A[2][2])
+   {
+      temp     = A[1][1];
+      A[1][1]  = A[2][2];
+      A[2][2]  = temp;
+      
+      for(int i=0; i<3; i++)
+      {
+         temp_vec[i] = X[i][1];
+         X[i][1]         = X[i][2];
+         X[i][2]         = temp_vec[i];
+      }
+   }
+
+   if(A[0][0] < A[1][1])
+   {
+      temp     = A[0][0];
+      A[0][0]  = A[1][1];
+      A[1][1]  = temp;
+      
+      for(int i=0; i<3; i++)
+      {
+         temp_vec[i] = X[i][0];
+         X[i][0]         = X[i][1];
+         X[i][1]         = temp_vec[i];
+      }
+   }
+  
+   // return s, X
+   for(int i=0; i<3; i++)
+      s[i] = A[i][i];
+
+}
+
+
+//---------------------------------------------------------------------------//
+// 3 by 3 matrix SVD
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+void svd( const Real A[3][3], Real U[3][3], Real S[3][3], Real V[3][3])
+{
+   // a^T
+   Real AT[3][3];
+   transpose(A, AT);
+
+   // calculate a^T * a;
+   Real ATA[3][3];
+   multiply_AB( AT, A, ATA);
+
+   // eigenvalue matirix S and eigenvector matrix  V from A = a^T * a
+   Real eigen_value[3];
+   eigen( ATA, eigen_value, V);
+   
+   for(int i=0; i<3; i++)
+   {
+      for(int j=0; j<3; j++)
+         S[i][j] = (i==j) ? sqrt(eigen_value[i]) : 0.0;
+   }
+
+  
+   // calculate U from U = a*V*inv(S);
+   Real AV[3][3];
+   multiply_AB(A, V, AV);
+ 
+   for(int i=0; i<3; i++)
+   {
+      for(int j=0; j<3; j++)
+         U[i][j] = AV[i][j]/S[j][j];
+   } 
+}   
+   
 
 //---------------------------------------------------------------------------//
 
