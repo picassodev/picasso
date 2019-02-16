@@ -2,8 +2,8 @@
 #define HARLOW_DENSELINEARALGEBRA_HPP
 
 #include <Kokkos_Core.hpp>
-
 #include <cmath>
+#include <cassert>
 
 namespace Harlow
 {
@@ -125,10 +125,11 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    Real R[3][3];
    Real RT[3][3];   // R^T
    Real RTA[3][3];  // R^T * A
+   Real XR[3][3];   // X*R
    // iterate until theta < 1.0e-10
    do{
         // find the biggest values among  A_ij except diagonal element 
-        // record the index i,j into r,s
+        // record the index i,j into r,c
         Real temp_big = fabs(A[0][1]);
         int r = 0;  // row
         int c = 1;  // column
@@ -167,8 +168,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
         multiply_AB( RT, A, RTA );
         multiply_AB( RTA, R, A );
  
-        // calculate X*R
-        Real XR[3][3];
+        // calculate X*R and store it into X again for next iteration
         multiply_AB( X, R, XR);
         for(int i=0; i<3; i++)
         {
@@ -237,6 +237,14 @@ template<class Real>
 KOKKOS_INLINE_FUNCTION
 void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
 {
+   // if matrix A is singular, throw error and stop simulation
+   Real det_A = determinant(A);
+   if( fabs(det_A) == 0.0 )
+   {
+       printf("Error, deformation gradient matrix cannot be sigular\n");
+       assert(1);
+   }
+   
    // A^T
    Real AT[3][3];
    transpose(A, AT);
