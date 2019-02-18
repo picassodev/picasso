@@ -122,11 +122,8 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    }
 
    Real theta;
-   Real R[3][3];
-   Real RT[3][3];   // R^T
-   Real RTA[3][3];  // R^T * A
-   Real XR[3][3];   // X*R
-   // iterate until theta < 1.0e-10
+   Real temp_A;
+   Real temp_X;
    do{
         // find the biggest values among  A_ij except diagonal element 
         // record the index i,j into r,c
@@ -146,36 +143,40 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
               }
            }
         }
-       
-        // initial Rotational Matrix R = I
-        for(int i=0; i<3; i++)
-        {
-           for(int j=0; j<3; j++)
-              R[i][j] = ( i == j) ? 1.0 : 0.0;
-        }
- 
+    
         // determine angle theta that make the A_rc  = 0
         theta = (A[r][r] == A[c][c]) ? pi/4.0 : atan( 2.0*A[r][c]/(A[r][r]-A[c][c]) )/2.0;
 
-        // construct Rotational Matrix R by replacing component rr, rc, cr, cc only
-        R[r][r] = cos(theta);
-        R[r][c] = -sin(theta);
-        R[c][r] = sin(theta);
-        R[c][c] = cos(theta);
+        // rotate by computing R^(T) * A * R
+        // only need to calculate (rr, rc, cr, cc) and (ri, ir, ic, ci for i != r and c) component
+        temp_A  = A[r][r]*cos(theta)*cos(theta) + A[c][c]*sin(theta)*sin(theta) + 2.0*A[r][c]*cos(theta)*sin(theta);
+        A[c][c] = A[r][r]*sin(theta)*sin(theta) + A[c][c]*cos(theta)*cos(theta) - 2.0*A[r][c]*cos(theta)*sin(theta);
+        A[r][r] = temp_A;
+        A[r][c] = 0.0;
+        A[c][r] = 0.0;
         
-        // rotate by computing R^(T) * A *  R
-        transpose( R, RT);
-        multiply_AB( RT, A, RTA );
-        multiply_AB( RTA, R, A );
- 
-        // calculate X*R and store it into X again for next iteration
-        multiply_AB( X, R, XR);
         for(int i=0; i<3; i++)
         {
-           for(int j=0; j<3; j++)
-              X[i][j] = XR[i][j];
+           if( i != r && i !=c )
+           {   temp_A  = A[i][r]*cos(theta) + A[i][c]*sin(theta);
+               A[i][c] = A[i][c]*cos(theta) - A[i][r]*sin(theta);
+               A[i][r] = temp_A;
+
+               A[r][i] = A[i][r];
+               A[c][i] = A[i][c];
+           }
         }
- 
+
+        // calculate X*R and store it into X again for next iteration
+        // only need to calculate (ri, ir, ic, ci for i != r and c) component
+        for(int i=0; i<3; i++)
+        {
+           temp_X  = X[i][r]*cos(theta) + X[i][c]*sin(theta);
+           X[i][c] = X[i][c]*cos(theta) - X[i][r]*sin(theta);
+           X[i][r] = temp_X;
+
+        }
+    
     } while(fabs(theta) >= 10.0*Tolerance<Real>::tol);
 
    // Descending order for eigenvalue and corresponding eigenvector
