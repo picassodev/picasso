@@ -6,7 +6,7 @@
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
-// traits class to handel Tolerance depending on data type
+// traits class to handle Tolerance depending on data type
 //---------------------------------------------------------------------------//
 template<typename T>
 struct Tolerance;

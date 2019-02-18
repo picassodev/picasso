@@ -159,7 +159,7 @@ void materialMapping(
     DenseLinearAlgebra::inverse( c, c_inv );
 
     // Compute the mapping.
-    DenseLinearAlgebra::multiply( c_inv, distance, mapping );
+    DenseLinearAlgebra::matVecMultiply( c_inv, distance, mapping );
 }
 
 //---------------------------------------------------------------------------//

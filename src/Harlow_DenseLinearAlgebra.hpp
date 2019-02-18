@@ -59,7 +59,7 @@ void inverse( const Real m[3][3], Real m_inv[3][3] )
 // Matrix vector multiply. A*x = y
 template<class Real>
 KOKKOS_INLINE_FUNCTION
-void multiply( const Real a[3][3], const Real x[3], Real y[3] )
+void matVecMultiply( const Real a[3][3], const Real x[3], Real y[3] )
 {
     for ( int i = 0; i < 3; ++i )
     {
@@ -73,7 +73,7 @@ void multiply( const Real a[3][3], const Real x[3], Real y[3] )
 // Matrix Matrix  multiply. A*B = C
 template<class Real>
 KOKKOS_INLINE_FUNCTION
-void multiply_AB( const Real a[3][3], const Real b[3][3], Real c[3][3] )
+void matMatMultiply( const Real a[3][3], const Real b[3][3], Real c[3][3] )
 {
    for ( int i = 0; i < 3; ++i )
    {
@@ -228,7 +228,6 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    // return s, X
    for(int i=0; i<3; i++)
       s[i] = A[i][i];
-
 }
 
 
@@ -241,7 +240,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
    // if matrix A is singular, throw error and stop simulation
    Real det_A = determinant(A);
    if( fabs(det_A) <= Tolerance<Real>::tol)
-      Kokkos::abort("Error, deformation gradient matrix cannot be sigular");
+      Kokkos::abort("Error, deformation gradient matrix cannot be singular");
    
    // A^T
    Real AT[3][3];
@@ -249,7 +248,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
 
    // calculate A^T * A;
    Real ATA[3][3];
-   multiply_AB( AT, A, ATA);
+   matMatMultiply( AT, A, ATA);
 
    // eigenvalue matrix S and eigenvector matrix  V from A = A^T * A
    Real eigen_value[3];
@@ -262,7 +261,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
 
    // calculate U from U = a*V*inv(S);
    Real AV[3][3];
-   multiply_AB(A, V, AV);
+   matMatMultiply(A, V, AV);
  
    for(int i=0; i<3; i++)
    {

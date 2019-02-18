@@ -51,7 +51,7 @@ void svdTest()
 
                         // A= a^T * a
                         DenseLinearAlgebra::transpose(sliced_a, trans_sliced_a);
-                        DenseLinearAlgebra::multiply_AB( trans_sliced_a, sliced_a, A);
+                        DenseLinearAlgebra::matMatMultiply( trans_sliced_a, sliced_a, A);
                         
                         // eigenvalue,  eignevector
                         DenseLinearAlgebra::eigen(A, eigen_value, X);
