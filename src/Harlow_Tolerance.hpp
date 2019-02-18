@@ -14,7 +14,7 @@ struct Tolerance;
 template<>
 struct Tolerance<float>
 {
-   static constexpr float tol = 1e-6;
+   static constexpr float tol = 1e-7;
 };
 
 template<>

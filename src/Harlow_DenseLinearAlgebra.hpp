@@ -176,7 +176,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
               X[i][j] = XR[i][j];
         }
  
-    } while(fabs(theta) >= Tolerance<Real>::tol);
+    } while(fabs(theta) >= 10.0*Tolerance<Real>::tol);
 
    // Descending order for eigenvalue and corresponding eigenvector
    Real temp;
