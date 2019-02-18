@@ -3,7 +3,6 @@
 
 #include <Kokkos_Core.hpp>
 #include <cmath>
-#include <cassert>
 
 namespace Harlow
 {
@@ -240,10 +239,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
    // if matrix A is singular, throw error and stop simulation
    Real det_A = determinant(A);
    if( fabs(det_A) == 0.0 )
-   {
-       printf("Error, deformation gradient matrix cannot be sigular\n");
-       assert(1);
-   }
+      Kokkos::abort("Error, deformation gradient matrix cannot be sigular");
    
    // A^T
    Real AT[3][3];
