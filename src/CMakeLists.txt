@@ -22,6 +22,7 @@ set(HEADERS
   Harlow_Types.hpp
   Harlow_VelocityInterpolation.hpp
   Harlow_Version.hpp
+  Harlow_Tolerance.hpp
   )
 
 set(SOURCES
