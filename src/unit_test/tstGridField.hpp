@@ -37,18 +37,19 @@ void fieldTest()
 
     // Make some cell fields.
     auto scalar_cell_field =
-        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Cell );
-    EXPECT_EQ( scalar_cell_field.Rank, 3 );
+        createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Cell );
+    EXPECT_EQ( scalar_cell_field.Rank, 4 );
     EXPECT_EQ( scalar_cell_field.extent(0), num_cell[0] );
     EXPECT_EQ( scalar_cell_field.extent(1), num_cell[1] );
     EXPECT_EQ( scalar_cell_field.extent(2), num_cell[2] );
+    EXPECT_EQ( scalar_cell_field.extent(3), 1 );
     bool correct_value_type =
         std::is_same<double,
                      typename decltype(scalar_cell_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
     auto vector_cell_field =
-        createField<double[5],TEST_MEMSPACE>( grid, MeshEntity::Cell );
+        createField<double,TEST_MEMSPACE>( grid, 5, MeshEntity::Cell );
     EXPECT_EQ( vector_cell_field.Rank, 4 );
     EXPECT_EQ( vector_cell_field.extent(0), num_cell[0] );
     EXPECT_EQ( vector_cell_field.extent(1), num_cell[1] );
@@ -59,33 +60,21 @@ void fieldTest()
                      typename decltype(vector_cell_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
-    auto tensor_cell_field =
-        createField<double[2][4],TEST_MEMSPACE>( grid, MeshEntity::Cell );
-    EXPECT_EQ( tensor_cell_field.Rank, 5 );
-    EXPECT_EQ( tensor_cell_field.extent(0), num_cell[0] );
-    EXPECT_EQ( tensor_cell_field.extent(1), num_cell[1] );
-    EXPECT_EQ( tensor_cell_field.extent(2), num_cell[2] );
-    EXPECT_EQ( tensor_cell_field.extent(3), 2 );
-    EXPECT_EQ( tensor_cell_field.extent(4), 4 );
-    correct_value_type =
-        std::is_same<double,
-                     typename decltype(tensor_cell_field)::value_type>::value;
-    EXPECT_TRUE( correct_value_type );
-
     // Make some node fields.
     auto scalar_node_field =
-        createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
-    EXPECT_EQ( scalar_node_field.Rank, 3 );
+        createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
+    EXPECT_EQ( scalar_node_field.Rank, 4 );
     EXPECT_EQ( scalar_node_field.extent(0), num_node[0] );
     EXPECT_EQ( scalar_node_field.extent(1), num_node[1] );
     EXPECT_EQ( scalar_node_field.extent(2), num_node[2] );
+    EXPECT_EQ( scalar_node_field.extent(3), 1 );
     correct_value_type =
         std::is_same<double,
                      typename decltype(scalar_node_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 
     auto vector_node_field =
-        createField<double[5],TEST_MEMSPACE>( grid, MeshEntity::Node );
+        createField<double,TEST_MEMSPACE>( grid, 5, MeshEntity::Node );
     EXPECT_EQ( vector_node_field.Rank, 4 );
     EXPECT_EQ( vector_node_field.extent(0), num_node[0] );
     EXPECT_EQ( vector_node_field.extent(1), num_node[1] );
@@ -94,19 +83,6 @@ void fieldTest()
     correct_value_type =
         std::is_same<double,
                      typename decltype(vector_node_field)::value_type>::value;
-    EXPECT_TRUE( correct_value_type );
-
-    auto tensor_node_field =
-        createField<double[2][4],TEST_MEMSPACE>( grid, MeshEntity::Node );
-    EXPECT_EQ( tensor_node_field.Rank, 5 );
-    EXPECT_EQ( tensor_node_field.extent(0), num_node[0] );
-    EXPECT_EQ( tensor_node_field.extent(1), num_node[1] );
-    EXPECT_EQ( tensor_node_field.extent(2), num_node[2] );
-    EXPECT_EQ( tensor_node_field.extent(3), 2 );
-    EXPECT_EQ( tensor_node_field.extent(4), 4 );
-    correct_value_type =
-        std::is_same<double,
-                     typename decltype(tensor_node_field)::value_type>::value;
     EXPECT_TRUE( correct_value_type );
 }
 

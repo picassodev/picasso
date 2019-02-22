@@ -44,19 +44,19 @@ void writeTest( const std::vector<int>& ranks_per_dim )
 
     // Create a cell field and fill it with data.
     GridField<double,TEST_MEMSPACE> cell_field(
-        global_grid, MeshEntity::Cell, 0, "cell_field" );
+        global_grid, 1, MeshEntity::Cell, 0, "cell_field" );
     auto cell_data = cell_field.data();
     Kokkos::parallel_for(
         "fill_cell_field",
         GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
             global_grid->block(),MeshEntity::Cell),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
-            cell_data( i, j, k ) = i + off_i + j + off_j + k + off_k;
+            cell_data( i, j, k, 0 ) = i + off_i + j + off_j + k + off_k;
         } );
 
     // Create a node field and fill it with data.
-    GridField<int[3],TEST_MEMSPACE> node_field(
-        global_grid, MeshEntity::Node, 0, "node_field" );
+    GridField<int,TEST_MEMSPACE> node_field(
+        global_grid, 3, MeshEntity::Node, 0, "node_field" );
     auto node_data = node_field.data();
     Kokkos::parallel_for(
         "fill_node_field",

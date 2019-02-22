@@ -57,23 +57,6 @@ struct BovTraits<double>
 
 //---------------------------------------------------------------------------//
 // Reorder field values for from IJK ordering to JKI ordering.
-
-// rank 0 field
-template<class SrcViewType, class DstViewType>
-KOKKOS_INLINE_FUNCTION
-void reorderFieldValue(
-    const int i,
-    const int j,
-    const int k,
-    const DstViewType& src,
-    SrcViewType& dst,
-    typename std::enable_if<
-    3==SrcViewType::traits::dimension::rank,int*>::type = 0 )
-{
-    dst( k, j, i ) = src( i, j, k );
-}
-
-// rank 1 field
 template<class SrcViewType, class DstViewType>
 KOKKOS_INLINE_FUNCTION
 void reorderFieldValue(
@@ -81,9 +64,7 @@ void reorderFieldValue(
     const int j,
     const int k,
     const SrcViewType& src,
-    DstViewType& dst,
-    typename std::enable_if<
-    4==SrcViewType::traits::dimension::rank,int*>::type = 0 )
+    DstViewType& dst )
 {
     for ( unsigned d = 0; d < src.extent(3); ++d )
         dst( k, j, i, d ) = src( i, j, k, d );
@@ -93,42 +74,7 @@ void reorderFieldValue(
 // Create the MPI subarray for the given field.
 template<class GridFieldType>
 MPI_Datatype
-createSubarray(
-    const GridFieldType& field,
-    typename std::enable_if<
-    3==GridFieldType::view_type::traits::dimension::rank,int*>::type = 0 )
-{
-    const auto& global_grid = field.globalGrid();
-    const auto& block = field.block();
-
-    int local_start[3] = { global_grid.globalOffset(Dim::K),
-                           global_grid.globalOffset(Dim::J),
-                           global_grid.globalOffset(Dim::I) };
-    int local_size[3] = { block.localNumEntity(field.location(),Dim::K),
-                          block.localNumEntity(field.location(),Dim::J),
-                          block.localNumEntity(field.location(),Dim::I) };
-    int global_size[3] = { global_grid.numEntity(field.location(),Dim::K),
-                           global_grid.numEntity(field.location(),Dim::J),
-                           global_grid.numEntity(field.location(),Dim::I) };
-
-    MPI_Datatype subarray;
-    MPI_Type_create_subarray(
-        3, global_size, local_size, local_start,
-        MPI_ORDER_C,
-        MpiTraits<typename GridFieldType::value_type>::type(),
-        &subarray );
-
-    return subarray;
-}
-
-//---------------------------------------------------------------------------//
-// Create the MPI subarray for the given field.
-template<class GridFieldType>
-MPI_Datatype
-createSubarray(
-    const GridFieldType& field,
-    typename std::enable_if<
-    4==GridFieldType::view_type::traits::dimension::rank,int*>::type = 0 )
+createSubarray( const GridFieldType& field )
 {
     const auto& global_grid = field.globalGrid();
     const auto& block = field.block();
@@ -180,7 +126,7 @@ void writeTimeStep( const int time_step_index,
         Kokkos::View<typename decltype(view)::data_type,Kokkos::HostSpace>;
     ReorderedView reordered_view(
         Kokkos::ViewAllocateWithoutInitializing("reordered_view"),
-        view.extent(2), view.extent(1), view.extent(0) );
+        view.extent(2), view.extent(1), view.extent(0), view.extent(3) );
     {
         auto view_mirror = Kokkos::create_mirror_view_and_copy(
             Kokkos::HostSpace(), view );
@@ -287,10 +233,7 @@ void writeTimeStep( const int time_step_index,
 
         // Number of data components. Scalar and vector types are
         // supported.
-        if ( 3 == view.Rank )
-            header << "DATA_COMPONENTS: " << 1 << std::endl;
-        else if ( 4 == view.Rank )
-            header << "DATA_COMPONENTS: " << view.extent(3) << std::endl;
+        header << "DATA_COMPONENTS: " << view.extent(3) << std::endl;
 
         // Close the header.
         header.close();

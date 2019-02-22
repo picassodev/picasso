@@ -293,8 +293,8 @@ void particleToGrid(
                         Real wm = wi[i] * wj[j] * wk[k] * particle_mass(p);
 
                         // Add mass contribution to the node.
-                        grid_mass_sv_data( nidx[Dim::I], nidx[Dim::J], nidx[Dim::K] )
-                            += wm;
+                        grid_mass_sv_data(
+                            nidx[Dim::I], nidx[Dim::J], nidx[Dim::K], 0 ) += wm;
 
                         // Compute distance to node.
                         distance[Dim::I] =

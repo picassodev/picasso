@@ -33,7 +33,7 @@ typename GridFieldType::value_type normInf( const GridFieldType& grid_field )
         GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
             grid_field.block(), grid_field.location() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
-        { if ( fabs(data(i,j,k)) > result ) result = fabs(data(i,j,k)); },
+        { if ( fabs(data(i,j,k,0)) > result ) result = fabs(data(i,j,k,0)); },
         reducer );
 
     // Global reduction.
@@ -58,7 +58,7 @@ typename GridFieldType::value_type norm1( const GridFieldType& grid_field )
         GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
             grid_field.block(), grid_field.location() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
-        { result += fabs(data(i,j,k)); },
+        { result += fabs(data(i,j,k,0)); },
         sum );
 
     // Global reduction.
@@ -83,7 +83,7 @@ typename GridFieldType::value_type norm2( const GridFieldType& grid_field )
         GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
             grid_field.block(), grid_field.location() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
-        { result += data(i,j,k) * data(i,j,k); },
+        { result += data(i,j,k,0) * data(i,j,k,0); },
         sum );
 
     // Global reduction.
@@ -110,7 +110,7 @@ typename GridFieldType::value_type dot( const GridFieldType& vec_a,
         GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
             vec_a.block(), vec_a.location() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, value_type& result )
-        { result += data_a(i,j,k) * data_b(i,j,k); },
+        { result += data_a(i,j,k,0) * data_b(i,j,k,0); },
         sum );
 
     // Global reduction.
@@ -131,34 +131,12 @@ void assign( const typename GridFieldType::value_type value,
 
 //---------------------------------------------------------------------------//
 // Scale a vector by a scalar.
-
-// Rank - 0
 template<class GridFieldType>
-void scale(
-    const typename GridFieldType::value_type alpha,
-    GridFieldType& grid_field,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==0),int*>::type = 0 )
+void scale( const typename GridFieldType::value_type alpha,
+            GridFieldType& grid_field )
 {
     auto data = grid_field.data();
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::scale",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            grid_field.block(), grid_field.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        { data(i,j,k) *= alpha; } );
-}
-
-// Rank - 1
-template<class GridFieldType>
-void scale(
-    const typename GridFieldType::value_type alpha,
-    GridFieldType& grid_field,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==1),int*>::type = 0 )
-{
-    auto data = grid_field.data();
-    auto e0 = data.extent(3);
+    int e0 = data.extent(3);
     Kokkos::parallel_for(
         "GridFieldVectorOp::scale",
         GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
@@ -170,89 +148,14 @@ void scale(
         } );
 }
 
-// Rank - 2
-template<class GridFieldType>
-void scale(
-    const typename GridFieldType::value_type alpha,
-    GridFieldType& grid_field,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==2),int*>::type = 0 )
-{
-    auto data = grid_field.data();
-    int e0 = data.extent(3);
-    int e1 = data.extent(4);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::scale",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            grid_field.block(), grid_field.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    data(i,j,k,n0,n1) *= alpha;
-        } );
-}
-
-// Rank - 3
-template<class GridFieldType>
-void scale(
-    const typename GridFieldType::value_type alpha,
-    GridFieldType& grid_field,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==3),int*>::type = 0 )
-{
-    auto data = grid_field.data();
-    int e0 = data.extent(3);
-    int e1 = data.extent(4);
-    int e2 = data.extent(4);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::scale",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            grid_field.block(), grid_field.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    for ( int n2 = 0; n2 < e2; ++n2 )
-                        data(i,j,k,n0,n1,n2) *= alpha;
-        } );
-}
-
 //---------------------------------------------------------------------------//
 // Vector update: C = alpha * A + beta * B
-
-// Rank - 0
 template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    GridFieldType& vec_c,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==0),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        { data_c(i,j,k) = alpha * data_a(i,j,k) + beta * data_b(i,j,k); } );
-}
-
-// Rank - 1
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    GridFieldType& vec_c,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==1),int*>::type = 0 )
+void update( const typename GridFieldType::value_type alpha,
+             const GridFieldType& vec_a,
+             const typename GridFieldType::value_type beta,
+             const GridFieldType& vec_b,
+             GridFieldType& vec_c )
 {
     auto data_a = vec_a.data();
     auto data_b = vec_b.data();
@@ -269,112 +172,16 @@ void update(
                     alpha * data_a(i,j,k,n0) + beta * data_b(i,j,k,n0);
         } );
 }
-
-// Rank - 2
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    GridFieldType& vec_c,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==2),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    int e0 = data_a.extent(3);
-    int e1 = data_a.extent(4);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    data_c(i,j,k,n0,n1) =
-                        alpha * data_a(i,j,k,n0,n1) + beta * data_b(i,j,k,n0,n1);
-        } );
-}
-
-// Rank - 3
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    GridFieldType& vec_c,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==3),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    int e0 = data_a.extent(3);
-    int e1 = data_a.extent(4);
-    int e2 = data_a.extent(5);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    for ( int n2 = 0; n2 < e2; ++n2 )
-                        data_c(i,j,k,n0,n1,n2) =
-                            alpha * data_a(i,j,k,n0,n1,n2) +
-                            beta * data_b(i,j,k,n0,n1,n2);
-        } );
-}
-
 //---------------------------------------------------------------------------//
 // Vector update: D = alpha * A + beta * B + gamma * C
-
-// Rank - 0
 template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    const typename GridFieldType::value_type gamma,
-    const GridFieldType& vec_c,
-    GridFieldType& vec_d,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==0),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    auto data_d = vec_d.data();
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            data_d(i,j,k) = alpha * data_a(i,j,k) +
-                            beta * data_b(i,j,k) +
-                            gamma * data_c(i,j,k);
-        } );
-}
-
-// Rank - 1
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    const typename GridFieldType::value_type gamma,
-    const GridFieldType& vec_c,
-    GridFieldType& vec_d,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==1),int*>::type = 0 )
+void update( const typename GridFieldType::value_type alpha,
+             const GridFieldType& vec_a,
+             const typename GridFieldType::value_type beta,
+             const GridFieldType& vec_b,
+             const typename GridFieldType::value_type gamma,
+             const GridFieldType& vec_c,
+             GridFieldType& vec_d )
 {
     auto data_a = vec_a.data();
     auto data_b = vec_b.data();
@@ -391,74 +198,6 @@ void update(
                 data_d(i,j,k,n0) = alpha * data_a(i,j,k,n0) +
                                    beta * data_b(i,j,k,n0) +
                                    gamma * data_c(i,j,k,n0);
-        } );
-}
-
-// Rank - 2
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    const typename GridFieldType::value_type gamma,
-    const GridFieldType& vec_c,
-    GridFieldType& vec_d,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==2),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    auto data_d = vec_d.data();
-    int e0 = data_a.extent(3);
-    int e1 = data_a.extent(4);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    data_d(i,j,k,n0,n1) = alpha * data_a(i,j,k,n0,n1) +
-                                          beta * data_b(i,j,k,n0,n1) +
-                                          gamma * data_c(i,j,k,n0,n1);
-        } );
-}
-
-// Rank - 3
-template<class GridFieldType>
-void update(
-    const typename GridFieldType::value_type alpha,
-    const GridFieldType& vec_a,
-    const typename GridFieldType::value_type beta,
-    const GridFieldType& vec_b,
-    const typename GridFieldType::value_type gamma,
-    const GridFieldType& vec_c,
-    GridFieldType& vec_d,
-    typename std::enable_if<
-    (std::rank<typename GridFieldType::data_type>::value==3),int*>::type = 0 )
-{
-    auto data_a = vec_a.data();
-    auto data_b = vec_b.data();
-    auto data_c = vec_c.data();
-    auto data_d = vec_d.data();
-    int e0 = data_a.extent(3);
-    int e1 = data_a.extent(4);
-    int e2 = data_a.extent(5);
-    Kokkos::parallel_for(
-        "GridFieldVectorOp::update",
-        GridExecution::createLocalEntityPolicy<typename GridFieldType::execution_space>(
-            vec_a.block(), vec_a.location() ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
-            for ( int n0 = 0; n0 < e0; ++n0 )
-                for ( int n1 = 0; n1 < e1; ++n1 )
-                    for ( int n2 = 0; n2 < e2; ++n2 )
-                        data_d(i,j,k,n0,n1,n2) = alpha * data_a(i,j,k,n0,n1,n2) +
-                                                 beta * data_b(i,j,k,n0,n1,n2) +
-                                                 gamma * data_c(i,j,k,n0,n1,n2);
         } );
 }
 
