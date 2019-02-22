@@ -27,7 +27,7 @@ void checkGather( const GridBlock& block,
               j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
             for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(0,j,k), data_val );
+                EXPECT_EQ( field(0,j,k,0), data_val );
 
     // +I face.
     if ( block.hasHalo(DomainBoundary::HighX) )
@@ -35,7 +35,7 @@ void checkGather( const GridBlock& block,
               j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
             for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(block.numEntity(MeshEntity::Cell,Dim::I)-1,j,k), data_val );
+                EXPECT_EQ( field(block.numEntity(MeshEntity::Cell,Dim::I)-1,j,k,0), data_val );
 
     // -J face.
     if ( block.hasHalo(DomainBoundary::LowY) )
@@ -43,7 +43,7 @@ void checkGather( const GridBlock& block,
               i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
             for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(i,0,k), data_val );
+                EXPECT_EQ( field(i,0,k,0), data_val );
 
     // +J face.
     if ( block.hasHalo(DomainBoundary::HighY) )
@@ -51,7 +51,7 @@ void checkGather( const GridBlock& block,
               i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
             for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K); ++k )
-                EXPECT_EQ( field(i,block.numEntity(MeshEntity::Cell,Dim::J)-1,k), data_val );
+                EXPECT_EQ( field(i,block.numEntity(MeshEntity::Cell,Dim::J)-1,k,0), data_val );
 
     // -K face.
     if ( block.hasHalo(DomainBoundary::LowZ) )
@@ -59,7 +59,7 @@ void checkGather( const GridBlock& block,
               i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
         for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
               j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-            EXPECT_EQ( field(i,j,0), data_val );
+            EXPECT_EQ( field(i,j,0,0), data_val );
 
     // +K face.
     if ( block.hasHalo(DomainBoundary::HighZ) )
@@ -67,7 +67,7 @@ void checkGather( const GridBlock& block,
               i < block.localEntityEnd(MeshEntity::Cell,Dim::I); ++i )
             for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
                   j < block.localEntityEnd(MeshEntity::Cell,Dim::J); ++j )
-                EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Cell,Dim::K)-1), data_val );
+                EXPECT_EQ( field(i,j,block.numEntity(MeshEntity::Cell,Dim::K)-1,0), data_val );
 }
 
 //---------------------------------------------------------------------------//
@@ -151,7 +151,7 @@ void checkScatter( const GridBlock& block,
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
             {
                 int i = 1;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 
     // +I face.
@@ -162,7 +162,7 @@ void checkScatter( const GridBlock& block,
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
             {
                 int i = block.numEntity(MeshEntity::Cell,Dim::I)-2;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 
     // -J face.
@@ -173,7 +173,7 @@ void checkScatter( const GridBlock& block,
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
             {
                 int j = 1;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 
     // +J face.
@@ -184,7 +184,7 @@ void checkScatter( const GridBlock& block,
                   k < block.localEntityEnd(MeshEntity::Cell,Dim::K) - 1; ++k )
             {
                 int j = block.numEntity(MeshEntity::Cell,Dim::J)-2;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 
     // -K face.
@@ -195,7 +195,7 @@ void checkScatter( const GridBlock& block,
                   j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
             {
                 int k = 1;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 
     // +K face.
@@ -206,7 +206,7 @@ void checkScatter( const GridBlock& block,
                   j < block.localEntityEnd(MeshEntity::Cell,Dim::J) - 1; ++j )
             {
                 int k = block.numEntity(MeshEntity::Cell,Dim::K)-2;
-                EXPECT_EQ( field(i,j,k), 2*data_val );
+                EXPECT_EQ( field(i,j,k,0), 2*data_val );
             }
 }
 
@@ -318,6 +318,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
     int halo_width = 1;
     GridField<double,TEST_MEMSPACE> grid_field(
         global_grid,
+        1,
         MeshEntity::Cell,
         halo_width,
         "TestField" );
@@ -331,7 +332,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
         GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
             grid_field.block(),grid_field.location()),
         KOKKOS_LAMBDA(const int i, const int j, const int k){
-            field(i,j,k) = data_val; }
+            field(i,j,k,0) = data_val; }
         );
 
     // Gather into the halo.
@@ -385,8 +386,9 @@ void vectorFieldTest()
 
     // Create a vector cell field on the grid.
     int halo_width = 1;
-    GridField<double[3],TEST_MEMSPACE> grid_field(
+    GridField<double,TEST_MEMSPACE> grid_field(
         global_grid,
+        3,
         MeshEntity::Cell,
         halo_width,
         "TestField" );

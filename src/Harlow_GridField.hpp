@@ -12,100 +12,53 @@
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
-// Cartesian grid field type traits.
-//---------------------------------------------------------------------------//
-template<typename DataType,int Rank>
-struct GridBlockFieldDataTypeImpl;
-
-template<typename DataType>
-struct GridBlockFieldDataTypeImpl<DataType,0>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    using type = value_type***;
-};
-
-template<typename DataType>
-struct GridBlockFieldDataTypeImpl<DataType,1>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    using type = value_type***[extent_0];
-};
-
-template<typename DataType>
-struct GridBlockFieldDataTypeImpl<DataType,2>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    static constexpr unsigned extent_1 = std::extent<DataType,1>::value;
-    using type = value_type***[extent_0][extent_1];
-};
-
-template<typename DataType>
-struct GridBlockFieldDataTypeImpl<DataType,3>
-{
-    using value_type = typename std::remove_all_extents<DataType>::type;
-    static constexpr unsigned extent_0 = std::extent<DataType,0>::value;
-    static constexpr unsigned extent_1 = std::extent<DataType,1>::value;
-    static constexpr unsigned extent_2 = std::extent<DataType,2>::value;
-    using type = value_type***[extent_0][extent_1][extent_2];
-};
-
-template<typename DataType>
-struct GridBlockFieldDataType
-{
-    static constexpr unsigned rank = std::rank<DataType>::value;
-    using type =
-        typename GridBlockFieldDataTypeImpl<DataType,rank>::type;
-};
-
-//---------------------------------------------------------------------------//
 // Field creator
 // ---------------------------------------------------------------------------//
 // Given a grid create a view of data with ijk indexing over the given entity
 // type. The view is uninitialized.
-template<class DataType, class DeviceType>
-Kokkos::View<typename GridBlockFieldDataType<DataType>::type,DeviceType>
+template<class ValueType, class DeviceType>
+Kokkos::View<ValueType****,DeviceType>
 createField( const GridBlock& grid,
+             const int num_component,
              const int field_location,
              const std::string& field_name = "" )
 {
-    return Kokkos::View<
-        typename GridBlockFieldDataType<DataType>::type,DeviceType>(
+    return Kokkos::View<ValueType****,DeviceType>(
             Kokkos::ViewAllocateWithoutInitializing(field_name),
             grid.numEntity(field_location,Dim::I),
             grid.numEntity(field_location,Dim::J),
-            grid.numEntity(field_location,Dim::K) );
+            grid.numEntity(field_location,Dim::K),
+            num_component );
 }
 
 //---------------------------------------------------------------------------//
 // Parallel grid field container.
 //---------------------------------------------------------------------------//
-template<class DataType, class DeviceType>
+template<class ValueType, class DeviceType>
 class GridField
 {
   public:
 
-    using data_type = DataType;
+    using value_type = ValueType;
     using device_type = DeviceType;
     using memory_space = typename device_type::memory_space;
     using execution_space = typename device_type::execution_space;
-    using view_data_type = typename GridBlockFieldDataType<DataType>::type;
-    using view_type = Kokkos::View<view_data_type,device_type>;
-    using value_type = typename view_type::value_type;
+    using view_type = Kokkos::View<ValueType****,device_type>;
 
     GridField( const std::shared_ptr<GlobalGrid>& global_grid,
+               const int num_component,
                const int field_location,
                const int halo_cell_width,
                const std::string& field_name = "" )
         : _global_grid( global_grid )
+        , _num_comp( num_component )
         , _field_location( field_location )
         , _name( field_name )
     {
         _block.assign( _global_grid->block(), halo_cell_width );
 
-        _data = createField<DataType,DeviceType>(
-            _block, field_location, field_name );
+        _data = createField<ValueType,DeviceType>(
+            _block, num_component, field_location, field_name );
     }
 
     // Get the global grid.
@@ -136,6 +89,10 @@ class GridField
     view_type data() const
     { return _data; }
 
+    // Get the number of field components.
+    int numComp() const
+    { return _num_comp; }
+
     // Get the field location.
     int location() const
     { return _field_location; }
@@ -149,6 +106,7 @@ class GridField
     std::shared_ptr<GlobalGrid> _global_grid;
     GridBlock _block;
     view_type _data;
+    int _num_comp;
     int _field_location;
     std::string _name;
 };
@@ -158,12 +116,12 @@ class GridField
 template<class >
 class is_grid_field : public std::false_type {};
 
-template<class DataType, class DeviceType>
-class is_grid_field<GridField<DataType,DeviceType> >
+template<class ValueType, class DeviceType>
+class is_grid_field<GridField<ValueType,DeviceType> >
     : public std::true_type {};
 
-template<class DataType, class DeviceType>
-class is_grid_field<GridField<const DataType,DeviceType> >
+template<class ValueType, class DeviceType>
+class is_grid_field<GridField<const ValueType,DeviceType> >
     : public std::true_type {};
 
 //---------------------------------------------------------------------------//

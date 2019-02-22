@@ -34,8 +34,8 @@ void parallelTest()
                     periodic, cell_size, halo_width );
 
     // Make a cell field and a node field.
-    auto cell_field = createField<double,TEST_MEMSPACE>( grid, MeshEntity::Cell );
-    auto node_field = createField<double,TEST_MEMSPACE>( grid, MeshEntity::Node );
+    auto cell_field = createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Cell );
+    auto node_field = createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
 
     // Change every value to 1 in both fields.
     auto cell_policy =
@@ -44,7 +44,7 @@ void parallelTest()
         "cell_fill",
         cell_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
-            cell_field(i,j,k) = 1.0;
+            cell_field(i,j,k,0) = 1.0;
         });
 
     auto node_policy =
@@ -53,7 +53,7 @@ void parallelTest()
         "node_fill",
         node_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
-            node_field(i,j,k) = 1.0;
+            node_field(i,j,k,0) = 1.0;
         });
 
     auto cell_mirror =
@@ -61,14 +61,14 @@ void parallelTest()
     for ( int i = 0; i < num_cell[0]; ++i )
         for ( int j = 0; j < num_cell[1]; ++j )
             for ( int k = 0; k < num_cell[2]; ++k )
-                EXPECT_EQ( cell_mirror(i,j,k), 1.0 );
+                EXPECT_EQ( cell_mirror(i,j,k,0), 1.0 );
 
     auto node_mirror =
         Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), node_field );
     for ( int i = 0; i < num_node[0]; ++i )
         for ( int j = 0; j < num_node[1]; ++j )
             for ( int k = 0; k < num_node[2]; ++k )
-                EXPECT_EQ( node_mirror(i,j,k), 1.0 );
+                EXPECT_EQ( node_mirror(i,j,k,0), 1.0 );
 
     // Now do a reduction to sum all of the values in the fields.
     double cell_sum = 0.0;
@@ -76,7 +76,7 @@ void parallelTest()
         "cell_sum",
         cell_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result ){
-            result += cell_field(i,j,k); },
+            result += cell_field(i,j,k,0); },
         cell_sum );
     double expected_cell_sum = num_cell[0] * num_cell[1] * num_cell[2];
     EXPECT_EQ( cell_sum, expected_cell_sum );
@@ -86,14 +86,14 @@ void parallelTest()
         "node_sum",
         node_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result ){
-            result += node_field(i,j,k); },
+            result += node_field(i,j,k,0); },
         node_sum );
     double expected_node_sum = num_node[0] * num_node[1] * num_node[2];
     EXPECT_EQ( node_sum, expected_node_sum );
 
     // Set a random value to be large and check that a max operation works.
     double max_val = 4.34;
-    cell_mirror( 3, 5, 2 ) = max_val;
+    cell_mirror( 3, 5, 2, 0 ) = max_val;
     Kokkos::deep_copy( cell_field, cell_mirror );
     double cell_max_result = 0.0;
     Kokkos::Max<double> cell_max_reducer( cell_max_result );
@@ -101,11 +101,11 @@ void parallelTest()
         "cell_max",
         cell_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result ){
-            if( cell_field(i,j,k) > result ) result = cell_field(i,j,k); },
+            if( cell_field(i,j,k,0) > result ) result = cell_field(i,j,k,0); },
         cell_max_reducer );
     EXPECT_EQ( cell_max_result, max_val );
 
-    node_mirror( 3, 5, 2 ) = max_val;
+    node_mirror( 3, 5, 2, 0 ) = max_val;
     Kokkos::deep_copy( node_field, node_mirror );
     double node_max_result = 0.0;
     Kokkos::Max<double> node_max_reducer( node_max_result );
@@ -113,7 +113,7 @@ void parallelTest()
         "node_max",
         node_policy,
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result ){
-            if( node_field(i,j,k) > result ) result = node_field(i,j,k); },
+            if( node_field(i,j,k,0) > result ) result = node_field(i,j,k,0); },
         node_max_reducer );
     EXPECT_EQ( node_max_result, max_val );
 

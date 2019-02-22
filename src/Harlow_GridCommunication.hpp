@@ -138,58 +138,18 @@ std::vector<int> neighborCounts( const GridBlock& grid,
 template<class ViewType>
 unsigned elementsPerEntity( const ViewType& view )
 {
-    int count = 1;
-    for ( int d = 3; d < view.Rank; ++d )
-        count *= view.extent(d);
-    return count;
+    return view.extent(3);
 }
 
 //---------------------------------------------------------------------------//
 // Serialization
 //---------------------------------------------------------------------------//
 // Pack a neighbor into a send buffer.
-
-// Rank 0 fields
 template<typename ViewType,typename BufferType, typename PackRange>
-void packNeighbor(
-    const PackRange& pack_range,
-    const ViewType field,
-    const int offset,
-    BufferType send_buffer,
-    typename std::enable_if<
-    3==ViewType::traits::dimension::rank,int*>::type = 0 )
-{
-    // Define an offset view type.
-    using NeighborBuffer =
-        Kokkos::View<typename ViewType::data_type,
-                     typename ViewType::memory_space,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-
-    // Get the offset view into the send buffer for the neighbor.
-    NeighborBuffer send_buffer_subview(
-        send_buffer.data() + offset,
-        pack_range[Dim::I].second - pack_range[Dim::I].first,
-        pack_range[Dim::J].second - pack_range[Dim::J].first,
-        pack_range[Dim::K].second - pack_range[Dim::K].first );
-
-    // Get a view of the layer we are sending.
-    auto field_subview = Kokkos::subview(
-        field,
-        pack_range[Dim::I], pack_range[Dim::J], pack_range[Dim::K] );
-
-    // Copy to the send buffer.
-    Kokkos::deep_copy( send_buffer_subview, field_subview );
-}
-
-// Rank 1 fields
-template<typename ViewType,typename BufferType, typename PackRange>
-void packNeighbor(
-    const PackRange& pack_range,
-    const ViewType field,
-    const int offset,
-    BufferType send_buffer,
-    typename std::enable_if<
-    4==ViewType::traits::dimension::rank,int*>::type = 0 )
+void packNeighbor( const PackRange& pack_range,
+                   const ViewType field,
+                   const int offset,
+                   BufferType send_buffer )
 {
     // Define an offset view type.
     using NeighborBuffer =
@@ -217,49 +177,11 @@ void packNeighbor(
 
 //---------------------------------------------------------------------------//
 // Gather a neighbor from a receive buffer.
-
-// Rank 0 fields.
 template<typename ViewType,typename BufferType, typename PackRange>
-void gatherNeighbor(
-    const PackRange& unpack_range,
-    const BufferType receive_buffer,
-    const int offset,
-    ViewType field,
-    typename std::enable_if<
-    3==ViewType::traits::dimension::rank,int*>::type = 0 )
-{
-    // Define an offset view type.
-    using NeighborBuffer =
-        Kokkos::View<typename ViewType::data_type,
-                     typename ViewType::memory_space,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-
-    // Get the offset view into the receive buffer for the neighbor.
-    NeighborBuffer receive_buffer_subview(
-        receive_buffer.data() + offset,
-        unpack_range[Dim::I].second - unpack_range[Dim::I].first,
-        unpack_range[Dim::J].second - unpack_range[Dim::J].first,
-        unpack_range[Dim::K].second - unpack_range[Dim::K].first );
-
-    // Get a view of the layer we are receiving.
-    auto field_subview = Kokkos::subview( field,
-                                          unpack_range[Dim::I],
-                                          unpack_range[Dim::J],
-                                          unpack_range[Dim::K] );
-
-    // Copy into the halo.
-    Kokkos::deep_copy( field_subview, receive_buffer_subview );
-}
-
-// Rank 1 fields.
-template<typename ViewType,typename BufferType, typename PackRange>
-void gatherNeighbor(
-    const PackRange& unpack_range,
-    const BufferType receive_buffer,
-    const int offset,
-    ViewType field,
-    typename std::enable_if<
-    4==ViewType::traits::dimension::rank,int*>::type = 0 )
+void gatherNeighbor( const PackRange& unpack_range,
+                     const BufferType receive_buffer,
+                     const int offset,
+                     ViewType field )
 {
     // Define an offset view type.
     using NeighborBuffer =
@@ -288,63 +210,11 @@ void gatherNeighbor(
 
 //---------------------------------------------------------------------------//
 // Scatter a neighbor from a receive buffer.
-
-// Rank 0 fields.
 template<typename ViewType,typename BufferType, typename PackRange>
-void scatterNeighbor(
-    const PackRange& unpack_range,
-    const BufferType receive_buffer,
-    const int offset,
-    ViewType field,
-    typename std::enable_if<
-    3==ViewType::traits::dimension::rank,int*>::type = 0 )
-{
-    // Declare an execution policy for the scatter update.
-    using ExecPolicy =
-        Kokkos::MDRangePolicy<typename ViewType::execution_space,
-                              Kokkos::Rank<3> >;
-
-    // Define an offset view type.
-    using NeighborBuffer =
-        Kokkos::View<typename ViewType::data_type,
-                     typename ViewType::memory_space,
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-
-    // Get the offset view into the receive buffer for the neighbor.
-    NeighborBuffer receive_buffer_subview(
-        receive_buffer.data() + offset,
-        unpack_range[Dim::I].second - unpack_range[Dim::I].first,
-        unpack_range[Dim::J].second - unpack_range[Dim::J].first,
-        unpack_range[Dim::K].second - unpack_range[Dim::K].first );
-
-    // Get a view of the layer we are receiving.
-    auto field_subview = Kokkos::subview( field,
-                                          unpack_range[Dim::I],
-                                          unpack_range[Dim::J],
-                                          unpack_range[Dim::K] );
-
-    // Add the halo contribution into the local entities.
-    Kokkos::parallel_for(
-        "Scatter negative neighbor update",
-        ExecPolicy(
-            {0,0,0},
-            {unpack_range[Dim::I].second - unpack_range[Dim::I].first,
-             unpack_range[Dim::J].second - unpack_range[Dim::J].first,
-             unpack_range[Dim::K].second - unpack_range[Dim::K].first} ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
-            field_subview(i,j,k) += receive_buffer_subview(i,j,k);
-        } );
-}
-
-// Rank 1 fields.
-template<typename ViewType,typename BufferType, typename PackRange>
-void scatterNeighbor(
-    const PackRange& unpack_range,
-    const BufferType receive_buffer,
-    const int offset,
-    ViewType field,
-    typename std::enable_if<
-    4==ViewType::traits::dimension::rank,int*>::type = 0 )
+void scatterNeighbor( const PackRange& unpack_range,
+                      const BufferType receive_buffer,
+                      const int offset,
+                      ViewType field )
 {
     // Declare an execution policy for the scatter update.
     using ExecPolicy =

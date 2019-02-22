@@ -50,11 +50,11 @@ void conservationTest()
 
     // Make a grid mass field.
     auto grid_mass =
-        createField<double,TEST_MEMSPACE>( block, MeshEntity::Node );
+        createField<double,TEST_MEMSPACE>( block, 1, MeshEntity::Node );
 
     // Make a grid velocity field.
     auto grid_velocity =
-        createField<double[3],TEST_MEMSPACE>( block, MeshEntity::Node );
+        createField<double,TEST_MEMSPACE>( block, 3, MeshEntity::Node );
 
     // Initialize grid velocity field
     Kokkos::parallel_for(
@@ -94,9 +94,9 @@ void conservationTest()
         for ( int j = 0; j < num_cell[1]+2*halo_width; ++j )
             for ( int k = 0; k < num_cell[2]+2*halo_width; ++k )
             {
-                gm_init_x += grid_mass_mirror(i,j,k)*grid_velocity_mirror(i,j,k,Dim::I);
-                gm_init_y += grid_mass_mirror(i,j,k)*grid_velocity_mirror(i,j,k,Dim::J);
-                gm_init_z += grid_mass_mirror(i,j,k)*grid_velocity_mirror(i,j,k,Dim::K);
+                gm_init_x += grid_mass_mirror(i,j,k,0)*grid_velocity_mirror(i,j,k,Dim::I);
+                gm_init_y += grid_mass_mirror(i,j,k,0)*grid_velocity_mirror(i,j,k,Dim::J);
+                gm_init_z += grid_mass_mirror(i,j,k,0)*grid_velocity_mirror(i,j,k,Dim::K);
             }
 
     // Interpolate grid to particle.
@@ -153,7 +153,7 @@ void conservationTest()
                 gm_final_x += grid_velocity_mirror(i,j,k,Dim::I);
                 gm_final_y += grid_velocity_mirror(i,j,k,Dim::J);
                 gm_final_z += grid_velocity_mirror(i,j,k,Dim::K);
-                total_grid_mass += grid_mass_mirror(i,j,k);
+                total_grid_mass += grid_mass_mirror(i,j,k,0);
             }
 
     // Check the mass conservation.

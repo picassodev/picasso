@@ -65,12 +65,6 @@ class ParticleViewAccessor
     operator()( const int p, const int d0 ) const
     { return _view(p,d0); }
 
-    template<int R = field_rank>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<(2==R),reference_type>::type
-    operator()( const int p, const int d0, const int d1 ) const
-    { return _view(p,d0,d1); }
-
   private:
     ViewType _view;
 };
@@ -111,8 +105,7 @@ class GridViewAccessor
 
     using grid_accessor = GridViewAccessor<ViewType>;
 
-    static constexpr unsigned field_rank =
-        ViewType::traits::dimension::rank - 3;
+    static constexpr unsigned field_rank = 1;
 
     using reference_type = typename ViewType::reference_type;
 
@@ -123,23 +116,10 @@ class GridViewAccessor
     int extent( const int dim ) const
     { return _view.extent(dim+3); }
 
-    template<int R = field_rank>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<(0==R),reference_type>::type
-    operator()( const int i, const int j, const int k ) const
-    { return _view(i,j,k); }
-
-    template<int R = field_rank>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<(1==R),reference_type>::type
+    reference_type
     operator()( const int i, const int j, const int k, const int d0 ) const
     { return _view(i,j,k,d0); }
-
-    template<int R = field_rank>
-    KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if<(2==R),reference_type>::type
-    operator()( const int i, const int j, const int k, const int d0, const int d1 ) const
-    { return _view(i,j,k,d0,d1); }
 
   private:
     ViewType _view;
@@ -170,7 +150,7 @@ void interpolateParticleValue(
     const FieldAccessor& src,
     ViewType& dst,
     typename std::enable_if<
-    (0 == FieldAccessor::field_rank && is_particle_accessor<FieldAccessor>::value),
+    (is_particle_accessor<FieldAccessor>::value) && 0 == FieldAccessor::field_rank,
     int*>::type = 0 )
 {
     // Get the value this particle will contribute to the grid.
@@ -185,7 +165,8 @@ void interpolateParticleValue(
                 // Add the contribution of the particle to the node.
                 dst( pli[Dim::I] + offsets[i],
                      pli[Dim::J] + offsets[j],
-                     pli[Dim::K] + offsets[k] ) +=
+                     pli[Dim::K] + offsets[k],
+                     0 ) +=
                     wi[i] * wj[j] * wk[k] * value;
             }
 }
@@ -205,7 +186,7 @@ void interpolateParticleValue(
     const FieldAccessor& src,
     ViewType& dst,
     typename std::enable_if<
-    (1 == FieldAccessor::field_rank && is_particle_accessor<FieldAccessor>::value),
+    (is_particle_accessor<FieldAccessor>::value) && 1 == FieldAccessor::field_rank,
     int*>::type = 0 )
 {
     // Loop over the field dimensions.
@@ -231,48 +212,6 @@ void interpolateParticleValue(
 }
 
 //---------------------------------------------------------------------------//
-// rank 2 field.
-template<class Real, class FieldAccessor, class ViewType>
-KOKKOS_INLINE_FUNCTION
-void interpolateParticleValue(
-    const int pid,
-    const int ns,
-    const int* offsets,
-    const int* pli,
-    const Real* wi,
-    const Real* wj,
-    const Real* wk,
-    const FieldAccessor& src,
-    ViewType& dst,
-    typename std::enable_if<
-    (2 == FieldAccessor::field_rank && is_particle_accessor<FieldAccessor>::value),
-    int*>::type = 0 )
-{
-    // Loop over the field dimensions.
-    for ( int d0 = 0; d0 < src.extent(0); ++d0 )
-        for ( int d1 = 0; d1 < src.extent(1); ++d1 )
-        {
-            // Get the value this particle will contribute to the grid.
-            auto value = src( pid, d0, d1 );
-
-            // Loop over the neighboring nodes and add the field
-            // contribution.
-            for ( int i = 0; i < ns; ++i )
-                for ( int j = 0; j < ns; ++j )
-                    for ( int k = 0; k < ns; ++k )
-                    {
-                        // Add the contribution of the particle to the node.
-                        dst( pli[Dim::I] + offsets[i],
-                             pli[Dim::J] + offsets[j],
-                             pli[Dim::K] + offsets[k],
-                             d0,
-                             d1 ) +=
-                            wi[i] * wj[j] * wk[k] * value;
-                    }
-        }
-}
-
-//---------------------------------------------------------------------------//
 // Interpolate from the grid to a single particle.
 //---------------------------------------------------------------------------//
 // rank 0 field.
@@ -289,7 +228,8 @@ void interpolateParticleValue(
     const FieldAccessor& src,
     ViewType& dst,
     typename std::enable_if<
-    (0 == FieldAccessor::field_rank && is_grid_accessor<FieldAccessor>::value),
+    (1 == ViewType::view_type::original_view_type::traits::dimension::rank &&
+     is_grid_accessor<FieldAccessor>::value),
     int*>::type = 0 )
 {
     // Loop over the neighboring nodes and add the field
@@ -301,7 +241,8 @@ void interpolateParticleValue(
                     wi[i] * wj[j] * wk[k] *
                     src( pli[Dim::I] + offsets[i],
                          pli[Dim::J] + offsets[j],
-                         pli[Dim::K] + offsets[k] );
+                         pli[Dim::K] + offsets[k],
+                         0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -319,7 +260,8 @@ void interpolateParticleValue(
     const FieldAccessor& src,
     ViewType& dst,
     typename std::enable_if<
-    (1 == FieldAccessor::field_rank && is_grid_accessor<FieldAccessor>::value),
+    (2 == ViewType::view_type::original_view_type::traits::dimension::rank &&
+     is_grid_accessor<FieldAccessor>::value),
     int*>::type = 0 )
 {
     // Loop over the neighboring nodes and add the field
@@ -339,46 +281,6 @@ void interpolateParticleValue(
                                  pli[Dim::J] + offsets[j],
                                  pli[Dim::K] + offsets[k],
                                  d0 );
-            }
-}
-
-//---------------------------------------------------------------------------//
-// rank 2 field.
-template<class Real, class FieldAccessor, class ViewType>
-KOKKOS_INLINE_FUNCTION
-void interpolateParticleValue(
-    const int pid,
-    const int ns,
-    const int* offsets,
-    const int* pli,
-    const Real* wi,
-    const Real* wj,
-    const Real* wk,
-    const FieldAccessor& src,
-    ViewType& dst,
-    typename std::enable_if<
-    (2 == FieldAccessor::field_rank && is_grid_accessor<FieldAccessor>::value),
-    int*>::type = 0 )
-{
-    // Loop over the neighboring nodes and add the field
-    // contribution.
-    for ( int i = 0; i < ns; ++i )
-        for ( int j = 0; j < ns; ++j )
-            for ( int k = 0; k < ns; ++k )
-            {
-                // Compute the weight for this node.
-                Real w = wi[i] * wj[j] * wk[k];
-
-                // Loop over the field dimensions. Add the contribution of the
-                // node to the particle.
-                for ( int d0 = 0; d0 < src.extent(0); ++d0 )
-                    for ( int d1 = 0; d1 < src.extent(1); ++d1 )
-                        dst( pid, d0, d1 ) +=
-                            w * src( pli[Dim::I] + offsets[i],
-                                     pli[Dim::J] + offsets[j],
-                                     pli[Dim::K] + offsets[k],
-                                     d0,
-                                     d1 );
             }
 }
 

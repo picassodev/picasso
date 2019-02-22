@@ -51,7 +51,7 @@ void vectorOpTest()
     // TEST SCALAR FIELDS
     //-------------------
     GridField<double,TEST_EXECSPACE> scalar_A(
-        global_grid, MeshEntity::Cell, 0, "scalar_A" );
+        global_grid, 1, MeshEntity::Cell, 0, "scalar_A" );
 
     // Assign some data.
     double a_val = -3.23;
@@ -63,12 +63,12 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k), a_val );
+                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k,0), a_val );
 
     // Check infinity norm.
     double expected_norm_inf = 1347.5;
     if ( 0 == comm_rank )
-        scalar_A_mirror( 3, 2, 1 ) = expected_norm_inf;
+        scalar_A_mirror( 3, 2, 1, 0 ) = expected_norm_inf;
     Kokkos::deep_copy( scalar_A.data(), scalar_A_mirror );
     auto norm_inf = GridFieldVectorOp::normInf( scalar_A );
     EXPECT_DOUBLE_EQ( norm_inf, expected_norm_inf );
@@ -92,7 +92,7 @@ void vectorOpTest()
     // Check the dot product.
     double b_val = 4.33;
     GridField<double,TEST_EXECSPACE> scalar_B(
-        global_grid, MeshEntity::Cell, 0, "scalar_B" );
+        global_grid, 1, MeshEntity::Cell, 0, "scalar_B" );
     GridFieldVectorOp::assign( b_val, scalar_B );
     auto dot_product = GridFieldVectorOp::dot( scalar_A, scalar_B );
     double expected_dot = total_num_cell * a_val * b_val;
@@ -105,7 +105,7 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k), a_val * alpha );
+                EXPECT_DOUBLE_EQ( scalar_A_mirror(i,j,k,0), a_val * alpha );
 
     double beta = 12.2;
     GridFieldVectorOp::scale( beta, scalar_B );
@@ -114,11 +114,11 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_DOUBLE_EQ( scalar_B_mirror(i,j,k), b_val * beta );
+                EXPECT_DOUBLE_EQ( scalar_B_mirror(i,j,k,0), b_val * beta );
 
     // Check the 2 vector update.
     GridField<double,TEST_EXECSPACE> scalar_C(
-        global_grid, MeshEntity::Cell, 0, "scalar_C" );
+        global_grid, 1, MeshEntity::Cell, 0, "scalar_C" );
     GridFieldVectorOp::update( 1.0 / alpha,
                                scalar_A,
                                1.0 / beta,
@@ -129,11 +129,11 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_DOUBLE_EQ( scalar_C_mirror(i,j,k), a_val + b_val );
+                EXPECT_DOUBLE_EQ( scalar_C_mirror(i,j,k,0), a_val + b_val );
 
     // Check the 3 vector update.
     GridField<double,TEST_EXECSPACE> scalar_D(
-        global_grid, MeshEntity::Cell, 0, "scalar_D" );
+        global_grid, 1, MeshEntity::Cell, 0, "scalar_D" );
     double gamma = -12.1;
     GridFieldVectorOp::update( 1.0 / alpha,
                                scalar_A,
@@ -147,25 +147,25 @@ void vectorOpTest()
     for ( int i = i_begin; i < i_end; ++i )
         for ( int j = j_begin; j < j_end; ++j )
             for ( int k = k_begin; k < k_end; ++k )
-                EXPECT_DOUBLE_EQ( scalar_D_mirror(i,j,k),
+                EXPECT_DOUBLE_EQ( scalar_D_mirror(i,j,k,0),
                                   (1.0 + gamma ) * (a_val + b_val) );
 
 
     // TEST Rank-1 FIELDS
     //-------------------
-    GridField<double[3],TEST_EXECSPACE> rank_1_A(
-        global_grid, MeshEntity::Cell, 0, "rank_1_A" );
+    GridField<double,TEST_EXECSPACE> rank_1_A(
+        global_grid, 3, MeshEntity::Cell, 0, "rank_1_A" );
     GridFieldVectorOp::assign( a_val, rank_1_A );
 
-    GridField<double[3],TEST_EXECSPACE> rank_1_B(
-        global_grid, MeshEntity::Cell, 0, "rank_1_B" );
+    GridField<double,TEST_EXECSPACE> rank_1_B(
+        global_grid, 3, MeshEntity::Cell, 0, "rank_1_B" );
     GridFieldVectorOp::assign( b_val, rank_1_B );
 
-    GridField<double[3],TEST_EXECSPACE> rank_1_C(
-        global_grid, MeshEntity::Cell, 0, "rank_1_C" );
+    GridField<double,TEST_EXECSPACE> rank_1_C(
+        global_grid, 3, MeshEntity::Cell, 0, "rank_1_C" );
 
-    GridField<double[3],TEST_EXECSPACE> rank_1_D(
-        global_grid, MeshEntity::Cell, 0, "rank_1_D" );
+    GridField<double,TEST_EXECSPACE> rank_1_D(
+        global_grid, 3, MeshEntity::Cell, 0, "rank_1_D" );
 
     // Check the 2 vector update.
     GridFieldVectorOp::update( alpha,
@@ -198,109 +198,6 @@ void vectorOpTest()
                 for ( int n0 = 0; n0 < 3; ++n0 )
                     EXPECT_DOUBLE_EQ( rank_1_D_mirror(i,j,k,n0),
                                       (1.0 + gamma) * (alpha * a_val + beta * b_val) );
-
-
-    // TEST Rank-2 FIELDS
-    //-------------------
-    GridField<double[3][2],TEST_EXECSPACE> rank_2_A(
-        global_grid, MeshEntity::Cell, 0, "rank_2_A" );
-    GridFieldVectorOp::assign( a_val, rank_2_A );
-
-    GridField<double[3][2],TEST_EXECSPACE> rank_2_B(
-        global_grid, MeshEntity::Cell, 0, "rank_2_B" );
-    GridFieldVectorOp::assign( b_val, rank_2_B );
-
-    GridField<double[3][2],TEST_EXECSPACE> rank_2_C(
-        global_grid, MeshEntity::Cell, 0, "rank_2_C" );
-
-    GridField<double[3][2],TEST_EXECSPACE> rank_2_D(
-        global_grid, MeshEntity::Cell, 0, "rank_2_D" );
-
-    // Check the 2 vector update.
-    GridFieldVectorOp::update( alpha,
-                               rank_2_A,
-                               beta,
-                               rank_2_B,
-                               rank_2_C );
-    auto rank_2_C_mirror = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), rank_2_C.data() );
-    for ( int i = i_begin; i < i_end; ++i )
-        for ( int j = j_begin; j < j_end; ++j )
-            for ( int k = k_begin; k < k_end; ++k )
-                for ( int n0 = 0; n0 < 3; ++n0 )
-                    for ( int n1 = 0; n1 < 2; ++n1 )
-                        EXPECT_DOUBLE_EQ( rank_2_C_mirror(i,j,k,n0,n1),
-                                          alpha * a_val + beta * b_val );
-
-    // Check the 3 vector update.
-    GridFieldVectorOp::update( alpha,
-                               rank_2_A,
-                               beta,
-                               rank_2_B,
-                               gamma,
-                               rank_2_C,
-                               rank_2_D );
-    auto rank_2_D_mirror = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), rank_2_D.data() );
-    for ( int i = i_begin; i < i_end; ++i )
-        for ( int j = j_begin; j < j_end; ++j )
-            for ( int k = k_begin; k < k_end; ++k )
-                for ( int n0 = 0; n0 < 3; ++n0 )
-                    for ( int n1 = 0; n1 < 2; ++n1 )
-                        EXPECT_DOUBLE_EQ( rank_2_D_mirror(i,j,k,n0,n1),
-                                          (1.0 + gamma) * (alpha * a_val + beta * b_val) );
-
-    // TEST Rank-3 FIELDS
-    //-------------------
-    GridField<double[3][2][4],TEST_EXECSPACE> rank_3_A(
-        global_grid, MeshEntity::Cell, 0, "rank_3_A" );
-    GridFieldVectorOp::assign( a_val, rank_3_A );
-
-    GridField<double[3][2][4],TEST_EXECSPACE> rank_3_B(
-        global_grid, MeshEntity::Cell, 0, "rank_3_B" );
-    GridFieldVectorOp::assign( b_val, rank_3_B );
-
-    GridField<double[3][2][4],TEST_EXECSPACE> rank_3_C(
-        global_grid, MeshEntity::Cell, 0, "rank_3_C" );
-
-    GridField<double[3][2][4],TEST_EXECSPACE> rank_3_D(
-        global_grid, MeshEntity::Cell, 0, "rank_3_D" );
-
-    // Check the 2 vector update.
-    GridFieldVectorOp::update( alpha,
-                               rank_3_A,
-                               beta,
-                               rank_3_B,
-                               rank_3_C );
-    auto rank_3_C_mirror = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), rank_3_C.data() );
-    for ( int i = i_begin; i < i_end; ++i )
-        for ( int j = j_begin; j < j_end; ++j )
-            for ( int k = k_begin; k < k_end; ++k )
-                for ( int n0 = 0; n0 < 3; ++n0 )
-                    for ( int n1 = 0; n1 < 2; ++n1 )
-                        for ( int n2 = 0; n2 < 4; ++n2 )
-                            EXPECT_DOUBLE_EQ( rank_3_C_mirror(i,j,k,n0,n1,n2),
-                                              alpha * a_val + beta * b_val );
-
-    // Check the 3 vector update.
-    GridFieldVectorOp::update( alpha,
-                               rank_3_A,
-                               beta,
-                               rank_3_B,
-                               gamma,
-                               rank_3_C,
-                               rank_3_D );
-    auto rank_3_D_mirror = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), rank_3_D.data() );
-    for ( int i = i_begin; i < i_end; ++i )
-        for ( int j = j_begin; j < j_end; ++j )
-            for ( int k = k_begin; k < k_end; ++k )
-                for ( int n0 = 0; n0 < 3; ++n0 )
-                    for ( int n1 = 0; n1 < 2; ++n1 )
-                        for ( int n2 = 0; n2 < 4; ++n2 )
-                            EXPECT_DOUBLE_EQ( rank_3_D_mirror(i,j,k,n0,n1,n2),
-                                              (1.0 + gamma) * (alpha * a_val + beta * b_val) );
 }
 
 //---------------------------------------------------------------------------//
