@@ -1,4 +1,5 @@
-#include <Harlow_GridBlock.hpp>
+#include <Cajita_GridBlock.hpp>
+
 #include <Harlow_ParticleFieldOps.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -39,8 +40,8 @@ void cellBinningTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
-    GridBlock block( low_corner, num_cell, boundary_location,
-                     periodic, cell_size, halo_width );
+    Cajita::GridBlock block( low_corner, num_cell, boundary_location,
+                             periodic, cell_size, halo_width );
 
     // Put a particle in the center of each cell. The kokkos 3d binning
     // operator will sort by X first and Z last so build them in opposite
@@ -103,8 +104,8 @@ void keyBinningTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 2;
-    GridBlock block( low_corner, num_cell, boundary_location,
-                     periodic, cell_size, halo_width );
+    Cajita::GridBlock block( low_corner, num_cell, boundary_location,
+                             periodic, cell_size, halo_width );
 
     // Put a particle in the center of each cell. The kokkos 1d binning
     // operator will sort the particles linearly by cell id. Create a list of

@@ -3,16 +3,8 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
-  Harlow_BovGridFieldWriter.hpp
   Harlow_DeformationGradient.hpp
   Harlow_DenseLinearAlgebra.hpp
-  Harlow_GlobalGrid.hpp
-  Harlow_GridBlock.hpp
-  Harlow_GridCommunication.hpp
-  Harlow_GridExecPolicy.hpp
-  Harlow_GridField.hpp
-  Harlow_GridFieldVectorOps.hpp
-  Harlow_MpiTraits.hpp
   Harlow_ParticleAdvection.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleFieldOps.hpp
@@ -26,8 +18,6 @@ set(HEADERS
   )
 
 set(SOURCES
-  Harlow_GlobalGrid.cpp
-  Harlow_GridBlock.cpp
   Harlow_Version.cpp
   )
 
@@ -43,6 +33,8 @@ target_include_directories(harlow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CUR
 target_link_libraries(harlow Kokkos::kokkos)
 target_link_libraries(harlow MPI::MPI_CXX)
 target_link_libraries(harlow Silo::silo)
+target_link_libraries(harlow Silo::silo)
+target_link_libraries(harlow cajita)
 install(TARGETS harlow LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 #-----------------------------------------------------------------------------

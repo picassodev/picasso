@@ -1,8 +1,10 @@
 #ifndef HARLOW_PARTICLECOMMUNICATION_HPP
 #define HARLOW_PARTICLECOMMUNICATION_HPP
 
-#include <Harlow_GlobalGrid.hpp>
-#include <Harlow_MpiTraits.hpp>
+#include <Cajita_GridBlock.hpp>
+#include <Cajita_GlobalGrid.hpp>
+#include <Cajita_MpiTraits.hpp>
+
 #include <Harlow_ParticleFieldOps.hpp>
 #include <Harlow_Types.hpp>
 
@@ -52,7 +54,7 @@ std::size_t particleByteSize( const FieldType& field, FieldViewTypes&&... next )
 //---------------------------------------------------------------------------//
 template<class CoordViewType>
 void computeParticleDestinations(
-    const GlobalGrid& global_grid,
+    const Cajita::GlobalGrid& global_grid,
     const CoordViewType& coords,
     Kokkos::View<int*,typename CoordViewType::memory_space>& destinations,
     Kokkos::View<std::size_t[27],typename CoordViewType::memory_space>& send_counts,
@@ -61,7 +63,7 @@ void computeParticleDestinations(
     using execution_space = typename CoordViewType::execution_space;
 
     // Get the grid block without a halo.
-    const GridBlock& local_block = global_grid.block();
+    const auto& local_block = global_grid.block();
 
     // Locate the particles in the global grid and get their destination
     // rank. The particle halo should be constructed such that particles will
@@ -151,7 +153,7 @@ void computeParticleDestinations(
 //---------------------------------------------------------------------------//
 // Determine if each of the 26 adjacent blocks in logical space is a rank we
 // should send to.
-std::vector<bool> getNeighbors( const GridBlock& grid )
+std::vector<bool> getNeighbors( const Cajita::GridBlock& grid )
 {
     std::vector<bool> is_neighbor;
     is_neighbor.reserve( 26 );
@@ -459,7 +461,7 @@ void unpackParticles( const ReceiveBuffer& receive_buffer,
 // When particles cross a periodic boundary their coordinates must be shifted
 // to represent a new physical location.
 template<class CoordViewType>
-void shiftPeriodicCoordinates( const GlobalGrid& global_grid,
+void shiftPeriodicCoordinates( const Cajita::GlobalGrid& global_grid,
                                CoordViewType& coords )
 {
     using execution_space = typename CoordViewType::execution_space;
@@ -579,14 +581,14 @@ void shiftPeriodicCoordinates( const GlobalGrid& global_grid,
   \param fields Tuple of particle fields to be redistributed.
  */
 template<class CoordViewType, class ... FieldViewTypes>
-void redistribute( const GlobalGrid& global_grid,
+void redistribute( const Cajita::GlobalGrid& global_grid,
                    CoordViewType& coords,
                    FieldViewTypes&&... fields )
 {
     using memory_space = typename CoordViewType::memory_space;
 
     // Get the grid block without a halo.
-    const GridBlock& local_block = global_grid.block();
+    const auto& local_block = global_grid.block();
 
     // Get the neighbor filter. This will tell us if we actually send to any
     // of the 26 adjacent logical neighbors.

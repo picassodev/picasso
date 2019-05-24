@@ -1,7 +1,8 @@
+#include <Cajita_GridBlock.hpp>
+#include <Cajita_GridExecPolicy.hpp>
+#include <Cajita_GridField.hpp>
+
 #include <Harlow_Types.hpp>
-#include <Harlow_GridBlock.hpp>
-#include <Harlow_GridExecPolicy.hpp>
-#include <Harlow_GridField.hpp>
 #include <Harlow_VelocityInterpolation.hpp>
 #include <Harlow_ParticleInterpolation.hpp>
 
@@ -24,8 +25,8 @@ void conservationTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.2298;
     int halo_width = 4;
-    GridBlock block( low_corner, num_cell, boundary_location,
-                     periodic, cell_size, halo_width );
+    Cajita::GridBlock block( low_corner, num_cell, boundary_location,
+                             periodic, cell_size, halo_width );
 
     // Calculate the low corners of the node primal grid. This includes the halo.
     std::vector<double> node_low_corner =
@@ -50,16 +51,16 @@ void conservationTest()
 
     // Make a grid mass field.
     auto grid_mass =
-        createField<double,TEST_MEMSPACE>( block, 1, MeshEntity::Node );
+        Cajita::createField<double,TEST_MEMSPACE>( block, 1, MeshEntity::Node );
 
     // Make a grid velocity field.
     auto grid_velocity =
-        createField<double,TEST_MEMSPACE>( block, 3, MeshEntity::Node );
+        Cajita::createField<double,TEST_MEMSPACE>( block, 3, MeshEntity::Node );
 
     // Initialize grid velocity field
     Kokkos::parallel_for(
         "init_grid_velocity",
-        GridExecution::createEntityPolicy<TEST_EXECSPACE>(block,MeshEntity::Node),
+        Cajita::GridExecution::createEntityPolicy<TEST_EXECSPACE>(block,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             grid_velocity(i,j,k,Dim::I) = (i-6.)*(i-6.) + 3.2*i;
             grid_velocity(i,j,k,Dim::J) = (j-10.)*(j-10.) + 1.4*j;

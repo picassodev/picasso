@@ -27,11 +27,6 @@ find_package(Silo REQUIRED)
 
 option(Harlow_ENABLE_Serial "Build Harlow with Serial support" ON)
 
-option(Harlow_ENABLE_Pthread "Build Harlow with Pthread support" OFF)
-if( Harlow_ENABLE_Pthread )
-  find_package(Threads)
-endif()
-
 option(Harlow_ENABLE_OpenMP "Build Harlow with OpenMP support" OFF)
 if( Harlow_ENABLE_OpenMP )
   find_package(OpenMP)
@@ -42,7 +37,7 @@ if( Harlow_ENABLE_Cuda )
   enable_language( CUDA )
 endif()
 
-set(HARLOW_SUPPORTED_DEVICES Serial Pthread OpenMP Cuda)
+set(HARLOW_SUPPORTED_DEVICES Serial OpenMP Cuda)
 set(ENABLE_DEVICES)
 foreach(_device ${HARLOW_SUPPORTED_DEVICES})
   if(Harlow_ENABLE_${_device})
@@ -108,4 +103,8 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "Harlow Revision = '${Harlow_GIT_COMMIT_HASH}'")
 
+# Cajita subpackage
+add_subdirectory(Cajita)
+
+# Primary core subpackage
 add_subdirectory(src)

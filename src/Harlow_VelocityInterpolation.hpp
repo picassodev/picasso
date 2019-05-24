@@ -1,6 +1,8 @@
 #ifndef HARLOW_VELOCITYINTERPOLATION_HPP
 #define HARLOW_VELOCITYINTERPOLATION_HPP
 
+#include <Cajita_GridBlock.hpp>
+
 #include <Harlow_Splines.hpp>
 #include <Harlow_DenseLinearAlgebra.hpp>
 
@@ -193,7 +195,7 @@ template<int SplineOrder,
          class GridMassView,
          class GridMomentumView>
 void particleToGrid(
-    const GridBlock& block,
+    const Cajita::GridBlock& block,
     const double dt,
     const ParticlePositionView& particle_position,
     const ParticleMassView& particle_mass,
@@ -467,7 +469,7 @@ template<int SplineOrder,
          class GridVelocityView,
          class ParticleVelocityView>
 void gridToParticle(
-    const GridBlock& block,
+    const Cajita::GridBlock& block,
     const GridVelocityView& grid_velocity,
     const ParticlePositionView& particle_position,
     ParticleVelocityView& particle_velocity )
