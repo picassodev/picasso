@@ -383,7 +383,7 @@ void gridToParticleTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, linear_test )
+TEST( TEST_CATEGORY, linear_test )
 {
     fillTest<FunctionOrder::Linear>();
     particleToGridTest<FunctionOrder::Linear>();
@@ -391,7 +391,7 @@ TEST_F( TEST_CATEGORY, linear_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, quadratic_test )
+TEST( TEST_CATEGORY, quadratic_test )
 {
     fillTest<FunctionOrder::Quadratic>();
     particleToGridTest<FunctionOrder::Quadratic>();
@@ -399,7 +399,7 @@ TEST_F( TEST_CATEGORY, quadratic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, cubic_test )
+TEST( TEST_CATEGORY, cubic_test )
 {
     fillTest<FunctionOrder::Cubic>();
     particleToGridTest<FunctionOrder::Cubic>();

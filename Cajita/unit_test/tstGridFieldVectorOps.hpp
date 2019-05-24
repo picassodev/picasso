@@ -203,7 +203,7 @@ void vectorOpTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, vector_ops )
+TEST( TEST_CATEGORY, vector_ops )
 {
     vectorOpTest();
 }

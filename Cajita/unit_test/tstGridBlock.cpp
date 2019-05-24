@@ -7,16 +7,6 @@ using namespace Cajita;
 
 namespace Test
 {
-//---------------------------------------------------------------------------//
-// Fixture
-class harlow_grid_block : public ::testing::Test {
-  protected:
-    static void SetUpTestCase() {
-    }
-
-    static void TearDownTestCase() {
-    }
-};
 
 //---------------------------------------------------------------------------//
 void apiTest()
@@ -191,19 +181,19 @@ void periodicTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( harlow_grid_block, api_test )
+TEST( harlow_grid_block, api_test )
 {
     apiTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( harlow_grid_block, assign_test )
+TEST( harlow_grid_block, assign_test )
 {
     assignTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( harlow_grid_block, periodic_test )
+TEST( harlow_grid_block, periodic_test )
 {
     periodicTest();
 }

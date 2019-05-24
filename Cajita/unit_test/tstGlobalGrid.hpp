@@ -11,16 +11,6 @@ using namespace Cajita;
 
 namespace Test
 {
-//---------------------------------------------------------------------------//
-// Fixture
-class harlow_global_grid : public ::testing::Test {
-  protected:
-    static void SetUpTestCase() {
-    }
-
-    static void TearDownTestCase() {
-    }
-};
 
 //---------------------------------------------------------------------------//
 void gridTest()
@@ -212,7 +202,7 @@ void gridTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( harlow_global_grid, grid_test )
+TEST( harlow_global_grid, grid_test )
 {
     gridTest();
 }

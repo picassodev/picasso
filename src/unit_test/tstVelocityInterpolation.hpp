@@ -172,14 +172,14 @@ void conservationTest()
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, linear_spline_test )
+TEST( TEST_CATEGORY, linear_spline_test )
 {
     conservationTest<FunctionOrder::Linear,FunctionOrder::Linear>();
     conservationTest<FunctionOrder::Linear,FunctionOrder::Bilinear>();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, Quadratic_spline_test )
+TEST( TEST_CATEGORY, Quadratic_spline_test )
 {
     conservationTest<FunctionOrder::Quadratic,FunctionOrder::Linear>();
     conservationTest<FunctionOrder::Quadratic,FunctionOrder::Bilinear>();
@@ -187,7 +187,7 @@ TEST_F( TEST_CATEGORY, Quadratic_spline_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, Cubic_spline_test )
+TEST( TEST_CATEGORY, Cubic_spline_test )
 {
     conservationTest<FunctionOrder::Cubic,FunctionOrder::Linear>();
     conservationTest<FunctionOrder::Cubic,FunctionOrder::Bilinear>();

@@ -320,7 +320,7 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, not_periodic_test )
+TEST( TEST_CATEGORY, not_periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -345,7 +345,7 @@ TEST_F( TEST_CATEGORY, not_periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, periodic_test )
+TEST( TEST_CATEGORY, periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -370,7 +370,7 @@ TEST_F( TEST_CATEGORY, periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, local_only_test )
+TEST( TEST_CATEGORY, local_only_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;

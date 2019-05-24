@@ -160,19 +160,19 @@ void keyBinningTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, resize_test )
+TEST( TEST_CATEGORY, resize_test )
 {
     resizeTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, cell_binning_test )
+TEST( TEST_CATEGORY, cell_binning_test )
 {
     cellBinningTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, key_binning_test )
+TEST( TEST_CATEGORY, key_binning_test )
 {
     keyBinningTest();
 }

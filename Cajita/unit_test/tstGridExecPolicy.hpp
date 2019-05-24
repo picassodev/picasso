@@ -417,13 +417,13 @@ void boundaryTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, parallel_test )
+TEST( TEST_CATEGORY, parallel_test )
 {
     parallelTest();
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, boundary_test )
+TEST( TEST_CATEGORY, boundary_test )
 {
     boundaryTest();
 }
