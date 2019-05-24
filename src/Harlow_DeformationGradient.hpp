@@ -2,6 +2,7 @@
 #define HARLOW_DEFORMATIONGRADIENT_HPP
 
 #include <Harlow_DenseLinearAlgebra.hpp>
+#include <Harlow_Types.hpp>
 
 #include <Kokkos_Core.hpp>
 

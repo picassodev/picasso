@@ -1,6 +1,8 @@
 #ifndef HARLOW_TYPES_HPP
 #define HARLOW_TYPES_HPP
 
+#include <Cajita_Types.hpp>
+
 namespace Harlow
 {
 
@@ -18,36 +20,13 @@ struct FunctionOrder
 };
 
 // Logical dimension index.
-struct Dim
-{
-    enum Values {
-        I = 0,
-        J = 1,
-        K = 2
-    };
-};
+using Dim = Cajita::Dim;
 
 // Domain boundary
-struct DomainBoundary
-{
-    enum Values {
-        LowX = 0,
-        HighX = 1,
-        LowY = 2,
-        HighY = 3,
-        LowZ = 4,
-        HighZ = 5
-    };
-};
+using DomainBoundary = Cajita::DomainBoundary;
 
 // Mesh entity type.
-struct MeshEntity
-{
-    enum Values {
-        Node = 0,
-        Cell = 1,
-    };
-};
+using MeshEntity = Cajita::MeshEntity;
 
 } // end namespace Harlow
 

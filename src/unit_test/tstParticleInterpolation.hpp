@@ -1,8 +1,9 @@
-#include <Harlow_Types.hpp>
-#include <Harlow_GridBlock.hpp>
-#include <Harlow_GridExecPolicy.hpp>
-#include <Harlow_GridField.hpp>
+#include <Cajita_GridBlock.hpp>
+#include <Cajita_GridExecPolicy.hpp>
+#include <Cajita_GridField.hpp>
+
 #include <Harlow_ParticleInterpolation.hpp>
+#include <Harlow_Types.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -24,8 +25,8 @@ void fillTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 4;
-    GridBlock grid( low_corner, num_cell, boundary_location,
-                    periodic, cell_size, halo_width );
+    Cajita::GridBlock grid( low_corner, num_cell, boundary_location,
+                            periodic, cell_size, halo_width );
 
     // Calculate the low corners of the node primal grid. This includes the halo.
     std::vector<double> node_low_corner =
@@ -50,7 +51,7 @@ void fillTest()
 
     // Make a node field.
     auto scalar_node_field =
-        createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
+        Cajita::createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -151,8 +152,8 @@ void particleToGridTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 4;
-    GridBlock grid( low_corner, num_cell, boundary_location,
-                    periodic, cell_size, halo_width );
+    Cajita::GridBlock grid( low_corner, num_cell, boundary_location,
+                            periodic, cell_size, halo_width );
 
     // Calculate the low corners of the node primal grid. This includes the halo.
     std::vector<double> node_low_corner =
@@ -192,7 +193,7 @@ void particleToGridTest()
 
     // Make a node field.
     auto scalar_node_field =
-        createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
+        Cajita::createField<double,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
 
     // Make a particle field.
     using ScalarViewType = Kokkos::View<float*,TEST_MEMSPACE>;
@@ -218,7 +219,7 @@ void particleToGridTest()
     double scalar_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "scalar grid sum",
-        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
+        Cajita::GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += scalar_node_field(i,j,k,0);
@@ -231,7 +232,7 @@ void particleToGridTest()
 
     // Make a node field.
     auto vector_node_field =
-        createField<double,TEST_MEMSPACE>( grid, 2, MeshEntity::Node );
+        Cajita::createField<double,TEST_MEMSPACE>( grid, 2, MeshEntity::Node );
 
     // Make a particle field.
     using VectorViewType = Kokkos::View<float*[2],TEST_MEMSPACE>;
@@ -255,7 +256,7 @@ void particleToGridTest()
     double vector_grid_sum = 0.0;
     Kokkos::parallel_reduce(
         "vector grid sum",
-        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
+        Cajita::GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k, double& result )
         {
             result += vector_node_field(i,j,k,0);
@@ -276,8 +277,8 @@ void gridToParticleTest()
     std::vector<bool> periodic = {false,false,false};
     double cell_size = 0.53;
     int halo_width = 4;
-    GridBlock grid( low_corner, num_cell, boundary_location,
-                    periodic, cell_size, halo_width );
+    Cajita::GridBlock grid( low_corner, num_cell, boundary_location,
+                            periodic, cell_size, halo_width );
 
     // Calculate the low corners of the node primal grid. This includes the halo.
     std::vector<double> node_low_corner =
@@ -317,11 +318,11 @@ void gridToParticleTest()
 
     // Make a node field.
     auto scalar_node_field =
-        createField<float,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
+        Cajita::createField<float,TEST_MEMSPACE>( grid, 1, MeshEntity::Node );
     double grid_value_0 = 1.2303;
     Kokkos::parallel_for(
         "scalar grid fill",
-        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
+        Cajita::GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             scalar_node_field(i,j,k,0) = grid_value_0;
@@ -348,11 +349,11 @@ void gridToParticleTest()
 
     // Make a node field.
     auto vector_node_field =
-        createField<float,TEST_MEMSPACE>( grid, 2, MeshEntity::Node );
+        Cajita::createField<float,TEST_MEMSPACE>( grid, 2, MeshEntity::Node );
     double grid_value_1 = -34.32;
     Kokkos::parallel_for(
         "vector grid fill",
-        GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
+        Cajita::GridExecution::createEntityPolicy<TEST_EXECSPACE>(grid,MeshEntity::Node),
         KOKKOS_LAMBDA( const int i, const int j, const int k )
         {
             vector_node_field(i,j,k,0) = grid_value_0;

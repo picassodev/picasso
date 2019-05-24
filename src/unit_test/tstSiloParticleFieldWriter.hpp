@@ -1,6 +1,7 @@
 #include <Harlow_SiloParticleFieldWriter.hpp>
 #include <Harlow_Types.hpp>
-#include <Harlow_GlobalGrid.hpp>
+
+#include <Cajita_GlobalGrid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -28,7 +29,7 @@ void writeTest( const std::vector<int>& ranks_per_dim )
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
     std::vector<bool> is_dim_periodic = {false,false,false};
-    auto global_grid = std::make_shared<GlobalGrid>(
+    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
         ranks_per_dim,
         is_dim_periodic,

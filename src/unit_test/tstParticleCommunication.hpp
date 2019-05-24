@@ -1,7 +1,8 @@
+#include <Cajita_GlobalGrid.hpp>
+#include <Cajita_GridBlock.hpp>
+
 #include <Harlow_ParticleCommunication.hpp>
 #include <Harlow_Types.hpp>
-#include <Harlow_GlobalGrid.hpp>
-#include <Harlow_GridBlock.hpp>
 #include <Harlow_ParticleFieldOps.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -28,7 +29,7 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    auto global_grid = std::make_shared<GlobalGrid>(
+    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
         ranks_per_dim,
         is_dim_periodic,
@@ -38,7 +39,7 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
 
     // Get the local block with a halo of 2.
     const int halo_size = 2;
-    GridBlock block;
+    Cajita::GridBlock block;
     block.assign( global_grid->block(), halo_size );
 
     // Get my local ranks.
@@ -164,7 +165,7 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
     }
 
     // Check that all of the particles are now in the local domain.
-    GridBlock local_block;
+    Cajita::GridBlock local_block;
     local_block.assign( global_grid->block(), 0 );
     double low_c[3] = { local_block.lowCorner( Dim::I ),
                         local_block.lowCorner( Dim::J ),
@@ -202,7 +203,7 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    auto global_grid = std::make_shared<GlobalGrid>(
+    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
         ranks_per_dim,
         is_dim_periodic,
@@ -212,7 +213,7 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
 
     // Get the local block with a halo of 2.
     const int halo_size = 2;
-    GridBlock block;
+    Cajita::GridBlock block;
     block.assign( global_grid->block(), halo_size );
 
     // Get my local ranks.
@@ -294,7 +295,7 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
     }
 
     // Check that all of the particles are now in the local domain.
-    GridBlock local_block;
+    Cajita::GridBlock local_block;
     local_block.assign( global_grid->block(), 0 );
     double low_c[3] = { local_block.lowCorner( Dim::I ),
                         local_block.lowCorner( Dim::J ),

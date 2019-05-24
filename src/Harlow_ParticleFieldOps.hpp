@@ -1,7 +1,9 @@
 #ifndef HARLOW_PARTICLEFIELDOPS_HPP
 #define HARLOW_PARTICLEFIELDOPS_HPP
 
-#include <Harlow_GridBlock.hpp>
+#include <Cajita_GridBlock.hpp>
+
+#include <Harlow_Types.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Sort.hpp>
@@ -63,7 +65,7 @@ void permute( const BinSortType& bin_sort, ViewList&&... list )
 // that bins particles by their cell location.
 template<class CoordViewType>
 Kokkos::BinSort<CoordViewType,Kokkos::BinOp3D<CoordViewType> >
-createCellBinning( const GridBlock& block,
+createCellBinning( const Cajita::GridBlock& block,
                    const CoordViewType& coords )
 {
     // Create the binning operator.
@@ -91,7 +93,7 @@ createCellBinning( const GridBlock& block,
 // Bin particles by cell and permute them in a single function. The
 // coordinates will also be permuted.
 template<class CoordViewType, class ... ViewList>
-void binByCellAndPermute( const GridBlock& block,
+void binByCellAndPermute( const Cajita::GridBlock& block,
                           CoordViewType& coords,
                           ViewList&&... list )
 {

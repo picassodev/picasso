@@ -1,7 +1,7 @@
 #ifndef HARLOW_SILOPARTICLEFIELDWRITER_HPP
 #define HARLOW_SILOPARTICLEFIELDWRITER_HPP
 
-#include <Harlow_GlobalGrid.hpp>
+#include <Cajita_GlobalGrid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -337,7 +337,7 @@ void writeMultiMesh( PMPIO_baton_t* baton,
 //---------------------------------------------------------------------------//
 // Write a time step.
 template<class CoordViewType, class ... FieldViewTypes>
-void writeTimeStep( const GlobalGrid& global_grid,
+void writeTimeStep( const Cajita::GlobalGrid& global_grid,
                     const int time_step_index,
                     const double time,
                     const CoordViewType& coords,
