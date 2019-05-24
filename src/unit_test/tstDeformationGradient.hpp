@@ -71,7 +71,7 @@ void updateTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, update_test )
+TEST( TEST_CATEGORY, update_test )
 {
     updateTest();
 }

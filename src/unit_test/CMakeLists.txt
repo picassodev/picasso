@@ -16,6 +16,8 @@ set_target_properties(harlow_gtest PROPERTIES
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(gtest_args --gtest_color=yes)
+
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
@@ -26,37 +28,48 @@ foreach(_test Version Splines )
 endforeach()
 
 ##--------------------------------------------------------------------------##
-## Kokkos-only tests with a single execution space.
+## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
-foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-  if(Harlow_ENABLE_${_device})
-    foreach(_test ParticleFieldOps ParticleInterpolation VelocityInterpolation ParticleAdvection DeformationGradient DenseLinearAlgebra)
-      add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
-      target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
-      if(_device STREQUAL OpenMP)
-        foreach(_thread 1 2)
-          add_test(NAME ${_test}_test_${_device}_${_thread} COMMAND
-            ${_test}_test_${_device} --gtest_color=yes --kokkos-threads=${_thread})
-        endforeach()
-      else()
-        add_test(NAME ${_test}_test_${_device} COMMAND ${_test}_test_${_device} --gtest_color=yes)
-      endif()
-    endforeach()
+macro(Harlow_add_tests)
+  cmake_parse_arguments(HARLOW_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
+  set(HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS 1)
+  if(MPIEXEC_MAX_NUMPROCS GREATER 1)
+    list(APPEND HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS ${MPIEXEC_MAX_NUMPROCS})
   endif()
-endforeach()
-
-##--------------------------------------------------------------------------##
-## MPI+Kokkos tests.
-##--------------------------------------------------------------------------##
-foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-  if(Harlow_ENABLE_${_device})
-    foreach(_test ParticleCommunication SiloParticleFieldWriter)
-      add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
-      target_link_libraries(${_test}_test_${_device} harlow harlow_gtest)
-      foreach(_np 1 ${MPI_TEST_NUM_PROC})
-        add_test(NAME ${_test}_test_${_device}_${_np} COMMAND
-          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test_${_device} --gtest_color=yes)
+  set(HARLOW_UNIT_TEST_NUMTHREADS 1 2)
+  set(HARLOW_UNIT_TEST_MAIN unit_test_main.cpp)
+  foreach(_device ${HARLOW_SUPPORTED_DEVICES})
+    if(Harlow_ENABLE_${_device})
+      set(_dir ${CMAKE_CURRENT_BINARY_DIR}/${_device})
+      file(MAKE_DIRECTORY ${_dir})
+      foreach(_test ${HARLOW_UNIT_TEST_NAMES})
+        set(_file ${_dir}/tst${_test}_${_device}.cpp)
+        file(WRITE ${_file} "#include <Test${_device}_Category.hpp>\n")
+        file(APPEND ${_file} "#include <tst${_test}.hpp>\n")
+        set(_target ${_test}_test_${_device})
+        add_executable(${_target} ${_file} ${HARLOW_UNIT_TEST_MAIN})
+        target_include_directories(${_target} PUBLIC ${_dir})
+        target_link_libraries(${_target} harlow harlow_gtest)
+        if(HARLOW_UNIT_TEST_MPI)
+          foreach(_np ${HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS})
+            add_test(NAME ${_target}_${_np} COMMAND
+              ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
+              ${_target} ${MPIEXEC_POSTFLAGS} ${gtest_args})
+          endforeach()
+        else()
+          if(_device STREQUAL OpenMP)
+            foreach(_thread ${HARLOW_UNIT_TEST_NUMTHREADS})
+              add_test(NAME ${_target}_${_thread} COMMAND
+                ${_target} ${gtest_args} --kokkos-threads=${_thread})
+            endforeach()
+          else()
+            add_test(NAME ${_target} COMMAND ${_target} ${gtest_args})
+          endif()
+        endif()
       endforeach()
-    endforeach()
-  endif()
-endforeach()
+    endif()
+  endforeach()
+endmacro()
+
+Harlow_add_tests(NAMES ParticleFieldOps ParticleInterpolation VelocityInterpolation ParticleAdvection DeformationGradient DenseLinearAlgebra)
+Harlow_add_tests(MPI NAMES ParticleCommunication SiloParticleFieldWriter)

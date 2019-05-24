@@ -4,21 +4,12 @@
 
 #include <gtest/gtest.h>
 
+namespace Test
+{
 //---------------------------------------------------------------------------//
 // TESTS
 //---------------------------------------------------------------------------//
-namespace Test {
-
-class harlow_version : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-  }
-
-  static void TearDownTestCase() {
-  }
-};
-
-TEST_F( harlow_version, version_test )
+TEST( harlow_version, version_test )
 {
     auto const version_id = Harlow::version();
     EXPECT_TRUE( !version_id.empty() );

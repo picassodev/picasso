@@ -7,21 +7,12 @@
 
 using namespace Harlow;
 
+namespace Test
+{
 //---------------------------------------------------------------------------//
 // TESTS
 //---------------------------------------------------------------------------//
-namespace Test {
-
-class harlow_splines : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-  }
-
-  static void TearDownTestCase() {
-  }
-};
-
-TEST_F( harlow_splines, linear_spline_test )
+TEST( harlow_splines, linear_spline_test )
 {
     // Check partition of unity for the linear spline.
     double xp = -1.4;
@@ -60,7 +51,7 @@ TEST_F( harlow_splines, linear_spline_test )
     EXPECT_EQ( int(x0) + offsets[1], cell_id + 1);
 }
 
-TEST_F( harlow_splines, quadratic_spline_test )
+TEST( harlow_splines, quadratic_spline_test )
 {
     // Check partition of unity for the quadratic spline.
     double xp = -1.4;
@@ -101,7 +92,7 @@ TEST_F( harlow_splines, quadratic_spline_test )
     EXPECT_EQ( int(x0) + offsets[2], node_id + 1);
 }
 
-TEST_F( harlow_splines, cubic_spline_test )
+TEST( harlow_splines, cubic_spline_test )
 {
     // Check partition of unity for the cubic spline.
     double xp = -1.4;

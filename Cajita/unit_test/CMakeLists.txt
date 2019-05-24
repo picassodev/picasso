@@ -16,6 +16,8 @@ set_target_properties(cajita_gtest PROPERTIES
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(gtest_args --gtest_color=yes)
+
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
@@ -26,55 +28,48 @@ foreach(_test CajitaVersion GridBlock)
 endforeach()
 
 ##--------------------------------------------------------------------------##
-## Kokkos-only tests with a single execution space.
+## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
-foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-  if(Harlow_ENABLE_${_device})
-    foreach(_test GridField GridExecPolicy)
-      add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
-      target_link_libraries(${_test}_test_${_device} cajita cajita_gtest)
-      if(_device STREQUAL OpenMP)
-        foreach(_thread 1 2)
-          add_test(NAME ${_test}_test_${_device}_${_thread} COMMAND
-            ${_test}_test_${_device} --gtest_color=yes --kokkos-threads=${_thread})
-        endforeach()
-      else()
-        add_test(NAME ${_test}_test_${_device} COMMAND ${_test}_test_${_device} --gtest_color=yes)
-      endif()
-    endforeach()
+macro(Cajita_add_tests)
+  cmake_parse_arguments(CAJITA_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
+  set(CAJITA_UNIT_TEST_MPIEXEC_NUMPROCS 1)
+  if(MPIEXEC_MAX_NUMPROCS GREATER 1)
+    list(APPEND CAJITA_UNIT_TEST_MPIEXEC_NUMPROCS ${MPIEXEC_MAX_NUMPROCS})
   endif()
-endforeach()
-
-##--------------------------------------------------------------------------##
-## MPI-only tests.
-##--------------------------------------------------------------------------##
-if( ${MPIEXEC_MAX_NUMPROCS} GREATER 4 )
-  set(MPI_TEST_NUM_PROC 4)
-else()
-  set(MPI_TEST_NUM_PROC ${MPIEXEC_MAX_NUMPROCS})
-endif()
-
-foreach(_test GlobalGrid)
-  add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
-  target_link_libraries(${_test}_test cajita cajita_gtest)
-  foreach(_np 1 ${MPI_TEST_NUM_PROC})
-    add_test(NAME ${_test}_test_${_np} COMMAND
-      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test --gtest_color=yes)
-  endforeach()
-endforeach()
-
-##--------------------------------------------------------------------------##
-## MPI+Kokkos tests.
-##--------------------------------------------------------------------------##
-foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-  if(Harlow_ENABLE_${_device})
-    foreach(_test GridCommunicationFace GridCommunicationNode GridFieldVectorOps BovGridFieldWriter)
-      add_executable(${_test}_test_${_device} ${_device}/tst${_test}_${_device}.cpp unit_test_main.cpp)
-      target_link_libraries(${_test}_test_${_device} cajita cajita_gtest)
-      foreach(_np 1 ${MPI_TEST_NUM_PROC})
-        add_test(NAME ${_test}_test_${_device}_${_np} COMMAND
-          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${_test}_test_${_device} --gtest_color=yes)
+  set(CAJITA_UNIT_TEST_NUMTHREADS 1 2)
+  set(CAJITA_UNIT_TEST_MAIN unit_test_main.cpp)
+  foreach(_device ${HARLOW_SUPPORTED_DEVICES})
+    if(Harlow_ENABLE_${_device})
+      set(_dir ${CMAKE_CURRENT_BINARY_DIR}/${_device})
+      file(MAKE_DIRECTORY ${_dir})
+      foreach(_test ${CAJITA_UNIT_TEST_NAMES})
+        set(_file ${_dir}/tst${_test}_${_device}.cpp)
+        file(WRITE ${_file} "#include <Test${_device}_Category.hpp>\n")
+        file(APPEND ${_file} "#include <tst${_test}.hpp>\n")
+        set(_target ${_test}_test_${_device})
+        add_executable(${_target} ${_file} ${CAJITA_UNIT_TEST_MAIN})
+        target_include_directories(${_target} PUBLIC ${_dir})
+        target_link_libraries(${_target} cajita cajita_gtest)
+        if(CAJITA_UNIT_TEST_MPI)
+          foreach(_np ${CAJITA_UNIT_TEST_MPIEXEC_NUMPROCS})
+            add_test(NAME ${_target}_${_np} COMMAND
+              ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
+              ${_target} ${MPIEXEC_POSTFLAGS} ${gtest_args})
+          endforeach()
+        else()
+          if(_device STREQUAL OpenMP)
+            foreach(_thread ${CAJITA_UNIT_TEST_NUMTHREADS})
+              add_test(NAME ${_target}_${_thread} COMMAND
+                ${_target} ${gtest_args} --kokkos-threads=${_thread})
+            endforeach()
+          else()
+            add_test(NAME ${_target} COMMAND ${_target} ${gtest_args})
+          endif()
+        endif()
       endforeach()
-    endforeach()
-  endif()
-endforeach()
+    endif()
+  endforeach()
+endmacro()
+
+Cajita_add_tests(NAMES GridField GridExecPolicy)
+Cajita_add_tests(MPI NAMES GlobalGrid GridCommunicationFace GridCommunicationNode GridFieldVectorOps BovGridFieldWriter)

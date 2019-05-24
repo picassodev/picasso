@@ -430,7 +430,7 @@ void vectorFieldTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, graph_not_periodic_test )
+TEST( TEST_CATEGORY, graph_not_periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -455,7 +455,7 @@ TEST_F( TEST_CATEGORY, graph_not_periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, graph_periodic_test )
+TEST( TEST_CATEGORY, graph_periodic_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
@@ -480,7 +480,7 @@ TEST_F( TEST_CATEGORY, graph_periodic_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, graph_vector_field_test )
+TEST( TEST_CATEGORY, graph_vector_field_test )
 {
     vectorFieldTest();
 }

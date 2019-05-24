@@ -105,7 +105,7 @@ void writeTest( const std::vector<int>& ranks_per_dim )
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST_F( TEST_CATEGORY, write_test )
+TEST( TEST_CATEGORY, write_test )
 {
     // Let MPI compute the partitioning for this test.
     int comm_size;
