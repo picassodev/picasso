@@ -1,7 +1,9 @@
-#include <Harlow_SiloParticleFieldWriter.hpp>
+#include <Harlow_SiloParticleWriter.hpp>
 #include <Harlow_Types.hpp>
 
 #include <Cajita_GlobalGrid.hpp>
+
+#include <Cabana_Core.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -18,8 +20,14 @@ using namespace Harlow;
 namespace Test
 {
 //---------------------------------------------------------------------------//
-void writeTest( const std::vector<int>& ranks_per_dim )
+void writeTest()
 {
+    // Let MPI compute the partitioning for this test.
+    int comm_size;
+    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
+    std::vector<int> ranks_per_dim( 3 );
+    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+
     // Create the global grid.
     double cell_size = 0.23;
     std::vector<int> global_num_cell = { 22, 19, 21 };
@@ -42,19 +50,26 @@ void writeTest( const std::vector<int>& ranks_per_dim )
     int num_particle = block.localNumEntity( MeshEntity::Cell, Dim::I ) *
                        block.localNumEntity( MeshEntity::Cell, Dim::J ) *
                        block.localNumEntity( MeshEntity::Cell, Dim::K );
-    Kokkos::View<double*[3],TEST_MEMSPACE> coords( "coords", num_particle );
-    Kokkos::View<int*,TEST_MEMSPACE> ids( "ids", num_particle );
-    Kokkos::View<float*[2][3],TEST_MEMSPACE> matrix( "matrix", num_particle );
-    Kokkos::View<double*[3],TEST_MEMSPACE> vec( "vec", num_particle );
+    using DataTypes = Cabana::MemberTypes<double[3],   // coords
+                                          double[3],   // vec
+                                          float[3][3], // matrix
+                                          int>;        // id.
+    Cabana::AoSoA<DataTypes,TEST_MEMSPACE> aosoa( "particles", num_particle );
+    auto coords = Cabana::slice<0>( aosoa, "coords" );
+    auto vec = Cabana::slice<1>( aosoa, "vec" );
+    auto matrix = Cabana::slice<2>( aosoa, "matrix" );
+    auto ids = Cabana::slice<3>( aosoa, "ids" );
 
     // Put the particles in the center of each cell.
     int i_off = global_grid->globalOffset(Dim::I);
     int j_off = global_grid->globalOffset(Dim::J);
     int k_off = global_grid->globalOffset(Dim::K);
-    auto coords_mirror = Kokkos::create_mirror_view( coords );
-    auto ids_mirror = Kokkos::create_mirror_view( ids );
-    auto matrix_mirror = Kokkos::create_mirror_view( matrix );
-    auto vec_mirror = Kokkos::create_mirror_view( vec );
+    auto aosoa_mirror = Cabana::Experimental::create_mirror_view(
+        Kokkos::HostSpace(), aosoa );
+    auto coords_mirror = Cabana::slice<0>( aosoa_mirror, "coords" );
+    auto vec_mirror = Cabana::slice<1>( aosoa_mirror, "vec" );
+    auto matrix_mirror = Cabana::slice<2>( aosoa_mirror, "matrix" );
+    auto ids_mirror = Cabana::slice<3>( aosoa_mirror, "ids" );
     int pid = 0;
     for ( int i = 0; i < block.localNumEntity(MeshEntity::Cell,Dim::I); ++i )
         for ( int j = 0; j < block.localNumEntity(MeshEntity::Cell,Dim::J); ++j )
@@ -80,14 +95,12 @@ void writeTest( const std::vector<int>& ranks_per_dim )
                     matrix_mirror(pid,d,Dim::K) = k + k_off;
                 }
             }
-    Kokkos::deep_copy( coords, coords_mirror );
-    Kokkos::deep_copy( ids, ids_mirror );
-    Kokkos::deep_copy( matrix, matrix_mirror );
+    Cabana::deep_copy( aosoa, aosoa_mirror );
 
     // Write a time step to file.
     double time = 7.64;
     double step = 892;
-    SiloParticleFieldWriter::writeTimeStep(
+    SiloParticleWriter::writeTimeStep(
         *global_grid, step, time, coords, ids, matrix, vec );
 
     // Move the particles and write again.
@@ -97,8 +110,8 @@ void writeTest( const std::vector<int>& ranks_per_dim )
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
             coords_mirror(p,d) += 1.32;
-    Kokkos::deep_copy( coords, coords_mirror );
-    SiloParticleFieldWriter::writeTimeStep(
+    Cabana::deep_copy( coords, coords_mirror );
+    SiloParticleWriter::writeTimeStep(
         *global_grid, step, time, coords, ids, matrix, vec );
 }
 
@@ -107,23 +120,7 @@ void writeTest( const std::vector<int>& ranks_per_dim )
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, write_test )
 {
-    // Let MPI compute the partitioning for this test.
-    int comm_size;
-    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
-    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
-
-    // Test with different block configurations to make sure all the
-    // dimensions get partitioned even at small numbers of ranks.
-    writeTest( ranks_per_dim );
-    std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    writeTest( ranks_per_dim );
-    std::swap( ranks_per_dim[0], ranks_per_dim[2] );
-    writeTest( ranks_per_dim );
-    std::swap( ranks_per_dim[1], ranks_per_dim[2] );
-    writeTest( ranks_per_dim );
-    std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    writeTest( ranks_per_dim );
+    writeTest();
 }
 
 //---------------------------------------------------------------------------//
