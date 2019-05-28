@@ -1,0 +1,8 @@
+#ifndef CAJITA_TEST_OPENMP_CATEGORY_HPP
+#define CAJITA_TEST_OPENMP_CATEGORY_HPP
+
+#define TEST_CATEGORY openmp
+#define TEST_EXECSPACE Kokkos::OpenMP
+#define TEST_MEMSPACE Kokkos::HostSpace
+
+#endif // end CAJITA_TEST_OPENMP_CATEGORY_HPP
