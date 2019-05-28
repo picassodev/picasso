@@ -5,9 +5,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 set(HEADERS
   Harlow_DeformationGradient.hpp
   Harlow_DenseLinearAlgebra.hpp
-  Harlow_ParticleAdvection.hpp
   Harlow_ParticleCommunication.hpp
-  Harlow_ParticleFieldOps.hpp
   Harlow_ParticleInterpolation.hpp
   Harlow_SiloParticleWriter.hpp
   Harlow_Splines.hpp
