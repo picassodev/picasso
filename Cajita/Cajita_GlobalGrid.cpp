@@ -169,6 +169,28 @@ MPI_Comm GlobalGrid::graphComm() const
 { return _graph_comm; }
 
 //---------------------------------------------------------------------------//
+// Get the MPI rank of a block with the given indices.
+int GlobalGrid::blockCommRank( const int i, const int j, const int k ) const
+{
+    std::vector<int> cr = { i, j, k };
+    int lr;
+    MPI_Cart_rank( _cart_comm, cr.data(), &lr );
+    return lr;
+}
+
+//---------------------------------------------------------------------------//
+// Get the MPI rank of the neighbor with the given offset relative to this
+// rank.
+int GlobalGrid::neighborCommRank( const int i_off,
+                                  const int j_off,
+                                  const int k_off ) const
+{
+    return blockCommRank( _cart_rank[Dim::I] + i_off,
+                          _cart_rank[Dim::J] + j_off,
+                          _cart_rank[Dim::K] + k_off );
+}
+
+//---------------------------------------------------------------------------//
 // Get a grid block on this rank with a given halo cell width.
 const GridBlock& GlobalGrid::block() const
 { return _grid_block; }

@@ -1,7 +1,9 @@
-#ifndef HARLOW_SILOPARTICLEFIELDWRITER_HPP
-#define HARLOW_SILOPARTICLEFIELDWRITER_HPP
+#ifndef HARLOW_SILOPARTICLEWRITER_HPP
+#define HARLOW_SILOPARTICLEWRITER_HPP
 
 #include <Cajita_GlobalGrid.hpp>
+
+#include <Cabana_Core.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -18,12 +20,12 @@
 
 namespace Harlow
 {
-namespace SiloParticleFieldWriter
+namespace SiloParticleWriter
 {
 //---------------------------------------------------------------------------//
 // Silo Particle Field Writer.
 //---------------------------------------------------------------------------//
-// BOV Format traits.
+// Format traits.
 template<typename T>
 struct SiloTraits;
 
@@ -57,110 +59,139 @@ struct SiloTraits<double>
 
 //---------------------------------------------------------------------------//
 // Rank-0 field
-template<class ViewType>
+template<class SliceType>
 void writeFieldsImpl(
     DBfile* silo_file,
     const std::string& mesh_name,
-    const ViewType& view,
+    const SliceType& slice,
     typename std::enable_if<
-    1==ViewType::traits::dimension::rank,int*>::type = 0 )
+    2==SliceType::kokkos_view::traits::dimension::rank,int*>::type = 0 )
 {
+    // Reorder in a contiguous blocked format.
+    Kokkos::View<typename SliceType::value_type*,
+                 typename SliceType::device_type> view( "field", slice.size() );
+    Kokkos::parallel_for(
+        "SiloParticleWriter::writeFieldRank0",
+        Kokkos::RangePolicy<typename SliceType::execution_space>(0,slice.size()),
+        KOKKOS_LAMBDA( const int i ){
+            view(i) = slice(i);
+        });
+
     // Mirror the field to the host.
-    Kokkos::View<typename ViewType::data_type,
-                 Kokkos::HostSpace> host_view( "host_view",
-                                               view.extent(0) );
-    Kokkos::deep_copy( host_view, view );
+    auto host_view = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view );
 
     // Write the field.
     DBPutPointvar1( silo_file,
-                    view.label().c_str(),
+                    slice.label().c_str(),
                     mesh_name.c_str(),
                     host_view.data(),
-                    view.extent(0),
-                    SiloTraits<typename ViewType::value_type>::type(),
+                    host_view.extent(0),
+                    SiloTraits<typename SliceType::value_type>::type(),
                     nullptr );
 }
 
 // Rank-1 field
-template<class ViewType>
+template<class SliceType>
 void writeFieldsImpl(
     DBfile* silo_file,
     const std::string& mesh_name,
-    const ViewType& view,
+    const SliceType& slice,
     typename std::enable_if<
-    2==ViewType::traits::dimension::rank,int*>::type = 0 )
+    3==SliceType::kokkos_view::traits::dimension::rank,int*>::type = 0 )
 {
-    // Mirror the field to the host and reorder in a blocked format.
-    Kokkos::View<typename ViewType::data_type,
+    // Reorder in a contiguous blocked format.
+    Kokkos::View<typename SliceType::value_type**,
                  Kokkos::LayoutLeft,
-                 Kokkos::HostSpace> host_view( "host_view",
-                                               view.extent(0) );
-    Kokkos::deep_copy( host_view, view );
+                 typename SliceType::device_type>
+        view( "field", slice.size(), slice.extent(2) );
+    Kokkos::parallel_for(
+        "SiloParticleWriter::writeFieldRank1",
+        Kokkos::RangePolicy<typename SliceType::execution_space>(0,slice.size()),
+        KOKKOS_LAMBDA( const int i ){
+            for ( std::size_t d0 = 0; d0 < slice.extent(2); ++d0 )
+                view(i,d0) = slice(i,d0);
+        });
+
+    // Mirror the field to the host.
+    auto host_view = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view );
 
     // Get the data pointers.
-    std::vector<typename ViewType::value_type*> ptrs( view.extent(1) );
-    for ( unsigned d = 0; d < view.extent(1); ++d )
-        ptrs[d] = &host_view(0,d);
+    std::vector<typename SliceType::value_type*> ptrs( host_view.extent(1) );
+    for ( std::size_t d0 = 0; d0 < host_view.extent(1); ++d0 )
+        ptrs[d0] = &host_view(0,d0);
 
     // Write the field.
     DBPutPointvar( silo_file,
-                   view.label().c_str(),
+                   slice.label().c_str(),
                    mesh_name.c_str(),
-                   view.extent(1),
+                   host_view.extent(1),
                    ptrs.data(),
-                   view.extent(0),
-                   SiloTraits<typename ViewType::value_type>::type(),
+                   host_view.extent(0),
+                   SiloTraits<typename SliceType::value_type>::type(),
                    nullptr );
 }
 
 // Rank-2 field
-template<class ViewType>
+template<class SliceType>
 void writeFieldsImpl(
     DBfile* silo_file,
     const std::string& mesh_name,
-    const ViewType& view,
+    const SliceType& slice,
     typename std::enable_if<
-    3==ViewType::traits::dimension::rank,int*>::type = 0 )
+    4==SliceType::kokkos_view::traits::dimension::rank,int*>::type = 0 )
 {
-    // Mirror the field to the host and reorder in a blocked format.
-    Kokkos::View<typename ViewType::data_type,
+    // Reorder in a contiguous blocked format.
+    Kokkos::View<typename SliceType::value_type***,
                  Kokkos::LayoutLeft,
-                 Kokkos::HostSpace> host_view( "host_view",
-                                               view.extent(0) );
-    Kokkos::deep_copy( host_view, view );
+                 typename SliceType::device_type>
+        view( "field", slice.size(), slice.extent(2), slice.extent(3) );
+    Kokkos::parallel_for(
+        "SiloParticleWriter::writeFieldRank2",
+        Kokkos::RangePolicy<typename SliceType::execution_space>(0,slice.size()),
+        KOKKOS_LAMBDA( const int i ){
+            for ( std::size_t d0 = 0; d0 < slice.extent(2); ++d0 )
+                for ( std::size_t d1 = 0; d1 < slice.extent(3); ++d1 )
+                    view(i,d0,d1) = slice(i,d0,d1);
+        });
+
+    // Mirror the field to the host.
+    auto host_view = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view );
 
     // Get the data pointers.
-    std::vector<typename ViewType::value_type*> ptrs;
-    ptrs.reserve( view.extent(1) * view.extent(2) );
-    for ( unsigned d1 = 0; d1 < view.extent(1); ++d1 )
-        for ( unsigned d2 = 0; d2 < view.extent(2); ++d2 )
-            ptrs.push_back( &host_view(0,d1,d2) );
+    std::vector<typename SliceType::value_type*> ptrs;
+    ptrs.reserve( host_view.extent(1) * host_view.extent(2) );
+    for ( unsigned d0 = 0; d0 < host_view.extent(1); ++d0 )
+        for ( unsigned d1 = 0; d1 < host_view.extent(2); ++d1 )
+            ptrs.push_back( &host_view(0,d0,d1) );
 
     // Write the field.
     DBPutPointvar( silo_file,
-                   view.label().c_str(),
+                   slice.label().c_str(),
                    mesh_name.c_str(),
-                   view.extent(1) * view.extent(2), ptrs.data(),
-                   view.extent(0),
-                   SiloTraits<typename ViewType::value_type>::type(),
+                   host_view.extent(1) * host_view.extent(2), ptrs.data(),
+                   host_view.extent(0),
+                   SiloTraits<typename SliceType::value_type>::type(),
                    nullptr );
 }
 
-template<class ViewType>
+template<class SliceType>
 void writeFields( DBfile* silo_file,
                   const std::string& mesh_name,
-                  const ViewType& view )
+                  const SliceType& slice )
 {
-    writeFieldsImpl( silo_file, mesh_name, view );
+    writeFieldsImpl( silo_file, mesh_name, slice );
 }
 
-template<class ViewType, class ... FieldViewTypes>
+template<class SliceType, class ... FieldSliceTypes>
 void writeFields( DBfile* silo_file,
                   const std::string& mesh_name,
-                  const ViewType& view,
-                  FieldViewTypes&&... fields )
+                  const SliceType& slice,
+                  FieldSliceTypes&&... fields )
 {
-    writeFieldsImpl( silo_file, mesh_name, view );
+    writeFieldsImpl( silo_file, mesh_name, slice );
     writeFields( silo_file, mesh_name, fields... );
 }
 
@@ -203,26 +234,26 @@ void closeFile( void* file, void* user_data )
 
 //---------------------------------------------------------------------------//
 // Get field names.
-template<class ViewType>
+template<class SliceType>
 void getFieldNamesImpl( std::vector<std::string>& names,
-                        const ViewType& view )
+                        const SliceType& slice )
 {
-    names.push_back( view.label() );
+    names.push_back( slice.label() );
 }
 
 // Get field names.
-template<class ViewType, class ... FieldViewTypes>
+template<class SliceType, class ... FieldSliceTypes>
 void getFieldNamesImpl( std::vector<std::string>& names,
-                        const ViewType& view,
-                        FieldViewTypes&&... fields )
+                        const SliceType& slice,
+                        FieldSliceTypes&&... fields )
 {
-    getFieldNamesImpl( names, view );
+    getFieldNamesImpl( names, slice );
     getFieldNamesImpl( names, fields... );
 }
 
 
-template<class ... FieldViewTypes>
-std::vector<std::string> getFieldNames( FieldViewTypes&&... fields )
+template<class ... FieldSliceTypes>
+std::vector<std::string> getFieldNames( FieldSliceTypes&&... fields )
 {
     std::vector<std::string> names;
     getFieldNamesImpl( names, fields... );
@@ -231,14 +262,14 @@ std::vector<std::string> getFieldNames( FieldViewTypes&&... fields )
 
 //---------------------------------------------------------------------------//
 // Write a multimesh hierarchy.
-template<class ... FieldViewTypes>
+template<class ... FieldSliceTypes>
 void writeMultiMesh( PMPIO_baton_t* baton,
                      DBfile* silo_file,
                      const int comm_size,
                      const std::string& mesh_name,
                      const int time_step_index,
                      const double time,
-                     FieldViewTypes&&... fields )
+                     FieldSliceTypes&&... fields )
 {
     // Go to the root directory of the file.
     DBSetDir( silo_file, "/" );
@@ -336,12 +367,12 @@ void writeMultiMesh( PMPIO_baton_t* baton,
 
 //---------------------------------------------------------------------------//
 // Write a time step.
-template<class CoordViewType, class ... FieldViewTypes>
+template<class CoordSliceType, class ... FieldSliceTypes>
 void writeTimeStep( const Cajita::GlobalGrid& global_grid,
                     const int time_step_index,
                     const double time,
-                    const CoordViewType& coords,
-                    FieldViewTypes&&... fields )
+                    const CoordSliceType& coords,
+                    FieldSliceTypes&&... fields )
 {
     // Pick a number of groups. We want to write approximately the N^3 blocks
     // to N^2 groups. Pick the block dimension with the largest number of
@@ -355,12 +386,12 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
     // Create the parallel baton.
     int mpi_tag = 1948;
     PMPIO_baton_t* baton =
-        PMPIO_Init( num_group, PMPIO_WRITE, global_grid.comm(), mpi_tag,
-                    createFile, openFile, closeFile, nullptr );
+        PMPIO_Init( num_group, PMPIO_WRITE, global_grid.cartesianComm(),
+                    mpi_tag, createFile, openFile, closeFile, nullptr );
 
     // Compose a data file name.
     int comm_rank;
-    MPI_Comm_rank( global_grid.comm(), &comm_rank );
+    MPI_Comm_rank( global_grid.cartesianComm(), &comm_rank );
     int group_rank = PMPIO_GroupRank( baton, comm_rank );
     std::stringstream file_name;
 
@@ -381,13 +412,23 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
     DBfile* silo_file = (DBfile*) PMPIO_WaitForBaton(
         baton, file_name.str().c_str(), dir_name.str().c_str() );
 
-    // Mirror the coordinate field to the host and reorder the coordinates in
-    // a blocked format.
-    Kokkos::View<typename CoordViewType::data_type,
+    // Reorder the coordinates in a blocked format.
+    Kokkos::View<typename CoordSliceType::value_type**,
                  Kokkos::LayoutLeft,
-                 Kokkos::HostSpace> host_coords( "host_coords",
-                                                 coords.extent(0) );
-    Kokkos::deep_copy( host_coords, coords );
+                 typename CoordSliceType::device_type>
+        view( "coords", coords.size(), coords.extent(2) );
+    Kokkos::parallel_for(
+        "SiloParticleWriter::writeCoords",
+        Kokkos::RangePolicy<typename CoordSliceType::execution_space>(
+            0,coords.size()),
+        KOKKOS_LAMBDA( const int i ){
+            for ( std::size_t d0 = 0; d0 < coords.extent(2); ++d0 )
+                view(i,d0) = coords(i,d0);
+        });
+
+    // Mirror the coordinates to the host.
+    auto host_coords = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view );
 
     // Add the point mesh.
     std::string mesh_name = "particles";
@@ -399,7 +440,7 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
         host_coords.extent(1),
         ptrs,
         host_coords.extent(0),
-        SiloTraits<typename CoordViewType::value_type>::type(),
+        SiloTraits<typename CoordSliceType::value_type>::type(),
         nullptr );
 
     // Add variables.
@@ -408,7 +449,7 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
     // Root rank writes the global multimesh hierarchy for parallel
     // simulations.
     int comm_size;
-    MPI_Comm_size( global_grid.comm(), &comm_size );
+    MPI_Comm_size( global_grid.cartesianComm(), &comm_size );
     if ( 0 == comm_rank && comm_size > 1 )
         writeMultiMesh( baton, silo_file,
                         comm_size, mesh_name,
@@ -423,7 +464,7 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace SiloParticleFieldWriter
+} // end namespace SiloParticleWriter
 } // end namespace Harlow
 
-#endif // HARLOW_SILOPARTICLEFIELDWRITER_HPP
+#endif // HARLOW_SILOPARTICLEWRITER_HPP

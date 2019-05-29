@@ -5,11 +5,9 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 set(HEADERS
   Harlow_DeformationGradient.hpp
   Harlow_DenseLinearAlgebra.hpp
-  Harlow_ParticleAdvection.hpp
   Harlow_ParticleCommunication.hpp
-  Harlow_ParticleFieldOps.hpp
   Harlow_ParticleInterpolation.hpp
-  Harlow_SiloParticleFieldWriter.hpp
+  Harlow_SiloParticleWriter.hpp
   Harlow_Splines.hpp
   Harlow_Types.hpp
   Harlow_VelocityInterpolation.hpp
@@ -32,7 +30,7 @@ add_library(harlow ${SOURCES})
 target_include_directories(harlow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(harlow Kokkos::kokkos)
 target_link_libraries(harlow MPI::MPI_CXX)
-target_link_libraries(harlow Silo::silo)
+target_link_libraries(harlow Cabana::core)
 target_link_libraries(harlow Silo::silo)
 target_link_libraries(harlow cajita)
 install(TARGETS harlow LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
