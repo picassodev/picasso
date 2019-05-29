@@ -46,6 +46,15 @@ class GlobalGrid
     // with the I index moving the fastest and the K index moving the slowest.
     MPI_Comm graphComm() const;
 
+    // Get the MPI rank of a block with the given indices.
+    int blockCommRank( const int i, const int j, const int k ) const;
+
+    // Get the MPI rank of the neighbor with the given offset relative to this
+    // rank.
+    int neighborCommRank( const int i_off,
+                          const int j_off,
+                          const int k_off ) const;
+
     // Get the locally owned grid block for this rank.
     const GridBlock& block() const;
 

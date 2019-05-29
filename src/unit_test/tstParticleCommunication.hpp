@@ -3,7 +3,8 @@
 
 #include <Harlow_ParticleCommunication.hpp>
 #include <Harlow_Types.hpp>
-#include <Harlow_ParticleFieldOps.hpp>
+
+#include <Cabana_Core.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -53,9 +54,12 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
     int num_particle = block.numEntity( MeshEntity::Cell, Dim::I ) *
                        block.numEntity( MeshEntity::Cell, Dim::J ) *
                        block.numEntity( MeshEntity::Cell, Dim::K );
-    Kokkos::View<double*[3],Kokkos::HostSpace> coords( "coords", num_particle );
-    Kokkos::View<int*,Kokkos::HostSpace> linear_ids( "linear_ids", num_particle );
-    Kokkos::View<int*[3][3],Kokkos::HostSpace> matrix_ids( "matrix_ids", num_particle );
+    using MemberTypes = Cabana::MemberTypes<double[3],int[3][3],int>;
+    using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
+    ParticleContainer particles( "particles", num_particle );
+    auto coords = Cabana::slice<0>( particles, "coords" );
+    auto matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
+    auto linear_ids = Cabana::slice<2>( particles, "linear_ids" );
 
     // Determine if a given neighbor has entities. Zero always returns true.
     auto has_entities =
@@ -67,7 +71,6 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
                 halo_check = block.hasHalo(2*dim+1);
             return halo_check;
         };
-
 
     // Put particles in the center of every cell including halo cells if we
     // have them. Their ids should be equivalent to that of the rank they are
@@ -129,30 +132,28 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
             }
     num_particle = pid;
 
-    // Resize.
-    ParticleFieldOps::resize( num_particle, coords, linear_ids, matrix_ids );
+    // Copy to the device space.
+    particles.resize( num_particle );
 
-    // Copy the data to the test space.
-    auto coords_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), coords );
-    auto linear_ids_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), linear_ids );
-    auto matrix_ids_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), matrix_ids );
+    auto particles_mirror = Cabana::Experimental::create_mirror_view_and_copy(
+        TEST_DEVICE(), particles );
 
     // Redistribute the particles.
     ParticleCommunication::redistribute(
-        *global_grid, coords_mirror, linear_ids_mirror, matrix_ids_mirror );
+        *global_grid, particles_mirror,
+        std::integral_constant<std::size_t,0>() );
 
     // Copy back to check.
-    Kokkos::deep_copy( coords, coords_mirror );
-    Kokkos::deep_copy( linear_ids, linear_ids_mirror );
-    Kokkos::deep_copy( matrix_ids, matrix_ids_mirror );
+    particles = Cabana::Experimental::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), particles_mirror );
+    coords = Cabana::slice<0>( particles, "coords" );
+    matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
+    linear_ids = Cabana::slice<2>( particles, "linear_ids" );
 
     // Check that we got as many particles as we should have.
-    EXPECT_EQ( coords.extent(0), num_particle );
-    EXPECT_EQ( linear_ids.extent(0), num_particle );
-    EXPECT_EQ( matrix_ids.extent(0), num_particle );
+    EXPECT_EQ( coords.size(), num_particle );
+    EXPECT_EQ( linear_ids.size(), num_particle );
+    EXPECT_EQ( matrix_ids.size(), num_particle );
 
     // Check that all of the particle ids are equal to this rank id.
     for ( int p = 0; p < num_particle; ++p )
@@ -226,9 +227,12 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
     int num_particle = block.localNumEntity( MeshEntity::Cell, Dim::I ) *
                        block.localNumEntity( MeshEntity::Cell, Dim::J ) *
                        block.localNumEntity( MeshEntity::Cell, Dim::K );
-    Kokkos::View<double*[3],Kokkos::HostSpace> coords( "coords", num_particle );
-    Kokkos::View<int*,Kokkos::HostSpace> linear_ids( "linear_ids", num_particle );
-    Kokkos::View<int*[3][3],Kokkos::HostSpace> matrix_ids( "matrix_ids", num_particle );
+    using MemberTypes = Cabana::MemberTypes<double[3],int[3][3],int>;
+    using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
+    ParticleContainer particles( "particles", num_particle );
+    auto coords = Cabana::slice<0>( particles, "coords" );
+    auto matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
+    auto linear_ids = Cabana::slice<2>( particles, "linear_ids" );
 
     // Put particles in the center of every local cell.
     int pid = 0;
@@ -262,27 +266,26 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
                 ++pid;
             }
 
-    // Copy the data to the test space.
-    auto coords_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), coords );
-    auto linear_ids_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), linear_ids );
-    auto matrix_ids_mirror = Kokkos::create_mirror_view_and_copy(
-        TEST_MEMSPACE(), matrix_ids );
+    // Copy to the device space.
+    auto particles_mirror = Cabana::Experimental::create_mirror_view_and_copy(
+        TEST_DEVICE(), particles );
 
     // Redistribute the particles.
     ParticleCommunication::redistribute(
-        *global_grid, coords_mirror, linear_ids_mirror, matrix_ids_mirror );
+        *global_grid, particles_mirror,
+        std::integral_constant<std::size_t,0>() );
 
     // Copy back to check.
-    Kokkos::deep_copy( coords, coords_mirror );
-    Kokkos::deep_copy( linear_ids, linear_ids_mirror );
-    Kokkos::deep_copy( matrix_ids, matrix_ids_mirror );
+    particles = Cabana::Experimental::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), particles_mirror );
+    coords = Cabana::slice<0>( particles, "coords" );
+    matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
+    linear_ids = Cabana::slice<2>( particles, "linear_ids" );
 
     // Check that we got as many particles as we should have.
-    EXPECT_EQ( coords.extent(0), num_particle );
-    EXPECT_EQ( linear_ids.extent(0), num_particle );
-    EXPECT_EQ( matrix_ids.extent(0), num_particle );
+    EXPECT_EQ( coords.size(), num_particle );
+    EXPECT_EQ( linear_ids.size(), num_particle );
+    EXPECT_EQ( matrix_ids.size(), num_particle );
 
     // Check that all of the particle ids are equal to this rank id.
     for ( int p = 0; p < num_particle; ++p )
