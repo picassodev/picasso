@@ -71,5 +71,5 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES ParticleInterpolation VelocityInterpolation DeformationGradient DenseLinearAlgebra)
+Harlow_add_tests(NAMES ParticleWorkset ParticleInterpolation VelocityInterpolation DeformationGradient DenseLinearAlgebra)
 Harlow_add_tests(MPI NAMES ParticleCommunication SiloParticleWriter)

@@ -76,25 +76,24 @@ struct Spline<FunctionOrder::Linear>
     }
 
     /*!
-      \brief Calculate the value of the gradient of the spline at all knots.
-      \param x0 The coordinate at which to evaluate the spline in the logical
-      grid space.
+      \brief Calculate the value of the gradient of the spline at given ijk
+      index in the stencil.
+      \param weight The node interpolation weight.
+      \param distance The physical distance between the particle and the
+      node.
       \param rdx The inverse physical grid cell size.
-      \param gradients Basis values at the knots. Ordered from lowest to
-      highest in terms of knot location.
+      \param gradient Basis gradient at the given node.
     */
     template<typename Real>
     KOKKOS_INLINE_FUNCTION
-    static void gradient( const Real x0, const Real rdx, Real gradients[2] )
+    static void gradient( const Real /* weight */,
+                          const Real* distance,
+                          const Real rdx,
+                          Real gradient[3] )
     {
-        std::ignore = x0;
-        std::ignore = rdx;
-
-        // Knot at i
-        gradients[0] = -rdx;
-
-        // Knot at i + 1
-        gradients[1] = rdx;
+        gradient[Dim::I] = ( distance[Dim::I] > 0.0 ) ? rdx : -rdx;
+        gradient[Dim::J] = ( distance[Dim::J] > 0.0 ) ? rdx : -rdx;
+        gradient[Dim::K] = ( distance[Dim::K] > 0.0 ) ? rdx : -rdx;
     }
 };
 
@@ -162,16 +161,26 @@ struct Spline<FunctionOrder::Quadratic>
         values[2] = 0.5 * xn * xn + 1.5 * xn + 9.0 / 8.0;
     }
 
-    /*
-      \brief Given a grid cell size get the reciprocal of the weight matrix
-      inverse which is used as the gradient scaling factor for the MLS-MPM
-      reconstruction.  \param dx The physical distance between grid locations.
+    /*!
+      \brief Calculate the value of the gradient of the spline at given ijk
+      index in the stencil.
+      \param weight The node interpolation weight.
+      \param distance The physical distance between the particle and the
+      node.
+      \param rdx The inverse physical grid cell size.
+      \param gradient Basis gradient at the given node.
     */
     template<typename Real>
     KOKKOS_INLINE_FUNCTION
-    static Real reciprocalWeightMatrixInverse( const Real rdx )
+    static void gradient( const Real weight,
+                          const Real* distance,
+                          const Real rdx,
+                          Real gradient[3] )
     {
-        return 4.0 * rdx * rdx;
+        Real w_dp = weight * 4.0 * rdx * rdx;
+        gradient[Dim::I] = w_dp * distance[Dim::I];
+        gradient[Dim::J] = w_dp * distance[Dim::J];
+        gradient[Dim::K] = w_dp * distance[Dim::K];
     }
 };
 
@@ -249,16 +258,26 @@ struct Spline<FunctionOrder::Cubic>
         values[3] = xn * xn2 / 6.0 + xn2 + 2.0 * xn + 4.0 / 3.0;
     }
 
-    /*
-      \brief Given a grid cell size get the reciprocal of the weight matrix
-      inverse which is used as the gradient scaling factor for the MLS-MPM
-      reconstruction.  \param dx The physical distance between grid locations.
+    /*!
+      \brief Calculate the value of the gradient of the spline at given ijk
+      index in the stencil.
+      \param weight The node interpolation weight.
+      \param distance The physical distance between the particle and the
+      node.
+      \param rdx The inverse physical grid cell size.
+      \param gradient Basis gradient at the given node.
     */
     template<typename Real>
     KOKKOS_INLINE_FUNCTION
-    static Real weightMatrixInverse( const Real rdx )
+    static void gradient( const Real weight,
+                          const Real* distance,
+                          const Real rdx,
+                          Real gradient[3] )
     {
-        return 3.0 * rdx * rdx;
+        Real w_dp = weight * 3.0 * rdx * rdx;
+        gradient[Dim::I] = w_dp * distance[Dim::I];
+        gradient[Dim::J] = w_dp * distance[Dim::J];
+        gradient[Dim::K] = w_dp * distance[Dim::K];
     }
 };
 
