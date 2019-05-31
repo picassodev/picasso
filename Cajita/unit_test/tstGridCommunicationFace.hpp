@@ -1,7 +1,7 @@
-#include <Cajita_GridCommunication.hpp>
+#include <Cajita_Halo.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
-#include <Cajita_GridField.hpp>
+#include <Cajita_Field.hpp>
 #include <Cajita_GridExecPolicy.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -316,7 +316,7 @@ void gatherScatterTest( const std::vector<int>& ranks_per_dim,
 
     // Create a scalar cell field on the grid.
     int halo_width = 1;
-    GridField<double,TEST_MEMSPACE> grid_field(
+    Field<double,TEST_MEMSPACE> grid_field(
         global_grid,
         1,
         MeshEntity::Cell,
@@ -386,7 +386,7 @@ void vectorFieldTest()
 
     // Create a vector cell field on the grid.
     int halo_width = 1;
-    GridField<double,TEST_MEMSPACE> grid_field(
+    Field<double,TEST_MEMSPACE> grid_field(
         global_grid,
         3,
         MeshEntity::Cell,

@@ -1,5 +1,5 @@
-#ifndef CAJITA_GRIDFIELD_HPP
-#define CAJITA_GRIDFIELD_HPP
+#ifndef CAJITA_FIELD_HPP
+#define CAJITA_FIELD_HPP
 
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
@@ -36,7 +36,7 @@ createField( const GridBlock& grid,
 // Parallel grid field container.
 //---------------------------------------------------------------------------//
 template<class ValueType, class DeviceType>
-class GridField
+class Field
 {
   public:
 
@@ -46,7 +46,7 @@ class GridField
     using execution_space = typename device_type::execution_space;
     using view_type = Kokkos::View<ValueType****,device_type>;
 
-    GridField( const std::shared_ptr<GlobalGrid>& global_grid,
+    Field( const std::shared_ptr<GlobalGrid>& global_grid,
                const int num_component,
                const int field_location,
                const int halo_cell_width,
@@ -115,18 +115,18 @@ class GridField
 //---------------------------------------------------------------------------//
 // Static type checker.
 template<class >
-class is_grid_field : public std::false_type {};
+class is_field : public std::false_type {};
 
 template<class ValueType, class DeviceType>
-class is_grid_field<GridField<ValueType,DeviceType> >
+class is_field<Field<ValueType,DeviceType> >
     : public std::true_type {};
 
 template<class ValueType, class DeviceType>
-class is_grid_field<GridField<const ValueType,DeviceType> >
+class is_field<Field<const ValueType,DeviceType> >
     : public std::true_type {};
 
 //---------------------------------------------------------------------------//
 
 } // end namespace Cajita
 
-#endif // end CAJITA_GRIDFIELD_HPP
+#endif // end CAJITA_FIELD_HPP

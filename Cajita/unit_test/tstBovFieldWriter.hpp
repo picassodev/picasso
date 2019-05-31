@@ -1,7 +1,7 @@
-#include <Cajita_BovGridFieldWriter.hpp>
+#include <Cajita_BovFieldWriter.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
-#include <Cajita_GridField.hpp>
+#include <Cajita_Field.hpp>
 #include <Cajita_GridExecPolicy.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -43,7 +43,7 @@ void writeTest( const std::vector<int>& ranks_per_dim )
     auto off_k = global_grid->globalOffset( Dim::K );
 
     // Create a cell field and fill it with data.
-    GridField<double,TEST_MEMSPACE> cell_field(
+    Field<double,TEST_MEMSPACE> cell_field(
         global_grid, 1, MeshEntity::Cell, 0, "cell_field" );
     auto cell_data = cell_field.data();
     Kokkos::parallel_for(
@@ -55,7 +55,7 @@ void writeTest( const std::vector<int>& ranks_per_dim )
         } );
 
     // Create a node field and fill it with data.
-    GridField<int,TEST_MEMSPACE> node_field(
+    Field<int,TEST_MEMSPACE> node_field(
         global_grid, 3, MeshEntity::Node, 0, "node_field" );
     auto node_data = node_field.data();
     Kokkos::parallel_for(
@@ -69,8 +69,8 @@ void writeTest( const std::vector<int>& ranks_per_dim )
         } );
 
     // Write the fields to a file.
-    BovGridFieldWriter::writeTimeStep( 302, 3.43, cell_field );
-    BovGridFieldWriter::writeTimeStep( 1972, 12.457, node_field );
+    BovFieldWriter::writeTimeStep( 302, 3.43, cell_field );
+    BovFieldWriter::writeTimeStep( 1972, 12.457, node_field );
 
     // Read the data back in on rank 0 and make sure it is OK.
     int rank;

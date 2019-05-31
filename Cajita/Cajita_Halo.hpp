@@ -1,8 +1,8 @@
-#ifndef CAJITA_GRIDCOMMUNICATION_HPP
-#define CAJITA_GRIDCOMMUNICATION_HPP
+#ifndef CAJITA_HALO_HPP
+#define CAJITA_HALO_HPP
 
 #include <Cajita_GridBlock.hpp>
-#include <Cajita_GridField.hpp>
+#include <Cajita_Field.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_MpiTraits.hpp>
 
@@ -274,9 +274,9 @@ void scatterNeighbor( const PackRange& unpack_range,
 
   \param tag tag Algorithm tag indicating a Cartesian topology communication.
 */
-template<class GridFieldType>
+template<class FieldType>
 void gather(
-    GridFieldType& grid_field, const int halo_num_cell, CartCommFaceTag tag )
+    FieldType& grid_field, const int halo_num_cell, CartCommFaceTag tag )
 {
     // Get the field.
     auto field = grid_field.data();
@@ -419,9 +419,9 @@ void gather(
 
   \param tag tag Algorithm tag indicating a Graph topology communication.
 */
-template<class GridFieldType>
+template<class FieldType>
 void gather(
-    GridFieldType& grid_field, const int halo_num_cell, GraphCommNodeTag tag )
+    FieldType& grid_field, const int halo_num_cell, GraphCommNodeTag tag )
 {
     // Get the field.
     auto field = grid_field.data();
@@ -597,9 +597,9 @@ void gather(
 
   \param tag tag Algorithm tag indicating a Cartesian topology communication.
 */
-template<class GridFieldType>
+template<class FieldType>
 void scatter(
-    GridFieldType& grid_field, const int halo_num_cell, CartCommFaceTag tag )
+    FieldType& grid_field, const int halo_num_cell, CartCommFaceTag tag )
 {
     // Get the field.
     auto field = grid_field.data();
@@ -743,9 +743,9 @@ void scatter(
 
   \param tag tag Algorithm tag indicating a Graph topology communication.
 */
-template<class GridFieldType>
+template<class FieldType>
 void scatter(
-    GridFieldType& grid_field, const int halo_num_cell, GraphCommNodeTag tag )
+    FieldType& grid_field, const int halo_num_cell, GraphCommNodeTag tag )
 {
     // Get the field.
     auto field = grid_field.data();
@@ -909,4 +909,4 @@ void scatter(
 } // end namespace GridCommunication
 } // end namespace Cajita
 
-#endif // end CAJITA_GRIDCOMMUNICATION_HPP
+#endif // end CAJITA_HALO_HPP

@@ -18,7 +18,7 @@
 
 namespace Cajita
 {
-namespace BovGridFieldWriter
+namespace BovFieldWriter
 {
 //---------------------------------------------------------------------------//
 // VisIt Brick-of-Values (BOV) grid field writer.
@@ -72,9 +72,9 @@ void reorderFieldValue(
 
 //---------------------------------------------------------------------------//
 // Create the MPI subarray for the given field.
-template<class GridFieldType>
+template<class FieldType>
 MPI_Datatype
-createSubarray( const GridFieldType& field )
+createSubarray( const FieldType& field )
 {
     const auto& global_grid = field.globalGrid();
     const auto& block = field.block();
@@ -97,7 +97,7 @@ createSubarray( const GridFieldType& field )
     MPI_Type_create_subarray(
         4, global_size, local_size, local_start,
         MPI_ORDER_C,
-        MpiTraits<typename GridFieldType::value_type>::type(),
+        MpiTraits<typename FieldType::value_type>::type(),
         &subarray );
 
     return subarray;
@@ -114,10 +114,10 @@ createSubarray( const GridFieldType& field )
   \param time The current time
   \param field The field to write
 */
-template<class GridFieldType>
+template<class FieldType>
 void writeTimeStep( const int time_step_index,
                     const double time,
-                    const GridFieldType& field )
+                    const FieldType& field )
 {
     // Mirror the field to the host and reorder the data in KJI
     // ordering. Our fields are in IJK ordering.
@@ -160,14 +160,14 @@ void writeTimeStep( const int time_step_index,
     // Set the data in the file this process is going to write to.
     MPI_File_set_view(
         data_file, 0,
-        MpiTraits<typename GridFieldType::value_type>::type(),
+        MpiTraits<typename FieldType::value_type>::type(),
         subarray, "native", MPI_INFO_NULL );
 
     // Write the field to binary.
     MPI_Status status;
     MPI_File_write_all(
         data_file, reordered_view.data(), reordered_view.size(),
-        MpiTraits<typename GridFieldType::value_type>::type(),
+        MpiTraits<typename FieldType::value_type>::type(),
         &status );
 
     // Clean up.
@@ -201,7 +201,7 @@ void writeTimeStep( const int time_step_index,
 
         // Data format.
         header << "DATA_FORMAT: "
-               << BovTraits<typename GridFieldType::value_type>::format()
+               << BovTraits<typename FieldType::value_type>::format()
                << std::endl;
 
         // Variable name.
@@ -242,7 +242,7 @@ void writeTimeStep( const int time_step_index,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace BovGridFieldWriter
+} // end namespace BovFieldWriter
 } // end namespace Cajita
 
 #endif // end CAJITA_BOVGRIDFIELDWRITER_HPP

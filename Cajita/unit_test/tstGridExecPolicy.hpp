@@ -1,7 +1,7 @@
 #include <Cajita_Types.hpp>
 #include <Cajita_GridBlock.hpp>
 #include <Cajita_GridExecPolicy.hpp>
-#include <Cajita_GridField.hpp>
+#include <Cajita_Field.hpp>
 
 #include <Kokkos_Core.hpp>
 

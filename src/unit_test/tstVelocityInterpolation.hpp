@@ -1,6 +1,6 @@
 #include <Cajita_GridBlock.hpp>
 #include <Cajita_GridExecPolicy.hpp>
-#include <Cajita_GridField.hpp>
+#include <Cajita_Field.hpp>
 
 #include <Harlow_Types.hpp>
 #include <Harlow_VelocityInterpolation.hpp>

@@ -3,13 +3,13 @@ configure_file(Cajita_config.hpp.cmakein Cajita_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
-  Cajita_BovGridFieldWriter.hpp
+  Cajita_BovFieldWriter.hpp
   Cajita_GlobalGrid.hpp
   Cajita_GridBlock.hpp
   Cajita_GridCommunication.hpp
   Cajita_GridExecPolicy.hpp
-  Cajita_GridField.hpp
-  Cajita_GridFieldVectorOps.hpp
+  Cajita_Field.hpp
+  Cajita_FieldVectorOps.hpp
   Cajita_MpiTraits.hpp
   Cajita_Types.hpp
   Cajita_Version.hpp
