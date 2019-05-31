@@ -1,4 +1,4 @@
-#include <Cajita_Halo.hpp>
+#include <Cajita_GridCommunication.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
 #include <Cajita_Field.hpp>
