@@ -71,5 +71,5 @@ macro(Cajita_add_tests)
   endforeach()
 endmacro()
 
-Cajita_add_tests(NAMES Field GridExecPolicy)
+Cajita_add_tests(NAMES IndexSpace Field GridExecPolicy)
 Cajita_add_tests(MPI NAMES GlobalGrid GridCommunicationFace GridCommunicationNode FieldVectorOps BovFieldWriter)
