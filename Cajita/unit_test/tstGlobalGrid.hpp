@@ -1,5 +1,6 @@
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
+#include <Cajita_UniformDimPartitioner.hpp>
 
 #include <gtest/gtest.h>
 
@@ -18,8 +19,7 @@ void gridTest()
     // Let MPI compute the partitioning for this test.
     int comm_size;
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
-    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    UniformDimPartitioner partitioner;
 
     // Create the global grid.
     double cell_size = 0.23;
@@ -31,7 +31,7 @@ void gridTest()
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
     GlobalGrid global_grid( MPI_COMM_WORLD,
-                            ranks_per_dim,
+                            partitioner,
                             is_dim_periodic,
                             global_low_corner,
                             global_high_corner,
@@ -60,7 +60,6 @@ void gridTest()
         grid_comm, 3, cart_dims.data(), cart_period.data(), cart_rank.data() );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( cart_dims[d], ranks_per_dim[d] );
         EXPECT_EQ( cart_period[d], 0 );
     }
 
@@ -84,17 +83,17 @@ void gridTest()
           grid_block.localEntityBegin(MeshEntity::Cell,Dim::K) };
 
     // Compute a global set of local cell size arrays.
-    std::vector<int> local_num_cell_i( ranks_per_dim[Dim::I], 0 );
-    std::vector<int> local_num_cell_j( ranks_per_dim[Dim::J], 0 );
-    std::vector<int> local_num_cell_k( ranks_per_dim[Dim::K], 0 );
+    std::vector<int> local_num_cell_i( cart_dims[Dim::I], 0 );
+    std::vector<int> local_num_cell_j( cart_dims[Dim::J], 0 );
+    std::vector<int> local_num_cell_k( cart_dims[Dim::K], 0 );
     local_num_cell_i[ cart_rank[Dim::I] ] = local_num_cells[Dim::I];
     local_num_cell_j[ cart_rank[Dim::J] ] = local_num_cells[Dim::J];
     local_num_cell_k[ cart_rank[Dim::K] ] = local_num_cells[Dim::K];
-    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_i.data(), ranks_per_dim[Dim::I],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_i.data(), cart_dims[Dim::I],
                    MPI_INT, MPI_MAX, grid_comm );
-    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_j.data(), ranks_per_dim[Dim::J],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_j.data(), cart_dims[Dim::J],
                    MPI_INT, MPI_MAX, grid_comm );
-    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_k.data(), ranks_per_dim[Dim::K],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_cell_k.data(), cart_dims[Dim::K],
                    MPI_INT, MPI_MAX, grid_comm );
 
     // Check to make sure we got the right number of total cells in each
@@ -119,17 +118,17 @@ void gridTest()
           grid_block.localEntityBegin(MeshEntity::Node,Dim::K) };
 
     // Compute a global set of local node size arrays.
-    std::vector<int> local_num_node_i( ranks_per_dim[Dim::I], 0 );
-    std::vector<int> local_num_node_j( ranks_per_dim[Dim::J], 0 );
-    std::vector<int> local_num_node_k( ranks_per_dim[Dim::K], 0 );
+    std::vector<int> local_num_node_i( cart_dims[Dim::I], 0 );
+    std::vector<int> local_num_node_j( cart_dims[Dim::J], 0 );
+    std::vector<int> local_num_node_k( cart_dims[Dim::K], 0 );
     local_num_node_i[ cart_rank[Dim::I] ] = local_num_nodes[Dim::I];
     local_num_node_j[ cart_rank[Dim::J] ] = local_num_nodes[Dim::J];
     local_num_node_k[ cart_rank[Dim::K] ] = local_num_nodes[Dim::K];
-    MPI_Allreduce( MPI_IN_PLACE, local_num_node_i.data(), ranks_per_dim[Dim::I],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_i.data(), cart_dims[Dim::I],
                    MPI_INT, MPI_MAX, grid_comm );
-    MPI_Allreduce( MPI_IN_PLACE, local_num_node_j.data(), ranks_per_dim[Dim::J],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_j.data(), cart_dims[Dim::J],
                    MPI_INT, MPI_MAX, grid_comm );
-    MPI_Allreduce( MPI_IN_PLACE, local_num_node_k.data(), ranks_per_dim[Dim::K],
+    MPI_Allreduce( MPI_IN_PLACE, local_num_node_k.data(), cart_dims[Dim::K],
                    MPI_INT, MPI_MAX, grid_comm );
 
     // Check boundary status.
@@ -138,7 +137,7 @@ void gridTest()
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowX) );
 
-    if ( cart_rank[Dim::I] == ranks_per_dim[Dim::I] - 1 )
+    if ( cart_rank[Dim::I] == cart_dims[Dim::I] - 1 )
         EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighX) );
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighX) );
@@ -148,7 +147,7 @@ void gridTest()
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowY) );
 
-    if ( cart_rank[Dim::J] == ranks_per_dim[Dim::J] - 1 )
+    if ( cart_rank[Dim::J] == cart_dims[Dim::J] - 1 )
         EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighY) );
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighY) );
@@ -158,7 +157,7 @@ void gridTest()
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::LowZ) );
 
-    if ( cart_rank[Dim::K] == ranks_per_dim[Dim::K] - 1 )
+    if ( cart_rank[Dim::K] == cart_dims[Dim::K] - 1 )
         EXPECT_TRUE( grid_block.onBoundary(DomainBoundary::HighZ) );
     else
         EXPECT_FALSE( grid_block.onBoundary(DomainBoundary::HighZ) );

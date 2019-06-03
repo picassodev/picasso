@@ -2,6 +2,7 @@
 #include <Harlow_Types.hpp>
 
 #include <Cajita_GlobalGrid.hpp>
+#include <Cajita_UniformDimPartitioner.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -23,10 +24,7 @@ namespace Test
 void writeTest()
 {
     // Let MPI compute the partitioning for this test.
-    int comm_size;
-    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
-    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    Cajita::UniformDimPartitioner partitioner;
 
     // Create the global grid.
     double cell_size = 0.23;
@@ -39,7 +37,7 @@ void writeTest()
     std::vector<bool> is_dim_periodic = {false,false,false};
     auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
-        ranks_per_dim,
+        partitioner,
         is_dim_periodic,
         global_low_corner,
         global_high_corner,

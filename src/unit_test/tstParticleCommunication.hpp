@@ -1,5 +1,6 @@
 #include <Cajita_GlobalGrid.hpp>
 #include <Cajita_GridBlock.hpp>
+#include <Cajita_ManualPartitioner.hpp>
 
 #include <Harlow_ParticleCommunication.hpp>
 #include <Harlow_Types.hpp>
@@ -19,7 +20,7 @@ using namespace Harlow;
 namespace Test
 {
 //---------------------------------------------------------------------------//
-void redistributeTest( const std::vector<int>& ranks_per_dim,
+void redistributeTest( const Cajita::ManualPartitioner& partitioner,
                        const std::vector<bool>& is_dim_periodic )
 {
     // Create the global grid.
@@ -32,7 +33,7 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
           global_low_corner[2] + cell_size * global_num_cell[2] };
     auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
-        ranks_per_dim,
+        partitioner,
         is_dim_periodic,
         global_low_corner,
         global_high_corner,
@@ -193,7 +194,7 @@ void redistributeTest( const std::vector<int>& ranks_per_dim,
 // have no particles to redistribute. In this case we put no particles in the
 // halo so no communication should occur. This ensures the graph communication
 // works when some neighbors get no data.
-void localOnlyTest( const std::vector<int>& ranks_per_dim,
+void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
                     const std::vector<bool>& is_dim_periodic )
 {
     // Create the global grid.
@@ -206,7 +207,7 @@ void localOnlyTest( const std::vector<int>& ranks_per_dim,
           global_low_corner[2] + cell_size * global_num_cell[2] };
     auto global_grid = std::make_shared<Cajita::GlobalGrid>(
         MPI_COMM_WORLD,
-        ranks_per_dim,
+        partitioner,
         is_dim_periodic,
         global_low_corner,
         global_high_corner,
@@ -330,21 +331,26 @@ TEST( TEST_CATEGORY, not_periodic_test )
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
     std::vector<int> ranks_per_dim( 3 );
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Boundaries are not periodic.
     std::vector<bool> is_dim_periodic = {false,false,false};
 
     // Test with different block configurations to make sure all the
     // dimensions get partitioned even at small numbers of ranks.
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[2] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[1], ranks_per_dim[2] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
 }
 
 //---------------------------------------------------------------------------//
@@ -355,21 +361,26 @@ TEST( TEST_CATEGORY, periodic_test )
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
     std::vector<int> ranks_per_dim( 3 );
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Every boundary is periodic
     std::vector<bool> is_dim_periodic = {true,true,true};
 
     // Test with different block configurations to make sure all the
     // dimensions get partitioned even at small numbers of ranks.
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[2] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[1], ranks_per_dim[2] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
     std::swap( ranks_per_dim[0], ranks_per_dim[1] );
-    redistributeTest( ranks_per_dim, is_dim_periodic );
+    partitioner = Cajita::ManualPartitioner( ranks_per_dim );
+    redistributeTest( partitioner, is_dim_periodic );
 }
 
 //---------------------------------------------------------------------------//
@@ -380,10 +391,11 @@ TEST( TEST_CATEGORY, local_only_test )
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
     std::vector<int> ranks_per_dim( 3 );
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Every boundary is periodic
     std::vector<bool> is_dim_periodic = {true,true,true};
-    localOnlyTest( ranks_per_dim, is_dim_periodic );
+    localOnlyTest( partitioner, is_dim_periodic );
 }
 
 //---------------------------------------------------------------------------//

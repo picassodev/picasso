@@ -2,6 +2,7 @@
 #define CAJITA_GLOBALGRID_HPP
 
 #include <Cajita_GridBlock.hpp>
+#include <Cajita_Partitioner.hpp>
 
 #include <vector>
 
@@ -19,15 +20,14 @@ class GlobalGrid
     /*!
      \brief Constructor.
      \param comm The communicator over which to define the grid.
-     \param ranks_per_dim The number of ranks in which to partition each
-     logical dimension.
+     \param partitioner The grid partitioner.
      \param is_dim_periodic Whether each logical dimension is periodic.
      \param global_low_corner The low corner of the grid in physical space.
      \param global_high_corner The high corner of the grid in physical space.
      \param cell_size The size of the cells in the grid.
     */
     GlobalGrid( MPI_Comm comm,
-                const std::vector<int>& ranks_per_dim,
+                const Partitioner& partitioner,
                 const std::vector<bool>& is_dim_periodic,
                 const std::vector<double>& global_low_corner,
                 const std::vector<double>& global_high_corner,

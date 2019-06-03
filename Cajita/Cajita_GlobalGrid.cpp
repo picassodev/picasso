@@ -10,13 +10,12 @@ namespace Cajita
 //---------------------------------------------------------------------------//
 // Constructor.
 GlobalGrid::GlobalGrid( MPI_Comm comm,
-                        const std::vector<int>& ranks_per_dim,
+                        const Partitioner& partitioner,
                         const std::vector<bool>& is_dim_periodic,
                         const std::vector<double>& global_low_corner,
                         const std::vector<double>& global_high_corner,
                         const double cell_size )
-    : _ranks_per_dim( ranks_per_dim )
-    , _global_low_corner( global_low_corner )
+    : _global_low_corner( global_low_corner )
 {
     // Compute how many cells are in each dimension.
     _global_num_cell.resize( 3 );
@@ -29,6 +28,9 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
         if ( std::abs(_global_num_cell[d] * cell_size + _global_low_corner[d] -
                       global_high_corner[d]) > std::numeric_limits<double>::epsilon() )
             throw std::invalid_argument("Dimension not divisible by cell size");
+
+    // Partition the problem.
+    _ranks_per_dim = partitioner.ranksPerDimension( comm, _global_num_cell );
 
     // Extract the periodicity of the boundary as integers.
     std::vector<int> periodic_dims =
