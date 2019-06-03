@@ -2,6 +2,7 @@
 #include <Cajita_GlobalGrid.hpp>
 #include <Cajita_Field.hpp>
 #include <Cajita_FieldVectorOps.hpp>
+#include <Cajita_UniformDimPartitioner.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -19,10 +20,7 @@ void vectorOpTest()
     // Let MPI compute the partitioning for this test.
     int comm_rank;
     MPI_Comm_rank( MPI_COMM_WORLD, &comm_rank );
-    int comm_size;
-    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
-    MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
+    UniformDimPartitioner partitioner;
 
     // Create the global grid.
     double cell_size = 0.23;
@@ -34,7 +32,7 @@ void vectorOpTest()
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
     auto global_grid = std::make_shared<GlobalGrid>( MPI_COMM_WORLD,
-                                                     ranks_per_dim,
+                                                     partitioner,
                                                      is_dim_periodic,
                                                      global_low_corner,
                                                      global_high_corner,
