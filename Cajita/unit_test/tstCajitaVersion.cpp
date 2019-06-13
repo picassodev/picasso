@@ -9,7 +9,7 @@
 //---------------------------------------------------------------------------//
 namespace Test {
 
-TEST( harlow_version, version_test )
+TEST( version, version_test )
 {
     auto const version_id = Cajita::version();
     EXPECT_TRUE( !version_id.empty() );

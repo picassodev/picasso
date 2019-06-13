@@ -454,6 +454,70 @@ void subviewTest()
 }
 
 //---------------------------------------------------------------------------//
+void sizeAppendTest()
+{
+    int s0 = 3;
+    IndexSpace<1> is1( {s0} );
+    int s1 = 5;
+    auto is2 = appendDimension( is1, s1 );
+
+    EXPECT_EQ( is2.min(0), 0 );
+    EXPECT_EQ( is2.max(0), s0 );
+    EXPECT_EQ( is2.min(1), 0 );
+    EXPECT_EQ( is2.max(1), s1 );
+
+    auto min2 = is2.min();
+    EXPECT_EQ( min2[0], 0 );
+    EXPECT_EQ( min2[1], 0 );
+    auto max2 = is2.max();
+    EXPECT_EQ( max2[0], s0 );
+    EXPECT_EQ( max2[1], s1 );
+
+    auto r20 = is2.range(0);
+    EXPECT_EQ( r20.first, 0 );
+    EXPECT_EQ( r20.second, s0 );
+    auto r21 = is2.range(1);
+    EXPECT_EQ( r21.first, 0 );
+    EXPECT_EQ( r21.second, s1 );
+
+    EXPECT_EQ( is2.rank(), 2 );
+    EXPECT_EQ( is2.extent(0), s0 );
+    EXPECT_EQ( is2.extent(1), s1 );
+}
+
+//---------------------------------------------------------------------------//
+void rangeAppendTest()
+{
+    int s0 = 3;
+    IndexSpace<1> is1( {s0} );
+    int s1 = 5;
+    auto is2 = appendDimension( is1, 0, s1 );
+
+    EXPECT_EQ( is2.min(0), 0 );
+    EXPECT_EQ( is2.max(0), s0 );
+    EXPECT_EQ( is2.min(1), 0 );
+    EXPECT_EQ( is2.max(1), s1 );
+
+    auto min2 = is2.min();
+    EXPECT_EQ( min2[0], 0 );
+    EXPECT_EQ( min2[1], 0 );
+    auto max2 = is2.max();
+    EXPECT_EQ( max2[0], s0 );
+    EXPECT_EQ( max2[1], s1 );
+
+    auto r20 = is2.range(0);
+    EXPECT_EQ( r20.first, 0 );
+    EXPECT_EQ( r20.second, s0 );
+    auto r21 = is2.range(1);
+    EXPECT_EQ( r21.first, 0 );
+    EXPECT_EQ( r21.second, s1 );
+
+    EXPECT_EQ( is2.rank(), 2 );
+    EXPECT_EQ( is2.extent(0), s0 );
+    EXPECT_EQ( is2.extent(1), s1 );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, index_space_test )
@@ -462,6 +526,8 @@ TEST( TEST_CATEGORY, index_space_test )
     rangeConstructorTest();
     executionTest();
     subviewTest();
+    sizeAppendTest();
+    rangeAppendTest();
 }
 
 //---------------------------------------------------------------------------//

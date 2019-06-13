@@ -1,9 +1,10 @@
-#include <Cajita_BovFieldWriter.hpp>
+#include <Cajita_BovWriter.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_GlobalGrid.hpp>
-#include <Cajita_Field.hpp>
-#include <Cajita_GridExecPolicy.hpp>
+#include <Cajita_Array.hpp>
+#include <Cajita_IndexSpace.hpp>
 #include <Cajita_UniformDimPartitioner.hpp>
+#include <Cajita_Halo.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -30,8 +31,8 @@ void writeTest()
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    std::vector<bool> is_dim_periodic = {false,false,false};
-    auto global_grid = std::make_shared<GlobalGrid>(
+    std::vector<bool> is_dim_periodic = {true,true,true};
+    auto global_grid = createGlobalGrid(
         MPI_COMM_WORLD,
         partitioner,
         is_dim_periodic,
@@ -44,35 +45,41 @@ void writeTest()
     auto off_j = global_grid->globalOffset( Dim::J );
     auto off_k = global_grid->globalOffset( Dim::K );
 
-    // Create a cell field and fill it with data.
-    Field<double,TEST_MEMSPACE> cell_field(
-        global_grid, 1, MeshEntity::Cell, 0, "cell_field" );
-    auto cell_data = cell_field.data();
+    // Create a scalar cell field and fill it with data.
+    auto cell_layout = createArrayLayout( global_grid, 0, 1, Cell() );
+    auto cell_field =
+        createArray<double,TEST_DEVICE>( "cell_field", cell_layout );
+    auto cell_data = cell_field->view();
     Kokkos::parallel_for(
         "fill_cell_field",
-        GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
-            global_grid->block(),MeshEntity::Cell),
+        createExecutionPolicy(
+            cell_layout->block().ownedIndexSpace(Cell()), TEST_EXECSPACE() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             cell_data( i, j, k, 0 ) = i + off_i + j + off_j + k + off_k;
         } );
 
-    // Create a node field and fill it with data.
-    Field<int,TEST_MEMSPACE> node_field(
-        global_grid, 3, MeshEntity::Node, 0, "node_field" );
-    auto node_data = node_field.data();
+    // Create a vector node field and fill it with data.
+    auto node_layout = createArrayLayout( global_grid, 0, 3, Node() );
+    auto node_field =
+        createArray<int,TEST_DEVICE>( "node_field", node_layout );
+    auto node_data = node_field->view();
     Kokkos::parallel_for(
         "fill_node_field",
-        GridExecution::createLocalEntityPolicy<TEST_EXECSPACE>(
-            global_grid->block(),MeshEntity::Node),
+        createExecutionPolicy(
+            node_layout->block().ownedIndexSpace(Node()), TEST_EXECSPACE() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             node_data( i, j, k, Dim::I ) = i + off_i;
             node_data( i, j, k, Dim::J ) = j + off_j;
             node_data( i, j, k, Dim::K ) = k + off_k;
         } );
 
+    // Gather the node data.
+    auto node_halo = createHalo( *node_field );
+    node_halo->gather( *node_field, 453 );
+
     // Write the fields to a file.
-    BovFieldWriter::writeTimeStep( 302, 3.43, cell_field );
-    BovFieldWriter::writeTimeStep( 1972, 12.457, node_field );
+    BovWriter::writeTimeStep( 302, 3.43, *cell_field );
+    BovWriter::writeTimeStep( 1972, 12.457, *node_field );
 
     // Read the data back in on rank 0 and make sure it is OK.
     int rank;
@@ -87,9 +94,9 @@ void writeTest()
         // The cell file data is ordered KJI
         double cell_value;
         int cell_id = 0;
-        for ( int k = 0; k < global_num_cell[Dim::K]; ++k )
-            for ( int j = 0; j < global_num_cell[Dim::J]; ++j )
-                for ( int i = 0; i < global_num_cell[Dim::I]; ++i )
+        for ( int k = 0; k < global_grid->globalNumEntity(Cell(),Dim::K); ++k )
+            for ( int j = 0; j < global_grid->globalNumEntity(Cell(),Dim::J); ++j )
+                for ( int i = 0; i < global_grid->globalNumEntity(Cell(),Dim::I); ++i )
                 {
                     cell_data_file.seekg( cell_id * sizeof(double) );
                     cell_data_file.read( (char*) &cell_value, sizeof(double) );
@@ -108,23 +115,29 @@ void writeTest()
         // The node file data is ordered KJI
         int node_value;
         int node_id = 0;
-        for ( int k = 0; k < global_num_cell[Dim::K] + 1; ++k )
-            for ( int j = 0; j < global_num_cell[Dim::J] + 1; ++j )
-                for ( int i = 0; i < global_num_cell[Dim::I] + 1; ++i )
+        for ( int k = 0; k < global_grid->globalNumEntity(Cell(),Dim::K)+1; ++k )
+            for ( int j = 0; j < global_grid->globalNumEntity(Cell(),Dim::J)+1; ++j )
+                for ( int i = 0; i < global_grid->globalNumEntity(Cell(),Dim::I)+1; ++i )
                 {
+                    auto ival =
+                        ( i == global_grid->globalNumEntity(Cell(),Dim::I) ) ? 0 : i;
                     node_data_file.seekg( node_id * sizeof(int) );
                     node_data_file.read( (char*) &node_value, sizeof(int) );
-                    EXPECT_EQ( node_value, i );
+                    EXPECT_EQ( node_value, ival );
                     ++node_id;
 
+                    auto jval =
+                        ( j == global_grid->globalNumEntity(Cell(),Dim::J) ) ? 0 : j;
                     node_data_file.seekg( node_id * sizeof(int) );
                     node_data_file.read( (char*) &node_value, sizeof(int) );
-                    EXPECT_EQ( node_value, j );
+                    EXPECT_EQ( node_value, jval );
                     ++node_id;
 
+                    auto kval =
+                        ( k == global_grid->globalNumEntity(Cell(),Dim::K) ) ? 0 : k;
                     node_data_file.seekg( node_id * sizeof(int) );
                     node_data_file.read( (char*) &node_value, sizeof(int) );
-                    EXPECT_EQ( node_value, k );
+                    EXPECT_EQ( node_value, kval );
                     ++node_id;
                 }
 

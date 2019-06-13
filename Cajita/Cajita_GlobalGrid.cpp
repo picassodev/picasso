@@ -1,5 +1,4 @@
 #include <Cajita_GlobalGrid.hpp>
-#include <Cajita_Types.hpp>
 
 #include <algorithm>
 #include <limits>
@@ -10,31 +9,30 @@ namespace Cajita
 //---------------------------------------------------------------------------//
 // Constructor.
 GlobalGrid::GlobalGrid( MPI_Comm comm,
+                        const std::shared_ptr<Domain>& domain,
                         const Partitioner& partitioner,
-                        const std::vector<bool>& is_dim_periodic,
-                        const std::vector<double>& global_low_corner,
-                        const std::vector<double>& global_high_corner,
                         const double cell_size )
-    : _global_low_corner( global_low_corner )
+    : _domain( domain )
+    , _cell_size( cell_size )
 {
     // Compute how many cells are in each dimension.
     _global_num_cell.resize( 3 );
     for ( int d = 0; d < 3; ++d )
-        _global_num_cell[d] =
-            std::rint((global_high_corner[d] - _global_low_corner[d]) / cell_size);
+        _global_num_cell[d] = std::rint((_domain->extent(d)) / cell_size);
 
     // Check the cell size.
     for ( int d = 0; d < 3; ++d )
-        if ( std::abs(_global_num_cell[d] * cell_size + _global_low_corner[d] -
-                      global_high_corner[d]) > std::numeric_limits<double>::epsilon() )
+        if ( std::abs(_global_num_cell[d] * cell_size - _domain->extent(d)) >
+             std::numeric_limits<double>::epsilon() )
             throw std::invalid_argument("Dimension not divisible by cell size");
 
     // Partition the problem.
     _ranks_per_dim = partitioner.ranksPerDimension( comm, _global_num_cell );
 
     // Extract the periodicity of the boundary as integers.
-    std::vector<int> periodic_dims =
-        {is_dim_periodic[0],is_dim_periodic[1],is_dim_periodic[2]};
+    std::vector<int> periodic_dims = { _domain->isPeriodic(Dim::I),
+                                       _domain->isPeriodic(Dim::J),
+                                       _domain->isPeriodic(Dim::K) };
 
     // Generate a communicator with a Cartesian topology.
     int reorder_cart_ranks = 1;
@@ -63,7 +61,6 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     // Compute the global cell offset and the local low corner on this rank by
     // computing the starting global cell index via exclusive scan.
     _global_cell_offset.assign( 3, 0 );
-    std::vector<double> local_low_corner( 3 );
     for ( int d = 0; d < 3; ++d )
     {
         for ( int r = 0; r < _cart_rank[d]; ++r )
@@ -72,160 +69,111 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
             if ( dim_remainder[d] > r )
                 ++_global_cell_offset[d];
         }
-        local_low_corner[d] =
-            _global_cell_offset[d] * cell_size + _global_low_corner[d];
     }
 
     // Compute the number of local cells in this rank in each dimension.
-    std::vector<int> local_num_cell( 3 );
+    _owned_num_cell.resize( 3 );
     for ( int d = 0; d < 3; ++d )
     {
-        local_num_cell[d] = cells_per_dim[d];
+        _owned_num_cell[d] = cells_per_dim[d];
         if ( dim_remainder[d] > _cart_rank[d] )
-            ++local_num_cell[d];
+            ++_owned_num_cell[d];
     }
-
-    // Determine if this rank is on a physical boundary.
-    std::vector<bool> boundary_location( 6, false );
-    for ( int d = 0; d < 3; ++d )
-    {
-        if ( 0 == _cart_rank[d] )
-            boundary_location[2*d] = true;
-        if ( _ranks_per_dim[d] - 1 == _cart_rank[d] )
-            boundary_location[2*d+1] = true;
-    }
-
-    // Create the local grid block.
-    _grid_block = GridBlock( local_low_corner, local_num_cell,
-                             boundary_location, is_dim_periodic, cell_size, 0 );
-
-    // Create the graph communicator. Start by getting the neighbors we will
-    // communicate with. Note the ordering of the ijk loop here - I moves the
-    // fastest and K moves the slowest. Note that we do not send to ourselves
-    // (when each index is 0).
-    //
-    // There has been a lot of discussion recently on whether or not
-    // MPI_PROC_NULL should be allowed as a neighbor in the creation of the
-    // distributed graph topology. The way I read it is that it should be
-    // allowed and this would make things a lot easier. However, some
-    // implementations seem to not have the same interpretation and therefore
-    // it will not work. Therefore, we can't just add MPI_PROC_NULL here and
-    // always assume we have 26 neighbors - we only work with the neighbors
-    // that we know are valid. So these neighbors are generated in the same
-    // IJK order, but we only save them if they are things we will actually
-    // send to.
-    std::vector<int> neighbors;
-    neighbors.reserve(26);
-    for ( int k = -1; k < 2; ++k )
-        for ( int j = -1; j < 2; ++j )
-            for ( int i = -1; i < 2; ++i )
-                if ( !(i==0 && j==0 && k==0) )
-                {
-                    // Set the Cartesian rank of this neighbor.
-                    std::vector<int> ncr = { _cart_rank[Dim::I] + i,
-                                             _cart_rank[Dim::J] + j,
-                                             _cart_rank[Dim::K] + k };
-
-                    // Check for being outside of a non-periodic dimension.
-                    bool is_null = false;
-                    for ( int d = 0; d < 3; ++d )
-                        if ( ncr[d] < 0 || ncr[d] >= _ranks_per_dim[d] )
-                            if ( !is_dim_periodic[d] )
-                                is_null = true;
-
-                    // Get our neighbor. The periodic case should wrap around
-                    // when out of bounds.
-                    if ( !is_null )
-                    {
-                        int nr;
-                        MPI_Cart_rank( _cart_comm, ncr.data(), &nr );
-                        neighbors.push_back( nr );
-                    }
-                }
-
-    // Build the new topology for the graph communicator. Choose not to
-    // reorder the ranks here - the Cartesian topology ordering is probably
-    // already near optimal for this case.
-    int reorder_graph_ranks = 0;
-    MPI_Dist_graph_create_adjacent(
-        _cart_comm,
-        neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-        neighbors.size(), neighbors.data(), MPI_UNWEIGHTED,
-        MPI_INFO_NULL,
-        reorder_graph_ranks, &_graph_comm );
 }
 
 //---------------------------------------------------------------------------//
 // Get the grid communicator.
 MPI_Comm GlobalGrid::comm() const
-{ return _cart_comm; }
-
-//---------------------------------------------------------------------------//
-// Get the grid communicator with a Cartesian topology.
-MPI_Comm GlobalGrid::cartesianComm() const
-{ return _cart_comm; }
-
-//---------------------------------------------------------------------------//
-// Get the grid communicator with a Graph topology.
-MPI_Comm GlobalGrid::graphComm() const
-{ return _graph_comm; }
-
-//---------------------------------------------------------------------------//
-// Get the MPI rank of a block with the given indices.
-int GlobalGrid::blockCommRank( const int i, const int j, const int k ) const
 {
+    return _cart_comm;
+}
+
+//---------------------------------------------------------------------------//
+// Get the domain of the grid.
+const Domain& GlobalGrid::domain() const
+{
+    return *_domain;
+}
+
+//---------------------------------------------------------------------------//
+// Get the number of blocks in each dimension in the global mesh.
+int GlobalGrid::dimNumBlock( const int dim ) const
+{
+    return _ranks_per_dim[dim];
+}
+
+//---------------------------------------------------------------------------//
+// Get the total number of blocks.
+int GlobalGrid::totalNumBlock() const
+{
+    int comm_size;
+    MPI_Comm_size( _cart_comm, &comm_size );
+    return comm_size;
+}
+
+//---------------------------------------------------------------------------//
+// Get the id of this block in a given dimension.
+int GlobalGrid::dimBlockId( const int dim ) const
+{
+    return _cart_rank[dim];
+}
+
+//---------------------------------------------------------------------------//
+// Get the id of this block.
+int GlobalGrid::blockId() const
+{
+    int comm_rank;
+    MPI_Comm_rank( _cart_comm, &comm_rank );
+    return comm_rank;
+}
+
+//---------------------------------------------------------------------------//
+// Get the MPI rank of a block with the given indices. If the rank is out
+// of bounds and the boundary is not periodic, return -1 to indicate an
+// invalid rank.
+int GlobalGrid::blockRank( const int i, const int j, const int k ) const
+{
+    // Get the indices.
     std::vector<int> cr = { i, j, k };
+
+    // Check for invalid indices. An index is invalid if it is out of bounds
+    // and the dimension is not periodic. An out of bound index in a periodic
+    // dimension is valid because it will wrap around to a valid index.
+    for ( int d = 0; d < 3; ++d )
+        if ( !_domain->isPeriodic(d) &&
+             (cr[d] < 0 || _ranks_per_dim[d] <= cr[d]) )
+            return -1;
+
+    // If we have indices get their rank.
     int lr;
     MPI_Cart_rank( _cart_comm, cr.data(), &lr );
     return lr;
 }
 
 //---------------------------------------------------------------------------//
-// Get the MPI rank of the neighbor with the given offset relative to this
-// rank.
-int GlobalGrid::neighborCommRank( const int i_off,
-                                  const int j_off,
-                                  const int k_off ) const
+// Get the owned number of cells in a given dimension.
+int GlobalGrid::ownedNumCell( const int dim ) const
 {
-    return blockCommRank( _cart_rank[Dim::I] + i_off,
-                          _cart_rank[Dim::J] + j_off,
-                          _cart_rank[Dim::K] + k_off );
+    return _owned_num_cell[dim];
 }
 
 //---------------------------------------------------------------------------//
-// Get a grid block on this rank with a given halo cell width.
-const GridBlock& GlobalGrid::block() const
-{ return _grid_block; }
-
-//---------------------------------------------------------------------------//
-// Get the number of blocks in each dimension in the global mesh.
-int GlobalGrid::numBlock( const int dim ) const
+// Get the global number of cells in a given dimension.
+int GlobalGrid::globalNumEntity( Cell, const int dim ) const
 {
-    return _ranks_per_dim[dim];
+    return _global_num_cell[dim];
 }
 
 //---------------------------------------------------------------------------//
-// Get the id of this block in a given dimension.
-int GlobalGrid::blockId( const int dim ) const
+// Get the global number of nodes in a given dimension.
+int GlobalGrid::globalNumEntity( Node, const int dim ) const
 {
-    return _cart_rank[dim];
-}
-
-//---------------------------------------------------------------------------//
-// Get whether a given logical dimension is periodic.
-bool GlobalGrid::isPeriodic( const int dim ) const
-{ return _grid_block.isPeriodic(dim); }
-
-//---------------------------------------------------------------------------//
-// Get the global number of entities in a given dimension.
-int GlobalGrid::numEntity( const int entity_type, const int dim ) const
-{
-    if ( MeshEntity::Cell == entity_type )
+    // If this dimension is periodic that last node in the dimension is
+    // repeated across the periodic boundary.
+    if ( _domain->isPeriodic(dim) )
         return _global_num_cell[dim];
-    else if ( MeshEntity::Node == entity_type )
-        return _global_num_cell[dim] + 1;
     else
-        throw std::invalid_argument("Invalid entity type");
+        return _global_num_cell[dim] + 1;
 }
 
 //---------------------------------------------------------------------------//
@@ -237,14 +185,39 @@ int GlobalGrid::globalOffset( const int dim ) const
 }
 
 //---------------------------------------------------------------------------//
-// Get the global low corner.
-double GlobalGrid::lowCorner( const int dim ) const
-{ return _global_low_corner[dim]; }
-
-//---------------------------------------------------------------------------//
 // Get the cell size.
 double GlobalGrid::cellSize() const
-{ return _grid_block.cellSize(); }
+{ return _cell_size; }
+
+//---------------------------------------------------------------------------//
+std::shared_ptr<GlobalGrid>
+createGlobalGrid( MPI_Comm comm,
+                  const std::shared_ptr<Domain> domain,
+                  const Partitioner& partitioner,
+                  const double cell_size )
+{
+    return std::make_shared<GlobalGrid>( comm,
+                                         domain,
+                                         partitioner,
+                                         cell_size );
+}
+
+//---------------------------------------------------------------------------//
+std::shared_ptr<GlobalGrid>
+createGlobalGrid( MPI_Comm comm,
+                  const Partitioner& partitioner,
+                  const std::vector<bool>& periodic,
+                  const std::vector<double>& global_low_corner,
+                  const std::vector<double>& global_high_corner,
+                  const double cell_size )
+{
+    auto domain =
+        createDomain( global_low_corner, global_high_corner, periodic );
+    return std::make_shared<GlobalGrid>( comm,
+                                         domain,
+                                         partitioner,
+                                         cell_size );
+}
 
 //---------------------------------------------------------------------------//
 

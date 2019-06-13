@@ -1,11 +1,15 @@
 #ifndef CAJITA_MPITRAITS_HPP
 #define CAJITA_MPITRAITS_HPP
 
+#include <Kokkos_Core.hpp>
+
 #include <mpi.h>
 
 namespace Cajita
 {
 
+//---------------------------------------------------------------------------//
+// Type traits
 template<typename T>
 struct MpiTraits;
 
@@ -38,6 +42,25 @@ struct MpiTraits<double>
 {
     static MPI_Datatype type() { return MPI_DOUBLE; }
 };
+
+//---------------------------------------------------------------------------//
+// Data order.
+template<typename Layout>
+struct MpiOrder;
+
+template<>
+struct MpiOrder<Kokkos::LayoutLeft>
+{
+    static int value() { return MPI_ORDER_FORTRAN; }
+};
+
+template<>
+struct MpiOrder<Kokkos::LayoutRight>
+{
+    static int value() { return MPI_ORDER_C; }
+};
+
+//---------------------------------------------------------------------------//
 
 } // end namespace Cajita
 
