@@ -20,6 +20,19 @@ struct Cell {};
 // Mesh node tag.
 struct Node {};
 
+// Mesh face tags.
+template<int D>
+struct Face;
+
+template<>
+struct Face<Dim::I> {};
+
+template<>
+struct Face<Dim::J> {};
+
+template<>
+struct Face<Dim::K> {};
+
 } // end namespace Cajita
 
 #endif // CAJITA_TYPES_HPP
