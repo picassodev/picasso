@@ -3,13 +3,14 @@ configure_file(Cajita_config.hpp.cmakein Cajita_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
-  Cajita_BovFieldWriter.hpp
-  Cajita_Field.hpp
-  Cajita_FieldVectorOps.hpp
+  Cajita.hpp
+  Cajita_Array.hpp
+  Cajita_Block.hpp
+  Cajita_BovWriter.hpp
+  Cajita_Domain.hpp
   Cajita_GlobalGrid.hpp
-  Cajita_GridBlock.hpp
-  Cajita_GridCommunication.hpp
-  Cajita_GridExecPolicy.hpp
+  Cajita_Halo.hpp
+  Cajita_IndexSpace.hpp
   Cajita_ManualPartitioner.hpp
   Cajita_MpiTraits.hpp
   Cajita_Partitioner.hpp
@@ -19,8 +20,10 @@ set(HEADERS
   )
 
 set(SOURCES
+  Cajita_Block.cpp
+  Cajita_Domain.cpp
   Cajita_GlobalGrid.cpp
-  Cajita_GridBlock.cpp
+  Cajita_IndexSpace.cpp
   Cajita_ManualPartitioner.cpp
   Cajita_UniformDimPartitioner.cpp
   Cajita_Version.cpp

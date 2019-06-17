@@ -21,7 +21,7 @@ set(gtest_args --gtest_color=yes)
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
-foreach(_test CajitaVersion GridBlock)
+foreach(_test CajitaVersion)
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
   target_link_libraries(${_test}_test cajita cajita_gtest)
   add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)
@@ -71,5 +71,5 @@ macro(Cajita_add_tests)
   endforeach()
 endmacro()
 
-Cajita_add_tests(NAMES IndexSpace Field GridExecPolicy)
-Cajita_add_tests(MPI NAMES GlobalGrid GridCommunicationFace GridCommunicationNode FieldVectorOps BovFieldWriter)
+Cajita_add_tests(NAMES IndexSpace)
+Cajita_add_tests(MPI NAMES GlobalGrid Block Array Halo BovWriter)

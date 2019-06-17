@@ -3,7 +3,9 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <vector>
 #include <algorithm>
+#include <string>
 
 namespace Cajita
 {
@@ -21,7 +23,7 @@ class IndexSpace
     static constexpr long Rank = N;
 
     /*!
-      \brief Size constructor.
+      \brief Initializer list size constructor.
     */
     IndexSpace( const std::initializer_list<long>& size )
     {
@@ -30,10 +32,29 @@ class IndexSpace
     }
 
     /*!
-      \brief Range constructor.
+      \brief Initializer list range constructor.
     */
     IndexSpace( const std::initializer_list<long>& min,
                 const std::initializer_list<long>& max )
+    {
+        std::copy( min.begin(), min.end(), _min.data() );
+        std::copy( max.begin(), max.end(), _max.data() );
+    }
+
+    /*!
+      \brief Vector size constructor.
+    */
+    IndexSpace( const std::vector<long>& size )
+    {
+        std::fill( _min.data(), _min.data() + Rank, 0 );
+        std::copy( size.begin(), size.end(), _max.data() );
+    }
+
+    /*!
+      \brief Vector range constructor.
+    */
+    IndexSpace( const std::vector<long>& min,
+                const std::vector<long>& max )
     {
         std::copy( min.begin(), min.end(), _min.data() );
         std::copy( max.begin(), max.end(), _max.data() );
@@ -56,8 +77,8 @@ class IndexSpace
     { return _max; }
 
     //! Get the range of a given dimension.
-    Kokkos::pair<long,long> range( const long dim ) const
-    { return Kokkos::pair<long,long>(_min[dim],_max[dim]); }
+    std::pair<long,long> range( const long dim ) const
+    { return std::make_pair(_min[dim],_max[dim]); }
 
     //! Get the number of dimensions.
     long rank() const
@@ -66,6 +87,15 @@ class IndexSpace
     //! Get the extent of a given dimension.
     long extent( const long dim ) const
     { return _max[dim] - _min[dim]; }
+
+    //! Get the total size of the index space.
+    long size() const
+    {
+        long size = 1;
+        for ( long d = 0; d < Rank; ++d )
+            size *= extent(d);
+        return size;
+    }
 
   private:
 
@@ -82,10 +112,9 @@ class IndexSpace
 
   Rank-1 specialization.
 */
-template<class IndexSpace_t, class ExecutionSpace>
-typename std::enable_if<(1==IndexSpace_t::Rank),
-                        Kokkos::RangePolicy<ExecutionSpace>>::type
-createExecutionPolicy( const IndexSpace_t& index_space,
+template<class ExecutionSpace>
+Kokkos::RangePolicy<ExecutionSpace>
+createExecutionPolicy( const IndexSpace<1>& index_space,
                        const ExecutionSpace& )
 {
     return Kokkos::RangePolicy<ExecutionSpace>(
@@ -95,13 +124,9 @@ createExecutionPolicy( const IndexSpace_t& index_space,
 //---------------------------------------------------------------------------//
 /*!
   \brief Create a multi-dimensional execution policy over an index space.
-
-  Higher-rank specialization.
 */
 template<class IndexSpace_t, class ExecutionSpace>
-typename std::enable_if<(1<IndexSpace_t::Rank),
-    Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<IndexSpace_t::Rank>>
-    >::type
+Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<IndexSpace_t::Rank>>
 createExecutionPolicy( const IndexSpace_t& index_space,
                        const ExecutionSpace& )
 {
@@ -112,15 +137,83 @@ createExecutionPolicy( const IndexSpace_t& index_space,
 
 //---------------------------------------------------------------------------//
 /*!
+  \brief Given an index space create a view over the extent of that index
+  space.
+
+  Rank-1 specialization.
+*/
+template<class Scalar, class DeviceType>
+Kokkos::View<Scalar*,DeviceType>
+createView( const std::string& label, const IndexSpace<1>& index_space )
+{
+    return Kokkos::View<Scalar*,DeviceType>(
+        Kokkos::ViewAllocateWithoutInitializing(label),
+        index_space.extent(0) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+  \brief Given an index space create a view over the extent of that index
+  space.
+
+  Rank-2 specialization.
+*/
+template<class Scalar, class DeviceType>
+Kokkos::View<Scalar**,DeviceType>
+createView( const std::string& label, const IndexSpace<2>& index_space )
+{
+    return Kokkos::View<Scalar**,DeviceType>(
+        Kokkos::ViewAllocateWithoutInitializing(label),
+        index_space.extent(0),
+        index_space.extent(1) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+  \brief Given an index space create a view over the extent of that index
+  space.
+
+  Rank-3 specialization.
+*/
+template<class Scalar, class DeviceType>
+Kokkos::View<Scalar***,DeviceType>
+createView( const std::string& label, const IndexSpace<3>& index_space )
+{
+    return Kokkos::View<Scalar***,DeviceType>(
+        Kokkos::ViewAllocateWithoutInitializing(label),
+        index_space.extent(0),
+        index_space.extent(1),
+        index_space.extent(2) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
+  \brief Given an index space create a view over the extent of that index
+  space.
+
+  Rank-4 specialization.
+*/
+template<class Scalar, class DeviceType>
+Kokkos::View<Scalar****,DeviceType>
+createView( const std::string& label, const IndexSpace<4>& index_space )
+{
+    return Kokkos::View<Scalar****,DeviceType>(
+        Kokkos::ViewAllocateWithoutInitializing(label),
+        index_space.extent(0),
+        index_space.extent(1),
+        index_space.extent(2),
+        index_space.extent(3) );
+}
+
+//---------------------------------------------------------------------------//
+/*!
   \brief Given a view create a subview over the given index space.
 
   Rank-1 specialization.
 */
-template<class ViewType, class IndexSpace_t>
-auto createSubview(
-    const ViewType& view,
-    const IndexSpace_t& index_space,
-    typename std::enable_if<(1==IndexSpace_t::Rank),int>::type* = 0 )
+template<class ViewType>
+auto createSubview( const ViewType& view,
+                    const IndexSpace<1>& index_space )
     -> decltype( Kokkos::subview(view,
                                  index_space.range(0)) )
 {
@@ -135,11 +228,9 @@ auto createSubview(
 
   Rank-2 specialization.
 */
-template<class ViewType, class IndexSpace_t>
-auto createSubview(
-    const ViewType& view,
-    const IndexSpace_t& index_space,
-    typename std::enable_if<(2==IndexSpace_t::Rank),int>::type* = 0 )
+template<class ViewType>
+auto createSubview( const ViewType& view,
+                    const IndexSpace<2>& index_space )
     -> decltype( Kokkos::subview(view,
                                  index_space.range(0),
                                  index_space.range(1)) )
@@ -156,11 +247,9 @@ auto createSubview(
 
   Rank-3 specialization.
 */
-template<class ViewType, class IndexSpace_t>
-auto createSubview(
-    const ViewType& view,
-    const IndexSpace_t& index_space,
-    typename std::enable_if<(3==IndexSpace_t::Rank),int>::type* = 0 )
+template<class ViewType>
+auto createSubview( const ViewType& view,
+                    const IndexSpace<3>& index_space )
     -> decltype( Kokkos::subview(view,
                                  index_space.range(0),
                                  index_space.range(1),
@@ -179,11 +268,9 @@ auto createSubview(
 
   Rank-4 specialization.
 */
-template<class ViewType, class IndexSpace_t>
-auto createSubview(
-    const ViewType& view,
-    const IndexSpace_t& index_space,
-    typename std::enable_if<(4==IndexSpace_t::Rank),int>::type* = 0 )
+template<class ViewType>
+auto createSubview( const ViewType& view,
+                    const IndexSpace<4>& index_space )
     -> decltype( Kokkos::subview(view,
                                  index_space.range(0),
                                  index_space.range(1),
@@ -196,6 +283,47 @@ auto createSubview(
                            index_space.range(1),
                            index_space.range(2),
                            index_space.range(3));
+}
+
+//---------------------------------------------------------------------------//
+// Given an N-dimensional index space append an additional dimension with the
+// given size.
+template<long N>
+IndexSpace<N+1> appendDimension( const IndexSpace<N>& index_space,
+                                 const long size )
+{
+    std::vector<long> min( N+1 );
+    for ( int d = 0; d < N; ++d )
+        min[d] = index_space.min(d);
+    min[N] = 0;
+
+    std::vector<long> max( N+1 );
+    for ( int d = 0; d < N; ++d )
+        max[d] = index_space.max(d);
+    max[N] = size;
+
+    return IndexSpace<N+1>( min, max );
+}
+
+//---------------------------------------------------------------------------//
+// Given an N-dimensional index space append an additional dimension with the
+// given range.
+template<long N>
+IndexSpace<N+1> appendDimension( const IndexSpace<N>& index_space,
+                                 const long min,
+                                 const long max )
+{
+    std::vector<long> range_min( N+1 );
+    for ( int d = 0; d < N; ++d )
+        range_min[d] = index_space.min(d);
+    range_min[N] = min;
+
+    std::vector<long> range_max( N+1 );
+    for ( int d = 0; d < N; ++d )
+        range_max[d] = index_space.max(d);
+    range_max[N] = max;
+
+    return IndexSpace<N+1>( range_min, range_max );
 }
 
 //---------------------------------------------------------------------------//

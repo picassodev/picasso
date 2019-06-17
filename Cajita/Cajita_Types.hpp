@@ -14,27 +14,11 @@ struct Dim
     };
 };
 
-// Domain boundary
-struct DomainBoundary
-{
-    enum Values {
-        LowX = 0,
-        HighX = 1,
-        LowY = 2,
-        HighY = 3,
-        LowZ = 4,
-        HighZ = 5
-    };
-};
+// Mesh cell tag.
+struct Cell {};
 
-// Mesh entity type.
-struct MeshEntity
-{
-    enum Values {
-        Node = 0,
-        Cell = 1,
-    };
-};
+// Mesh node tag.
+struct Node {};
 
 } // end namespace Cajita
 
