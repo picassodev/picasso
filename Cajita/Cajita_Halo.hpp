@@ -60,7 +60,6 @@ class Halo
         // Get the neighbor ranks we will exchange with in the halo and
         // allocate buffers. If any of the exchanges are self sends mark these
         // so we know which send buffers correspond to which receive buffers.
-        std::vector<int> forward_ids( 27, -1 );
         for ( int i = -1; i < 2; ++i )
             for ( int j = -1; j < 2; ++j )
                 for ( int k = -1; k < 2; ++k )
@@ -116,7 +115,7 @@ class Halo
 
     /*!
       \brief Gather data into our ghosts from their owners.
-      \param view The view to gather.
+      \param array The array to gather.
       \param mpi_tag An MPI tag for asynchronous communication. Note that a
       range of MPI tags are used for the communication with this value being
       the base. The range (mpi_tag,mpi_tag+27) will be used in the
@@ -142,8 +141,7 @@ class Halo
         auto view = array.view();
 
         // Allocate requests.
-        std::vector<MPI_Request> requests;
-        requests.reserve( 52 );
+        std::vector<MPI_Request> requests( 2 * num_n, MPI_REQUEST_NULL );
 
         // Post receives.
         for ( int n = 0; n < num_n; ++n )
@@ -151,14 +149,13 @@ class Halo
             // Only process this neighbor if there is work to do.
             if ( 0 < _ghosted_buffers[n].size() )
             {
-                requests.push_back( MPI_Request() );
                 MPI_Irecv( _ghosted_buffers[n].data(),
                            _ghosted_buffers[n].size(),
                            MpiTraits<value_type>::type(),
                            _neighbor_ranks[n],
                            mpi_tag + _receive_tags[n],
                            _comm,
-                           &requests.back() );
+                           &requests[n] );
             }
         }
 
@@ -172,31 +169,38 @@ class Halo
                 packOwned( view, n );
 
                 // Post a send.
-                requests.push_back( MPI_Request() );
                 MPI_Isend( _owned_buffers[n].data(),
                            _owned_buffers[n].size(),
                            MpiTraits<value_type>::type(),
                            _neighbor_ranks[n],
                            mpi_tag + _send_tags[n],
                            _comm,
-                           &requests.back() );
+                           &requests[num_n + n] );
             }
         }
 
-        // Wait on all requests.
-        std::vector<MPI_Status> status( requests.size() );
-        MPI_Waitall( requests.size(), requests.data(), status.data() );
-
         // Unpack receive buffers.
-        for ( int n = 0; n < num_n; ++n )
+        bool unpack_complete = false;
+        while ( !unpack_complete )
         {
-            gatherGhosted( view, n );
+            // Get the next buffer to unpack.
+            int unpack_index = MPI_UNDEFINED;
+            MPI_Waitany( num_n, requests.data(), &unpack_index, MPI_STATUS_IGNORE );
+
+            // If there are no more buffers to unpack we are done.
+            if ( MPI_UNDEFINED == unpack_index ) unpack_complete = true;
+
+            // Otherwise unpack the next buffer.
+            else gatherGhosted( view, unpack_index );
         }
+
+        // Wait on send requests.
+        MPI_Waitall( num_n, requests.data() + num_n, MPI_STATUSES_IGNORE );
     }
 
     /*!
       \brief Scatter data from our ghosts to their owners.
-      \param view The view to scatter.
+      \param array The array to scatter.
       \param mpi_tag An MPI tag for asynchronous communication. Note that a
       range of MPI tags are used for the communication with this value being
       the base. The range (mpi_tag,mpi_tag+27) will be used in the
@@ -222,8 +226,7 @@ class Halo
         auto view = array.view();
 
         // Requests.
-        std::vector<MPI_Request> requests;
-        requests.reserve( 52 );
+        std::vector<MPI_Request> requests( 2 * num_n, MPI_REQUEST_NULL );
 
         // Post receives for all neighbors that are not self sends.
         for ( int n = 0; n < num_n; ++n )
@@ -231,14 +234,13 @@ class Halo
             // Only process this neighbor if there is work to do.
             if ( 0 < _owned_buffers[n].size() )
             {
-                requests.push_back( MPI_Request() );
                 MPI_Irecv( _owned_buffers[n].data(),
                            _owned_buffers[n].size(),
                            MpiTraits<value_type>::type(),
                            _neighbor_ranks[n],
                            mpi_tag + _receive_tags[n],
                            _comm,
-                           &requests.back() );
+                           &requests[n] );
             }
         }
 
@@ -252,26 +254,33 @@ class Halo
                 packGhosted( view, n );
 
                 // Post a send.
-                requests.push_back( MPI_Request() );
                 MPI_Isend( _ghosted_buffers[n].data(),
                            _ghosted_buffers[n].size(),
                            MpiTraits<value_type>::type(),
                            _neighbor_ranks[n],
                            mpi_tag + _send_tags[n],
                            _comm,
-                           &requests.back() );
+                           &requests[num_n + n] );
             }
         }
 
-        // Wait on all requests.
-        std::vector<MPI_Status> status( requests.size() );
-        MPI_Waitall( requests.size(), requests.data(), status.data() );
-
         // Unpack receive buffers.
-        for ( int n = 0; n < num_n; ++n )
+        bool unpack_complete = false;
+        while ( !unpack_complete )
         {
-            scatterOwned( view, n );
+            // Get the next buffer to unpack.
+            int unpack_index = MPI_UNDEFINED;
+            MPI_Waitany( num_n, requests.data(), &unpack_index, MPI_STATUS_IGNORE );
+
+            // If there are no more buffers to unpack we are done.
+            if ( MPI_UNDEFINED == unpack_index ) unpack_complete = true;
+
+            // Otherwise unpack the next buffer.
+            else scatterOwned( view, unpack_index );
         }
+
+        // Wait on send requests.
+        MPI_Waitall( num_n, requests.data() + num_n, MPI_STATUSES_IGNORE );
     }
 
   private:
