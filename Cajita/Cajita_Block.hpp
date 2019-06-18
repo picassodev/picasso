@@ -86,6 +86,32 @@ class Block
                                            const int off_j,
                                            const int off_k ) const;
 
+    // Get the local index space of the owned Dir-direction faces.
+    template<int Dir>
+    IndexSpace<3> ownedIndexSpace( Face<Dir> ) const;
+
+    // Get the local index space of the owned and ghosted Dir-direction faces.
+    template<int Dir>
+    IndexSpace<3> ghostedIndexSpace( Face<Dir> ) const;
+
+    // Given a relative set of indices of a neighbor get the set of local
+    // Dir-direction face indices we own that we share with that neighbor to use
+    // as ghosts.
+    template<int Dir>
+    IndexSpace<3> sharedOwnedIndexSpace( Face<Dir>,
+                                         const int off_i,
+                                         const int off_j,
+                                         const int off_k ) const;
+
+    // Given a relative set of indices of a neighbor get set of local
+    // Dir-direction face indices owned by that neighbor that are shared with
+    // us to use as ghosts.
+    template<int Dir>
+    IndexSpace<3> sharedGhostedIndexSpace( Face<Dir>,
+                                           const int off_i,
+                                           const int off_j,
+                                           const int off_k ) const;
+
   private:
 
     std::shared_ptr<GlobalGrid> _global_grid;
