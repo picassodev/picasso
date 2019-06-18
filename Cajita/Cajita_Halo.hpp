@@ -166,7 +166,8 @@ class Halo
             if ( 0 < _owned_buffers[n].size() )
             {
                 // Pack the send buffer.
-                packOwned( view, n );
+                auto subview = createSubview( view, _owned_spaces[n] );
+                Kokkos::deep_copy( _owned_buffers[n], subview );
 
                 // Post a send.
                 MPI_Isend( _owned_buffers[n].data(),
@@ -188,10 +189,17 @@ class Halo
             MPI_Waitany( num_n, requests.data(), &unpack_index, MPI_STATUS_IGNORE );
 
             // If there are no more buffers to unpack we are done.
-            if ( MPI_UNDEFINED == unpack_index ) unpack_complete = true;
+            if ( MPI_UNDEFINED == unpack_index )
+            {
+                unpack_complete = true;
+            }
 
             // Otherwise unpack the next buffer.
-            else gatherGhosted( view, unpack_index );
+            else
+            {
+                auto subview = createSubview( view, _ghosted_spaces[unpack_index] );
+                Kokkos::deep_copy( subview, _ghosted_buffers[unpack_index] );
+            }
         }
 
         // Wait on send requests.
@@ -206,7 +214,7 @@ class Halo
       the base. The range (mpi_tag,mpi_tag+27) will be used in the
       communication. Users should avoid using this range of tags in their
       other communication routines.
-     */
+    */
     template<class Array_t>
     void scatter( const Array_t& array, const int mpi_tag )
     {
@@ -251,7 +259,8 @@ class Halo
             if ( 0 < _ghosted_buffers[n].size() )
             {
                 // Pack the send buffer.
-                packGhosted( view, n );
+                auto subview = createSubview( view, _ghosted_spaces[n] );
+                Kokkos::deep_copy( _ghosted_buffers[n], subview );
 
                 // Post a send.
                 MPI_Isend( _ghosted_buffers[n].data(),
@@ -273,55 +282,32 @@ class Halo
             MPI_Waitany( num_n, requests.data(), &unpack_index, MPI_STATUS_IGNORE );
 
             // If there are no more buffers to unpack we are done.
-            if ( MPI_UNDEFINED == unpack_index ) unpack_complete = true;
+            if ( MPI_UNDEFINED == unpack_index )
+            {
+                unpack_complete = true;
+            }
 
             // Otherwise unpack the next buffer.
-            else scatterOwned( view, unpack_index );
+            else
+            {
+                auto subview = createSubview( view, _owned_spaces[unpack_index] );
+                auto owned_buffer = _owned_buffers[unpack_index];
+                IndexSpace<4> scatter_space(
+                    { static_cast<long>(subview.extent(0)),
+                            static_cast<long>(subview.extent(1)),
+                            static_cast<long>(subview.extent(2)),
+                            static_cast<long>(subview.extent(3)) } );
+                Kokkos::parallel_for(
+                    "Cajita::Halo::scatterOwned",
+                    createExecutionPolicy(scatter_space,execution_space()),
+                    KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
+                        subview(i,j,k,l) += owned_buffer(i,j,k,l);
+                    });
+            }
+
+            // Wait on send requests.
+            MPI_Waitall( num_n, requests.data() + num_n, MPI_STATUSES_IGNORE );
         }
-
-        // Wait on send requests.
-        MPI_Waitall( num_n, requests.data() + num_n, MPI_STATUSES_IGNORE );
-    }
-
-  private:
-
-    // Pack owned data into a buffer.
-    void packOwned( const view_type view, const int neighbor )
-    {
-        auto subview = createSubview( view, _owned_spaces[neighbor] );
-        Kokkos::deep_copy( _owned_buffers[neighbor], subview );
-    }
-
-    // Pack ghosted data into a buffer.
-    void packGhosted( const view_type view, const int neighbor )
-    {
-        auto subview = createSubview( view, _ghosted_spaces[neighbor] );
-        Kokkos::deep_copy( _ghosted_buffers[neighbor], subview );
-    }
-
-    // Gather ghosted data from a buffer.
-    void gatherGhosted( view_type view, const int neighbor )
-    {
-        auto subview = createSubview( view, _ghosted_spaces[neighbor] );
-        Kokkos::deep_copy( subview, _ghosted_buffers[neighbor] );
-    }
-
-    // Scatter owned data from a buffer.
-    void scatterOwned( view_type view, const int neighbor )
-    {
-        auto subview = createSubview( view, _owned_spaces[neighbor] );
-        auto owned_buffer = _owned_buffers[neighbor];
-        IndexSpace<4> scatter_space(
-            { static_cast<long>(subview.extent(0)),
-              static_cast<long>(subview.extent(1)),
-              static_cast<long>(subview.extent(2)),
-              static_cast<long>(subview.extent(3)) } );
-        Kokkos::parallel_for(
-            "Cajita::Halo::scatterOwned",
-            createExecutionPolicy(scatter_space,execution_space()),
-            KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
-                subview(i,j,k,l) += owned_buffer(i,j,k,l);
-            });
     }
 
   private:

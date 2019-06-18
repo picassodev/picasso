@@ -102,7 +102,7 @@ MPI_Datatype createSubarray( const Array_t& array,
     MPI_Datatype subarray;
     MPI_Type_create_subarray(
         4, global_size, local_size, local_start,
-        MpiOrder<array_layout>::value(),
+        MPI_ORDER_C,
         MpiTraits<value_type>::type(),
         &subarray );
 
@@ -181,7 +181,7 @@ void writeTimeStep( const int time_step_index,
                                    owned_extents[Dim::J],
                                    owned_extents[Dim::I],
                                    owned_extents[3] } );
-    auto owned_view = createView<value_type,device_type>(
+    auto owned_view = createView<value_type,Kokkos::LayoutRight,device_type>(
         array.label(), reorder_space );
     Kokkos::parallel_for(
         "bov_reorder",
