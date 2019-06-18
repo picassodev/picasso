@@ -81,7 +81,6 @@ MPI_Datatype createSubarray( const Array_t& array,
                              const std::vector<long>& owned_extents,
                              const std::vector<long>& global_extents )
 {
-    using array_layout = typename Array_t::view_type::array_layout;
     using value_type = typename Array_t::value_type;
     const auto& global_grid = array.layout().block().globalGrid();
 
@@ -145,7 +144,7 @@ void writeTimeStep( const int time_step_index,
             global_extents[d] = global_grid.globalNumEntity(Cell(),d) + 1;
     }
     global_extents[3] = array.layout().dofsPerEntity();
-    auto owned_index_space = array.layout().ownedIndexSpace();
+    auto owned_index_space = array.layout().indexSpace(Own());
     std::vector<long> owned_extents( 4, -1 );
     for ( int d = 0; d < 3; ++d )
     {

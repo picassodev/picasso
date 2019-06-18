@@ -45,72 +45,78 @@ class Block
     int neighborRank( const int off_i, const int off_j, const int off_k ) const;
 
     // Get the local index space of the owned cells.
-    IndexSpace<3> ownedIndexSpace( Cell ) const;
+    IndexSpace<3> indexSpace( Own, Cell ) const;
 
     // Get the local index space of the owned and ghosted cells.
-    IndexSpace<3> ghostedIndexSpace( Cell ) const;
+    IndexSpace<3> indexSpace( Ghost, Cell ) const;
 
     // Given a relative set of indices of a neighbor get the set of local cell
     // indices we own that we share with that neighbor to use as ghosts.
-    IndexSpace<3> sharedOwnedIndexSpace( Cell,
-                                         const int off_i,
-                                         const int off_j,
-                                         const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Own,
+                                    Cell,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
     // Given a relative set of indices of a neighbor get set of local cell
     // indices owned by that neighbor that are shared with us to use as
     // ghosts.
-    IndexSpace<3> sharedGhostedIndexSpace( Cell,
-                                           const int off_i,
-                                           const int off_j,
-                                           const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Ghost,
+                                    Cell,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
     // Get the local index space of the owned nodes.
-    IndexSpace<3> ownedIndexSpace( Node ) const;
+    IndexSpace<3> indexSpace( Own, Node ) const;
 
     // Get the local index space of the owned and ghosted nodes.
-    IndexSpace<3> ghostedIndexSpace( Node ) const;
+    IndexSpace<3> indexSpace( Ghost, Node ) const;
 
     // Given a relative set of indices of a neighbor get the set of local node
     // indices we own that we share with that neighbor to use as ghosts.
-    IndexSpace<3> sharedOwnedIndexSpace( Node,
-                                         const int off_i,
-                                         const int off_j,
-                                         const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Own,
+                                    Node,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
     // Given a relative set of indices of a neighbor get set of local node
     // indices owned by that neighbor that are shared with us to use as
     // ghosts.
-    IndexSpace<3> sharedGhostedIndexSpace( Node,
-                                           const int off_i,
-                                           const int off_j,
-                                           const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Ghost,
+                                    Node,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
     // Get the local index space of the owned Dir-direction faces.
     template<int Dir>
-    IndexSpace<3> ownedIndexSpace( Face<Dir> ) const;
+    IndexSpace<3> indexSpace( Own, Face<Dir> ) const;
 
     // Get the local index space of the owned and ghosted Dir-direction faces.
     template<int Dir>
-    IndexSpace<3> ghostedIndexSpace( Face<Dir> ) const;
+    IndexSpace<3> indexSpace( Ghost, Face<Dir> ) const;
 
     // Given a relative set of indices of a neighbor get the set of local
     // Dir-direction face indices we own that we share with that neighbor to use
     // as ghosts.
     template<int Dir>
-    IndexSpace<3> sharedOwnedIndexSpace( Face<Dir>,
-                                         const int off_i,
-                                         const int off_j,
-                                         const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Own,
+                                    Face<Dir>,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
     // Given a relative set of indices of a neighbor get set of local
     // Dir-direction face indices owned by that neighbor that are shared with
     // us to use as ghosts.
     template<int Dir>
-    IndexSpace<3> sharedGhostedIndexSpace( Face<Dir>,
-                                           const int off_i,
-                                           const int off_j,
-                                           const int off_k ) const;
+    IndexSpace<3> sharedIndexSpace( Ghost,
+                                    Face<Dir>,
+                                    const int off_i,
+                                    const int off_j,
+                                    const int off_k ) const;
 
   private:
 
