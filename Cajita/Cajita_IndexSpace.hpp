@@ -142,11 +142,11 @@ createExecutionPolicy( const IndexSpace_t& index_space,
 
   Rank-1 specialization.
 */
-template<class Scalar, class DeviceType>
-Kokkos::View<Scalar*,DeviceType>
+template<class Scalar, class ... Params>
+Kokkos::View<Scalar*,Params...>
 createView( const std::string& label, const IndexSpace<1>& index_space )
 {
-    return Kokkos::View<Scalar*,DeviceType>(
+    return Kokkos::View<Scalar*,Params...>(
         Kokkos::ViewAllocateWithoutInitializing(label),
         index_space.extent(0) );
 }
@@ -158,11 +158,11 @@ createView( const std::string& label, const IndexSpace<1>& index_space )
 
   Rank-2 specialization.
 */
-template<class Scalar, class DeviceType>
-Kokkos::View<Scalar**,DeviceType>
+template<class Scalar, class ... Params>
+Kokkos::View<Scalar**,Params...>
 createView( const std::string& label, const IndexSpace<2>& index_space )
 {
-    return Kokkos::View<Scalar**,DeviceType>(
+    return Kokkos::View<Scalar**,Params...>(
         Kokkos::ViewAllocateWithoutInitializing(label),
         index_space.extent(0),
         index_space.extent(1) );
@@ -175,11 +175,11 @@ createView( const std::string& label, const IndexSpace<2>& index_space )
 
   Rank-3 specialization.
 */
-template<class Scalar, class DeviceType>
-Kokkos::View<Scalar***,DeviceType>
+template<class Scalar, class ... Params>
+Kokkos::View<Scalar***,Params...>
 createView( const std::string& label, const IndexSpace<3>& index_space )
 {
-    return Kokkos::View<Scalar***,DeviceType>(
+    return Kokkos::View<Scalar***,Params...>(
         Kokkos::ViewAllocateWithoutInitializing(label),
         index_space.extent(0),
         index_space.extent(1),
@@ -193,11 +193,11 @@ createView( const std::string& label, const IndexSpace<3>& index_space )
 
   Rank-4 specialization.
 */
-template<class Scalar, class DeviceType>
-Kokkos::View<Scalar****,DeviceType>
+template<class Scalar, class ... Params>
+Kokkos::View<Scalar****,Params...>
 createView( const std::string& label, const IndexSpace<4>& index_space )
 {
-    return Kokkos::View<Scalar****,DeviceType>(
+    return Kokkos::View<Scalar****,Params...>(
         Kokkos::ViewAllocateWithoutInitializing(label),
         index_space.extent(0),
         index_space.extent(1),

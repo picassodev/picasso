@@ -44,23 +44,6 @@ struct MpiTraits<double>
 };
 
 //---------------------------------------------------------------------------//
-// Data order.
-template<typename Layout>
-struct MpiOrder;
-
-template<>
-struct MpiOrder<Kokkos::LayoutLeft>
-{
-    static int value() { return MPI_ORDER_FORTRAN; }
-};
-
-template<>
-struct MpiOrder<Kokkos::LayoutRight>
-{
-    static int value() { return MPI_ORDER_C; }
-};
-
-//---------------------------------------------------------------------------//
 
 } // end namespace Cajita
 
