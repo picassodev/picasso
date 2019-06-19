@@ -18,19 +18,36 @@ namespace Cajita
 // Halo exchange patterns.
 //---------------------------------------------------------------------------//
 // Base class.
-struct HaloPattern
+class HaloPattern
 {
+  public:
+
+    // Default constructor.
+    HaloPattern() {}
+
+    // Destructor
     virtual ~HaloPattern() = default;
 
+    // Assign the neighbors that are in the halo pattern.
+    void setNeighbors( const std::vector<std::array<int,3> >& neighbors )
+    { _neighbors = neighbors; }
+
     // Get the neighbors that are in the halo pattern.
-    virtual std::vector<std::array<int,3> > getNeighbors() const = 0;
+    std::vector<std::array<int,3> > getNeighbors() const
+    { return _neighbors; }
+
+  private:
+
+    std::vector<std::array<int,3> > _neighbors;
 };
 
 // Full halo with all 26 adjacent blocks.
-struct FullHaloPattern : HaloPattern
+class FullHaloPattern : public HaloPattern
 {
-    // Get the neighbors that are in the halo pattern.
-    std::vector<std::array<int,3> > getNeighbors() const override
+  public:
+
+    FullHaloPattern()
+        : HaloPattern()
     {
         std::vector<std::array<int,3> > neighbors;
         neighbors.reserve( 26 );
@@ -39,25 +56,8 @@ struct FullHaloPattern : HaloPattern
                 for ( int k = -1; k < 2; ++k )
                     if ( !(i == 0 && j == 0 && k == 0) )
                         neighbors.push_back( {i,j,k} );
-        return neighbors;
+        this->setNeighbors( neighbors );
     }
-};
-
-// General halo pattern.
-struct GeneralHaloPattern : HaloPattern
-{
-    // Constructor
-    GeneralHaloPattern( const std::vector<std::array<int,3> >& neighbors )
-        : _neighbors( neighbors )
-    {}
-
-    // Get the neighbors that are in the halo pattern.
-    std::vector<std::array<int,3> > getNeighbors() const override
-    {
-        return _neighbors;
-    }
-
-    std::vector<std::array<int,3> > _neighbors;
 };
 
 //---------------------------------------------------------------------------//

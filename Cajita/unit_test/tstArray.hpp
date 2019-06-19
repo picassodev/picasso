@@ -320,6 +320,17 @@ void arrayOpTest()
     ArrayOp::normInf( *array, norm_inf );
     for ( int n = 0; n < dofs_per_cell; ++n )
         EXPECT_FLOAT_EQ( norm_inf[n], fabs(large_vals[n]) );
+
+    // Check to copy.
+    ArrayOp::copy( *array, *array_2, Own() );
+    Kokkos::deep_copy( host_view, array->view() );
+    auto owned_space = array->layout().indexSpace( Own() );
+    for ( long i = owned_space.min(Dim::I); i < owned_space.max(Dim::I); ++i )
+        for ( long j = owned_space.min(Dim::J); j < owned_space.max(Dim::J); ++j )
+            for ( long k = owned_space.min(Dim::K); k < owned_space.max(Dim::K); ++k )
+                for ( long l = 0; l < owned_space.extent(3); ++l )
+                    EXPECT_EQ( host_view(i,j,k,l), 0.5 );
+
 }
 
 //---------------------------------------------------------------------------//
