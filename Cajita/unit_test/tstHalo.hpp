@@ -48,7 +48,7 @@ void gatherScatterTest( const ManualPartitioner& partitioner,
     Kokkos::deep_copy( owned_subview, 1.0 );
 
     // Create a halo.
-    auto halo = createHalo( *array );
+    auto halo = createHalo( *array, FullHaloPattern() );
 
     // Gather into the ghosts.
     halo->gather( *array, 124 );

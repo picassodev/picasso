@@ -518,6 +518,18 @@ void rangeAppendTest()
 }
 
 //---------------------------------------------------------------------------//
+void comparisonTest()
+{
+    IndexSpace<3> is1( {9,2,1}, {12,16,4} );
+    IndexSpace<3> is2( {9,2,1}, {12,16,4} );
+    IndexSpace<3> is3( {9,2,1}, {12,16,5} );
+    EXPECT_TRUE( is1 == is2 );
+    EXPECT_FALSE( is1 != is2 );
+    EXPECT_FALSE( is1 == is3 );
+    EXPECT_TRUE( is1 != is3 );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, index_space_test )
@@ -528,6 +540,7 @@ TEST( TEST_CATEGORY, index_space_test )
     subviewTest();
     sizeAppendTest();
     rangeAppendTest();
+    comparisonTest();
 }
 
 //---------------------------------------------------------------------------//

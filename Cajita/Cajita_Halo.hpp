@@ -9,10 +9,59 @@
 
 #include <type_traits>
 #include <vector>
+#include <array>
 #include <algorithm>
 
 namespace Cajita
 {
+//---------------------------------------------------------------------------//
+// Halo exchange patterns.
+//---------------------------------------------------------------------------//
+// Base class.
+struct HaloPattern
+{
+    virtual ~HaloPattern() = default;
+
+    // Get the neighbors that are in the halo pattern.
+    virtual std::vector<std::array<int,3> > getNeighbors() const = 0;
+};
+
+// Full halo with all 26 adjacent blocks.
+struct FullHaloPattern : HaloPattern
+{
+    // Get the neighbors that are in the halo pattern.
+    std::vector<std::array<int,3> > getNeighbors() const override
+    {
+        std::vector<std::array<int,3> > neighbors;
+        neighbors.reserve( 26 );
+        for ( int i = -1; i < 2; ++i )
+            for ( int j = -1; j < 2; ++j )
+                for ( int k = -1; k < 2; ++k )
+                    if ( !(i == 0 && j == 0 && k == 0) )
+                        neighbors.push_back( {i,j,k} );
+        return neighbors;
+    }
+};
+
+// General halo pattern.
+struct GeneralHaloPattern : HaloPattern
+{
+    // Constructor
+    GeneralHaloPattern( const std::vector<std::array<int,3> >& neighbors )
+        : _neighbors( neighbors )
+    {}
+
+    // Get the neighbors that are in the halo pattern.
+    std::vector<std::array<int,3> > getNeighbors() const override
+    {
+        return _neighbors;
+    }
+
+    std::vector<std::array<int,3> > _neighbors;
+};
+
+//---------------------------------------------------------------------------//
+// Halo exchange communication plan for migrating shared data between blocks.
 //---------------------------------------------------------------------------//
 template<class Scalar, class DeviceType>
 class Halo
@@ -36,7 +85,7 @@ class Halo
       \param layout The array layout to build the halo for.
     */
     template<class ArrayLayout_t>
-    Halo( const ArrayLayout_t& layout )
+    Halo( const ArrayLayout_t& layout, const HaloPattern& pattern )
         : _comm( layout.block().globalGrid().comm() )
     {
         // Function to get the local id of the neighbor.
@@ -60,57 +109,60 @@ class Halo
         // Get the neighbor ranks we will exchange with in the halo and
         // allocate buffers. If any of the exchanges are self sends mark these
         // so we know which send buffers correspond to which receive buffers.
-        for ( int i = -1; i < 2; ++i )
-            for ( int j = -1; j < 2; ++j )
-                for ( int k = -1; k < 2; ++k )
-                    if ( !(i == 0 && j == 0 && k == 0) )
-                    {
-                        // Get the rank of the neighbor.
-                        int rank =
-                            layout.block().neighborRank(i,j,k);
+        auto neighbors = pattern.getNeighbors();
+        for ( const auto& n : neighbors )
+        {
+            // Get the neighbor ids.
+            auto i = n[Dim::I];
+            auto j = n[Dim::J];
+            auto k = n[Dim::K];
 
-                        // If this is a valid rank add it as a neighbor.
-                        if ( rank >= 0 )
-                        {
-                            // Add the rank.
-                            _neighbor_ranks.push_back( rank );
+            // Get the rank of the neighbor.
+            int rank =
+                layout.block().neighborRank(i,j,k);
 
-                            // Set the tag we will use to send data to this
-                            // neighbor. The receiving rank should have a
-                            // matching tag.
-                            _send_tags.push_back( neighbor_id(i,j,k) );
+            // If this is a valid rank add it as a neighbor.
+            if ( rank >= 0 )
+            {
+                // Add the rank.
+                _neighbor_ranks.push_back( rank );
 
-                            // Set the tag we will use to receive data from
-                            // this neighbor. The sending rank should have a
-                            // matching tag.
-                            _receive_tags.push_back(
-                                neighbor_id(flip(i),flip(j),flip(k)) );
+                // Set the tag we will use to send data to this
+                // neighbor. The receiving rank should have a
+                // matching tag.
+                _send_tags.push_back( neighbor_id(i,j,k) );
 
-                            // Get the owned index space we share with this
-                            // neighbor.
-                            _owned_spaces.push_back(
-                                layout.sharedIndexSpace(Own(),i,j,k) );
+                // Set the tag we will use to receive data from
+                // this neighbor. The sending rank should have a
+                // matching tag.
+                _receive_tags.push_back(
+                    neighbor_id(flip(i),flip(j),flip(k)) );
 
-                            // Create the buffer of data we own that we share
-                            // with this neighbor.
-                            _owned_buffers.push_back(
-                                createView<value_type,device_type>(
-                                    "halo_owned_buffer",
-                                    _owned_spaces.back()) );
+                // Get the owned index space we share with this
+                // neighbor.
+                _owned_spaces.push_back(
+                    layout.sharedIndexSpace(Own(),i,j,k) );
 
-                            // Get the ghosted index space we share with this
-                            // neighbor.
-                            _ghosted_spaces.push_back(
-                                layout.sharedIndexSpace(Ghost(),i,j,k) );
+                // Create the buffer of data we own that we share
+                // with this neighbor.
+                _owned_buffers.push_back(
+                    createView<value_type,device_type>(
+                        "halo_owned_buffer",
+                        _owned_spaces.back()) );
 
-                            // Create the buffer of ghost data that is owned
-                            // by our neighbor
-                            _ghosted_buffers.push_back(
-                                createView<value_type,device_type>(
-                                    "halo_ghosted_buffer",
-                                    _ghosted_spaces.back()) );
-                        }
-                    }
+                // Get the ghosted index space we share with this
+                // neighbor.
+                _ghosted_spaces.push_back(
+                    layout.sharedIndexSpace(Ghost(),i,j,k) );
+
+                // Create the buffer of ghost data that is owned
+                // by our neighbor
+                _ghosted_buffers.push_back(
+                    createView<value_type,device_type>(
+                        "halo_ghosted_buffer",
+                        _ghosted_spaces.back()) );
+            }
+        }
     }
 
     /*!
@@ -334,9 +386,9 @@ class Halo
 */
 template<class Scalar, class Device, class ArrayLayout_t>
 std::shared_ptr<Halo<Scalar,Device>>
-createHalo( const ArrayLayout_t& layout )
+createHalo( const ArrayLayout_t& layout, const HaloPattern& pattern )
 {
-    return std::make_shared<Halo<Scalar,Device>>( layout );
+    return std::make_shared<Halo<Scalar,Device>>( layout, pattern );
 }
 
 //---------------------------------------------------------------------------//
@@ -351,11 +403,11 @@ createHalo( const ArrayLayout_t& layout )
 template<class Array_t>
 std::shared_ptr<Halo<typename Array_t::value_type,
                      typename Array_t::device_type>>
-createHalo( const Array_t& array )
+createHalo( const Array_t& array, const HaloPattern& pattern )
 {
     return std::make_shared<Halo<typename Array_t::value_type,
                                  typename Array_t::device_type>>(
-                                     array.layout() );
+                                     array.layout(), pattern );
 }
 
 //---------------------------------------------------------------------------//

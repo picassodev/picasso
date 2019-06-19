@@ -60,6 +60,23 @@ class IndexSpace
         std::copy( max.begin(), max.end(), _max.data() );
     }
 
+    //! Comparison operator.
+    bool operator==( const IndexSpace<N>& rhs ) const
+    {
+        for ( long i = 0; i < N; ++i )
+        {
+            if ( min(i) != rhs.min(i) || max(i) != rhs.max(i) )
+                return false;
+        }
+        return true;
+    }
+
+    //! Comparison operator.
+    bool operator!=( const IndexSpace<N>& rhs ) const
+    {
+        return !(operator==(rhs));
+    }
+
     //! Get the minimum index in a given dimension.
     long min( const long dim ) const
     { return _min[dim]; }
