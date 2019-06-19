@@ -764,7 +764,7 @@ void periodicTest()
     // GEOMETRY
     //////////////////
 
-    // Get another block without a halo and check the local low corner. Do an
+    // Get another block without a halo and check the corners. Do an
     // exclusive scan of sizes to get the local cell offset.
     auto grid_block_2 = createBlock( global_grid, 0 );
     int i_offset =
@@ -780,18 +780,57 @@ void periodicTest()
                          local_num_cell_k.begin() + cart_rank[Dim::K],
                          0 );
 
-    EXPECT_EQ( grid_block_2->lowCorner(Dim::I),
+    EXPECT_EQ( grid_block_2->lowCorner(Own(),Dim::I),
                i_offset * cell_size + global_low_corner[Dim::I] );
-    EXPECT_EQ( grid_block_2->lowCorner(Dim::J),
+    EXPECT_EQ( grid_block_2->lowCorner(Own(),Dim::J),
                j_offset * cell_size + global_low_corner[Dim::J] );
-    EXPECT_EQ( grid_block_2->lowCorner(Dim::K),
+    EXPECT_EQ( grid_block_2->lowCorner(Own(),Dim::K),
                k_offset * cell_size + global_low_corner[Dim::K] );
 
-    // Compare ghosted low corner to the low corner of the block without a
-    // halo.
+    EXPECT_EQ( grid_block_2->highCorner(Own(),Dim::I),
+               (i_offset + local_num_cells[Dim::I]) * cell_size +
+               global_low_corner[Dim::I] );
+    EXPECT_EQ( grid_block_2->highCorner(Own(),Dim::J),
+               (j_offset + local_num_cells[Dim::J]) * cell_size +
+               global_low_corner[Dim::J] );
+    EXPECT_EQ( grid_block_2->highCorner(Own(),Dim::K),
+               (k_offset + local_num_cells[Dim::K]) * cell_size +
+               global_low_corner[Dim::K] );
+
+    EXPECT_EQ( grid_block_2->lowCorner(Ghost(),Dim::I),
+               i_offset * cell_size + global_low_corner[Dim::I] );
+    EXPECT_EQ( grid_block_2->lowCorner(Ghost(),Dim::J),
+               j_offset * cell_size + global_low_corner[Dim::J] );
+    EXPECT_EQ( grid_block_2->lowCorner(Ghost(),Dim::K),
+               k_offset * cell_size + global_low_corner[Dim::K] );
+
+    EXPECT_EQ( grid_block_2->highCorner(Ghost(),Dim::I),
+               (i_offset + local_num_cells[Dim::I]) * cell_size +
+               global_low_corner[Dim::I] );
+    EXPECT_EQ( grid_block_2->highCorner(Ghost(),Dim::J),
+               (j_offset + local_num_cells[Dim::J]) * cell_size +
+               global_low_corner[Dim::J] );
+    EXPECT_EQ( grid_block_2->highCorner(Ghost(),Dim::K),
+               (k_offset + local_num_cells[Dim::K]) * cell_size +
+               global_low_corner[Dim::K] );
+
+    // Compare ghosted corner to the corner of the block without a halo.
     for ( int d = 0; d < 3; ++d )
-        EXPECT_EQ( grid_block_2->lowCorner(d) - cell_size * halo_width,
-                   grid_block->lowCorner(d) );
+    {
+        EXPECT_EQ( grid_block_2->lowCorner(Ghost(),d) - cell_size * halo_width,
+                   grid_block->lowCorner(Ghost(),d) );
+        EXPECT_EQ( grid_block_2->lowCorner(Ghost(),d),
+                   grid_block->lowCorner(Own(),d) );
+        EXPECT_EQ( grid_block_2->lowCorner(Own(),d),
+                   grid_block->lowCorner(Own(),d) );
+
+        EXPECT_EQ( grid_block_2->highCorner(Ghost(),d) + cell_size * halo_width,
+                   grid_block->highCorner(Ghost(),d) );
+        EXPECT_EQ( grid_block_2->highCorner(Ghost(),d),
+                   grid_block->highCorner(Own(),d) );
+        EXPECT_EQ( grid_block_2->highCorner(Own(),d),
+                   grid_block->highCorner(Own(),d) );
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -913,7 +952,10 @@ void notPeriodicTest()
 
     // Check the low corner.
     for ( int d = 0; d < 3; ++d )
-        EXPECT_EQ( grid_block->lowCorner(d), global_low_corner[d] );
+    {
+        EXPECT_EQ( grid_block->lowCorner(Own(),d), global_low_corner[d] );
+        EXPECT_EQ( grid_block->lowCorner(Ghost(),d), global_low_corner[d] );
+    }
 
     // Check neighbor ranks and shared spaces.
     for ( int i = -1; i < 2; ++i )

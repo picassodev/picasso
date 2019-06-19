@@ -31,8 +31,20 @@ class Block
     const GlobalGrid& globalGrid() const;
 
     // Get the physical coordinates of the low corner of the block in a given
-    // dimension. This low corner includes the halo region.
-    double lowCorner( const int dim ) const;
+    // dimension in the owned decomposition.
+    double lowCorner( Own, const int dim ) const;
+
+    // Get the physical coordinates of the high corner of the block in a given
+    // dimension in the owned decomposition.
+    double highCorner( Own, const int dim ) const;
+
+    // Get the physical coordinates of the low corner of the block in a given
+    // dimension in the ghosted decomposition.
+    double lowCorner( Ghost, const int dim ) const;
+
+    // Get the physical coordinates of the high corner of the block in a given
+    // dimension in the ghosted decomposition.
+    double highCorner( Ghost, const int dim ) const;
 
     // Get the number of cells in the halo.
     int haloWidth() const;
@@ -121,7 +133,6 @@ class Block
   private:
 
     std::shared_ptr<GlobalGrid> _global_grid;
-    std::vector<double> _low_corner;
     int _halo_cell_width;
 };
 

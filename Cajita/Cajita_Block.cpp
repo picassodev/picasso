@@ -9,22 +9,7 @@ Block::Block(
     const int halo_cell_width )
     : _global_grid( global_grid )
     , _halo_cell_width( halo_cell_width )
-{
-    // Calculate the owned low corner of the local block.
-    _low_corner.resize( 3 );
-    for ( int d = 0; d < 3; ++d )
-        _low_corner[d] = global_grid->domain().lowCorner(d) +
-                         global_grid->cellSize() * global_grid->globalOffset(d);
-
-    // If there are halo cells in the negative direction, subtract the halo
-    // width to get the low corner including the halo. There are halo cells if
-    // the dimension is periodic or if this is not the left-most block in that
-    // dimension.
-    for ( int d = 0; d < 3; ++d )
-        if ( global_grid->domain().isPeriodic(d) ||
-             global_grid->dimBlockId(d) > 0 )
-            _low_corner[d] -= _halo_cell_width * global_grid->cellSize();
-}
+{}
 
 //---------------------------------------------------------------------------//
 // Get the global grid that owns the block.
@@ -35,10 +20,45 @@ const GlobalGrid& Block::globalGrid() const
 
 //---------------------------------------------------------------------------//
 // Get the physical coordinates of the low corner of the grid in a given
-// dimension. This low corner includes the halo region.
-double Block::lowCorner( const int dim ) const
+// dimension in the owned decomposition.
+double Block::lowCorner( Own, const int dim ) const
 {
-    return _low_corner[dim];
+    return _global_grid->domain().lowCorner(dim) +
+        _global_grid->cellSize() * _global_grid->globalOffset(dim);
+}
+
+//---------------------------------------------------------------------------//
+// Get the physical coordinates of the high corner of the grid in a given
+// dimension in the owned decomposition.
+double Block::highCorner( Own, const int dim ) const
+{
+    return _global_grid->domain().lowCorner(dim) +
+        _global_grid->cellSize() *
+        ( _global_grid->globalOffset(dim) + _global_grid->ownedNumCell(dim) );
+}
+
+//---------------------------------------------------------------------------//
+// Get the physical coordinates of the low corner of the grid in a given
+// dimension in the ghosted decomposition.
+double Block::lowCorner( Ghost, const int dim ) const
+{
+    return
+        ( _global_grid->domain().isPeriodic(dim) ||
+          _global_grid->dimBlockId(dim) > 0 )
+        ? lowCorner( Own(), dim ) - _halo_cell_width * _global_grid->cellSize()
+        : lowCorner( Own(), dim );
+}
+
+//---------------------------------------------------------------------------//
+// Get the physical coordinates of the high corner of the grid in a given
+// dimension in the ghosted decomposition.
+double Block::highCorner( Ghost, const int dim ) const
+{
+    return
+        ( _global_grid->domain().isPeriodic(dim) ||
+          _global_grid->dimBlockId(dim) < _global_grid->dimNumBlock(dim) - 1 )
+        ? highCorner( Own(), dim ) + _halo_cell_width * _global_grid->cellSize()
+        : highCorner( Own(), dim );
 }
 
 //---------------------------------------------------------------------------//
