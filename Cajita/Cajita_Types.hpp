@@ -33,6 +33,12 @@ struct Face<Dim::J> {};
 template<>
 struct Face<Dim::K> {};
 
+// Owned decomposition tag.
+struct Own {};
+
+// Ghosted decomposition tag.
+struct Ghost {};
+
 } // end namespace Cajita
 
 #endif // CAJITA_TYPES_HPP

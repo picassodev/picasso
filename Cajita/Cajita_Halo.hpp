@@ -89,7 +89,7 @@ class Halo
                             // Get the owned index space we share with this
                             // neighbor.
                             _owned_spaces.push_back(
-                                layout.sharedOwnedIndexSpace(i,j,k) );
+                                layout.sharedIndexSpace(Own(),i,j,k) );
 
                             // Create the buffer of data we own that we share
                             // with this neighbor.
@@ -101,7 +101,7 @@ class Halo
                             // Get the ghosted index space we share with this
                             // neighbor.
                             _ghosted_spaces.push_back(
-                                layout.sharedGhostedIndexSpace(i,j,k) );
+                                layout.sharedIndexSpace(Ghost(),i,j,k) );
 
                             // Create the buffer of ghost data that is owned
                             // by our neighbor
