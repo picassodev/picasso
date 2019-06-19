@@ -288,6 +288,29 @@ void scale( Array_t& array,
 
 //---------------------------------------------------------------------------//
 /*!
+  \brief Copy one array into another over the designated decomposition. A <- B
+  \param a The array to which the data will be copied.
+  \param b The array from which the data will be copied.
+  \param tag The tag for the decomposition over which to perform the
+  operation.
+*/
+template<class Array_t, class DecompositionTag>
+void copy( Array_t& a,
+           const Array_t& b,
+           DecompositionTag tag )
+{
+    static_assert( is_array<Array_t>::value, "Cajita::Array required" );
+    auto a_space = a.layout().indexSpace( tag );
+    auto b_space = b.layout().indexSpace( tag );
+    if ( a_space != b_space )
+        throw std::logic_error( "Incompatible index spaces" );
+    auto subview_a = createSubview( a.view(), a_space );
+    auto subview_b = createSubview( b.view(), b_space );
+    Kokkos::deep_copy( subview_a, subview_b );
+}
+
+//---------------------------------------------------------------------------//
+/*!
   \brief Update two vectors auch that a = alpha * a + beta * b.
   \param a The array that will be updated.
   \param alpha The value to scale a by.
