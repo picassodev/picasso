@@ -9,6 +9,7 @@
 #include <Cajita_Halo.hpp>
 #include <Cajita_IndexSpace.hpp>
 #include <Cajita_ManualPartitioner.hpp>
+#include <Cajita_MpiTraits.hpp>
 #include <Cajita_Partitioner.hpp>
 #include <Cajita_Types.hpp>
 #include <Cajita_UniformDimPartitioner.hpp>

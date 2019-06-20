@@ -1,7 +1,7 @@
 #ifndef HARLOW_VELOCITYINTERPOLATION_HPP
 #define HARLOW_VELOCITYINTERPOLATION_HPP
 
-#include <Cajita_GridBlock.hpp>
+#include <Cajita.hpp>
 
 #include <Harlow_Splines.hpp>
 #include <Harlow_DenseLinearAlgebra.hpp>

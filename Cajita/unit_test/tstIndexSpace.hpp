@@ -271,7 +271,6 @@ void executionTest()
         KOKKOS_LAMBDA( const int i ){
             v1(i) = 1.0;
         });
-    Kokkos::fence();
     auto v1_mirror = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), v1 );
     for ( int i = 0; i < size_i; ++i )
@@ -294,7 +293,6 @@ void executionTest()
         KOKKOS_LAMBDA( const int i, const int j ){
             v2(i,j) = 1.0;
         });
-    Kokkos::fence();
     auto v2_mirror = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), v2 );
     for ( int i = 0; i < size_i; ++i )
@@ -319,7 +317,6 @@ void executionTest()
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             v3(i,j,k) = 1.0;
         });
-    Kokkos::fence();
     auto v3_mirror = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), v3 );
     for ( int i = 0; i < size_i; ++i )
@@ -346,7 +343,6 @@ void executionTest()
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
             v4(i,j,k,l) = 1.0;
         });
-    Kokkos::fence();
     auto v4_mirror = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), v4 );
     for ( int i = 0; i < size_i; ++i )
@@ -375,7 +371,6 @@ void subviewTest()
     Kokkos::View<double*,TEST_DEVICE> v1( "v1", size_i );
     auto sv1 = createSubview( v1, is1 );
     Kokkos::deep_copy( sv1, 1.0 );
-    Kokkos::fence();
     auto v1_mirror = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), v1 );
     for ( int i = 0; i < size_i; ++i )

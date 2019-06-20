@@ -1,7 +1,7 @@
 #ifndef HARLOW_SILOPARTICLEWRITER_HPP
 #define HARLOW_SILOPARTICLEWRITER_HPP
 
-#include <Cajita_GlobalGrid.hpp>
+#include <Cajita.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -380,18 +380,18 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
     // input later with this behavior as the default.
     int num_group = 0;
     for ( int d = 0; d < 3; ++d )
-        if ( global_grid.numBlock(d) > num_group )
-            num_group = global_grid.numBlock(d);
+        if ( global_grid.dimNumBlock(d) > num_group )
+            num_group = global_grid.dimNumBlock(d);
 
     // Create the parallel baton.
     int mpi_tag = 1948;
     PMPIO_baton_t* baton =
-        PMPIO_Init( num_group, PMPIO_WRITE, global_grid.cartesianComm(),
+        PMPIO_Init( num_group, PMPIO_WRITE, global_grid.comm(),
                     mpi_tag, createFile, openFile, closeFile, nullptr );
 
     // Compose a data file name.
     int comm_rank;
-    MPI_Comm_rank( global_grid.cartesianComm(), &comm_rank );
+    MPI_Comm_rank( global_grid.comm(), &comm_rank );
     int group_rank = PMPIO_GroupRank( baton, comm_rank );
     std::stringstream file_name;
 
@@ -449,7 +449,7 @@ void writeTimeStep( const Cajita::GlobalGrid& global_grid,
     // Root rank writes the global multimesh hierarchy for parallel
     // simulations.
     int comm_size;
-    MPI_Comm_size( global_grid.cartesianComm(), &comm_size );
+    MPI_Comm_size( global_grid.comm(), &comm_size );
     if ( 0 == comm_rank && comm_size > 1 )
         writeMultiMesh( baton, silo_file,
                         comm_size, mesh_name,

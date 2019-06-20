@@ -1,8 +1,7 @@
 #include <Harlow_SiloParticleWriter.hpp>
 #include <Harlow_Types.hpp>
 
-#include <Cajita_GlobalGrid.hpp>
-#include <Cajita_UniformDimPartitioner.hpp>
+#include <Cajita.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -35,19 +34,17 @@ void writeTest()
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
     std::vector<bool> is_dim_periodic = {false,false,false};
-    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
-        MPI_COMM_WORLD,
-        partitioner,
-        is_dim_periodic,
-        global_low_corner,
-        global_high_corner,
-        cell_size );
+    auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
+                                                 partitioner,
+                                                 is_dim_periodic,
+                                                 global_low_corner,
+                                                 global_high_corner,
+                                                 cell_size );
 
     // Allocate particles in the center of each cell.
-    const auto& block = global_grid->block();
-    int num_particle = block.localNumEntity( MeshEntity::Cell, Dim::I ) *
-                       block.localNumEntity( MeshEntity::Cell, Dim::J ) *
-                       block.localNumEntity( MeshEntity::Cell, Dim::K );
+    auto block = Cajita::createBlock( global_grid, 0 );
+    auto owned_cell_space = block->indexSpace( Cajita::Own(), Cajita::Cell() );
+    int num_particle = owned_cell_space.size();
     using DataTypes = Cabana::MemberTypes<double[3],   // coords
                                           double[3],   // vec
                                           float[3][3], // matrix
@@ -62,23 +59,23 @@ void writeTest()
     int i_off = global_grid->globalOffset(Dim::I);
     int j_off = global_grid->globalOffset(Dim::J);
     int k_off = global_grid->globalOffset(Dim::K);
-    auto aosoa_mirror = Cabana::Experimental::create_mirror_view(
+    auto aosoa_mirror = Cabana::create_mirror_view(
         Kokkos::HostSpace(), aosoa );
     auto coords_mirror = Cabana::slice<0>( aosoa_mirror, "coords" );
     auto vec_mirror = Cabana::slice<1>( aosoa_mirror, "vec" );
     auto matrix_mirror = Cabana::slice<2>( aosoa_mirror, "matrix" );
     auto ids_mirror = Cabana::slice<3>( aosoa_mirror, "ids" );
     int pid = 0;
-    for ( int i = 0; i < block.localNumEntity(MeshEntity::Cell,Dim::I); ++i )
-        for ( int j = 0; j < block.localNumEntity(MeshEntity::Cell,Dim::J); ++j )
-            for ( int k = 0; k < block.localNumEntity(MeshEntity::Cell,Dim::K); ++k, ++pid )
+    for ( int i = 0; i < owned_cell_space.extent(Dim::I); ++i )
+        for ( int j = 0; j < owned_cell_space.extent(Dim::J); ++j )
+            for ( int k = 0; k < owned_cell_space.extent(Dim::K); ++k, ++pid )
             {
                 coords_mirror( pid, Dim::I ) =
-                    block.lowCorner(Dim::I) + (i+0.5) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::I) + (i+0.5) * cell_size;
                 coords_mirror( pid, Dim::J ) =
-                    block.lowCorner(Dim::J) + (j+0.5) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::J) + (j+0.5) * cell_size;
                 coords_mirror( pid, Dim::K ) =
-                    block.lowCorner(Dim::K) + (k+0.5) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::K) + (k+0.5) * cell_size;
 
                 ids_mirror( pid ) = i + i_off + j + j_off + k + k_off;
 

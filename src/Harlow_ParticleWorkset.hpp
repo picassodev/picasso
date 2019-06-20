@@ -1,7 +1,7 @@
 #ifndef HARLOW_PARTICLEWORKSET_HPP
 #define HARLOW_PARTICLEWORKSET_HPP
 
-#include <Cajita_GridBlock.hpp>
+#include <Cajita.hpp>
 
 #include <Harlow_Splines.hpp>
 
@@ -176,7 +176,7 @@ void updateParticleWorkset( const PositionSlice& position,
 //---------------------------------------------------------------------------//
 // Allocate the workset.
 template<int SplineOrder, class Workset>
-void allocateParticleWorkset( const Cajita::GridBlock& block,
+void allocateParticleWorkset( const Cajita::Block& block,
                               const std::size_t num_particle,
                               Workset& workset )
 {
@@ -217,22 +217,22 @@ void allocateParticleWorkset( const Cajita::GridBlock& block,
             Kokkos::ViewAllocateWithoutInitializing("workset._basis_grad"),
             workset._num_particle,ns,ns,ns);
 
-    workset._dx = block.cellSize();
+    workset._dx = block.globalGrid().cellSize();
 
-    workset._rdx = block.inverseCellSize();
+    workset._rdx = 1.0 / workset._dx;
 
-    workset._low_x = block.lowCorner(Dim::I);
+    workset._low_x = block.lowCorner( Cajita::Ghost(), Dim::I );
 
-    workset._low_y = block.lowCorner(Dim::J);
+    workset._low_y = block.lowCorner( Cajita::Ghost(), Dim::J );
 
-    workset._low_z = block.lowCorner(Dim::K);
+    workset._low_z = block.lowCorner( Cajita::Ghost(), Dim::K );
 }
 
 //---------------------------------------------------------------------------//
 // Create the workset.
-template<int SplineOrder,class DeviceType>
+template<int SplineOrder, class DeviceType>
 std::shared_ptr<ParticleWorkset<DeviceType> >
-createParticleWorkset( const Cajita::GridBlock& block,
+createParticleWorkset( const Cajita::Block& block,
                        const std::size_t num_particle )
 {
     auto workset = std::make_shared<ParticleWorkset<DeviceType> >();

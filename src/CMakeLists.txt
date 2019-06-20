@@ -3,16 +3,13 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 #-----------------------------------------------------------------------------
 
 set(HEADERS
-  Harlow_DeformationGradient.hpp
   Harlow_DenseLinearAlgebra.hpp
   Harlow_ParticleCommunication.hpp
-  Harlow_ParticleInterpolation.hpp
+  Harlow_ParticleWorkset.hpp
   Harlow_SiloParticleWriter.hpp
   Harlow_Splines.hpp
   Harlow_Types.hpp
-  Harlow_VelocityInterpolation.hpp
   Harlow_Version.hpp
-  Harlow_Tolerance.hpp
   )
 
 set(SOURCES

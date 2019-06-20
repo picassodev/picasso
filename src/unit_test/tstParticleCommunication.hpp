@@ -1,6 +1,4 @@
-#include <Cajita_GlobalGrid.hpp>
-#include <Cajita_GridBlock.hpp>
-#include <Cajita_ManualPartitioner.hpp>
+#include <Cajita.hpp>
 
 #include <Harlow_ParticleCommunication.hpp>
 #include <Harlow_Types.hpp>
@@ -31,47 +29,27 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
-        MPI_COMM_WORLD,
-        partitioner,
-        is_dim_periodic,
-        global_low_corner,
-        global_high_corner,
-        cell_size );
+    auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
+                                                 partitioner,
+                                                 is_dim_periodic,
+                                                 global_low_corner,
+                                                 global_high_corner,
+                                                 cell_size );
 
-    // Get the local block with a halo of 2.
+    // Create local block with a halo of 2.
     const int halo_size = 2;
-    Cajita::GridBlock block;
-    block.assign( global_grid->block(), halo_size );
-
-    // Get my local ranks.
-    int my_linear_rank;
-    MPI_Comm_rank( global_grid->cartesianComm(), &my_linear_rank );
-    int my_cart_rank[3];
-    MPI_Cart_coords( global_grid->cartesianComm(), my_linear_rank, 3, my_cart_rank );
+    auto block = Cajita::createBlock( global_grid, halo_size );
 
     // Allocate a maximum number of particles assuming we have a halo on every
     // boundary.
-    int num_particle = block.numEntity( MeshEntity::Cell, Dim::I ) *
-                       block.numEntity( MeshEntity::Cell, Dim::J ) *
-                       block.numEntity( MeshEntity::Cell, Dim::K );
-    using MemberTypes = Cabana::MemberTypes<double[3],int[3][3],int>;
+    auto ghosted_cell_space =
+        block->indexSpace( Cajita::Ghost(), Cajita::Cell() );
+    int num_particle = ghosted_cell_space.size();
+    using MemberTypes = Cabana::MemberTypes<double[3],int>;
     using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
     ParticleContainer particles( "particles", num_particle );
     auto coords = Cabana::slice<0>( particles, "coords" );
-    auto matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
-    auto linear_ids = Cabana::slice<2>( particles, "linear_ids" );
-
-    // Determine if a given neighbor has entities. Zero always returns true.
-    auto has_entities =
-        [&]( const int dim, const int logical_index ){
-            bool halo_check = true;
-            if ( -1 == logical_index )
-                halo_check = block.hasHalo(2*dim);
-            else if ( 1 == logical_index )
-                halo_check = block.hasHalo(2*dim+1);
-            return halo_check;
-        };
+    auto linear_ids = Cabana::slice<1>( particles, "linear_ids" );
 
     // Put particles in the center of every cell including halo cells if we
     // have them. Their ids should be equivalent to that of the rank they are
@@ -81,50 +59,35 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
         for ( int nj = -1; nj < 2; ++nj )
             for ( int ni = -1; ni < 2; ++ni )
             {
-                if ( has_entities(Dim::I,ni) &&
-                     has_entities(Dim::J,nj) &&
-                     has_entities(Dim::K,nk) )
+                auto neighbor_rank = block->neighborRank(ni,nj,nk);
+                if ( neighbor_rank >= 0 )
                 {
-                    for ( int k = block.haloEntityBegin(MeshEntity::Cell,Dim::K,nk,halo_size);
-                          k < block.haloEntityEnd(MeshEntity::Cell,Dim::K,nk,halo_size);
+                    auto shared_space = block->sharedIndexSpace(
+                        Cajita::Ghost(),Cajita::Cell(),ni,nj,nk);
+                    for ( int k = shared_space.min(Dim::K);
+                          k < shared_space.max(Dim::K);
                           ++k )
-                        for ( int j = block.haloEntityBegin(MeshEntity::Cell,Dim::J,nj,halo_size);
-                              j < block.haloEntityEnd(MeshEntity::Cell,Dim::J,nj,halo_size);
+                        for ( int j = shared_space.min(Dim::J);
+                              j < shared_space.max(Dim::J);
                               ++j )
-                            for ( int i = block.haloEntityBegin(MeshEntity::Cell,Dim::I,ni,halo_size);
-                                  i < block.haloEntityEnd(MeshEntity::Cell,Dim::I,ni,halo_size);
+                            for ( int i = shared_space.min(Dim::I);
+                                  i < shared_space.max(Dim::I);
                                   ++i )
                             {
                                 // Set the coordinates at the cell center.
                                 coords(pid,Dim::I) =
-                                    block.lowCorner(Dim::I) + (i + 0.5) * cell_size;
+                                    block->lowCorner(Cajita::Ghost(),Dim::I) +
+                                    (i + 0.5) * cell_size;
                                 coords(pid,Dim::J) =
-                                    block.lowCorner(Dim::J) + (j + 0.5) * cell_size;
+                                    block->lowCorner(Cajita::Ghost(),Dim::J) +
+                                    (j + 0.5) * cell_size;
                                 coords(pid,Dim::K) =
-                                    block.lowCorner(Dim::K) + (k + 0.5) * cell_size;
+                                    block->lowCorner(Cajita::Ghost(),Dim::K) +
+                                    (k + 0.5) * cell_size;
 
-                                // Set the cartesian rank
-                                int neighbor_cart_rank[3] =
-                                    { my_cart_rank[Dim::I] + ni,
-                                      my_cart_rank[Dim::J] + nj,
-                                      my_cart_rank[Dim::K] + nk };
-
-                                // Set the linear rank
-                                MPI_Cart_rank( global_grid->cartesianComm(),
-                                               neighbor_cart_rank,
-                                               &linear_ids(pid) );
-
-                                // Set the cartesian rank. We map back so we
-                                // get the wrap-around effect for periodic
-                                // boundaries (e.g. when the logical index
-                                // places us out of bounds).
-                                MPI_Cart_coords( global_grid->cartesianComm(),
-                                                 linear_ids(pid),
-                                                 3,
-                                                 neighbor_cart_rank );
-                                for ( int d0 = 0; d0 < 3; ++d0 )
-                                    for ( int d1 = 0; d1 < 3; ++d1 )
-                                        matrix_ids( pid, d0, d1 ) = neighbor_cart_rank[d1];
+                                // Set the linear ids as the linear rank of
+                                // the neighbor.
+                                linear_ids(pid) = neighbor_rank;
 
                                 // Increment the particle count.
                                 ++pid;
@@ -136,51 +99,35 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
     // Copy to the device space.
     particles.resize( num_particle );
 
-    auto particles_mirror = Cabana::Experimental::create_mirror_view_and_copy(
+    auto particles_mirror = Cabana::create_mirror_view_and_copy(
         TEST_DEVICE(), particles );
 
     // Redistribute the particles.
     ParticleCommunication::redistribute(
-        *global_grid, particles_mirror,
+        *block, particles_mirror,
         std::integral_constant<std::size_t,0>() );
 
     // Copy back to check.
-    particles = Cabana::Experimental::create_mirror_view_and_copy(
+    particles = Cabana::create_mirror_view_and_copy(
         Kokkos::HostSpace(), particles_mirror );
     coords = Cabana::slice<0>( particles, "coords" );
-    matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
-    linear_ids = Cabana::slice<2>( particles, "linear_ids" );
+    linear_ids = Cabana::slice<1>( particles, "linear_ids" );
 
     // Check that we got as many particles as we should have.
     EXPECT_EQ( coords.size(), num_particle );
     EXPECT_EQ( linear_ids.size(), num_particle );
-    EXPECT_EQ( matrix_ids.size(), num_particle );
 
     // Check that all of the particle ids are equal to this rank id.
     for ( int p = 0; p < num_particle; ++p )
-    {
-        EXPECT_EQ( linear_ids(p), my_linear_rank );
-
-        for ( int d0 = 0; d0 < 3; ++d0 )
-            for ( int d1 = 0; d1 < 3; ++d1 )
-                EXPECT_EQ( matrix_ids(p,d0,d1), my_cart_rank[d1] );
-    }
+        EXPECT_EQ( linear_ids(p), global_grid->blockId() );
 
     // Check that all of the particles are now in the local domain.
-    Cajita::GridBlock local_block;
-    local_block.assign( global_grid->block(), 0 );
-    double low_c[3] = { local_block.lowCorner( Dim::I ),
-                        local_block.lowCorner( Dim::J ),
-                        local_block.lowCorner( Dim::K ) };
-    double high_c[3] = { low_c[Dim::I] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::I ) *
-                         local_block.cellSize(),
-                         low_c[Dim::J] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::J ) *
-                         local_block.cellSize(),
-                         low_c[Dim::K] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::K ) *
-                         local_block.cellSize() };
+    double low_c[3] = { block->lowCorner( Cajita::Own(), Dim::I ),
+                        block->lowCorner( Cajita::Own(), Dim::J ),
+                        block->lowCorner( Cajita::Own(), Dim::K ) };
+    double high_c[3] = { block->highCorner( Cajita::Own(), Dim::I ),
+                         block->highCorner( Cajita::Own(), Dim::J ),
+                         block->highCorner( Cajita::Own(), Dim::K ) };
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
         {
@@ -205,114 +152,81 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    auto global_grid = std::make_shared<Cajita::GlobalGrid>(
-        MPI_COMM_WORLD,
-        partitioner,
-        is_dim_periodic,
-        global_low_corner,
-        global_high_corner,
-        cell_size );
+    auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
+                                                 partitioner,
+                                                 is_dim_periodic,
+                                                 global_low_corner,
+                                                 global_high_corner,
+                                                 cell_size );
 
     // Get the local block with a halo of 2.
     const int halo_size = 2;
-    Cajita::GridBlock block;
-    block.assign( global_grid->block(), halo_size );
-
-    // Get my local ranks.
-    int my_linear_rank;
-    MPI_Comm_rank( global_grid->cartesianComm(), &my_linear_rank );
-    int my_cart_rank[3];
-    MPI_Cart_coords( global_grid->cartesianComm(), my_linear_rank, 3, my_cart_rank );
+    auto block = Cajita::createBlock( global_grid, halo_size );
 
     // Allocate particles
-    int num_particle = block.localNumEntity( MeshEntity::Cell, Dim::I ) *
-                       block.localNumEntity( MeshEntity::Cell, Dim::J ) *
-                       block.localNumEntity( MeshEntity::Cell, Dim::K );
-    using MemberTypes = Cabana::MemberTypes<double[3],int[3][3],int>;
+    auto owned_cell_space =
+        block->indexSpace( Cajita::Own(), Cajita::Cell() );
+    int num_particle = owned_cell_space.size();
+    using MemberTypes = Cabana::MemberTypes<double[3],int>;
     using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
     ParticleContainer particles( "particles", num_particle );
     auto coords = Cabana::slice<0>( particles, "coords" );
-    auto matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
-    auto linear_ids = Cabana::slice<2>( particles, "linear_ids" );
+    auto linear_ids = Cabana::slice<1>( particles, "linear_ids" );
 
     // Put particles in the center of every local cell.
     int pid = 0;
-    for ( int k = block.localEntityBegin(MeshEntity::Cell,Dim::K);
-          k < block.localEntityEnd(MeshEntity::Cell,Dim::K);
-          ++k )
-        for ( int j = block.localEntityBegin(MeshEntity::Cell,Dim::J);
-              j < block.localEntityEnd(MeshEntity::Cell,Dim::J);
-              ++j )
-            for ( int i = block.localEntityBegin(MeshEntity::Cell,Dim::I);
-                  i < block.localEntityEnd(MeshEntity::Cell,Dim::I);
-                  ++i )
+    for ( int k = 0; k < owned_cell_space.extent(Dim::K); ++k )
+        for ( int j = 0; j < owned_cell_space.extent(Dim::J); ++j )
+            for ( int i = 0; i < owned_cell_space.extent(Dim::I); ++i )
             {
                 // Set the coordinates at the cell center.
                 coords(pid,Dim::I) =
-                    block.lowCorner(Dim::I) + (i + 0.5) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::I) +
+                    (i + 0.5) * cell_size;
                 coords(pid,Dim::J) =
-                    block.lowCorner(Dim::J) + (j + 0.5) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::J) +
+                    (j + 0.5) * cell_size;
                 coords(pid,Dim::K) =
-                    block.lowCorner(Dim::K) + (k + 0.5) * cell_size;
-
-                // Set the cartesian rank
-                for ( int d0 = 0; d0 < 3; ++d0 )
-                    for ( int d1 = 0; d1 < 3; ++d1 )
-                        matrix_ids( pid, d0, d1 ) = my_cart_rank[d1];
+                    block->lowCorner(Cajita::Own(),Dim::K) +
+                    (k + 0.5) * cell_size;
 
                 // Set the linear rank
-                linear_ids(pid) = my_linear_rank;
+                linear_ids(pid) = global_grid->blockId();
 
                 // Increment the particle count.
                 ++pid;
             }
 
     // Copy to the device space.
-    auto particles_mirror = Cabana::Experimental::create_mirror_view_and_copy(
+    auto particles_mirror = Cabana::create_mirror_view_and_copy(
         TEST_DEVICE(), particles );
 
     // Redistribute the particles.
     ParticleCommunication::redistribute(
-        *global_grid, particles_mirror,
+        *block, particles_mirror,
         std::integral_constant<std::size_t,0>() );
 
     // Copy back to check.
-    particles = Cabana::Experimental::create_mirror_view_and_copy(
+    particles = Cabana::create_mirror_view_and_copy(
         Kokkos::HostSpace(), particles_mirror );
     coords = Cabana::slice<0>( particles, "coords" );
-    matrix_ids = Cabana::slice<1>( particles, "matrix_ids" );
-    linear_ids = Cabana::slice<2>( particles, "linear_ids" );
+    linear_ids = Cabana::slice<1>( particles, "linear_ids" );
 
     // Check that we got as many particles as we should have.
     EXPECT_EQ( coords.size(), num_particle );
     EXPECT_EQ( linear_ids.size(), num_particle );
-    EXPECT_EQ( matrix_ids.size(), num_particle );
 
     // Check that all of the particle ids are equal to this rank id.
     for ( int p = 0; p < num_particle; ++p )
-    {
-        EXPECT_EQ( linear_ids(p), my_linear_rank );
-
-        for ( int d0 = 0; d0 < 3; ++d0 )
-            for ( int d1 = 0; d1 < 3; ++d1 )
-                EXPECT_EQ( matrix_ids(p,d0,d1), my_cart_rank[d1] );
-    }
+        EXPECT_EQ( linear_ids(p), global_grid->blockId() );
 
     // Check that all of the particles are now in the local domain.
-    Cajita::GridBlock local_block;
-    local_block.assign( global_grid->block(), 0 );
-    double low_c[3] = { local_block.lowCorner( Dim::I ),
-                        local_block.lowCorner( Dim::J ),
-                        local_block.lowCorner( Dim::K ) };
-    double high_c[3] = { low_c[Dim::I] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::I ) *
-                         local_block.cellSize(),
-                         low_c[Dim::J] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::J ) *
-                         local_block.cellSize(),
-                         low_c[Dim::K] +
-                         local_block.numEntity( MeshEntity::Cell, Dim::K ) *
-                         local_block.cellSize() };
+    double low_c[3] = { block->lowCorner( Cajita::Own(), Dim::I ),
+                        block->lowCorner( Cajita::Own(), Dim::J ),
+                        block->lowCorner( Cajita::Own(), Dim::K ) };
+    double high_c[3] = { block->highCorner( Cajita::Own(), Dim::I ),
+                         block->highCorner( Cajita::Own(), Dim::J ),
+                         block->highCorner( Cajita::Own(), Dim::K ) };
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
         {
