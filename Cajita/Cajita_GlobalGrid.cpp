@@ -23,7 +23,7 @@ GlobalGrid::GlobalGrid( MPI_Comm comm,
     // Check the cell size.
     for ( int d = 0; d < 3; ++d )
         if ( std::abs(_global_num_cell[d] * cell_size - _domain->extent(d)) >
-             std::numeric_limits<double>::epsilon() )
+             10.0 * std::numeric_limits<double>::epsilon() )
             throw std::invalid_argument("Dimension not divisible by cell size");
 
     // Partition the problem.

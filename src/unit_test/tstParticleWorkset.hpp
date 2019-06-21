@@ -1,5 +1,4 @@
-#include <Cajita_GridBlock.hpp>
-#include <Cajita_Types.hpp>
+#include <Cajita.hpp>
 
 #include <Harlow_Types.hpp>
 #include <Harlow_ParticleWorkset.hpp>
@@ -13,6 +12,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <mpi.h>
+
 using namespace Harlow;
 
 namespace Test
@@ -20,40 +21,55 @@ namespace Test
 //---------------------------------------------------------------------------//
 void worksetTest()
 {
+    // Create a different MPI communication on every rank, effectively making
+    // it serial.
+    int comm_rank;
+    MPI_Comm_rank( MPI_COMM_WORLD, &comm_rank );
+    MPI_Comm serial_comm;
+    MPI_Comm_split( MPI_COMM_WORLD, comm_rank, 0, &serial_comm );
+
+    // Let MPI compute the partitioning for this test.
+    Cajita::UniformDimPartitioner partitioner;
+
     // Make a cartesian grid.
     std::vector<int> num_cell = { 13, 21, 10 };
     std::vector<double> low_corner = { -1.1, 3.3, -5.3 };
-    std::vector<bool> boundary_location = { false, false, false, false, false, false};
-    std::vector<bool> periodic = {false,false,false};
+    std::vector<bool> periodic = {true,true,true};
     double cell_size = 0.53;
-    int halo_width = 4;
-    Cajita::GridBlock grid( low_corner, num_cell, boundary_location,
-                            periodic, cell_size, halo_width );
+    std::vector<double> high_corner =
+        { low_corner[Dim::I] + cell_size * num_cell[Dim::I],
+          low_corner[Dim::J] + cell_size * num_cell[Dim::J],
+          low_corner[Dim::K] + cell_size * num_cell[Dim::K] };
+    auto global_grid = Cajita::createGlobalGrid( serial_comm,
+                                                 partitioner,
+                                                 periodic,
+                                                 low_corner,
+                                                 high_corner,
+                                                 cell_size );
 
-    // Calculate the low corners of the node primal grid. This includes the halo.
-    std::vector<double> node_low_corner =
-        { low_corner[Dim::I] - halo_width * cell_size,
-          low_corner[Dim::J] - halo_width * cell_size,
-          low_corner[Dim::K] - halo_width * cell_size };
+    // Create a block.
+    int halo_width = 4;
+    auto block = Cajita::createBlock( global_grid, halo_width );
 
     // Put a particle in the lower left center of each local cell.
-    int num_particle = num_cell[0] * num_cell[1] * num_cell[2];
+    auto owned_cell_space = block->indexSpace( Cajita::Own(), Cajita::Cell() );
+    int num_particle = owned_cell_space.size();
     using MemberTypes = Cabana::MemberTypes<double[3]>;
     Cabana::AoSoA<MemberTypes,TEST_DEVICE> particles( "particles", num_particle );
-    auto particles_mirror = Cabana::Experimental::create_mirror_view_and_copy(
+    auto particles_mirror = Cabana::create_mirror_view_and_copy(
         Kokkos::HostSpace(), particles );
     auto position_mirror = Cabana::slice<0>( particles_mirror );
     int pid = 0;
-    for ( int i = 0; i < num_cell[Dim::I]; ++i )
-        for ( int j = 0; j < num_cell[Dim::J]; ++j )
-            for ( int k = 0; k < num_cell[Dim::K]; ++k, ++pid )
+    for ( int i = 0; i < owned_cell_space.extent(Dim::I); ++i )
+        for ( int j = 0; j < owned_cell_space.extent(Dim::J); ++j )
+            for ( int k = 0; k < owned_cell_space.extent(Dim::K); ++k, ++pid )
             {
                 position_mirror( pid, Dim::I ) =
-                    low_corner[Dim::I] + (i+0.25) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::I) + (i+0.25) * cell_size;
                 position_mirror( pid, Dim::J ) =
-                    low_corner[Dim::J] + (j+0.25) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::J) + (j+0.25) * cell_size;
                 position_mirror( pid, Dim::K ) =
-                    low_corner[Dim::K] + (k+0.25) * cell_size;
+                    block->lowCorner(Cajita::Own(),Dim::K) + (k+0.25) * cell_size;
             }
     Cabana::deep_copy( particles, particles_mirror );
     auto position = Cabana::slice<0>( particles );
@@ -61,7 +77,7 @@ void worksetTest()
     // Create a workset.
     auto workset =
         createParticleWorkset<FunctionOrder::Quadratic,TEST_DEVICE>(
-            grid, num_particle );
+            *block, num_particle );
 
     // Update the workset.
     double dt = 33.2;
@@ -73,9 +89,9 @@ void worksetTest()
     EXPECT_EQ( workset->_ns, 3 );
     EXPECT_EQ( workset->_dx, cell_size );
     EXPECT_EQ( workset->_rdx, 1.0/cell_size );
-    EXPECT_EQ( workset->_low_x, node_low_corner[Dim::I] );
-    EXPECT_EQ( workset->_low_y, node_low_corner[Dim::J] );
-    EXPECT_EQ( workset->_low_z, node_low_corner[Dim::K] );
+    EXPECT_EQ( workset->_low_x, block->lowCorner(Cajita::Ghost(),Dim::I) );
+    EXPECT_EQ( workset->_low_y, block->lowCorner(Cajita::Ghost(),Dim::J) );
+    EXPECT_EQ( workset->_low_z, block->lowCorner(Cajita::Ghost(),Dim::K) );
     EXPECT_EQ( workset->_dt, dt );
 
     // Check the allocation.

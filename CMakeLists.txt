@@ -108,4 +108,4 @@ MESSAGE(STATUS "Harlow Revision = '${Harlow_GIT_COMMIT_HASH}'")
 add_subdirectory(Cajita)
 
 # Primary core subpackage
-#add_subdirectory(src)
+add_subdirectory(src)
