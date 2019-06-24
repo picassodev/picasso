@@ -46,9 +46,9 @@ void layoutTest()
 
     // Check the owned index_space.
     auto array_node_owned_space =
-        node_layout->indexSpace( Own() );
+        node_layout->indexSpace( Own(), Local() );
     auto block_node_owned_space =
-        node_layout->block().indexSpace( Own(), Node() );
+        node_layout->block().indexSpace( Own(), Node(), Local() );
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( array_node_owned_space.min(d),
@@ -61,9 +61,9 @@ void layoutTest()
 
     // Check the ghosted index_space.
     auto array_node_ghosted_space =
-        node_layout->indexSpace( Ghost() );
+        node_layout->indexSpace( Ghost(), Local() );
     auto block_node_ghosted_space =
-        node_layout->block().indexSpace( Ghost(), Node() );
+        node_layout->block().indexSpace( Ghost(), Node(), Local() );
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( array_node_ghosted_space.min(d),
@@ -111,9 +111,9 @@ void layoutTest()
 
     // Check the owned index_space.
     auto array_cell_owned_space =
-        cell_layout->indexSpace( Own() );
+        cell_layout->indexSpace( Own(), Local() );
     auto block_cell_owned_space =
-        cell_layout->block().indexSpace( Own(), Cell() );
+        cell_layout->block().indexSpace( Own(), Cell(), Local() );
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( array_cell_owned_space.min(d),
@@ -126,9 +126,9 @@ void layoutTest()
 
     // Check the ghosted index_space.
     auto array_cell_ghosted_space =
-        cell_layout->indexSpace( Ghost() );
+        cell_layout->indexSpace( Ghost(), Local() );
     auto block_cell_ghosted_space =
-        cell_layout->block().indexSpace( Ghost(), Cell() );
+        cell_layout->block().indexSpace( Ghost(), Cell(), Local() );
     for ( int d = 0; d < 3; ++d )
     {
         EXPECT_EQ( array_cell_ghosted_space.min(d),
@@ -204,7 +204,7 @@ void arrayTest()
 
     // Check the array.
     EXPECT_EQ( label, array->label() );
-    auto space = cell_layout->indexSpace( Ghost() );
+    auto space = cell_layout->indexSpace( Ghost(), Local() );
     auto view = array->view();
     EXPECT_EQ( label, view.label() );
     EXPECT_EQ( view.size(), space.size() );
@@ -248,7 +248,7 @@ void arrayOpTest()
     ArrayOp::assign( *array, 2.0, Ghost() );
     auto host_view = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), array->view() );
-    auto ghosted_space = array->layout().indexSpace( Ghost() );
+    auto ghosted_space = array->layout().indexSpace( Ghost(), Local() );
     for ( long i = 0; i < ghosted_space.extent(Dim::I); ++i )
         for ( long j = 0; j < ghosted_space.extent(Dim::J); ++j )
             for ( long k = 0; k < ghosted_space.extent(Dim::K); ++k )
@@ -324,7 +324,7 @@ void arrayOpTest()
     // Check to copy.
     ArrayOp::copy( *array, *array_2, Own() );
     Kokkos::deep_copy( host_view, array->view() );
-    auto owned_space = array->layout().indexSpace( Own() );
+    auto owned_space = array->layout().indexSpace( Own(), Local() );
     for ( long i = owned_space.min(Dim::I); i < owned_space.max(Dim::I); ++i )
         for ( long j = owned_space.min(Dim::J); j < owned_space.max(Dim::J); ++j )
             for ( long k = owned_space.min(Dim::K); k < owned_space.max(Dim::K); ++k )

@@ -43,7 +43,7 @@ void gatherScatterTest( const ManualPartitioner& partitioner,
     auto array = createArray<double,TEST_DEVICE>( "array", cell_layout );
 
     // Assign the owned cells a value of 1.
-    auto owned_space = cell_layout->indexSpace( Own() );
+    auto owned_space = cell_layout->indexSpace( Own(), Local() );
     auto owned_subview = createSubview( array->view(), owned_space );
     Kokkos::deep_copy( owned_subview, 1.0 );
 
@@ -54,7 +54,7 @@ void gatherScatterTest( const ManualPartitioner& partitioner,
     halo->gather( *array, 124 );
 
     // Check the gather. We should get 1 everywhere in the array now.
-    auto ghosted_space = cell_layout->indexSpace( Ghost() );
+    auto ghosted_space = cell_layout->indexSpace( Ghost(), Local() );
     auto host_view = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), array->view() );
     for ( unsigned i = 0; i < ghosted_space.extent(0); ++i )

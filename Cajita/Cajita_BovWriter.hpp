@@ -144,7 +144,7 @@ void writeTimeStep( const int time_step_index,
             global_extents[d] = global_grid.globalNumEntity(Cell(),d) + 1;
     }
     global_extents[3] = array.layout().dofsPerEntity();
-    auto owned_index_space = array.layout().indexSpace(Own());
+    auto owned_index_space = array.layout().indexSpace(Own(),Local());
     std::vector<long> owned_extents( 4, -1 );
     for ( int d = 0; d < 3; ++d )
     {

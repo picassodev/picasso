@@ -14,6 +14,7 @@ set(HEADERS
   Cajita_ManualPartitioner.hpp
   Cajita_MpiTraits.hpp
   Cajita_Partitioner.hpp
+  Cajita_StructuredSolver.hpp
   Cajita_Types.hpp
   Cajita_UniformDimPartitioner.hpp
   Cajita_Version.hpp
@@ -40,6 +41,7 @@ add_library(cajita ${SOURCES})
 target_include_directories(cajita PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(cajita Kokkos::kokkos)
 target_link_libraries(cajita MPI::MPI_CXX)
+target_link_libraries(cajita HYPRE::hypre)
 install(TARGETS cajita LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 #-----------------------------------------------------------------------------

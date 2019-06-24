@@ -3,7 +3,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <vector>
+#include <array>
 #include <algorithm>
 #include <string>
 
@@ -44,7 +44,7 @@ class IndexSpace
     /*!
       \brief Vector size constructor.
     */
-    IndexSpace( const std::vector<long>& size )
+    IndexSpace( const std::array<long,N>& size )
     {
         std::fill( _min.data(), _min.data() + Rank, 0 );
         std::copy( size.begin(), size.end(), _max.data() );
@@ -53,8 +53,8 @@ class IndexSpace
     /*!
       \brief Vector range constructor.
     */
-    IndexSpace( const std::vector<long>& min,
-                const std::vector<long>& max )
+    IndexSpace( const std::array<long,N>& min,
+                const std::array<long,N>& max )
     {
         std::copy( min.begin(), min.end(), _min.data() );
         std::copy( max.begin(), max.end(), _max.data() );
@@ -309,12 +309,12 @@ template<long N>
 IndexSpace<N+1> appendDimension( const IndexSpace<N>& index_space,
                                  const long size )
 {
-    std::vector<long> min( N+1 );
+    std::array<long,N+1> min;
     for ( int d = 0; d < N; ++d )
         min[d] = index_space.min(d);
     min[N] = 0;
 
-    std::vector<long> max( N+1 );
+    std::array<long,N+1> max;
     for ( int d = 0; d < N; ++d )
         max[d] = index_space.max(d);
     max[N] = size;
@@ -330,12 +330,12 @@ IndexSpace<N+1> appendDimension( const IndexSpace<N>& index_space,
                                  const long min,
                                  const long max )
 {
-    std::vector<long> range_min( N+1 );
+    std::array<long,N+1> range_min;
     for ( int d = 0; d < N; ++d )
         range_min[d] = index_space.min(d);
     range_min[N] = min;
 
-    std::vector<long> range_max( N+1 );
+    std::array<long,N+1> range_max;
     for ( int d = 0; d < N; ++d )
         range_max[d] = index_space.max(d);
     range_max[N] = max;

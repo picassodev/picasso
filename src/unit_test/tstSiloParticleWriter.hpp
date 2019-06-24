@@ -43,7 +43,8 @@ void writeTest()
 
     // Allocate particles in the center of each cell.
     auto block = Cajita::createBlock( global_grid, 0 );
-    auto owned_cell_space = block->indexSpace( Cajita::Own(), Cajita::Cell() );
+    auto owned_cell_space =
+        block->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
     int num_particle = owned_cell_space.size();
     using DataTypes = Cabana::MemberTypes<double[3],   // coords
                                           double[3],   // vec

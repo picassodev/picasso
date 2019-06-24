@@ -52,7 +52,8 @@ void worksetTest()
     auto block = Cajita::createBlock( global_grid, halo_width );
 
     // Put a particle in the lower left center of each local cell.
-    auto owned_cell_space = block->indexSpace( Cajita::Own(), Cajita::Cell() );
+    auto owned_cell_space =
+        block->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
     int num_particle = owned_cell_space.size();
     using MemberTypes = Cabana::MemberTypes<double[3]>;
     Cabana::AoSoA<MemberTypes,TEST_DEVICE> particles( "particles", num_particle );

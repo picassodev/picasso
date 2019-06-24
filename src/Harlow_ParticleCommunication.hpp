@@ -8,7 +8,6 @@
 #include <Cabana_Core.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ScatterView.hpp>
 
 #include <mpi.h>
 

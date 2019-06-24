@@ -151,14 +151,8 @@ int GlobalGrid::blockRank( const int i, const int j, const int k ) const
 }
 
 //---------------------------------------------------------------------------//
-// Get the owned number of cells in a given dimension.
-int GlobalGrid::ownedNumCell( const int dim ) const
-{
-    return _owned_num_cell[dim];
-}
-
-//---------------------------------------------------------------------------//
 // Get the global number of cells in a given dimension.
+template<>
 int GlobalGrid::globalNumEntity( Cell, const int dim ) const
 {
     return _global_num_cell[dim];
@@ -166,6 +160,7 @@ int GlobalGrid::globalNumEntity( Cell, const int dim ) const
 
 //---------------------------------------------------------------------------//
 // Get the global number of nodes in a given dimension.
+template<>
 int GlobalGrid::globalNumEntity( Node, const int dim ) const
 {
     // If this dimension is periodic that last node in the dimension is
@@ -174,6 +169,43 @@ int GlobalGrid::globalNumEntity( Node, const int dim ) const
         return _global_num_cell[dim];
     else
         return _global_num_cell[dim] + 1;
+}
+
+//---------------------------------------------------------------------------//
+// Get the global number of I-faces in a given dimension.
+template<>
+int GlobalGrid::globalNumEntity( Face<Dim::I>, const int dim ) const
+{
+    return ( Dim::I == dim )
+        ? globalNumEntity( Node(), dim )
+        : globalNumEntity( Cell(), dim );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global number of J-faces in a given dimension.
+template<>
+int GlobalGrid::globalNumEntity( Face<Dim::J>, const int dim ) const
+{
+    return ( Dim::J == dim )
+        ? globalNumEntity( Node(), dim )
+        : globalNumEntity( Cell(), dim );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global number of K-faces in a given dimension.
+template<>
+int GlobalGrid::globalNumEntity( Face<Dim::K>, const int dim ) const
+{
+    return ( Dim::K == dim )
+        ? globalNumEntity( Node(), dim )
+        : globalNumEntity( Cell(), dim );
+}
+
+//---------------------------------------------------------------------------//
+// Get the owned number of cells in a given dimension.
+int GlobalGrid::ownedNumCell( const int dim ) const
+{
+    return _owned_num_cell[dim];
 }
 
 //---------------------------------------------------------------------------//

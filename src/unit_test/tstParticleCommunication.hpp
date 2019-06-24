@@ -43,7 +43,7 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
     // Allocate a maximum number of particles assuming we have a halo on every
     // boundary.
     auto ghosted_cell_space =
-        block->indexSpace( Cajita::Ghost(), Cajita::Cell() );
+        block->indexSpace( Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
     int num_particle = ghosted_cell_space.size();
     using MemberTypes = Cabana::MemberTypes<double[3],int>;
     using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
@@ -165,7 +165,7 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
 
     // Allocate particles
     auto owned_cell_space =
-        block->indexSpace( Cajita::Own(), Cajita::Cell() );
+        block->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
     int num_particle = owned_cell_space.size();
     using MemberTypes = Cabana::MemberTypes<double[3],int>;
     using ParticleContainer = Cabana::AoSoA<MemberTypes,Kokkos::HostSpace>;
