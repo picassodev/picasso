@@ -21,6 +21,7 @@ const GlobalGrid& Block::globalGrid() const
 //---------------------------------------------------------------------------//
 // Get the physical coordinates of the low corner of the grid in a given
 // dimension in the owned decomposition.
+template<>
 double Block::lowCorner( Own, const int dim ) const
 {
     return _global_grid->domain().lowCorner(dim) +
@@ -30,6 +31,7 @@ double Block::lowCorner( Own, const int dim ) const
 //---------------------------------------------------------------------------//
 // Get the physical coordinates of the high corner of the grid in a given
 // dimension in the owned decomposition.
+template<>
 double Block::highCorner( Own, const int dim ) const
 {
     return _global_grid->domain().lowCorner(dim) +
@@ -40,6 +42,7 @@ double Block::highCorner( Own, const int dim ) const
 //---------------------------------------------------------------------------//
 // Get the physical coordinates of the low corner of the grid in a given
 // dimension in the ghosted decomposition.
+template<>
 double Block::lowCorner( Ghost, const int dim ) const
 {
     return
@@ -52,6 +55,7 @@ double Block::lowCorner( Ghost, const int dim ) const
 //---------------------------------------------------------------------------//
 // Get the physical coordinates of the high corner of the grid in a given
 // dimension in the ghosted decomposition.
+template<>
 double Block::highCorner( Ghost, const int dim ) const
 {
     return
@@ -85,10 +89,11 @@ int Block::neighborRank( const int off_i,
 
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned cells.
-IndexSpace<3> Block::indexSpace( Own, Cell ) const
+template<>
+IndexSpace<3> Block::indexSpace( Own, Cell, Local ) const
 {
     // Compute the lower bound.
-    std::vector<long> min(3);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
         min[d] = ( _global_grid->domain().isPeriodic(d) ||
                    _global_grid->dimBlockId(d) > 0 )
@@ -96,7 +101,7 @@ IndexSpace<3> Block::indexSpace( Own, Cell ) const
                  : 0;
 
     // Compute the upper bound.
-    std::vector<long> max(3);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
         max[d] = min[d] + _global_grid->ownedNumCell(d);
 
@@ -105,10 +110,11 @@ IndexSpace<3> Block::indexSpace( Own, Cell ) const
 
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned and ghosted cells.
-IndexSpace<3> Block::indexSpace( Ghost, Cell ) const
+template<>
+IndexSpace<3> Block::indexSpace( Ghost, Cell, Local ) const
 {
     // Compute the size.
-    std::vector<long> size( 3 );
+    std::array<long,3> size;
     for ( int d = 0; d < 3; ++d )
     {
         // Start with the local number of cells.
@@ -130,8 +136,25 @@ IndexSpace<3> Block::indexSpace( Ghost, Cell ) const
 }
 
 //---------------------------------------------------------------------------//
+// Get the global index space of the owned cells.
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Cell t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global index space of the owned and ghosted cells.
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Cell t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
 // Given a relative set of indices of a neighbor get the set of local cell
 // indices we own that we share with that neighbor to use as ghosts.
+template<>
 IndexSpace<3> Block::sharedIndexSpace( Own,
                                        Cell,
                                        const int off_i,
@@ -150,13 +173,13 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
         return IndexSpace<3>( {0,0,0}, {0,0,0} );
 
     // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
+    std::array<long,3> nid = { off_i, off_j, off_k };
 
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Cell() );
+    // Get the owned local index space.
+    auto owned_space = indexSpace( Own(), Cell(), Local() );
 
     // Compute the lower bound.
-    std::vector<long> min(3,-1);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -173,7 +196,7 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
     }
 
     // Compute the upper bound.
-    std::vector<long> max(3,-1);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -196,75 +219,23 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
 // Given a relative set of indices of a neighbor get set of local cell
 // indices owned by that neighbor that are shared with us to use as
 // ghosts.
+template<>
 IndexSpace<3> Block::sharedIndexSpace( Ghost,
-                                       Cell,
+                                       Cell tag,
                                        const int off_i,
                                        const int off_j,
                                        const int off_k ) const
 {
-    // Check that the offsets are valid.
-    if ( off_i < -1 || 1 < off_i ||
-         off_j < -1 || 1 < off_j ||
-         off_k < -1 || 1 < off_k )
-        throw std::logic_error( "Neighbor indices out of bounds" );
-
-    // Check to see if this is a valid neighbor. If not, return a shared space
-    // of size 0.
-    if ( neighborRank(off_i,off_j,off_k) < 0 )
-        return IndexSpace<3>( {0,0,0}, {0,0,0} );
-
-    // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
-
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Cell() );
-
-    // Get the ghosted index space.
-    auto ghosted_space = indexSpace( Ghost(), Cell() );
-
-    // Compute the lower bound.
-    std::vector<long> min(3,-1);
-    for ( int d = 0; d < 3; ++d )
-    {
-        // Lower neighbor.
-        if ( -1 == nid[d])
-            min[d] = ghosted_space.min(d);
-
-        // Middle neighbor
-        else if ( 0 == nid[d] )
-            min[d] = owned_space.min(d);
-
-        // Upper neighbor.
-        else if ( 1 == nid[d] )
-            min[d] = owned_space.max(d);
-    }
-
-    // Compute the upper bound.
-    std::vector<long> max(3,-1);
-    for ( int d = 0; d < 3; ++d )
-    {
-        // Lower neighbor.
-        if ( -1 == nid[d])
-            max[d] = owned_space.min(d);
-
-        // Middle neighbor
-        else if ( 0 == nid[d] )
-            max[d] = owned_space.max(d);
-
-        // Upper neighbor.
-        else if ( 1 == nid[d] )
-            max[d] = ghosted_space.max(d);
-    }
-
-    return IndexSpace<3>( min, max );
+    return ghostedSharedIndexSpace( tag, off_i, off_j, off_k );
 }
 
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned nodes.
-IndexSpace<3> Block::indexSpace( Own, Node ) const
+template<>
+IndexSpace<3> Block::indexSpace( Own, Node, Local ) const
 {
     // Compute the lower bound.
-    std::vector<long> min(3);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
         min[d] = ( _global_grid->domain().isPeriodic(d) ||
                    _global_grid->dimBlockId(d) > 0 )
@@ -272,7 +243,7 @@ IndexSpace<3> Block::indexSpace( Own, Node ) const
                  : 0;
 
     // Compute the upper bound.
-    std::vector<long> max(3);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
         max[d] = ( _global_grid->domain().isPeriodic(d) ||
                    _global_grid->dimBlockId(d) <
@@ -285,10 +256,11 @@ IndexSpace<3> Block::indexSpace( Own, Node ) const
 
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned and ghosted nodes.
-IndexSpace<3> Block::indexSpace( Ghost, Node ) const
+template<>
+IndexSpace<3> Block::indexSpace( Ghost, Node, Local ) const
 {
     // Compute the size.
-    std::vector<long> size( 3 );
+    std::array<long,3> size;
     for ( int d = 0; d < 3; ++d )
     {
         // Start with the local number of nodes.
@@ -310,8 +282,25 @@ IndexSpace<3> Block::indexSpace( Ghost, Node ) const
 }
 
 //---------------------------------------------------------------------------//
+// Get the global index space of the owned nodes.
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Node t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global index space of the owned and ghosted nodes.
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Node t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
 // Given a relative set of indices of a neighbor get the set of local node
 // indices we own that we share with that neighbor to use as ghosts.
+template<>
 IndexSpace<3> Block::sharedIndexSpace( Own,
                                        Node,
                                        const int off_i,
@@ -330,13 +319,13 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
         return IndexSpace<3>( {0,0,0}, {0,0,0} );
 
     // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
+    std::array<long,3> nid = { off_i, off_j, off_k };
 
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Node() );
+    // Get the owned local index space.
+    auto owned_space = indexSpace( Own(), Node(), Local() );
 
     // Compute the lower bound.
-    std::vector<long> min(3,-1);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -353,7 +342,7 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
     }
 
     // Compute the upper bound.
-    std::vector<long> max(3,-1);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -376,11 +365,190 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
 // Given a relative set of indices of a neighbor get set of local node
 // indices owned by that neighbor that are shared with us to use as
 // ghosts.
+template<>
 IndexSpace<3> Block::sharedIndexSpace( Ghost,
-                                       Node,
+                                       Node tag,
                                        const int off_i,
                                        const int off_j,
                                        const int off_k ) const
+{
+    return ghostedSharedIndexSpace( tag, off_i, off_j, off_k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::I> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::I> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::I> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::I> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Own t1, Face<Dim::I> t2,  const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Ghost t1, Face<Dim::I> t2, const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::J> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::J> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::J> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::J> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Own t1, Face<Dim::J> t2, const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Ghost t1, Face<Dim::J> t2, const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::K> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::K> t2, Local t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Own t1, Face<Dim::K> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::indexSpace( Ghost t1, Face<Dim::K> t2, Global t3 ) const
+{
+    return faceIndexSpace( t1, t2, t3 );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Own t1, Face<Dim::K> t2, const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+template<>
+IndexSpace<3> Block::sharedIndexSpace(
+    Ghost t1, Face<Dim::K> t2, const int i, const int j, const int k ) const
+{
+    return faceSharedIndexSpace( t1, t2, i, j, k );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global index space of the owned cells.
+template<class EntityType>
+IndexSpace<3> Block::globalIndexSpace( Own, EntityType ) const
+{
+    auto local_space = indexSpace( Own(), EntityType(), Local() );
+    std::array<long,3> min;
+    std::array<long,3> max;
+    for ( int d = 0; d < 3; ++d )
+    {
+        min[d] = _global_grid->globalOffset(d);
+        max[d] = min[d] + local_space.extent(d);
+    }
+
+    return IndexSpace<3>( min, max );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global index space of the owned and ghosted cells.
+template<class EntityType>
+IndexSpace<3> Block::globalIndexSpace( Ghost, EntityType ) const
+{
+    auto own_local_space = indexSpace( Own(), EntityType(), Local() );
+    auto ghost_local_space = indexSpace( Ghost(), EntityType(), Local() );
+    std::array<long,3> min;
+    std::array<long,3> max;
+    for ( int d = 0; d < 3; ++d )
+    {
+        min[d] = _global_grid->globalOffset(d) - own_local_space.min(d);
+        max[d] = min[d] + ghost_local_space.extent(d);
+    }
+
+    return IndexSpace<3>( min, max );
+}
+
+//---------------------------------------------------------------------------//
+// Get the ghosted shared index space of the block.
+template<class EntityType>
+IndexSpace<3> Block::ghostedSharedIndexSpace( EntityType,
+                                              const int off_i,
+                                              const int off_j,
+                                              const int off_k ) const
 {
     // Check that the offsets are valid.
     if ( off_i < -1 || 1 < off_i ||
@@ -394,16 +562,16 @@ IndexSpace<3> Block::sharedIndexSpace( Ghost,
         return IndexSpace<3>( {0,0,0}, {0,0,0} );
 
     // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
+    std::array<long,3> nid = { off_i, off_j, off_k };
 
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Node() );
+    // Get the owned local index space.
+    auto owned_space = indexSpace( Own(), EntityType(), Local() );
 
-    // Get the ghosted index space.
-    auto ghosted_space = indexSpace( Ghost(), Node() );
+    // Get the ghosted local index space.
+    auto ghosted_space = indexSpace( Ghost(), EntityType(), Local() );
 
     // Compute the lower bound.
-    std::vector<long> min(3,-1);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -420,7 +588,7 @@ IndexSpace<3> Block::sharedIndexSpace( Ghost,
     }
 
     // Compute the upper bound.
-    std::vector<long> max(3,-1);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -442,10 +610,10 @@ IndexSpace<3> Block::sharedIndexSpace( Ghost,
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned Dir-direction faces.
 template<int Dir>
-IndexSpace<3> Block::indexSpace( Own, Face<Dir> ) const
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dir>, Local ) const
 {
     // Compute the lower bound.
-    std::vector<long> min(3);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
         min[d] = ( _global_grid->domain().isPeriodic(d) ||
                    _global_grid->dimBlockId(d) > 0 )
@@ -453,7 +621,7 @@ IndexSpace<3> Block::indexSpace( Own, Face<Dir> ) const
                  : 0;
 
     // Compute the upper bound.
-    std::vector<long> max(3);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
     {
         if ( Dir == d )
@@ -476,10 +644,10 @@ IndexSpace<3> Block::indexSpace( Own, Face<Dir> ) const
 //---------------------------------------------------------------------------//
 // Get the local index space of the owned and ghosted Dir-direction faces.
 template<int Dir>
-IndexSpace<3> Block::indexSpace( Ghost, Face<Dir> ) const
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dir>, Local ) const
 {
     // Compute the size.
-    std::vector<long> size( 3 );
+    std::array<long,3> size;
     for ( int d = 0; d < 3; ++d )
     {
         if ( Dir == d)
@@ -510,15 +678,31 @@ IndexSpace<3> Block::indexSpace( Ghost, Face<Dir> ) const
 }
 
 //---------------------------------------------------------------------------//
+// Get the global index space of the owned nodes.
+template<int Dir>
+IndexSpace<3> Block::faceIndexSpace( Own t1, Face<Dir> t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
+// Get the global index space of the owned and ghosted nodes.
+template<int Dir>
+IndexSpace<3> Block::faceIndexSpace( Ghost t1, Face<Dir> t2, Global ) const
+{
+    return globalIndexSpace( t1, t2 );
+}
+
+//---------------------------------------------------------------------------//
 // Given a relative set of indices of a neighbor get the set of local
 // Dir-direction face indices we own that we share with that neighbor to use
 // as ghosts.
 template<int Dir>
-IndexSpace<3> Block::sharedIndexSpace( Own,
-                                       Face<Dir>,
-                                       const int off_i,
-                                       const int off_j,
-                                       const int off_k ) const
+IndexSpace<3> Block::faceSharedIndexSpace( Own,
+                                           Face<Dir>,
+                                           const int off_i,
+                                           const int off_j,
+                                           const int off_k ) const
 {
     // Check that the offsets are valid.
     if ( off_i < -1 || 1 < off_i ||
@@ -532,13 +716,13 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
         return IndexSpace<3>( {0,0,0}, {0,0,0} );
 
     // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
+    std::array<long,3> nid = { off_i, off_j, off_k };
 
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Face<Dir>() );
+    // Get the owned local index space.
+    auto owned_space = indexSpace( Own(), Face<Dir>(), Local() );
 
     // Compute the lower bound.
-    std::vector<long> min(3,-1);
+    std::array<long,3> min;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -555,7 +739,7 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
     }
 
     // Compute the upper bound.
-    std::vector<long> max(3,-1);
+    std::array<long,3> max;
     for ( int d = 0; d < 3; ++d )
     {
         // Lower neighbor.
@@ -581,91 +765,111 @@ IndexSpace<3> Block::sharedIndexSpace( Own,
 // Dir-direction face indices owned by that neighbor that are shared with us
 // to use as ghosts.
 template<int Dir>
-IndexSpace<3> Block::sharedIndexSpace( Ghost,
-                                       Face<Dir>,
-                                       const int off_i,
-                                       const int off_j,
-                                       const int off_k ) const
+IndexSpace<3> Block::faceSharedIndexSpace( Ghost,
+                                           Face<Dir> tag,
+                                           const int off_i,
+                                           const int off_j,
+                                           const int off_k ) const
 {
-    // Check that the offsets are valid.
-    if ( off_i < -1 || 1 < off_i ||
-         off_j < -1 || 1 < off_j ||
-         off_k < -1 || 1 < off_k )
-        throw std::logic_error( "Neighbor indices out of bounds" );
-
-    // Check to see if this is a valid neighbor. If not, return a shared space
-    // of size 0.
-    if ( neighborRank(off_i,off_j,off_k) < 0 )
-        return IndexSpace<3>( {0,0,0}, {0,0,0} );
-
-    // Wrap the indices.
-    std::vector<long> nid = { off_i, off_j, off_k };
-
-    // Get the owned index space.
-    auto owned_space = indexSpace( Own(), Face<Dir>() );
-
-    // Get the ghosted index space.
-    auto ghosted_space = indexSpace( Ghost(), Face<Dir>() );
-
-    // Compute the lower bound.
-    std::vector<long> min(3,-1);
-    for ( int d = 0; d < 3; ++d )
-    {
-        // Lower neighbor.
-        if ( -1 == nid[d])
-            min[d] = ghosted_space.min(d);
-
-        // Middle neighbor
-        else if ( 0 == nid[d] )
-            min[d] = owned_space.min(d);
-
-        // Upper neighbor.
-        else if ( 1 == nid[d] )
-            min[d] = owned_space.max(d);
-    }
-
-    // Compute the upper bound.
-    std::vector<long> max(3,-1);
-    for ( int d = 0; d < 3; ++d )
-    {
-        // Lower neighbor.
-        if ( -1 == nid[d])
-            max[d] = owned_space.min(d);
-
-        // Middle neighbor
-        else if ( 0 == nid[d] )
-            max[d] = owned_space.max(d);
-
-        // Upper neighbor.
-        else if ( 1 == nid[d] )
-            max[d] = ghosted_space.max(d);
-    }
-
-    return IndexSpace<3>( min, max );
+    return ghostedSharedIndexSpace( tag, off_i, off_j, off_k );
 }
 
 //---------------------------------------------------------------------------//
-// Face indexing explicit instantiations.
+// Global indexing explicit instantiations
 //---------------------------------------------------------------------------//
-template IndexSpace<3> Block::indexSpace( Own, Face<Dim::I> ) const;
-template IndexSpace<3> Block::indexSpace( Ghost, Face<Dim::I> ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+template IndexSpace<3> Block::globalIndexSpace( Own, Cell ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Ghost, Cell ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Own, Node ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Ghost, Node ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Own, Face<Dim::I> ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Ghost, Face<Dim::I> ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Own, Face<Dim::J> ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Ghost, Face<Dim::J> ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Own, Face<Dim::K> ) const;
+
+template IndexSpace<3> Block::globalIndexSpace( Ghost, Face<Dim::K> ) const;
+
+//---------------------------------------------------------------------------//
+// Ghosted shared indexing explicit instantiations.
+//---------------------------------------------------------------------------//
+template IndexSpace<3> Block::ghostedSharedIndexSpace(
+    Cell, const int, const int, const int ) const;
+
+template IndexSpace<3> Block::ghostedSharedIndexSpace(
+    Node, const int, const int, const int ) const;
+
+template IndexSpace<3> Block::ghostedSharedIndexSpace(
+    Face<Dim::I>, const int, const int, const int ) const;
+
+template IndexSpace<3> Block::ghostedSharedIndexSpace(
+    Face<Dim::J>, const int, const int, const int ) const;
+
+template IndexSpace<3> Block::ghostedSharedIndexSpace(
+    Face<Dim::K>, const int, const int, const int ) const;
+
+//---------------------------------------------------------------------------//
+// Face indexing explicit instantiations
+//---------------------------------------------------------------------------//
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::I>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::I>, Global ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::I>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::I>, Global ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::J>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::J>, Global ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::J>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::J>, Global ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::K>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Own, Face<Dim::K>, Global ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::K>, Local ) const;
+
+template
+IndexSpace<3> Block::faceIndexSpace( Ghost, Face<Dim::K>, Global ) const;
+
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Own, Face<Dim::I>, const int, const int, const int ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Ghost, Face<Dim::I>, const int, const int, const int ) const;
 
-template IndexSpace<3> Block::indexSpace( Own, Face<Dim::J> ) const;
-template IndexSpace<3> Block::indexSpace( Ghost, Face<Dim::J> ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Own, Face<Dim::J>, const int, const int, const int ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Ghost, Face<Dim::J>, const int, const int, const int ) const;
 
-template IndexSpace<3> Block::indexSpace( Own, Face<Dim::K> ) const;
-template IndexSpace<3> Block::indexSpace( Ghost, Face<Dim::K> ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Own, Face<Dim::K>, const int, const int, const int ) const;
-template IndexSpace<3> Block::sharedIndexSpace(
+
+template IndexSpace<3> Block::faceSharedIndexSpace(
     Ghost, Face<Dim::K>, const int, const int, const int ) const;
 
 //---------------------------------------------------------------------------//

@@ -55,14 +55,12 @@ class GlobalGrid
     // invalid rank.
     int blockRank( const int i, const int j, const int k ) const;
 
+    // Get the global number of entities in a given dimension.
+    template<class EntityType>
+    int globalNumEntity( EntityType, const int dim ) const;
+
     // Get the owned number of cells in a given dimension of this block.
     int ownedNumCell( const int dim ) const;
-
-    // Get the global number of cells in a given dimension.
-    int globalNumEntity( Cell, const int dim ) const;
-
-    // Get the global number of nodes in a given dimension.
-    int globalNumEntity( Node, const int dim ) const;
 
     // Get the global offset in a given dimension. This is where our block
     // starts in the global indexing scheme.

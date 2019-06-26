@@ -79,4 +79,4 @@ macro(Cajita_add_tests)
 endmacro()
 
 Cajita_add_tests(NAMES IndexSpace)
-Cajita_add_tests(MPI NAMES GlobalGrid Block Array Halo BovWriter)
+Cajita_add_tests(MPI NAMES GlobalGrid Block Array Halo StructuredSolver BovWriter)

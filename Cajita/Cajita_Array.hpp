@@ -46,25 +46,28 @@ class ArrayLayout
     int dofsPerEntity() const
     { return _dofs_per_entity; }
 
-    // Get the local index space of the array elements in the given
+    // Get the index space of the array elements in the given
     // decomposition.
-    template<class DecompositionTag>
-    IndexSpace<4> indexSpace( DecompositionTag tag ) const
+    template<class DecompositionTag, class IndexType>
+    IndexSpace<4> indexSpace( DecompositionTag decomposition_tag,
+                              IndexType index_type ) const
     {
-        return appendDimension( _block->indexSpace(tag,EntityType()),
-                                _dofs_per_entity );
+        return appendDimension(
+            _block->indexSpace(decomposition_tag,EntityType(),index_type),
+            _dofs_per_entity );
     }
 
     // Get the local index space of the array elements we shared with the
     // given neighbor in the given decomposition.
     template<class DecompositionTag>
-    IndexSpace<4> sharedIndexSpace( DecompositionTag tag,
+    IndexSpace<4> sharedIndexSpace( DecompositionTag decomposition_tag,
                                     const int off_i,
                                     const int off_j,
                                     const int off_k ) const
     {
         return appendDimension(
-            _block->sharedIndexSpace(tag,EntityType(),off_i,off_j,off_k),
+            _block->sharedIndexSpace(decomposition_tag,EntityType(),
+                                     off_i,off_j,off_k),
             _dofs_per_entity );
     }
 
@@ -149,7 +152,8 @@ class Array
            const std::shared_ptr<array_layout>& layout )
         : _layout( layout )
         , _data(
-            createView<value_type,Params...>(label,layout->indexSpace(Ghost())) )
+            createView<value_type,Params...>(
+                label,layout->indexSpace(Ghost(),Local())) )
     {}
 
     //! Get the layout of the array.
@@ -223,7 +227,7 @@ void assign( Array_t& array,
 {
     static_assert( is_array<Array_t>::value, "Cajita::Array required" );
     auto subview =
-        createSubview( array.view(), array.layout().indexSpace(tag) );
+        createSubview( array.view(), array.layout().indexSpace(tag,Local()) );
     Kokkos::deep_copy( subview, alpha );
 }
 
@@ -244,7 +248,7 @@ void scale( Array_t& array,
     auto view = array.view();
     Kokkos::parallel_for(
         "ArrayOp::scale",
-        createExecutionPolicy( array.layout().indexSpace(tag),
+        createExecutionPolicy( array.layout().indexSpace(tag,Local()),
                                typename Array_t::execution_space() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
             view(i,j,k,l) *= alpha;
@@ -279,7 +283,7 @@ void scale( Array_t& array,
     auto array_view = array.view();
     Kokkos::parallel_for(
         "ArrayOp::scale",
-        createExecutionPolicy( array.layout().indexSpace(tag),
+        createExecutionPolicy( array.layout().indexSpace(tag,Local()),
                                typename Array_t::execution_space() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
             array_view(i,j,k,l) *= alpha_view(l);
@@ -300,8 +304,8 @@ void copy( Array_t& a,
            DecompositionTag tag )
 {
     static_assert( is_array<Array_t>::value, "Cajita::Array required" );
-    auto a_space = a.layout().indexSpace( tag );
-    auto b_space = b.layout().indexSpace( tag );
+    auto a_space = a.layout().indexSpace( tag, Local() );
+    auto b_space = b.layout().indexSpace( tag, Local() );
     if ( a_space != b_space )
         throw std::logic_error( "Incompatible index spaces" );
     auto subview_a = createSubview( a.view(), a_space );
@@ -331,7 +335,7 @@ void update( Array_t& a,
     auto b_view = b.view();
     Kokkos::parallel_for(
         "ArrayOp::update",
-        createExecutionPolicy( a.layout().indexSpace(tag),
+        createExecutionPolicy( a.layout().indexSpace(tag,Local()),
                                typename Array_t::execution_space() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int l ){
             a_view(i,j,k,l) = alpha * a_view(i,j,k,l) + beta * b_view(i,j,k,l);
@@ -402,7 +406,7 @@ void dot( const Array_t& a,
     DotFunctor<typename Array_t::view_type> functor( a.view(), b.view() );
     Kokkos::parallel_reduce(
         "ArrayOp::dot",
-        createExecutionPolicy( a.layout().indexSpace(Own()),
+        createExecutionPolicy( a.layout().indexSpace(Own(),Local()),
                                typename Array_t::execution_space() ),
         functor,
         products.data() );
@@ -477,7 +481,7 @@ void normInf( const Array_t& array,
     NormInfFunctor<typename Array_t::view_type> functor( array.view() );
     Kokkos::parallel_reduce(
         "ArrayOp::normInf",
-        createExecutionPolicy( array.layout().indexSpace(Own()),
+        createExecutionPolicy( array.layout().indexSpace(Own(),Local()),
                                typename Array_t::execution_space() ),
         functor,
         norms.data() );
@@ -549,7 +553,7 @@ void norm1( const Array_t& array,
     Norm1Functor<typename Array_t::view_type> functor( array.view() );
     Kokkos::parallel_reduce(
         "ArrayOp::norm1",
-        createExecutionPolicy( array.layout().indexSpace(Own()),
+        createExecutionPolicy( array.layout().indexSpace(Own(),Local()),
                                typename Array_t::execution_space() ),
         functor,
         norms.data() );
@@ -621,7 +625,7 @@ void norm2( const Array_t& array,
     Norm2Functor<typename Array_t::view_type> functor( array.view() );
     Kokkos::parallel_reduce(
         "ArrayOp::norm2",
-        createExecutionPolicy( array.layout().indexSpace(Own()),
+        createExecutionPolicy( array.layout().indexSpace(Own(),Local()),
                                typename Array_t::execution_space() ),
         functor,
         norms.data() );
