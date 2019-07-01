@@ -2,7 +2,9 @@
 #define HARLOW_DENSELINEARALGEBRA_HPP
 
 #include <Harlow_Tolerance.hpp>
+
 #include <Kokkos_Core.hpp>
+
 #include <cmath>
 
 namespace Harlow
@@ -79,7 +81,7 @@ void matMatMultiply( const Real a[3][3], const Real b[3][3], Real c[3][3] )
    {
         for ( int j = 0; j < 3; ++j )
         {
-            c[i][j] = 0.0;    
+            c[i][j] = 0.0;
             for ( int k = 0; k < 3; ++k )
                 c[i][j] += a[i][k] * b[k][j];
         }
@@ -109,7 +111,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
 {
    // pi
    Real pi = atan(1.0)*4.0;
-   
+
    Real A[3][3];
    // intialize X with I and copy a into A
    for(int i=0; i<3; i++)
@@ -125,7 +127,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
    Real temp_A;
    Real temp_X;
    do{
-        // find the biggest values among  A_ij except diagonal element 
+        // find the biggest values among  A_ij except diagonal element
         // record the index i,j into r,c
         Real temp_big = fabs(A[0][1]);
         int r = 0;  // row
@@ -143,7 +145,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
               }
            }
         }
-    
+
         // determine angle theta that make the A_rc  = 0
         theta = (A[r][r] == A[c][c]) ? pi/4.0 : atan( 2.0*A[r][c]/(A[r][r]-A[c][c]) )/2.0;
 
@@ -154,7 +156,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
         A[r][r] = temp_A;
         A[r][c] = 0.0;
         A[c][r] = 0.0;
-        
+
         for(int i=0; i<3; i++)
         {
            if( i != r && i !=c )
@@ -176,19 +178,19 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
            X[i][r] = temp_X;
 
         }
-    
+
     } while(fabs(theta) >= 10.0*Tolerance<Real>::tol);
 
    // Descending order for eigenvalue and corresponding eigenvector
    Real temp;
    Real temp_vec[3];
-   
+
    if(A[0][0] < A[1][1])
    {
       temp    = A[0][0];
       A[0][0] = A[1][1];
       A[1][1] = temp;
-      
+
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][0];
@@ -196,13 +198,13 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
          X[i][1]     = temp_vec[i];
       }
    }
-  
+
    if(A[1][1] < A[2][2])
    {
       temp    = A[1][1];
       A[1][1] = A[2][2];
       A[2][2] = temp;
-      
+
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][1];
@@ -216,7 +218,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
       temp    = A[0][0];
       A[0][0] = A[1][1];
       A[1][1] = temp;
-      
+
       for(int i=0; i<3; i++)
       {
          temp_vec[i] = X[i][0];
@@ -224,7 +226,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
          X[i][1]     = temp_vec[i];
       }
    }
-  
+
    // return s, X
    for(int i=0; i<3; i++)
       s[i] = A[i][i];
@@ -241,7 +243,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
    Real det_A = determinant(A);
    if( fabs(det_A) <= Tolerance<Real>::tol)
       Kokkos::abort("Error, deformation gradient matrix cannot be singular");
-   
+
    // A^T
    Real AT[3][3];
    transpose(A, AT);
@@ -253,7 +255,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
    // eigenvalue matrix S and eigenvector matrix  V from A = A^T * A
    Real eigen_value[3];
    eigen( ATA, eigen_value, V);
-   
+
    for(int i=0; i<3; i++)
    {
          S[i]= sqrt(eigen_value[i]);
@@ -262,14 +264,14 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
    // calculate U from U = a*V*inv(S);
    Real AV[3][3];
    matMatMultiply(A, V, AV);
- 
+
    for(int i=0; i<3; i++)
    {
       for(int j=0; j<3; j++)
          U[i][j] = AV[i][j]/S[j];
-   } 
-}   
-   
+   }
+}
+
 
 //---------------------------------------------------------------------------//
 

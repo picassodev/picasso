@@ -30,6 +30,8 @@ endforeach()
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
+set(HARLOW_SUPPORTED_DEVICES Serial OpenMP Cuda)
+
 macro(Harlow_add_tests)
   cmake_parse_arguments(HARLOW_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
   set(HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS 1)
@@ -46,7 +48,7 @@ macro(Harlow_add_tests)
   endforeach()
   set(HARLOW_UNIT_TEST_MAIN unit_test_main.cpp)
   foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-    if(Harlow_ENABLE_${_device})
+    if(Kokkos_DEVICES MATCHES "${_device}")
       set(_dir ${CMAKE_CURRENT_BINARY_DIR}/${_device})
       file(MAKE_DIRECTORY ${_dir})
       foreach(_test ${HARLOW_UNIT_TEST_NAMES})
