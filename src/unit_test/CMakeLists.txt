@@ -3,18 +3,9 @@ if(NOT Harlow_ENABLE_TESTING)
   return()
 endif()
 
-set(GTEST_SOURCE_DIR ${CMAKE_SOURCE_DIR}/tpls)
-
-include_directories(${GTEST_SOURCE_DIR})
-add_library(harlow_gtest ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc)
-set_target_properties(harlow_gtest PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-    )
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_PROJECT_BINARY_DIR}/googletest-src/googletest/include)
 
 set(gtest_args --gtest_color=yes)
 
@@ -23,7 +14,7 @@ set(gtest_args --gtest_color=yes)
 ##--------------------------------------------------------------------------##
 foreach(_test Version Splines )
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
-  target_link_libraries(${_test}_test harlow harlow_gtest)
+  target_link_libraries(${_test}_test harlow gtest)
   add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)
 endforeach()
 
@@ -58,7 +49,7 @@ macro(Harlow_add_tests)
         set(_target ${_test}_test_${_device})
         add_executable(${_target} ${_file} ${HARLOW_UNIT_TEST_MAIN})
         target_include_directories(${_target} PUBLIC ${_dir})
-        target_link_libraries(${_target} harlow harlow_gtest)
+        target_link_libraries(${_target} harlow gtest)
         if(HARLOW_UNIT_TEST_MPI)
           foreach(_np ${HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS})
             add_test(NAME ${_target}_${_np} COMMAND
