@@ -367,8 +367,8 @@ void writeMultiMesh( PMPIO_baton_t* baton,
 
 //---------------------------------------------------------------------------//
 // Write a time step.
-template<class CoordSliceType, class ... FieldSliceTypes>
-void writeTimeStep( const Cajita::GlobalGrid& global_grid,
+template<class GlobalGridType, class CoordSliceType, class ... FieldSliceTypes>
+void writeTimeStep( const GlobalGridType& global_grid,
                     const int time_step_index,
                     const double time,
                     const CoordSliceType& coords,

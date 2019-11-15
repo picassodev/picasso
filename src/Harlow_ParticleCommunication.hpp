@@ -23,11 +23,12 @@ namespace ParticleCommunication
 //---------------------------------------------------------------------------//
 // Particle destination
 //---------------------------------------------------------------------------//
-template<class CoordSliceType,
+template<class BlockType,
+         class CoordSliceType,
          class NeighborRankView,
          class DestinationRankView>
 void computeParticleDestinations(
-    const Cajita::Block& block,
+    const BlockType& block,
     const CoordSliceType& coords,
     const NeighborRankView& neighbor_ranks,
     DestinationRankView& destinations )
@@ -37,13 +38,14 @@ void computeParticleDestinations(
     // Locate the particles in the global grid and get their destination
     // rank. The particle halo should be constructed such that particles will
     // only move to a location in the 26 neighbor halo or stay on this rank.
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( block );
     auto num_particle_send = coords.size();
-    auto low_corner_i = block.lowCorner(Cajita::Own(),Dim::I);
-    auto low_corner_j = block.lowCorner(Cajita::Own(),Dim::J);
-    auto low_corner_k = block.lowCorner(Cajita::Own(),Dim::K);
-    auto high_corner_i = block.highCorner(Cajita::Own(),Dim::I);
-    auto high_corner_j = block.highCorner(Cajita::Own(),Dim::J);
-    auto high_corner_k = block.highCorner(Cajita::Own(),Dim::K);
+    auto low_corner_i = local_mesh.lowCorner(Cajita::Own(),Dim::I);
+    auto low_corner_j = local_mesh.lowCorner(Cajita::Own(),Dim::J);
+    auto low_corner_k = local_mesh.lowCorner(Cajita::Own(),Dim::K);
+    auto high_corner_i = local_mesh.highCorner(Cajita::Own(),Dim::I);
+    auto high_corner_j = local_mesh.highCorner(Cajita::Own(),Dim::J);
+    auto high_corner_k = local_mesh.highCorner(Cajita::Own(),Dim::K);
     Kokkos::parallel_for(
         "redistribute_locate",
         Kokkos::RangePolicy<execution_space>(0,num_particle_send),
@@ -71,19 +73,21 @@ void computeParticleDestinations(
 //---------------------------------------------------------------------------//
 // When particles cross a periodic boundary their coordinates must be shifted
 // to represent a new physical location.
-template<class CoordSliceType>
-void shiftPeriodicCoordinates( const Cajita::Domain& domain,
+template<class GlobalGridType, class CoordSliceType>
+void shiftPeriodicCoordinates( const GlobalGridType& global_grid,
                                CoordSliceType& coords )
 {
     using execution_space = typename CoordSliceType::execution_space;
 
+    const auto& global_mesh = global_grid.globalMesh();
+
     for ( int d = 0; d < 3; ++d )
     {
-        if ( domain.isPeriodic(d) )
+        if ( global_grid.isPeriodic(d) )
         {
-            double global_low = domain.lowCorner( d );
-            double global_high = domain.highCorner( d );
-            double global_span = domain.extent( d );
+            double global_low = global_mesh.lowCorner( d );
+            double global_high = global_mesh.highCorner( d );
+            double global_span = global_mesh.extent( d );
 
             Kokkos::parallel_for(
                 "redistribute_periodic_shift",
@@ -110,8 +114,8 @@ void shiftPeriodicCoordinates( const Cajita::Domain& domain,
 
   \param Member index in the AoSoA of the particle coordinates.
  */
-template<class ParticleContainer, std::size_t CoordIndex>
-void redistribute( const Cajita::Block& block,
+template<class BlockType, class ParticleContainer, std::size_t CoordIndex>
+void redistribute( const BlockType& block,
                    ParticleContainer& particles,
                    std::integral_constant<std::size_t,CoordIndex> )
 {
@@ -159,7 +163,7 @@ void redistribute( const Cajita::Block& block,
     coords = Cabana::slice<CoordIndex>( particles );
 
     // Shift the particle coordinates for movement across periodic boundaries.
-    shiftPeriodicCoordinates( block.globalGrid().domain(), coords );
+    shiftPeriodicCoordinates( block.globalGrid(), coords );
 }
 
 //---------------------------------------------------------------------------//

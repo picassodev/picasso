@@ -19,26 +19,28 @@ namespace Test
 {
 //---------------------------------------------------------------------------//
 void redistributeTest( const Cajita::ManualPartitioner& partitioner,
-                       const std::vector<bool>& is_dim_periodic )
+                       const std::array<bool,3>& is_dim_periodic )
 {
     // Create the global grid.
     double cell_size = 0.23;
-    std::vector<int> global_num_cell = { 22, 19, 21 };
-    std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
-    std::vector<double> global_high_corner =
+    std::array<int,3> global_num_cell = { 22, 19, 21 };
+    std::array<double,3> global_low_corner = { 1.2, 3.3, -2.8 };
+    std::array<double,3> global_high_corner =
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
+    auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
+                                                        global_high_corner,
+                                                        global_num_cell );
     auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
-                                                 partitioner,
+                                                 global_mesh,
                                                  is_dim_periodic,
-                                                 global_low_corner,
-                                                 global_high_corner,
-                                                 cell_size );
+                                                 partitioner );
 
     // Create local block with a halo of 2.
     const int halo_size = 2;
     auto block = Cajita::createBlock( global_grid, halo_size );
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
 
     // Allocate a maximum number of particles assuming we have a halo on every
     // boundary.
@@ -76,13 +78,13 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
                             {
                                 // Set the coordinates at the cell center.
                                 coords(pid,Dim::I) =
-                                    block->lowCorner(Cajita::Ghost(),Dim::I) +
+                                    local_mesh.lowCorner(Cajita::Ghost(),Dim::I) +
                                     (i + 0.5) * cell_size;
                                 coords(pid,Dim::J) =
-                                    block->lowCorner(Cajita::Ghost(),Dim::J) +
+                                    local_mesh.lowCorner(Cajita::Ghost(),Dim::J) +
                                     (j + 0.5) * cell_size;
                                 coords(pid,Dim::K) =
-                                    block->lowCorner(Cajita::Ghost(),Dim::K) +
+                                    local_mesh.lowCorner(Cajita::Ghost(),Dim::K) +
                                     (k + 0.5) * cell_size;
 
                                 // Set the linear ids as the linear rank of
@@ -122,12 +124,12 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
         EXPECT_EQ( linear_ids(p), global_grid->blockId() );
 
     // Check that all of the particles are now in the local domain.
-    double low_c[3] = { block->lowCorner( Cajita::Own(), Dim::I ),
-                        block->lowCorner( Cajita::Own(), Dim::J ),
-                        block->lowCorner( Cajita::Own(), Dim::K ) };
-    double high_c[3] = { block->highCorner( Cajita::Own(), Dim::I ),
-                         block->highCorner( Cajita::Own(), Dim::J ),
-                         block->highCorner( Cajita::Own(), Dim::K ) };
+    double low_c[3] = { local_mesh.lowCorner( Cajita::Own(), Dim::I ),
+                        local_mesh.lowCorner( Cajita::Own(), Dim::J ),
+                        local_mesh.lowCorner( Cajita::Own(), Dim::K ) };
+    double high_c[3] = { local_mesh.highCorner( Cajita::Own(), Dim::I ),
+                         local_mesh.highCorner( Cajita::Own(), Dim::J ),
+                         local_mesh.highCorner( Cajita::Own(), Dim::K ) };
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
         {
@@ -142,26 +144,28 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
 // halo so no communication should occur. This ensures the graph communication
 // works when some neighbors get no data.
 void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
-                    const std::vector<bool>& is_dim_periodic )
+                    const std::array<bool,3>& is_dim_periodic )
 {
     // Create the global grid.
     double cell_size = 0.23;
-    std::vector<int> global_num_cell = { 22, 19, 21 };
-    std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
-    std::vector<double> global_high_corner =
+    std::array<int,3> global_num_cell = { 22, 19, 21 };
+    std::array<double,3> global_low_corner = { 1.2, 3.3, -2.8 };
+    std::array<double,3> global_high_corner =
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
+    auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
+                                                        global_high_corner,
+                                                        global_num_cell );
     auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
-                                                 partitioner,
+                                                 global_mesh,
                                                  is_dim_periodic,
-                                                 global_low_corner,
-                                                 global_high_corner,
-                                                 cell_size );
+                                                 partitioner );
 
     // Get the local block with a halo of 2.
     const int halo_size = 2;
     auto block = Cajita::createBlock( global_grid, halo_size );
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
 
     // Allocate particles
     auto owned_cell_space =
@@ -181,13 +185,13 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
             {
                 // Set the coordinates at the cell center.
                 coords(pid,Dim::I) =
-                    block->lowCorner(Cajita::Own(),Dim::I) +
+                    local_mesh.lowCorner(Cajita::Own(),Dim::I) +
                     (i + 0.5) * cell_size;
                 coords(pid,Dim::J) =
-                    block->lowCorner(Cajita::Own(),Dim::J) +
+                    local_mesh.lowCorner(Cajita::Own(),Dim::J) +
                     (j + 0.5) * cell_size;
                 coords(pid,Dim::K) =
-                    block->lowCorner(Cajita::Own(),Dim::K) +
+                    local_mesh.lowCorner(Cajita::Own(),Dim::K) +
                     (k + 0.5) * cell_size;
 
                 // Set the linear rank
@@ -221,12 +225,12 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
         EXPECT_EQ( linear_ids(p), global_grid->blockId() );
 
     // Check that all of the particles are now in the local domain.
-    double low_c[3] = { block->lowCorner( Cajita::Own(), Dim::I ),
-                        block->lowCorner( Cajita::Own(), Dim::J ),
-                        block->lowCorner( Cajita::Own(), Dim::K ) };
-    double high_c[3] = { block->highCorner( Cajita::Own(), Dim::I ),
-                         block->highCorner( Cajita::Own(), Dim::J ),
-                         block->highCorner( Cajita::Own(), Dim::K ) };
+    double low_c[3] = { local_mesh.lowCorner( Cajita::Own(), Dim::I ),
+                        local_mesh.lowCorner( Cajita::Own(), Dim::J ),
+                        local_mesh.lowCorner( Cajita::Own(), Dim::K ) };
+    double high_c[3] = { local_mesh.highCorner( Cajita::Own(), Dim::I ),
+                         local_mesh.highCorner( Cajita::Own(), Dim::J ),
+                         local_mesh.highCorner( Cajita::Own(), Dim::K ) };
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
         {
@@ -243,12 +247,12 @@ TEST( TEST_CATEGORY, not_periodic_test )
     // Let MPI compute the partitioning for this test.
     int comm_size;
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
+    std::array<int,3> ranks_per_dim = {0,0,0};
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
     Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Boundaries are not periodic.
-    std::vector<bool> is_dim_periodic = {false,false,false};
+    std::array<bool,3> is_dim_periodic = {false,false,false};
 
     // Test with different block configurations to make sure all the
     // dimensions get partitioned even at small numbers of ranks.
@@ -273,12 +277,12 @@ TEST( TEST_CATEGORY, periodic_test )
     // Let MPI compute the partitioning for this test.
     int comm_size;
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
+    std::array<int,3> ranks_per_dim = {0,0,0};
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
     Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Every boundary is periodic
-    std::vector<bool> is_dim_periodic = {true,true,true};
+    std::array<bool,3> is_dim_periodic = {true,true,true};
 
     // Test with different block configurations to make sure all the
     // dimensions get partitioned even at small numbers of ranks.
@@ -303,12 +307,12 @@ TEST( TEST_CATEGORY, local_only_test )
     // Let MPI compute the partitioning for this test.
     int comm_size;
     MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
-    std::vector<int> ranks_per_dim( 3 );
+    std::array<int,3> ranks_per_dim = {0,0,0};
     MPI_Dims_create( comm_size, 3, ranks_per_dim.data() );
     Cajita::ManualPartitioner partitioner( ranks_per_dim );
 
     // Every boundary is periodic
-    std::vector<bool> is_dim_periodic = {true,true,true};
+    std::array<bool,3> is_dim_periodic = {true,true,true};
     localOnlyTest( partitioner, is_dim_periodic );
 }
 

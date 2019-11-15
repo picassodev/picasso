@@ -27,22 +27,24 @@ void writeTest()
 
     // Create the global grid.
     double cell_size = 0.23;
-    std::vector<int> global_num_cell = { 22, 19, 21 };
-    std::vector<double> global_low_corner = { 1.2, 3.3, -2.8 };
-    std::vector<double> global_high_corner =
+    std::array<int,3> global_num_cell = { 22, 19, 21 };
+    std::array<double,3> global_low_corner = { 1.2, 3.3, -2.8 };
+    std::array<double,3> global_high_corner =
         { global_low_corner[0] + cell_size * global_num_cell[0],
           global_low_corner[1] + cell_size * global_num_cell[1],
           global_low_corner[2] + cell_size * global_num_cell[2] };
-    std::vector<bool> is_dim_periodic = {false,false,false};
-    auto global_grid = Cajita::createGlobalGrid( MPI_COMM_WORLD,
-                                                 partitioner,
-                                                 is_dim_periodic,
-                                                 global_low_corner,
-                                                 global_high_corner,
-                                                 cell_size );
+    auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
+                                                        global_high_corner,
+                                                        global_num_cell );
+    std::array<bool,3> is_dim_periodic = {false,false,false};
+    auto global_grid = createGlobalGrid( MPI_COMM_WORLD,
+                                         global_mesh,
+                                         is_dim_periodic,
+                                         partitioner );
 
     // Allocate particles in the center of each cell.
     auto block = Cajita::createBlock( global_grid, 0 );
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
     auto owned_cell_space =
         block->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
     int num_particle = owned_cell_space.size();
@@ -72,11 +74,11 @@ void writeTest()
             for ( int k = 0; k < owned_cell_space.extent(Dim::K); ++k, ++pid )
             {
                 coords_mirror( pid, Dim::I ) =
-                    block->lowCorner(Cajita::Own(),Dim::I) + (i+0.5) * cell_size;
+                    local_mesh.lowCorner(Cajita::Own(),Dim::I) + (i+0.5) * cell_size;
                 coords_mirror( pid, Dim::J ) =
-                    block->lowCorner(Cajita::Own(),Dim::J) + (j+0.5) * cell_size;
+                    local_mesh.lowCorner(Cajita::Own(),Dim::J) + (j+0.5) * cell_size;
                 coords_mirror( pid, Dim::K ) =
-                    block->lowCorner(Cajita::Own(),Dim::K) + (k+0.5) * cell_size;
+                    local_mesh.lowCorner(Cajita::Own(),Dim::K) + (k+0.5) * cell_size;
 
                 ids_mirror( pid ) = i + i_off + j + j_off + k + k_off;
 
