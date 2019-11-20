@@ -39,7 +39,7 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
 
     // Create local block with a halo of 2.
     const int halo_size = 2;
-    auto block = Cajita::createBlock( global_grid, halo_size );
+    auto block = Cajita::createLocalGrid( global_grid, halo_size );
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
 
     // Allocate a maximum number of particles assuming we have a halo on every
@@ -164,7 +164,7 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
 
     // Get the local block with a halo of 2.
     const int halo_size = 2;
-    auto block = Cajita::createBlock( global_grid, halo_size );
+    auto block = Cajita::createLocalGrid( global_grid, halo_size );
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
 
     // Allocate particles

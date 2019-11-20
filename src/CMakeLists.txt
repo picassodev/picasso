@@ -28,3 +28,5 @@ target_include_directories(harlow
   )
 
 add_subdirectory(unit_test)
+
+add_subdirectory(examples)

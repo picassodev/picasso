@@ -43,7 +43,7 @@ void writeTest()
                                          partitioner );
 
     // Allocate particles in the center of each cell.
-    auto block = Cajita::createBlock( global_grid, 0 );
+    auto block = Cajita::createLocalGrid( global_grid, 0 );
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( *block );
     auto owned_cell_space =
         block->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
