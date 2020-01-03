@@ -1,11 +1,10 @@
 #ifndef HARLOW_DENSELINEARALGEBRA_HPP
 #define HARLOW_DENSELINEARALGEBRA_HPP
 
-#include <Harlow_Tolerance.hpp>
-
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
+#include <limits>
 
 namespace Harlow
 {
@@ -179,7 +178,7 @@ void eigen( const Real a[3][3], Real s[3], Real X[3][3] )
 
         }
 
-    } while(fabs(theta) >= 10.0*Tolerance<Real>::tol);
+    } while(fabs(theta) >= 10.0*std::numeric_limits<Real>::epsilon());
 
    // Descending order for eigenvalue and corresponding eigenvector
    Real temp;
@@ -241,7 +240,7 @@ void svd( const Real A[3][3], Real U[3][3], Real S[3], Real V[3][3])
 {
    // if matrix A is singular, throw error and stop simulation
    Real det_A = determinant(A);
-   if( fabs(det_A) <= Tolerance<Real>::tol)
+   if( fabs(det_A) <= std::numeric_limits<Real>::epsilon())
       Kokkos::abort("Error, deformation gradient matrix cannot be singular");
 
    // A^T

@@ -12,7 +12,7 @@ set(gtest_args --gtest_color=yes)
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
-foreach(_test Version Splines )
+foreach(_test Version )
   add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
   target_link_libraries(${_test}_test harlow gtest)
   add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)
@@ -71,5 +71,5 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES ParticleWorkset DenseLinearAlgebra)
+Harlow_add_tests(NAMES DenseLinearAlgebra)
 Harlow_add_tests(MPI NAMES ParticleCommunication SiloParticleWriter)

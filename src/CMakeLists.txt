@@ -3,9 +3,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 set(HEADERS
   Harlow_DenseLinearAlgebra.hpp
   Harlow_ParticleCommunication.hpp
-  Harlow_ParticleWorkset.hpp
   Harlow_SiloParticleWriter.hpp
-  Harlow_Splines.hpp
   Harlow_Types.hpp
   Harlow_Version.hpp
   )
@@ -30,3 +28,5 @@ target_include_directories(harlow
   )
 
 add_subdirectory(unit_test)
+
+add_subdirectory(examples)
