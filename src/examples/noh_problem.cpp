@@ -227,10 +227,6 @@ void nohProblem( const double cell_size,
             return (gamma - 1.0) * energy * density;
         };
 
-    // Get data for particle/grid operations.
-    double rdx = 1.0 / cell_size;
-    using Basis = Cajita::Spline<2>;
-
     // Get grid views.
     auto m_v_view = m_v->view();
     auto mu_v_view = mu_v->view();
@@ -273,16 +269,13 @@ void nohProblem( const double cell_size,
             Kokkos::RangePolicy<execution_space>(0,local_num_p),
             KOKKOS_LAMBDA( const int p ){
 
-                // Update the logical position, stencil, and weights.
-                double lx[3];
-                int stencil[3][Basis::num_knot];
-                double w[3][Basis::num_knot];
-                for ( int d = 0; d < 3; ++d )
-                {
-                    lx[d] = Basis::mapToLogicalGrid( x_p(p,d), rdx, low_node[d] );
-                    Basis::stencil( lx[d], stencil[d] );
-                    Basis::value( lx[d], w[d] );
-                }
+                // Get the particle coordinates.
+                double px[3] = { x_p(p,Dim::I), x_p(p,Dim::J), x_p(p,Dim::K) };
+
+                // Evaluate the spline.
+                using sd_type = Cajita::SplineData<double,2,Cajita::Node>;
+                sd_type sd;
+                Cajita::evaluateSpline( local_mesh, px, sd );
 
                 // Access scatter view data.
                 auto m_v_sv_access = m_v_sv.access();
@@ -291,30 +284,30 @@ void nohProblem( const double cell_size,
 
                 // Update grid values (P2G).
                 double wm;
-                for ( int i = 0; i < Basis::num_knot; ++i )
-                    for ( int j = 0; j < Basis::num_knot; ++j )
-                        for ( int k = 0; k < Basis::num_knot; ++k )
+                for ( int i = 0; i < sd_type::num_knot; ++i )
+                    for ( int j = 0; j < sd_type::num_knot; ++j )
+                        for ( int k = 0; k < sd_type::num_knot; ++k )
                         {
                             // Node weight times mass
-                            wm = m_p(p) * w[Dim::I][i] * w[Dim::J][j] * w[Dim::K][k];
+                            wm = m_p(p) * sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
                             // Deposit mass
-                            m_v_sv_access(stencil[Dim::I][i],
-                                          stencil[Dim::J][j],
-                                          stencil[Dim::K][k],
+                            m_v_sv_access(sd.s[Dim::I][i],
+                                          sd.s[Dim::J][j],
+                                          sd.s[Dim::K][k],
                                           0 ) += wm;
 
                             // Deposit energy.
-                            me_v_sv_access(stencil[Dim::I][i],
-                                           stencil[Dim::J][j],
-                                           stencil[Dim::K][k],
+                            me_v_sv_access(sd.s[Dim::I][i],
+                                           sd.s[Dim::J][j],
+                                           sd.s[Dim::K][k],
                                            0) += wm * e_p(p);
 
                             // Deposit momentum
                             for ( int d = 0; d < 3; ++d )
-                                mu_v_sv_access(stencil[Dim::I][i],
-                                               stencil[Dim::J][j],
-                                               stencil[Dim::K][k],
+                                mu_v_sv_access(sd.s[Dim::I][i],
+                                               sd.s[Dim::J][j],
+                                               sd.s[Dim::K][k],
                                                d) +=
                                     wm * u_p(p,d);
                         }
@@ -402,18 +395,14 @@ void nohProblem( const double cell_size,
             Kokkos::RangePolicy<execution_space>(0,local_num_p),
             KOKKOS_LAMBDA( const int p ){
 
-                // Update the logical position, stencil, and weights.
-                double lx[3];
-                int stencil[3][Basis::num_knot];
-                double w[3][Basis::num_knot];
-                double gw[3][Basis::num_knot];
-                for ( int d = 0; d < 3; ++d )
-                {
-                    lx[d] = Basis::mapToLogicalGrid( x_p(p,d), rdx, low_node[d] );
-                    Basis::stencil( lx[d], stencil[d] );
-                    Basis::value( lx[d], w[d] );
-                    Basis::gradient( lx[d], rdx, gw[d] );
-                }
+
+                // Get the particle coordinates.
+                double px[3] = { x_p(p,Dim::I), x_p(p,Dim::J), x_p(p,Dim::K) };
+
+                // Evaluate the spline.
+                using sd_type = Cajita::SplineData<double,2,Cajita::Node>;
+                sd_type sd;
+                Cajita::evaluateSpline( local_mesh, px, sd );
 
                 // Update particle values (G2P).
                 double weight;
@@ -422,65 +411,65 @@ void nohProblem( const double cell_size,
                 double grad_u[3][3] = {{0.0,0.0,0.0},
                                        {0.0,0.0,0.0},
                                        {0.0,0.0,0.0}};
-                for ( int i = 0; i < Basis::num_knot; ++i )
-                    for ( int j = 0; j < Basis::num_knot; ++j )
-                        for ( int k = 0; k < Basis::num_knot; ++k )
+                for ( int i = 0; i < sd_type::num_knot; ++i )
+                    for ( int j = 0; j < sd_type::num_knot; ++j )
+                        for ( int k = 0; k < sd_type::num_knot; ++k )
                         {
                             // Node weight.
                             weight =
-                                w[Dim::I][i] * w[Dim::J][j] * w[Dim::K][k];
+                                sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
                             // Node gradient.
                             grad_weight[Dim::I] =
-                                gw[Dim::I][i] * w[Dim::J][j] * w[Dim::K][k];
+                                sd.g[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
                             grad_weight[Dim::J] =
-                                w[Dim::I][i] * gw[Dim::J][j] * w[Dim::K][k];
+                                sd.w[Dim::I][i] * sd.g[Dim::J][j] * sd.w[Dim::K][k];
                             grad_weight[Dim::K] =
-                                w[Dim::I][i] * w[Dim::J][j] * gw[Dim::K][k];
+                                sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.g[Dim::K][k];
 
                             for ( int d = 0; d < 3; ++d )
                             {
                                 // Update position
                                 x_p(p,d) += delta_t *
                                             weight *
-                                            u_v_theta_view(stencil[Dim::I][i],
-                                                           stencil[Dim::J][j],
-                                                           stencil[Dim::K][k],
+                                            u_v_theta_view(sd.s[Dim::I][i],
+                                                           sd.s[Dim::J][j],
+                                                           sd.s[Dim::K][k],
                                                            d );
 
                                 // Update velocity.
-                                u_p(p,d) += weight * ( u_v_new_view(stencil[Dim::I][i],
-                                                                    stencil[Dim::J][j],
-                                                                    stencil[Dim::K][k],
+                                u_p(p,d) += weight * ( u_v_new_view(sd.s[Dim::I][i],
+                                                                    sd.s[Dim::J][j],
+                                                                    sd.s[Dim::K][k],
                                                                     d ) -
-                                                       u_v_old_view(stencil[Dim::I][i],
-                                                                    stencil[Dim::J][j],
-                                                                    stencil[Dim::K][k],
+                                                       u_v_old_view(sd.s[Dim::I][i],
+                                                                    sd.s[Dim::J][j],
+                                                                    sd.s[Dim::K][k],
                                                                     d) );
 
                                 // Update specific internal energy.
-                                e_p(p) += weight * ( e_v_new_view(stencil[Dim::I][i],
-                                                                  stencil[Dim::J][j],
-                                                                  stencil[Dim::K][k],
+                                e_p(p) += weight * ( e_v_new_view(sd.s[Dim::I][i],
+                                                                  sd.s[Dim::J][j],
+                                                                  sd.s[Dim::K][k],
                                                                   d ) -
-                                                     e_v_old_view(stencil[Dim::I][i],
-                                                                  stencil[Dim::J][j],
-                                                                  stencil[Dim::K][k],
+                                                     e_v_old_view(sd.s[Dim::I][i],
+                                                                  sd.s[Dim::J][j],
+                                                                  sd.s[Dim::K][k],
                                                                   d) );
 
                                 // Velocity gradient
                                 for ( int d1 = 0; d1 < 3; ++d1 )
                                     grad_u[d][d1] += grad_weight[d] *
-                                                     u_v_theta_view(stencil[Dim::I][i],
-                                                                    stencil[Dim::J][j],
-                                                                    stencil[Dim::K][k],
+                                                     u_v_theta_view(sd.s[Dim::I][i],
+                                                                    sd.s[Dim::J][j],
+                                                                    sd.s[Dim::K][k],
                                                                     d1 );
 
                                 // Velocity divergence.
                                 div_u += grad_weight[d] *
-                                         u_v_theta_view(stencil[Dim::I][i],
-                                                        stencil[Dim::J][j],
-                                                        stencil[Dim::K][k],
+                                         u_v_theta_view(sd.s[Dim::I][i],
+                                                        sd.s[Dim::J][j],
+                                                        sd.s[Dim::K][k],
                                                         d );
                             }
                         }
@@ -498,13 +487,7 @@ void nohProblem( const double cell_size,
                 double pv = p_p(p) * J_p(p) * v_p(p);
 
                 // Update the logical position, stencil, and weights.
-                for ( int d = 0; d < 3; ++d )
-                {
-                    lx[d] = Basis::mapToLogicalGrid( x_p(p,d), rdx, low_node[d] );
-                    Basis::stencil( lx[d], stencil[d] );
-                    Basis::value( lx[d], w[d] );
-                    Basis::gradient( lx[d], rdx, gw[d] );
-                }
+                Cajita::evaluateSpline( local_mesh, px, sd );
 
                 // Access scatter view data.
                 auto m_v_sv_access = m_v_sv.access();
@@ -515,56 +498,56 @@ void nohProblem( const double cell_size,
 
                 // Update grid values (P2G).
                 double wm;
-                for ( int i = 0; i < Basis::num_knot; ++i )
-                    for ( int j = 0; j < Basis::num_knot; ++j )
-                        for ( int k = 0; k < Basis::num_knot; ++k )
+                for ( int i = 0; i < sd_type::num_knot; ++i )
+                    for ( int j = 0; j < sd_type::num_knot; ++j )
+                        for ( int k = 0; k < sd_type::num_knot; ++k )
                         {
                             // Node weight.
-                            weight = w[Dim::I][i] * w[Dim::J][j] * w[Dim::K][k];
+                            weight = sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
                             // Node weight times mass
                             wm = m_p(p) * weight;
 
                             // Node gradient.
                             grad_weight[Dim::I] =
-                                gw[Dim::I][i] * w[Dim::J][j] * w[Dim::K][k];
+                                sd.g[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
                             grad_weight[Dim::J] =
-                                w[Dim::I][i] * gw[Dim::J][j] * w[Dim::K][k];
+                                sd.w[Dim::I][i] * sd.g[Dim::J][j] * sd.w[Dim::K][k];
                             grad_weight[Dim::K] =
-                                w[Dim::I][i] * w[Dim::J][j] * gw[Dim::K][k];
+                                sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.g[Dim::K][k];
 
                             // Deposit mass
-                            m_v_sv_access(stencil[Dim::I][i],
-                                          stencil[Dim::J][j],
-                                          stencil[Dim::K][k],
+                            m_v_sv_access(sd.s[Dim::I][i],
+                                          sd.s[Dim::J][j],
+                                          sd.s[Dim::K][k],
                                           0 ) += wm;
 
                             // Deposit energy.
-                            me_v_sv_access(stencil[Dim::I][i],
-                                           stencil[Dim::J][j],
-                                           stencil[Dim::K][k],
+                            me_v_sv_access(sd.s[Dim::I][i],
+                                           sd.s[Dim::J][j],
+                                           sd.s[Dim::K][k],
                                            0 ) += wm * e_p(p);
 
                             for ( int d = 0; d < 3; ++d )
                             {
                                 // Deposit momentum
-                                mu_v_sv_access(stencil[Dim::I][i],
-                                               stencil[Dim::J][j],
-                                               stencil[Dim::K][k],
+                                mu_v_sv_access(sd.s[Dim::I][i],
+                                               sd.s[Dim::J][j],
+                                               sd.s[Dim::K][k],
                                                d) +=
                                     wm * u_p(p,d);
 
                                 // Deposit force
-                                f_v_sv_access(stencil[Dim::I][i],
-                                              stencil[Dim::J][j],
-                                              stencil[Dim::K][k],
+                                f_v_sv_access(sd.s[Dim::I][i],
+                                              sd.s[Dim::J][j],
+                                              sd.s[Dim::K][k],
                                               d) +=
                                     grad_weight[d] * pv;
 
                                 // Deposit PdV work.
-                                pdv_v_sv_access(stencil[Dim::I][i],
-                                                stencil[Dim::J][j],
-                                                stencil[Dim::K][k],
+                                pdv_v_sv_access(sd.s[Dim::I][i],
+                                                sd.s[Dim::J][j],
+                                                sd.s[Dim::K][k],
                                                 0 ) += weight * pv * div_u;
 
                             }
