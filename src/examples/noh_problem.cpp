@@ -404,6 +404,32 @@ void nohProblem( const double cell_size,
                 sd_type sd;
                 Cajita::evaluateSpline( local_mesh, px, sd );
 
+                // Project velocities to particle
+                double u_p_theta[3] = {0.0,0.0,0.0};
+                Cajita::G2P::value( u_v_theta_view, sd, u_p_theta );
+                double u_p_old[3] = {0.0,0.0,0.0};
+                Cajita::G2P::value( u_v_old_view, sd, u_p_old );
+                double u_p_new[3] = {0.0,0.0,0.0};
+                Cajita::G2P::value( u_v_new_view, sd, u_p_new );
+
+                // Project velocity gradient
+                double grad_u_p[3][3] = {{0.0,0.0,0.0},
+                                         {0.0,0.0,0.0},
+                                         {0.0,0.0,0.0}};
+                Cajita::G2P::gradient( u_v_theta_view, sd, grad_u_p );
+
+                // Project velocity divergence
+                double div_u_p = 0.0;
+                Cajita::G2P::divergence( u_v_theta_view, sd, div_u_p );
+
+                // Update position
+                for ( int d = 0; d < 3; ++d )
+                    x_p(p,d) += delta_t * u_p_theta[d];
+
+                // Update velocity.
+                for ( int d = 0; d < 3; ++d )
+                    u_p(p,d) += u_p_new(p,d) - u_p_old(p,d);
+
                 // Update particle values (G2P).
                 double weight;
                 double grad_weight[3];
@@ -436,6 +462,7 @@ void nohProblem( const double cell_size,
                                                            sd.s[Dim::J][j],
                                                            sd.s[Dim::K][k],
                                                            d );
+                                px[d] = x_p(p,d);
 
                                 // Update velocity.
                                 u_p(p,d) += weight * ( u_v_new_view(sd.s[Dim::I][i],
