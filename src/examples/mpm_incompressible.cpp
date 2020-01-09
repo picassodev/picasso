@@ -39,7 +39,8 @@ struct TracerField
 void solve( const int num_cell,
             const int ppc,
             const int tpc,
-            const double t_final )
+            const double t_final,
+            const double delta_t )
 {
     // Fluid density.
     double density = 1.0;
@@ -268,9 +269,17 @@ void solve( const int num_cell,
 
                 // Apply velocity boundary condition.
                 if ( 0 == i || node_space.max(Dim::I) - 1 == i )
+                {
                     u_i_view(i,j,k,Dim::I) = 0.0;
-                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
                     u_i_view(i,j,k,Dim::J) = 0.0;
+                    u_i_view(i,j,k,Dim::K) = 0.0;
+                }
+                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
+                {
+                    u_i_view(i,j,k,Dim::I) = 0.0;
+                    u_i_view(i,j,k,Dim::J) = 0.0;
+                    u_i_view(i,j,k,Dim::K) = 0.0;
+                }
             });
     }
 
@@ -285,13 +294,13 @@ void solve( const int num_cell,
 
     // Create a 7-point 3d laplacian stencil.
     std::vector<std::array<int,3> > stencil =
-        { {0,0,0}, {-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
+        { {0,0,0}, {1,0,0}, {0,1,0}, {0,0,1} };
     solver->setMatrixStencil( stencil, true );
 
     // Cajita::Create the laplacian matrix entries. The stencil is defined
     // over cells.
     int rdx_2 = 1.0 / (cell_size * cell_size);
-    auto matrix_entry_layout = Cajita::createArrayLayout( local_grid, 7, Cajita::Cell() );
+    auto matrix_entry_layout = Cajita::createArrayLayout( local_grid, 4, Cajita::Cell() );
     auto matrix_entries = Cajita::createArray<double,device_type>(
         "matrix_entries", matrix_entry_layout );
     auto entry_view = matrix_entries->view();
@@ -303,9 +312,6 @@ void solve( const int num_cell,
             entry_view(i,j,k,1) = rdx_2;
             entry_view(i,j,k,2) = rdx_2;
             entry_view(i,j,k,3) = rdx_2;
-            entry_view(i,j,k,4) = rdx_2;
-            entry_view(i,j,k,5) = rdx_2;
-            entry_view(i,j,k,6) = rdx_2;
         } );
 
     solver->setMatrixValues( *matrix_entries );
@@ -323,8 +329,6 @@ void solve( const int num_cell,
     solver->setup();
 
     // Time step.
-    double vmax = 0.5 * pi;
-    double delta_t = cell_size / (2.0 * vmax);
     int num_step = t_final / delta_t;
     double time = 0.0;
     for ( int t = 0; t < num_step; ++t )
@@ -418,9 +422,17 @@ void solve( const int num_cell,
 
                 // Apply velocity boundary condition.
                 if ( 0 == i || node_space.max(Dim::I) - 1 == i )
+                {
                     u_i_view(i,j,k,Dim::I) = 0.0;
-                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
                     u_i_view(i,j,k,Dim::J) = 0.0;
+                    u_i_view(i,j,k,Dim::K) = 0.0;
+                }
+                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
+                {
+                    u_i_view(i,j,k,Dim::I) = 0.0;
+                    u_i_view(i,j,k,Dim::J) = 0.0;
+                    u_i_view(i,j,k,Dim::K) = 0.0;
+                }
             });
         velocity_halo_i->gather( *u_i );
 
@@ -486,6 +498,7 @@ void solve( const int num_cell,
         num_tracer = tracers.size();
 
         // Compute divergence.
+        velocity_halo_i->gather( *u_i );
         Kokkos::parallel_for(
             "pressure_rhs",
             Cajita::createExecutionPolicy( cell_space, execution_space() ),
@@ -529,8 +542,11 @@ int main( int argc, char* argv[] )
     // end time.
     double t_final = std::atof( argv[4] );
 
+    // time step size
+    double delta_t = std::atof( argv[5] );
+
     // run the problem.
-    solve( num_cell, ppc, tpc, t_final );
+    solve( num_cell, ppc, tpc, t_final, delta_t );
 
     Kokkos::finalize();
 
