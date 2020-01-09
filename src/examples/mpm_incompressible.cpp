@@ -59,7 +59,7 @@ void solve( const int num_cell,
         Cajita::SplineData<double,spline_order,Cajita::Node>;
 
     // Number of polypic modes
-    const int num_mode = 8;
+    const int num_mode = 4;
 
     // Build the global mesh.
     const double cell_size = 2.0 / num_cell;
@@ -156,7 +156,8 @@ void solve( const int num_cell,
     // Initialize particle positions and tracers. Initialize them randomly in the cell.
     // Also initialize particle masses and grid velocity.
     {
-        auto u_i_sv = Kokkos::Experimental::create_scatter_view( u_i_view );
+        auto m_i_sv = Kokkos::Experimental::create_scatter_view( m_i_view );
+        auto mu_i_sv = Kokkos::Experimental::create_scatter_view( mu_i_view );
         uint64_t seed = global_grid->blockId() + ( 19383747 % (global_grid->blockId() + 1) );
         using rnd_type = Kokkos::Random_XorShift64_Pool<device_type>;
         rnd_type pool;
@@ -208,21 +209,22 @@ void solve( const int num_cell,
                     // Particle mass.
                     m_p(pid) = p_mass;
 
-                    // Particle velocity. Initial velocity is a vortex sheet
+                    // Particle momentum. Initial velocity is a vortex sheet
                     // moving at 1 radian per second.
-                    double u_p[3] = {0.0,0.0,0.0};
+                    double mu_p[3] = {0.0,0.0,0.0};
                     double r = px[Dim::I] * px[Dim::I] + px[Dim::J] * px[Dim::J];
                     if ( r <= 0.25 )
                     {
-                        u_p[Dim::I] = -px[Dim::J] / (pi*pi);
-                        u_p[Dim::J] = px[Dim::I] / (pi*pi);
+                        mu_p[Dim::I] = -p_mass * px[Dim::J] * pi;
+                        mu_p[Dim::J] = p_mass * px[Dim::I] * pi;
                     }
 
-                    // Interpolate initial velocity to nodes.
+                    // Interpolate initial momentum and mass to nodes.
                     using sd_type = Cajita::SplineData<double,spline_order,Cajita::Node>;
                     sd_type sd;
                     Cajita::evaluateSpline( local_mesh, px, sd );
-                    Cajita::P2G::value( u_p, sd, u_i_sv );
+                    Cajita::P2G::value( mu_p, sd, mu_i_sv );
+                    Cajita::P2G::value( p_mass, sd, m_i_sv );
                 }
 
                 // Create tracers.
@@ -247,8 +249,29 @@ void solve( const int num_cell,
                         c_t(tid) = 2;
                 }
             });
-        Kokkos::Experimental::contribute( u_i_view, u_i_sv );
-        velocity_halo_i->scatter( *u_i );
+
+        // Complete the particle-grid scatter to the nodes.
+        Kokkos::Experimental::contribute( m_i_view, m_i_sv );
+        Kokkos::Experimental::contribute( mu_i_view, mu_i_sv );
+        scatter_halo_i->scatter( *scatter_i );
+
+        // Compute grid initial velocity.
+        Kokkos::parallel_for(
+            "compute_initial_grid_velocity",
+            Cajita::createExecutionPolicy( node_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Compute node velocity
+                for ( int d = 0; d < 3; ++d )
+                    u_i_view(i,j,k,d) =
+                        ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,d) / m_i_view(i,j,k,0) : 0.0;
+
+                // Apply velocity boundary condition.
+                if ( 0 == i || node_space.max(Dim::I) - 1 == i )
+                    u_i_view(i,j,k,Dim::I) = 0.0;
+                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
+                    u_i_view(i,j,k,Dim::J) = 0.0;
+            });
     }
 
     // Create a grid solver.
@@ -277,30 +300,12 @@ void solve( const int num_cell,
         createExecutionPolicy( cell_space, execution_space() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             entry_view(i,j,k,0) = -6.0 * rdx_2;
-
-            if ( i >= 1 )
-                entry_view(i,j,k,1) = rdx_2 ;
-            else
-                entry_view(i,j,k,1) = 0.0;
-
-            if ( i < cell_space.max(Dim::I)-1 )
-                entry_view(i,j,k,2) = rdx_2;
-            else
-                entry_view(i,j,k,2) = 0.0;
-
-            if ( j >= 1 )
-                entry_view(i,j,k,3) = rdx_2;
-            else
-                entry_view(i,j,k,3) = 0.0;
-
-            if ( j < cell_space.max(Dim::J)-1 )
-                entry_view(i,j,k,4) = rdx_2;
-            else
-                entry_view(i,j,k,4) = 0.0;
-
+            entry_view(i,j,k,1) = rdx_2;
+            entry_view(i,j,k,2) = rdx_2;
+            entry_view(i,j,k,3) = rdx_2;
+            entry_view(i,j,k,4) = rdx_2;
             entry_view(i,j,k,5) = rdx_2;
             entry_view(i,j,k,6) = rdx_2;
-
         } );
 
     solver->setMatrixValues( *matrix_entries );
@@ -392,7 +397,7 @@ void solve( const int num_cell,
                 Cajita::P2G::value( m_p(p), sd, m_i_sv );
 
                 // Interpolate particle momentum to the grid.
-                Harlow::PolyPIC::p2g<num_mode>( m_p(p), u_p, sd, local_mesh, delta_t, mu_i_sv );
+                Harlow::PolyPIC::p2g<num_mode>( m_p(p), u_p, sd, delta_t, mu_i_sv );
             });
 
         // Complete the particle-grid scatter to the nodes.
@@ -479,6 +484,26 @@ void solve( const int num_cell,
         Harlow::ParticleCommunication::redistribute(
             *local_grid, tracers, std::integral_constant<std::size_t,TracerField::x>() );
         num_tracer = tracers.size();
+
+        // Compute divergence.
+        Kokkos::parallel_for(
+            "pressure_rhs",
+            Cajita::createExecutionPolicy( cell_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Get the cell center.
+                int c[3] = {i,j,k};
+                double cx[3];
+                local_mesh.coordinates( Cajita::Cell(), c, cx );
+
+                // Evaluate the spline at the cell center.
+                sd_type sd;
+                Cajita::evaluateSpline( local_mesh, cx, sd );
+
+                // Project divergence to the cell center.
+                Cajita::G2P::divergence( u_i_view, sd, du_c_view(i,j,k,0) );
+            });
+        Cajita::BovWriter::writeTimeStep( t, time, *du_c );
 
         // Update time
         time += delta_t;

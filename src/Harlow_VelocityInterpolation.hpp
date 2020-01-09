@@ -28,6 +28,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,0>,
                          const Scalar[3],
+                         const Scalar,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -47,6 +48,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,1>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -59,8 +61,8 @@ void polyPicModeWeights( std::integral_constant<int,1>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights( std::integral_constant<int,0>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[1] = mode_weights[0] * distance[Dim::I] * 4.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[1] = mode_weights[0] * distance[Dim::I] * 4.0 * rdx_2;
 }
 
 // Mode 2.
@@ -68,6 +70,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,2>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -80,8 +83,8 @@ void polyPicModeWeights( std::integral_constant<int,2>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights( std::integral_constant<int,1>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[2] = mode_weights[0] * distance[Dim::J] * 4.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[2] = mode_weights[0] * distance[Dim::J] * 4.0 * rdx_2;
 }
 
 // Mode 3.
@@ -89,6 +92,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,3>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -101,8 +105,8 @@ void polyPicModeWeights( std::integral_constant<int,3>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights( std::integral_constant<int,2>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[3] = mode_weights[0] * distance[Dim::K] * 4.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[3] = mode_weights[0] * distance[Dim::K] * 4.0 * rdx_2;
 }
 
 // Mode 4.
@@ -110,6 +114,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,4>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -122,8 +127,8 @@ void polyPicModeWeights( std::integral_constant<int,4>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights( std::integral_constant<int,3>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[4] = mode_weights[0] * distance[Dim::I] * distance[Dim::J] * 16.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[4] = mode_weights[0] * distance[Dim::I] * distance[Dim::J] * 16.0 * rdx_2 * rdx_2;
 }
 
 // Mode 5.
@@ -131,6 +136,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,5>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -143,8 +149,8 @@ void polyPicModeWeights( std::integral_constant<int,5>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights(std::integral_constant<int,4>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[5] = mode_weights[0] * distance[Dim::J] * distance[Dim::K] * 16.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[5] = mode_weights[0] * distance[Dim::J] * distance[Dim::K] * 16.0 * rdx_2 * rdx_2;
 }
 
 // Mode 6.
@@ -152,6 +158,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,6>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -164,8 +171,8 @@ void polyPicModeWeights( std::integral_constant<int,6>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights(std::integral_constant<int,5>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[6] = mode_weights[0] * distance[Dim::I] * distance[Dim::K] * 16.0;
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+    mode_weights[6] = mode_weights[0] * distance[Dim::I] * distance[Dim::K] * 16.0 * rdx_2 * rdx_2;
 }
 
 // Mode 7.
@@ -173,6 +180,7 @@ template<class Scalar>
 KOKKOS_INLINE_FUNCTION
 void polyPicModeWeights( std::integral_constant<int,7>,
                          const Scalar distance[3],
+                         const Scalar rdx_2,
                          const Scalar wi[3],
                          const Scalar wj[3],
                          const Scalar wk[3],
@@ -185,412 +193,412 @@ void polyPicModeWeights( std::integral_constant<int,7>,
                          Scalar* mode_weights )
 {
     polyPicModeWeights(std::integral_constant<int,6>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+        distance, rdx_2, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
     mode_weights[7] = mode_weights[0] *
-                      distance[Dim::I] * distance[Dim::J] * distance[Dim::K] * 64.0;
+                      distance[Dim::I] * distance[Dim::J] * distance[Dim::K] * 64.0 * rdx_2 * rdx_2 * rdx_2;
 }
 
-// Mode 8.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,8>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,7>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[8]  = wj[j] * wk[k] * mod_i * 4.0;
-}
+// // Mode 8.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,8>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,7>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[8]  = wj[j] * wk[k] * mod_i * 4.0;
+// }
 
-// Mode 9.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,9>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,8>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[9]  = wi[i] * wk[k] * mod_j * 4.0;
-}
+// // Mode 9.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,9>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,8>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[9]  = wi[i] * wk[k] * mod_j * 4.0;
+// }
 
-// Mode 10.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,10>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,9>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[10] = wi[i] * wj[j] * mod_k * 4.0;
-}
+// // Mode 10.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,10>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,9>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[10] = wi[i] * wj[j] * mod_k * 4.0;
+// }
 
-// Mode 11.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,11>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,10>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[11] = wk[k] * mod_i * mod_j * 16.0;
-}
+// // Mode 11.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,11>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,10>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[11] = wk[k] * mod_i * mod_j * 16.0;
+// }
 
-// Mode 12.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,12>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,11>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[12] = wj[j] * mod_i * mod_k * 16.0;
-}
+// // Mode 12.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,12>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,11>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[12] = wj[j] * mod_i * mod_k * 16.0;
+// }
 
-// Mode 13.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,13>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,12>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[13] = wi[i] * mod_j * mod_k * 16.0;
-}
+// // Mode 13.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,13>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,12>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[13] = wi[i] * mod_j * mod_k * 16.0;
+// }
 
-// Mode 14.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,14>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,13>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[14] = mod_i * mod_j * mod_k * 64.0;
-}
+// // Mode 14.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,14>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,13>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[14] = mod_i * mod_j * mod_k * 64.0;
+// }
 
-// Mode 15.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,15>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,14>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[15] = wj[j] * wk[k] * distance[Dim::J] * mod_i * 16.0;
-}
+// // Mode 15.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,15>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,14>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[15] = wj[j] * wk[k] * distance[Dim::J] * mod_i * 16.0;
+// }
 
-// Mode 16.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,16>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,15>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[16] = wj[j] * wk[k] * distance[Dim::K] * mod_i * 16.0;
-}
+// // Mode 16.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,16>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,15>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[16] = wj[j] * wk[k] * distance[Dim::K] * mod_i * 16.0;
+// }
 
-// Mode 17.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,17>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,16>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[17] = wj[j] * wk[k] *
-                       distance[Dim::J] * distance[Dim::K] * mod_i * 64.0;
-}
+// // Mode 17.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,17>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,16>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[17] = wj[j] * wk[k] *
+//                        distance[Dim::J] * distance[Dim::K] * mod_i * 64.0;
+// }
 
-// Mode 18.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,18>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,17>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[18] = wi[i] * wk[k] * distance[Dim::I] * mod_j * 16.0;
-}
+// // Mode 18.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,18>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,17>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[18] = wi[i] * wk[k] * distance[Dim::I] * mod_j * 16.0;
+// }
 
-// Mode 19.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,19>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,18>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[19] = wi[i] * wk[k] * distance[Dim::K] * mod_j * 16.0;
-}
+// // Mode 19.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,19>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,18>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[19] = wi[i] * wk[k] * distance[Dim::K] * mod_j * 16.0;
+// }
 
-// Mode 20.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,20>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,19>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[20] = wi[i] * wk[k] *
-                       distance[Dim::I] * distance[Dim::K] * mod_j * 64.0;
-}
+// // Mode 20.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,20>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,19>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[20] = wi[i] * wk[k] *
+//                        distance[Dim::I] * distance[Dim::K] * mod_j * 64.0;
+// }
 
-// Mode 21.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,21>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,20>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[21] = wi[i] * wj[j] * distance[Dim::I] * mod_k * 16.0;
-}
+// // Mode 21.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,21>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,20>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[21] = wi[i] * wj[j] * distance[Dim::I] * mod_k * 16.0;
+// }
 
-// Mode 22.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,22>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,21>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[22] = wi[i] * wj[j] * distance[Dim::J] * mod_k * 16.0;
-}
+// // Mode 22.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,22>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,21>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[22] = wi[i] * wj[j] * distance[Dim::J] * mod_k * 16.0;
+// }
 
-// Mode 23.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,23>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,22>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[23] = wi[i] * wj[j] *
-                       distance[Dim::I] * distance[Dim::J] * mod_k * 64.0;
-}
+// // Mode 23.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,23>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,22>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[23] = wi[i] * wj[j] *
+//                        distance[Dim::I] * distance[Dim::J] * mod_k * 64.0;
+// }
 
-// Mode 24.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,24>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,23>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[24] = wk[k] * distance[Dim::K] * mod_i * mod_j * 64.0;
-}
+// // Mode 24.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,24>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,23>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[24] = wk[k] * distance[Dim::K] * mod_i * mod_j * 64.0;
+// }
 
-// Mode 25.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,25>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,24>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[25] = wj[j] * distance[Dim::J] * mod_i * mod_k * 64.0;
-}
+// // Mode 25.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,25>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,24>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[25] = wj[j] * distance[Dim::J] * mod_i * mod_k * 64.0;
+// }
 
-// Mode 26.
-template<class Scalar>
-KOKKOS_INLINE_FUNCTION
-void polyPicModeWeights( std::integral_constant<int,26>,
-                         const Scalar distance[3],
-                         const Scalar wi[3],
-                         const Scalar wj[3],
-                         const Scalar wk[3],
-                         const int i,
-                         const int j,
-                         const int k,
-                         const int mod_i,
-                         const int mod_j,
-                         const int mod_k,
-                         Scalar* mode_weights )
-{
-    polyPicModeWeights(std::integral_constant<int,25>(),
-        distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
-    mode_weights[26] = wi[i] * distance[Dim::I] * mod_j * mod_k * 64.0;
-}
+// // Mode 26.
+// template<class Scalar>
+// KOKKOS_INLINE_FUNCTION
+// void polyPicModeWeights( std::integral_constant<int,26>,
+//                          const Scalar distance[3],
+//                          const Scalar wi[3],
+//                          const Scalar wj[3],
+//                          const Scalar wk[3],
+//                          const int i,
+//                          const int j,
+//                          const int k,
+//                          const int mod_i,
+//                          const int mod_j,
+//                          const int mod_k,
+//                          Scalar* mode_weights )
+// {
+//     polyPicModeWeights(std::integral_constant<int,25>(),
+//         distance, wi, wj, wk, i, j, k, mod_i, mod_j, mod_k, mode_weights );
+//     mode_weights[26] = wi[i] * distance[Dim::I] * mod_j * mod_k * 64.0;
+// }
 
 //---------------------------------------------------------------------------//
 // Interpolate grid node velocity to the particle.
@@ -604,6 +612,8 @@ void g2p(
     Cajita::isNode<typename SplineDataType::entity_type>::value,void*>::type = 0 )
 {
     using value_type = typename VelocityView::value_type;
+
+    auto rdx_2 = 1.0 / (sd.dx*sd.dx);
 
     int mod_i, mod_j, mod_k;
     value_type distance[3];
@@ -622,14 +632,15 @@ void g2p(
                 mod_j = ( 1 == j ) ? -2 : 1;
                 mod_k = ( 1 == k ) ? -2 : 1;
 
-                // Compute the logical dinstance to the entity.
-                distance[Dim::I] = sd.s[Dim::I][i] - sd.x[Dim::I];
-                distance[Dim::J] = sd.s[Dim::J][j] - sd.x[Dim::J];
-                distance[Dim::K] = sd.s[Dim::K][k] - sd.x[Dim::K];
+                // Compute physical distance to entity.
+                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
+                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
+                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
 
                 // Compute the mode weights.
-                polyPicModeWeights(std::integral_constant<int,N>(),
-                    distance, sd.w[Dim::I], sd.w[Dim::J], sd.w[Dim::K],
+                polyPicModeWeights(
+                    std::integral_constant<int,N-1>(),
+                    distance, rdx_2, sd.w[Dim::I], sd.w[Dim::J], sd.w[Dim::K],
                     i, j, k, mod_i, mod_j, mod_k,
                     mode_weights );
 
@@ -658,6 +669,8 @@ void f2p(
     using value_type = typename VelocityView::value_type;
     using entity_type = typename SplineDataType::entity_type;
 
+    auto rdx_2 = 1.0 / (sd.dx*sd.dx);
+
     int mod_i, mod_j, mod_k;
     value_type distance[3];
     value_type mode_weights[N];
@@ -674,15 +687,15 @@ void f2p(
                 mod_j = ( 1 == j ) ? -2 : 1;
                 mod_k = ( 1 == k ) ? -2 : 1;
 
-                // Compute the logical distance to the entity.
-                distance[Dim::I] = sd.s[Dim::I][i] - sd.x[Dim::I];
-                distance[Dim::J] = sd.s[Dim::J][j] - sd.x[Dim::J];
-                distance[Dim::K] = sd.s[Dim::K][k] - sd.x[Dim::K];
+                // Compute physical distance to entity.
+                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
+                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
+                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
 
                 // Compute the mode weights.
                 polyPicModeWeights(
-                    std::integral_constant<int,N>(),
-                    distance, sd.w[Dim::I], sd.w[Dim::J], sd.w[Dim::K],
+                    std::integral_constant<int,N-1>(),
+                    distance, rdx_2, sd.w[Dim::I], sd.w[Dim::J], sd.w[Dim::K],
                     i, j, k, mod_i, mod_j, mod_k,
                     mode_weights );
 
@@ -1107,13 +1120,12 @@ void polyPicBasis( std::integral_constant<int,26>,
 
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum to the nodes.
-template<int N, class SplineDataType, class LocalMeshType, class MomentumView>
+template<int N, class SplineDataType, class MomentumView>
 KOKKOS_INLINE_FUNCTION
 void p2g(
     const typename MomentumView::original_value_type m_p,
     const typename MomentumView::original_value_type u_p[N][3],
     const SplineDataType& sd,
-    const LocalMeshType& local_mesh,
     const typename MomentumView::original_value_type dt,
     const MomentumView& node_momentum,
     typename std::enable_if<
@@ -1125,11 +1137,9 @@ void p2g(
 
     using value_type = typename MomentumView::original_value_type;
 
-    int zero_id[3] = {0,0,0};
-    auto dx = local_mesh.measure( Cajita::Edge<Dim::I>(), zero_id );
-    auto rdx = 1.0 / dx;
+    auto rdx = 1.0 / sd.dx;
     auto a = 4.0 * rdx * rdx;
-    auto b = 0.25 * dx * dx;
+    auto b = 0.25 * sd.dx * sd.dx;
 
     // Create the affine projection operator using the velocity
     // gradient.
@@ -1152,9 +1162,9 @@ void p2g(
     // frame of the stencil. This is the distance between the particle
     // and the closest entity.
     value_type pln[3];
-    pln[Dim::I] = (sd.x[Dim::I] - int(sd.x[Dim::I])) * dx;
-    pln[Dim::J] = (sd.x[Dim::J] - int(sd.x[Dim::J])) * dx;
-    pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * dx;
+    pln[Dim::I] = (sd.x[Dim::I] - int(sd.x[Dim::I])) * sd.dx;
+    pln[Dim::J] = (sd.x[Dim::J] - int(sd.x[Dim::J])) * sd.dx;
+    pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * sd.dx;
 
     // Loop data.
     int entity[3];
@@ -1175,15 +1185,15 @@ void p2g(
                 entity[Dim::K] = sd.s[Dim::K][k];
 
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * dx;
+                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
+                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
+                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
 
                 // Compute the mapping.
                 DenseLinearAlgebra::matVecMultiply( c_inv, distance, mapping );
 
                 // Get the polypic coefficients.
-                polyPicBasis( std::integral_constant<int,N>(), mapping, pln, a, b, coeffs );
+                polyPicBasis( std::integral_constant<int,N-1>(), mapping, pln, a, b, coeffs );
 
                 // Weight times mass.
                 wm = sd.w[Dim::I][i] *
@@ -1215,9 +1225,6 @@ void p2f(
     const typename MomentumView::value_type m_p,
     const typename MomentumView::value_type u_p[N][3],
     const SplineDataType& sd,
-    const typename LocalMeshType::scalar_type dx,
-    const typename LocalMeshType::scalar_type a,
-    const typename LocalMeshType::scalar_type b,
     const typename MomentumView::value_type c_inv[3][3],
     const MomentumView& face_momentum,
     typename std::enable_if<
@@ -1230,13 +1237,17 @@ void p2f(
     using value_type = typename MomentumView::value_type;
     using entity_type = typename SplineDataType::entity_type;
 
+    auto rdx = 1.0 / sd.dx;
+    auto a = 4.0 * rdx * rdx;
+    auto b = 0.25 * sd.dx * sd.dx;
+
     // Get the physical location of the particle in the reference
     // frame of the stencil. This is the distance between the particle
     // and the closest entity.
     value_type pln[3];
-    pln[Dim::I] = (sd.x[Dim::I] - int(sd.x[Dim::I])) * dx;
-    pln[Dim::J] = (sd.x[Dim::J] - int(sd.x[Dim::J])) * dx;
-    pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * dx;
+    pln[Dim::I] = (sd.x[Dim::I] - int(sd.x[Dim::I])) * sd.dx;
+    pln[Dim::J] = (sd.x[Dim::J] - int(sd.x[Dim::J])) * sd.dx;
+    pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * sd.dx;
 
     // Loop data.
     int entity[3];
@@ -1257,15 +1268,15 @@ void p2f(
                 entity[Dim::K] = sd.s[Dim::K][k];
 
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * dx;
+                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
+                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
+                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
 
                 // Compute the mapping.
                 DenseLinearAlgebra::matVecMultiply( c_inv, distance, mapping );
 
                 // Get the polypic coefficients.
-                polyPicBasis( std::integral_constant<int,N>(), mapping, pln, a, b, coeffs );
+                polyPicBasis( std::integral_constant<int,N-1>(), mapping, pln, a, b, coeffs );
 
                 // Weight times mass.
                 wm = sd.w[Dim::I][i] *
@@ -1292,7 +1303,6 @@ template<int N,
          class SplineDataTypeI,
          class SplineDataTypeJ,
          class SplineDataTypeK,
-         class LocalMeshType,
          class MomentumView>
 KOKKOS_INLINE_FUNCTION
 void p2g(
@@ -1301,19 +1311,12 @@ void p2g(
     const SplineDataTypeI& sd_i,
     const SplineDataTypeJ& sd_j,
     const SplineDataTypeK& sd_k,
-    const LocalMeshType& local_mesh,
     const typename MomentumView::value_type dt,
     const MomentumView& face_i_momentum,
     const MomentumView& face_j_momentum,
     const MomentumView& face_k_momentum )
 {
     using value_type = typename MomentumView::value_type;
-
-    int zero_id[3] = {0,0,0};
-    auto dx = local_mesh.measure( Cajita::Edge<Dim::I>(), zero_id );
-    auto rdx = 1.0 / dx;
-    auto a = 4.0 * rdx * rdx;
-    auto b = 0.25 * dx * dx;
 
     // Create the affine projection operator using the velocity
     // gradient.
@@ -1333,9 +1336,9 @@ void p2g(
     DenseLinearAlgebra::inverse( c, c_inv );
 
     // Project to faces.
-    p2f( m_p, u_p, sd_i, dx, a, b, c_inv, face_i_momentum );
-    p2f( m_p, u_p, sd_j, dx, a, b, c_inv, face_j_momentum );
-    p2f( m_p, u_p, sd_k, dx, a, b, c_inv, face_k_momentum );
+    p2f( m_p, u_p, sd_i, c_inv, face_i_momentum );
+    p2f( m_p, u_p, sd_j, c_inv, face_j_momentum );
+    p2f( m_p, u_p, sd_k, c_inv, face_k_momentum );
 }
 
 //---------------------------------------------------------------------------//
