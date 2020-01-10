@@ -726,9 +726,9 @@ void g2p(
     const SplineDataTypeK& sd_k,
     typename VelocityView::value_type u_p[N][3] )
 {
-    f2p( face_i_velocity, sd_i, u_p );
-    f2p( face_j_velocity, sd_j, u_p );
-    f2p( face_k_velocity, sd_k, u_p );
+    f2p<N>( face_i_velocity, sd_i, u_p );
+    f2p<N>( face_j_velocity, sd_j, u_p );
+    f2p<N>( face_k_velocity, sd_k, u_p );
 }
 
 //---------------------------------------------------------------------------//
@@ -1219,13 +1219,13 @@ void p2g(
 
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum to the faces.
-template<int N, class SplineDataType, class LocalMeshType, class MomentumView>
+template<int N, class SplineDataType, class MomentumView>
 KOKKOS_INLINE_FUNCTION
 void p2f(
-    const typename MomentumView::value_type m_p,
-    const typename MomentumView::value_type u_p[N][3],
+    const typename MomentumView::original_value_type m_p,
+    const typename MomentumView::original_value_type u_p[N][3],
     const SplineDataType& sd,
-    const typename MomentumView::value_type c_inv[3][3],
+    const typename MomentumView::original_value_type c_inv[3][3],
     const MomentumView& face_momentum,
     typename std::enable_if<
     Cajita::isFace<typename SplineDataType::entity_type>::value,void*>::type = 0 )
@@ -1234,7 +1234,7 @@ void p2f(
                    "P2G requires a Kokkos::ScatterView" );
     auto momentum_access = face_momentum.access();
 
-    using value_type = typename MomentumView::value_type;
+    using value_type = typename MomentumView::original_value_type;
     using entity_type = typename SplineDataType::entity_type;
 
     auto rdx = 1.0 / sd.dx;
@@ -1306,17 +1306,17 @@ template<int N,
          class MomentumView>
 KOKKOS_INLINE_FUNCTION
 void p2g(
-    const typename MomentumView::value_type m_p,
-    const typename MomentumView::value_type u_p[N][3],
+    const typename MomentumView::original_value_type m_p,
+    const typename MomentumView::original_value_type u_p[N][3],
     const SplineDataTypeI& sd_i,
     const SplineDataTypeJ& sd_j,
     const SplineDataTypeK& sd_k,
-    const typename MomentumView::value_type dt,
+    const typename MomentumView::original_value_type dt,
     const MomentumView& face_i_momentum,
     const MomentumView& face_j_momentum,
     const MomentumView& face_k_momentum )
 {
-    using value_type = typename MomentumView::value_type;
+    using value_type = typename MomentumView::original_value_type;
 
     // Create the affine projection operator using the velocity
     // gradient.
@@ -1336,9 +1336,9 @@ void p2g(
     DenseLinearAlgebra::inverse( c, c_inv );
 
     // Project to faces.
-    p2f( m_p, u_p, sd_i, c_inv, face_i_momentum );
-    p2f( m_p, u_p, sd_j, c_inv, face_j_momentum );
-    p2f( m_p, u_p, sd_k, c_inv, face_k_momentum );
+    p2f<N>( m_p, u_p, sd_i, c_inv, face_i_momentum );
+    p2f<N>( m_p, u_p, sd_j, c_inv, face_j_momentum );
+    p2f<N>( m_p, u_p, sd_k, c_inv, face_k_momentum );
 }
 
 //---------------------------------------------------------------------------//

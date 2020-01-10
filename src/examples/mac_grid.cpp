@@ -56,8 +56,9 @@ void solve( const int num_cell,
 
     // Spline discretization.
     const int spline_order = 1;
-    using sd_type =
-        Cajita::SplineData<double,spline_order,Cajita::Node>;
+    using sd_type_i = Cajita::SplineData<double,spline_order,Cajita::Face<Dim::I>>;
+    using sd_type_j = Cajita::SplineData<double,spline_order,Cajita::Face<Dim::J>>;
+    using sd_type_k = Cajita::SplineData<double,spline_order,Cajita::Face<Dim::K>>;
 
     // Number of polypic modes
     const int num_mode = 8;
@@ -84,27 +85,64 @@ void solve( const int num_cell,
     // Index spaces.
     auto cell_space =
         local_grid->indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
-    auto node_space =
-        local_grid->indexSpace( Cajita::Own(), Cajita::Node(), Cajita::Local() );
+    auto face_i_space =
+        local_grid->indexSpace( Cajita::Own(), Cajita::Face<Dim::I>(), Cajita::Local() );
+    auto face_j_space =
+        local_grid->indexSpace( Cajita::Own(), Cajita::Face<Dim::J>(), Cajita::Local() );
+    auto face_k_space =
+        local_grid->indexSpace( Cajita::Own(), Cajita::Face<Dim::K>(), Cajita::Local() );
 
-    // Node fields.
+    // A reduced space neglecting the outer-most cell.
+    Cajita::IndexSpace<3> reduced_cell_space(
+        {cell_space.min(Dim::I)+1,cell_space.min(Dim::J)+1,cell_space.min(Dim::K)},
+        {cell_space.max(Dim::I)-1,cell_space.max(Dim::J)-1,cell_space.max(Dim::K)} );
+
+    // Face fields.
     // 0: mass
-    // 1-4: momentum
-    // 4-7: velocity
-    // 7-10: pressure gradient
-    auto node_layout =
-        Cajita::createArrayLayout( local_grid, 10, Cajita::Node() );
-    auto node_fields =
-        Cajita::createArray<double,device_type>( "node_fields", node_layout );
-    auto m_i = Cajita::createSubarray( *node_fields, 0, 1 );
-    auto mu_i = Cajita::createSubarray( *node_fields, 1, 4 );
-    auto u_i = Cajita::createSubarray( *node_fields, 4, 7 );
-    auto pg_i = Cajita::createSubarray( *node_fields, 7, 10 );
+    // 1: momentum
+    // 2: velocity
+    // 3: pressure gradient
+    auto face_i_layout =
+        Cajita::createArrayLayout( local_grid, 4, Cajita::Face<Dim::I>() );
+    auto face_i_fields =
+        Cajita::createArray<double,device_type>( "face_i_fields", face_i_layout );
+    auto m_i = Cajita::createSubarray( *face_i_fields, 0, 1 );
+    auto mu_i = Cajita::createSubarray( *face_i_fields, 1, 2 );
+    auto u_i = Cajita::createSubarray( *face_i_fields, 2, 3 );
+    auto pg_i = Cajita::createSubarray( *face_i_fields, 3, 4 );
 
-    auto scatter_i = Cajita::createSubarray( *node_fields, 0, 4 );
+    auto scatter_i = Cajita::createSubarray( *face_i_fields, 0, 2 );
     auto scatter_halo_i = Cajita::createHalo( *scatter_i, Cajita::FullHaloPattern() );
 
     auto velocity_halo_i = Cajita::createHalo( *u_i, Cajita::FullHaloPattern() );
+
+    auto face_j_layout =
+        Cajita::createArrayLayout( local_grid, 4, Cajita::Face<Dim::J>() );
+    auto face_j_fields =
+        Cajita::createArray<double,device_type>( "face_j_fields", face_j_layout );
+    auto m_j = Cajita::createSubarray( *face_j_fields, 0, 1 );
+    auto mu_j = Cajita::createSubarray( *face_j_fields, 1, 2 );
+    auto u_j = Cajita::createSubarray( *face_j_fields, 2, 3 );
+    auto pg_j = Cajita::createSubarray( *face_j_fields, 3, 4 );
+
+    auto scatter_j = Cajita::createSubarray( *face_j_fields, 0, 2 );
+    auto scatter_halo_j = Cajita::createHalo( *scatter_j, Cajita::FullHaloPattern() );
+
+    auto velocity_halo_j = Cajita::createHalo( *u_j, Cajita::FullHaloPattern() );
+
+    auto face_k_layout =
+        Cajita::createArrayLayout( local_grid, 4, Cajita::Face<Dim::K>() );
+    auto face_k_fields =
+        Cajita::createArray<double,device_type>( "face_k_fields", face_k_layout );
+    auto m_k = Cajita::createSubarray( *face_k_fields, 0, 1 );
+    auto mu_k = Cajita::createSubarray( *face_k_fields, 1, 2 );
+    auto u_k = Cajita::createSubarray( *face_k_fields, 2, 3 );
+    auto pg_k = Cajita::createSubarray( *face_k_fields, 3, 4 );
+
+    auto scatter_k = Cajita::createSubarray( *face_k_fields, 0, 2 );
+    auto scatter_halo_k = Cajita::createHalo( *scatter_k, Cajita::FullHaloPattern() );
+
+    auto velocity_halo_k = Cajita::createHalo( *u_k, Cajita::FullHaloPattern() );
 
     // Cell fields.
     // 0: velocity divergence
@@ -124,11 +162,23 @@ void solve( const int num_cell,
     auto u_i_view = u_i->view();
     auto pg_i_view = pg_i->view();
 
+    auto m_j_view = m_j->view();
+    auto mu_j_view = mu_j->view();
+    auto u_j_view = u_j->view();
+    auto pg_j_view = pg_j->view();
+
+    auto m_k_view = m_k->view();
+    auto mu_k_view = mu_k->view();
+    auto u_k_view = u_k->view();
+    auto pg_k_view = pg_k->view();
+
     auto p_c_view = p_c->view();
     auto du_c_view = du_c->view();
 
     // Initialize fields to zero.
-    Cajita::ArrayOp::assign( *node_fields, 0.0, Cajita::Ghost() );
+    Cajita::ArrayOp::assign( *face_i_fields, 0.0, Cajita::Ghost() );
+    Cajita::ArrayOp::assign( *face_j_fields, 0.0, Cajita::Ghost() );
+    Cajita::ArrayOp::assign( *face_k_fields, 0.0, Cajita::Ghost() );
     Cajita::ArrayOp::assign( *p_c, 0.0, Cajita::Ghost() );
     Cajita::ArrayOp::assign( *du_c, 0.0, Cajita::Ghost() );
 
@@ -138,7 +188,7 @@ void solve( const int num_cell,
                             double>;    // mass
 
     // Particles.
-    auto num_particle = cell_space.size() * ppc;
+    auto num_particle = reduced_cell_space.size() * ppc;
     Cabana::AoSoA<ParticleTypes,device_type> particles( "particles", num_particle );
     auto x_p = Cabana::slice<ParticleField::x>( particles, "position" );
     auto m_p = Cabana::slice<ParticleField::m>( particles, "mass" );
@@ -149,7 +199,7 @@ void solve( const int num_cell,
                             int>;      // color
 
     // Tracers.
-    auto num_tracer = cell_space.size() * tpc;
+    auto num_tracer = reduced_cell_space.size() * tpc;
     Cabana::AoSoA<TracerTypes,device_type> tracers( "tracers", num_tracer );
     auto x_t = Cabana::slice<TracerField::x>( tracers, "position" );
     auto c_t = Cabana::slice<TracerField::c>( tracers, "color" );
@@ -159,20 +209,24 @@ void solve( const int num_cell,
     {
         auto m_i_sv = Kokkos::Experimental::create_scatter_view( m_i_view );
         auto mu_i_sv = Kokkos::Experimental::create_scatter_view( mu_i_view );
+        auto m_j_sv = Kokkos::Experimental::create_scatter_view( m_j_view );
+        auto mu_j_sv = Kokkos::Experimental::create_scatter_view( mu_j_view );
+        auto m_k_sv = Kokkos::Experimental::create_scatter_view( m_k_view );
+        auto mu_k_sv = Kokkos::Experimental::create_scatter_view( mu_k_view );
         uint64_t seed = global_grid->blockId() + ( 19383747 % (global_grid->blockId() + 1) );
         using rnd_type = Kokkos::Random_XorShift64_Pool<device_type>;
         rnd_type pool;
-        pool.init( seed, cell_space.size() );
+        pool.init( seed, reduced_cell_space.size() );
         Kokkos::parallel_for(
             "init_particle_location",
-            Cajita::createExecutionPolicy( cell_space, execution_space() ),
+            Cajita::createExecutionPolicy( reduced_cell_space, execution_space() ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
                 // Compute the owned local cell id.
-                int i_own = i - cell_space.min(Dim::I);
-                int j_own = j - cell_space.min(Dim::J);
-                int k_own = k - cell_space.min(Dim::K);
-                int cell_id = i_own + cell_space.extent(Dim::I) * (
-                    j_own + k_own * cell_space.extent(Dim::J) );
+                int i_own = i - reduced_cell_space.min(Dim::I);
+                int j_own = j - reduced_cell_space.min(Dim::J);
+                int k_own = k - reduced_cell_space.min(Dim::K);
+                int cell_id = i_own + reduced_cell_space.extent(Dim::I) * (
+                    j_own + k_own * reduced_cell_space.extent(Dim::J) );
 
                 // Get the coordinates of the low cell node.
                 int low_node[3] = {i,j,k};
@@ -220,12 +274,21 @@ void solve( const int num_cell,
                         mu_p[Dim::J] = p_mass * px[Dim::I] * pi;
                     }
 
-                    // Interpolate initial momentum and mass to nodes.
-                    using sd_type = Cajita::SplineData<double,spline_order,Cajita::Node>;
-                    sd_type sd;
-                    Cajita::evaluateSpline( local_mesh, px, sd );
-                    Cajita::P2G::value( mu_p, sd, mu_i_sv );
-                    Cajita::P2G::value( p_mass, sd, m_i_sv );
+                    // Interpolate initial momentum and mass to faces.
+                    sd_type_i sd_i;
+                    Cajita::evaluateSpline( local_mesh, px, sd_i );
+                    Cajita::P2G::value( mu_p[Dim::I], sd_i, mu_i_sv );
+                    Cajita::P2G::value( p_mass, sd_i, m_i_sv );
+
+                    sd_type_j sd_j;
+                    Cajita::evaluateSpline( local_mesh, px, sd_j );
+                    Cajita::P2G::value( mu_p[Dim::J], sd_j, mu_j_sv );
+                    Cajita::P2G::value( p_mass, sd_j, m_j_sv );
+
+                    sd_type_k sd_k;
+                    Cajita::evaluateSpline( local_mesh, px, sd_k );
+                    Cajita::P2G::value( mu_p[Dim::K], sd_k, mu_k_sv );
+                    Cajita::P2G::value( p_mass, sd_k, m_k_sv );
                 }
 
                 // Create tracers.
@@ -251,35 +314,56 @@ void solve( const int num_cell,
                 }
             });
 
-        // Complete the particle-grid scatter to the nodes.
+        // Complete the particle-grid scatter to the faces.
         Kokkos::Experimental::contribute( m_i_view, m_i_sv );
         Kokkos::Experimental::contribute( mu_i_view, mu_i_sv );
+        Kokkos::Experimental::contribute( m_j_view, m_j_sv );
+        Kokkos::Experimental::contribute( mu_j_view, mu_j_sv );
+        Kokkos::Experimental::contribute( m_k_view, m_k_sv );
+        Kokkos::Experimental::contribute( mu_k_view, mu_k_sv );
         scatter_halo_i->scatter( *scatter_i );
+        scatter_halo_j->scatter( *scatter_j );
+        scatter_halo_k->scatter( *scatter_k );
 
         // Compute grid initial velocity.
         Kokkos::parallel_for(
-            "compute_initial_grid_velocity",
-            Cajita::createExecutionPolicy( node_space, execution_space() ),
+            "compute_initial_grid_velocity_i",
+            Cajita::createExecutionPolicy( face_i_space, execution_space() ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
-                // Compute node velocity
-                for ( int d = 0; d < 3; ++d )
-                    u_i_view(i,j,k,d) =
-                        ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,d) / m_i_view(i,j,k,0) : 0.0;
+                // Compute face velocity
+                u_i_view(i,j,k,0) =
+                    ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,0) / m_i_view(i,j,k,0) : 0.0;
 
                 // Apply velocity boundary condition.
-                if ( 0 == i || node_space.max(Dim::I) - 1 == i )
+                if ( i < 2 || face_i_space.max(Dim::I) - 2 <= i )
                 {
-                    u_i_view(i,j,k,Dim::I) = 0.0;
-                    u_i_view(i,j,k,Dim::J) = 0.0;
-                    u_i_view(i,j,k,Dim::K) = 0.0;
+                    u_i_view(i,j,k,0) = 0.0;
                 }
-                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
+            });
+        Kokkos::parallel_for(
+            "compute_initial_grid_velocity_j",
+            Cajita::createExecutionPolicy( face_j_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Compute face velocity
+                u_j_view(i,j,k,0) =
+                    ( m_j_view(i,j,k,0) > 0.0 ) ? mu_j_view(i,j,k,0) / m_j_view(i,j,k,0) : 0.0;
+
+                // Apply velocity boundary condition.
+                if ( j < 2 || face_j_space.max(Dim::J) - 2 <= j )
                 {
-                    u_i_view(i,j,k,Dim::I) = 0.0;
-                    u_i_view(i,j,k,Dim::J) = 0.0;
-                    u_i_view(i,j,k,Dim::K) = 0.0;
+                    u_j_view(i,j,k,0) = 0.0;
                 }
+            });
+        Kokkos::parallel_for(
+            "compute_initial_grid_velocity_k",
+            Cajita::createExecutionPolicy( face_k_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Compute face velocity
+                u_k_view(i,j,k,0) =
+                    ( m_k_view(i,j,k,0) > 0.0 ) ? mu_k_view(i,j,k,0) / m_k_view(i,j,k,0) : 0.0;
             });
     }
 
@@ -292,7 +376,7 @@ void solve( const int num_cell,
         Cajita::createStructuredSolver<double,device_type>( "Diagonal", *cell_layout, true );
     solver->setPreconditioner( preconditioner );
 
-    // Create a 7-point 3d laplacian stencil.
+    // Create a 7-point 3d laplacian stencil (symmetric).
     std::vector<std::array<int,3> > stencil =
         { {0,0,0}, {1,0,0}, {0,1,0}, {0,0,1} };
     solver->setMatrixStencil( stencil, true );
@@ -317,7 +401,7 @@ void solve( const int num_cell,
     solver->setMatrixValues( *matrix_entries );
 
     // Set the tolerance.
-    solver->setTolerance( 1.0e-8 );
+    solver->setTolerance( 1.0e-9 );
 
     // Set the maximum iterations.
     solver->setMaxIter( 1000 );
@@ -340,6 +424,8 @@ void solve( const int num_cell,
 
         // Gather grid values.
         velocity_halo_i->gather( *u_i );
+        velocity_halo_j->gather( *u_j );
+        velocity_halo_k->gather( *u_k );
 
         // Move Tracers.
         Kokkos::parallel_for(
@@ -350,13 +436,19 @@ void solve( const int num_cell,
                 // Get the tracer position.
                 double tx[3] = { x_t(t,Dim::I), x_t(t,Dim::J), x_t(t,Dim::K) };
 
-                // Evaluate tracer spline.
-                sd_type sd;
-                Cajita::evaluateSpline( local_mesh, tx, sd );
+                // Evaluate tracer splines.
+                sd_type_i sd_i;
+                Cajita::evaluateSpline( local_mesh, tx, sd_i );
+                sd_type_j sd_j;
+                Cajita::evaluateSpline( local_mesh, tx, sd_j );
+                sd_type_k sd_k;
+                Cajita::evaluateSpline( local_mesh, tx, sd_k );
 
-                // Interpolate node velocity to tracer
+                // Interpolate grid velocity to tracer
                 double u_t[3];
-                Cajita::G2P::value( u_i_view, sd, u_t );
+                Cajita::G2P::value( u_i_view, sd_i, u_t[Dim::I] );
+                Cajita::G2P::value( u_j_view, sd_j, u_t[Dim::J] );
+                Cajita::G2P::value( u_k_view, sd_k, u_t[Dim::K] );
 
                 // Move tracer.
                 for ( int d = 0; d < 3; ++d )
@@ -366,9 +458,15 @@ void solve( const int num_cell,
         // Mass and momentum scatter views.
         auto m_i_sv = Kokkos::Experimental::create_scatter_view( m_i_view );
         auto mu_i_sv = Kokkos::Experimental::create_scatter_view( mu_i_view );
+        auto m_j_sv = Kokkos::Experimental::create_scatter_view( m_j_view );
+        auto mu_j_sv = Kokkos::Experimental::create_scatter_view( mu_j_view );
+        auto m_k_sv = Kokkos::Experimental::create_scatter_view( m_k_view );
+        auto mu_k_sv = Kokkos::Experimental::create_scatter_view( mu_k_view );
 
         // Reset grid mass and momentum.
         Cajita::ArrayOp::assign( *scatter_i, 0.0, Cajita::Ghost() );
+        Cajita::ArrayOp::assign( *scatter_j, 0.0, Cajita::Ghost() );
+        Cajita::ArrayOp::assign( *scatter_k, 0.0, Cajita::Ghost() );
 
         // Update particles and predict grid momentum.
         Kokkos::parallel_for(
@@ -380,12 +478,18 @@ void solve( const int num_cell,
                 double px[3] = { x_p(p,Dim::I), x_p(p,Dim::J), x_p(p,Dim::K) };
 
                 // Evaluate particle spline.
-                sd_type sd;
-                Cajita::evaluateSpline( local_mesh, px, sd );
+                sd_type_i sd_i;
+                Cajita::evaluateSpline( local_mesh, px, sd_i );
+                sd_type_j sd_j;
+                Cajita::evaluateSpline( local_mesh, px, sd_j );
+                sd_type_k sd_k;
+                Cajita::evaluateSpline( local_mesh, px, sd_k );
 
-                // Interpolate node velocity to particle with PolyPIC
+                // Interpolate grid velocity to particle with PolyPIC
                 double u_p[num_mode][3];
-                Harlow::PolyPIC::g2p<num_mode>( u_i_view, sd, u_p );
+                Harlow::PolyPIC::g2p<num_mode>( u_i_view, u_j_view, u_k_view,
+                                                sd_i, sd_j, sd_k,
+                                                u_p );
 
                 // Move the particle.
                 for ( int d = 0; d < 3; ++d )
@@ -394,47 +498,76 @@ void solve( const int num_cell,
                     x_p(p,d) = px[d];
                 }
 
-                // Re-evaluate the particle spline after the particles have moved.
-                Cajita::evaluateSpline( local_mesh, px, sd );
+                // Re-evaluate the particle splines after the particles have moved.
+                Cajita::evaluateSpline( local_mesh, px, sd_i );
+                Cajita::evaluateSpline( local_mesh, px, sd_j );
+                Cajita::evaluateSpline( local_mesh, px, sd_k );
 
                 // Interpolate particle mass to the grid.
-                Cajita::P2G::value( m_p(p), sd, m_i_sv );
+                Cajita::P2G::value( m_p(p), sd_i, m_i_sv );
+                Cajita::P2G::value( m_p(p), sd_j, m_j_sv );
+                Cajita::P2G::value( m_p(p), sd_k, m_k_sv );
 
                 // Interpolate particle momentum to the grid.
-                Harlow::PolyPIC::p2g<num_mode>( m_p(p), u_p, sd, delta_t, mu_i_sv );
+                Harlow::PolyPIC::p2g<num_mode>( m_p(p), u_p,
+                                                sd_i, sd_j, sd_k, delta_t,
+                                                mu_i_sv, mu_j_sv, mu_k_sv );
             });
 
-        // Complete the particle-grid scatter to the nodes.
+        // Complete the particle-grid scatter to the faces.
         Kokkos::Experimental::contribute( m_i_view, m_i_sv );
         Kokkos::Experimental::contribute( mu_i_view, mu_i_sv );
+        Kokkos::Experimental::contribute( m_j_view, m_j_sv );
+        Kokkos::Experimental::contribute( mu_j_view, mu_j_sv );
+        Kokkos::Experimental::contribute( m_k_view, m_k_sv );
+        Kokkos::Experimental::contribute( mu_k_view, mu_k_sv );
         scatter_halo_i->scatter( *scatter_i );
+        scatter_halo_j->scatter( *scatter_j );
+        scatter_halo_k->scatter( *scatter_k );
 
         // Compute grid velocity.
         Kokkos::parallel_for(
-            "compute_grid_velocity",
-            Cajita::createExecutionPolicy( node_space, execution_space() ),
+            "compute_initial_grid_velocity_i",
+            Cajita::createExecutionPolicy( face_i_space, execution_space() ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
-                // Compute node velocity
-                for ( int d = 0; d < 3; ++d )
-                    u_i_view(i,j,k,d) =
-                        ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,d) / m_i_view(i,j,k,0) : 0.0;
+                // Compute face velocity
+                u_i_view(i,j,k,0) =
+                    ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,0) / m_i_view(i,j,k,0) : 0.0;
 
                 // Apply velocity boundary condition.
-                if ( 0 == i || node_space.max(Dim::I) - 1 == i )
+                if ( i < 2 || face_i_space.max(Dim::I) - 2 <= i )
                 {
-                    u_i_view(i,j,k,Dim::I) = 0.0;
-                    u_i_view(i,j,k,Dim::J) = 0.0;
-                    u_i_view(i,j,k,Dim::K) = 0.0;
-                }
-                if ( 0 == j || node_space.max(Dim::J) - 1 == j )
-                {
-                    u_i_view(i,j,k,Dim::I) = 0.0;
-                    u_i_view(i,j,k,Dim::J) = 0.0;
-                    u_i_view(i,j,k,Dim::K) = 0.0;
+                    u_i_view(i,j,k,0) = 0.0;
                 }
             });
+        Kokkos::parallel_for(
+            "compute_initial_grid_velocity_j",
+            Cajita::createExecutionPolicy( face_j_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Compute face velocity
+                u_j_view(i,j,k,0) =
+                    ( m_j_view(i,j,k,0) > 0.0 ) ? mu_j_view(i,j,k,0) / m_j_view(i,j,k,0) : 0.0;
+
+                // Apply velocity boundary condition.
+                if ( j < 2 || face_j_space.max(Dim::J) - 2 <= j )
+                {
+                    u_j_view(i,j,k,0) = 0.0;
+                }
+            });
+        Kokkos::parallel_for(
+            "compute_initial_grid_velocity_k",
+            Cajita::createExecutionPolicy( face_k_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Compute face velocity
+                u_k_view(i,j,k,0) =
+                    ( m_k_view(i,j,k,0) > 0.0 ) ? mu_k_view(i,j,k,0) / m_k_view(i,j,k,0) : 0.0;
+            });
         velocity_halo_i->gather( *u_i );
+        velocity_halo_j->gather( *u_j );
+        velocity_halo_k->gather( *u_k );
 
         // Compute pressure solve rhs.
         Kokkos::parallel_for(
@@ -442,17 +575,10 @@ void solve( const int num_cell,
             Cajita::createExecutionPolicy( cell_space, execution_space() ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
-                // Get the cell center.
-                int c[3] = {i,j,k};
-                double cx[3];
-                local_mesh.coordinates( Cajita::Cell(), c, cx );
-
-                // Evaluate the spline at the cell center.
-                sd_type sd;
-                Cajita::evaluateSpline( local_mesh, cx, sd );
-
-                // Project divergence to the cell center.
-                Cajita::G2P::divergence( u_i_view, sd, du_c_view(i,j,k,0) );
+                // Divergence.
+                du_c_view(i,j,k,0) = ( ( u_i_view(i+1,j,k,0) - u_i_view(i,j,k,0) ) +
+                                       ( u_j_view(i,j+1,k,0) - u_j_view(i,j,k,0) ) +
+                                       ( u_k_view(i,j,k+1,0) - u_k_view(i,j,k,0) ) ) / cell_size;
 
                 // Scale by density and time.
                 du_c_view(i,j,k,0) *= density / delta_t;
@@ -463,29 +589,41 @@ void solve( const int num_cell,
 
         // Compute pressure gradient.
         Cajita::ArrayOp::assign( *pg_i, 0.0, Cajita::Ghost() );
+        Cajita::ArrayOp::assign( *pg_j, 0.0, Cajita::Ghost() );
+        Cajita::ArrayOp::assign( *pg_k, 0.0, Cajita::Ghost() );
         auto pg_i_sv = Kokkos::Experimental::create_scatter_view( pg_i_view );
+        auto pg_j_sv = Kokkos::Experimental::create_scatter_view( pg_j_view );
+        auto pg_k_sv = Kokkos::Experimental::create_scatter_view( pg_k_view );
         Kokkos::parallel_for(
             "pressure_gradient",
             Cajita::createExecutionPolicy( cell_space, execution_space() ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
-                // Get the cell center.
-                int c[3] = {i,j,k};
-                double cx[3];
-                local_mesh.coordinates( Cajita::Cell(), c, cx );
+                auto result = p_c_view(i,j,k,0) / cell_size;
 
-                // Evaluate the spline at the cell center.
-                sd_type sd;
-                Cajita::evaluateSpline( local_mesh, cx, sd );
+                auto pg_i_access = pg_i_sv.access();
+                pg_i_access(i,j,k,0) += result;
+                pg_i_access(i+1,j,k,0) += -result;
 
-                // Project gradient to the cell center.
-                Cajita::P2G::gradient( p_c_view(i,j,k,0), sd, pg_i_sv );
+                auto pg_j_access = pg_j_sv.access();
+                pg_j_access(i,j,k,0) += result;
+                pg_j_access(i,j+1,k,0) += -result;
+
+                auto pg_k_access = pg_k_sv.access();
+                pg_k_access(i,j,k,0) += result;
+                pg_k_access(i,j,k+1,0) += -result;
             });
         Kokkos::Experimental::contribute( pg_i_view, pg_i_sv );
+        Kokkos::Experimental::contribute( pg_j_view, pg_j_sv );
+        Kokkos::Experimental::contribute( pg_k_view, pg_k_sv );
         velocity_halo_i->scatter( *pg_i );
+        velocity_halo_j->scatter( *pg_j );
+        velocity_halo_k->scatter( *pg_k );
 
         // Update velocity with pressure gradient.
-        Cajita::ArrayOp::update( *u_i, 1.0, *pg_i, delta_t / density, Cajita::Own() );
+        Cajita::ArrayOp::update( *u_i, 1.0, *pg_i, -delta_t / density, Cajita::Own() );
+        Cajita::ArrayOp::update( *u_j, 1.0, *pg_j, -delta_t / density, Cajita::Own() );
+        Cajita::ArrayOp::update( *u_k, 1.0, *pg_k, -delta_t / density, Cajita::Own() );
 
         // Redistribute particles.
         Harlow::ParticleCommunication::redistribute(
@@ -498,25 +636,18 @@ void solve( const int num_cell,
         num_tracer = tracers.size();
 
         // Compute divergence.
-        velocity_halo_i->gather( *u_i );
-        Kokkos::parallel_for(
-            "pressure_rhs",
-            Cajita::createExecutionPolicy( cell_space, execution_space() ),
-            KOKKOS_LAMBDA( const int i, const int j, const int k ){
-
-                // Get the cell center.
-                int c[3] = {i,j,k};
-                double cx[3];
-                local_mesh.coordinates( Cajita::Cell(), c, cx );
-
-                // Evaluate the spline at the cell center.
-                sd_type sd;
-                Cajita::evaluateSpline( local_mesh, cx, sd );
-
-                // Project divergence to the cell center.
-                Cajita::G2P::divergence( u_i_view, sd, du_c_view(i,j,k,0) );
-            });
-        Cajita::BovWriter::writeTimeStep( t, time, *du_c );
+        // velocity_halo_i->gather( *u_i );
+        // velocity_halo_j->gather( *u_j );
+        // velocity_halo_k->gather( *u_k );
+        // Kokkos::parallel_for(
+        //     "pressure_rhs",
+        //     Cajita::createExecutionPolicy( cell_space, execution_space() ),
+        //     KOKKOS_LAMBDA( const int i, const int j, const int k ){
+        //         du_c_view(i,j,k,0) = ( ( u_i_view(i+1,j,k,0) - u_i_view(i,j,k,0) ) +
+        //                                ( u_j_view(i,j+1,k,0) - u_j_view(i,j,k,0) ) +
+        //                                ( u_k_view(i,j,k+1,0) - u_k_view(i,j,k,0) ) ) / cell_size;
+        //     });
+        // Cajita::BovWriter::writeTimeStep( t, time, *du_c );
 
         // Update time
         time += delta_t;
