@@ -94,9 +94,16 @@ void solve( const int num_cell,
         local_grid->indexSpace( Cajita::Own(), Cajita::Face<Dim::K>(), Cajita::Local() );
 
     // A reduced space neglecting the outer-most cell.
-    Cajita::IndexSpace<3> reduced_cell_space(
-        {cell_space.min(Dim::I)+1,cell_space.min(Dim::J)+1,cell_space.min(Dim::K)},
-        {cell_space.max(Dim::I)-1,cell_space.max(Dim::J)-1,cell_space.max(Dim::K)} );
+    auto global_space = local_grid->indexSpace(Cajita::Ghost(),Cajita::Cell(),Cajita::Global());
+    std::array<long,3> reduced_space_min =
+        { (0==global_space.min(Dim::I)) ? cell_space.min(Dim::I)+1 : cell_space.min(Dim::I),
+          (0==global_space.min(Dim::J)) ? cell_space.min(Dim::J)+1 : cell_space.min(Dim::J),
+          cell_space.min(Dim::K) };
+    std::array<long,3> reduced_space_max =
+        { (num_cell==global_space.max(Dim::I)) ? cell_space.max(Dim::I)-1 : cell_space.max(Dim::I),
+          (num_cell==global_space.max(Dim::J)) ? cell_space.max(Dim::J)-1 : cell_space.max(Dim::J),
+          cell_space.max(Dim::K) };
+    Cajita::IndexSpace<3> reduced_cell_space( reduced_space_min, reduced_space_max );
 
     // Face fields.
     // 0: mass
@@ -385,57 +392,96 @@ void solve( const int num_cell,
             });
     }
 
-    // Create a grid solver.
+    // // Create a grid solver.
+    // auto solver =
+    //     Cajita::createHypreStructuredSolver<double,device_type>( "PCG", *cell_layout );
+
+    // // Create a grid preconditioner.
+    // auto preconditioner =
+    //     Cajita::createHypreStructuredSolver<double,device_type>( "Diagonal", *cell_layout, true );
+    // solver->setPreconditioner( preconditioner );
+
+    // // Create a 7-point 3d laplacian stencil (symmetric).
+    // std::vector<std::array<int,3> > stencil =
+    //     { {0,0,0}, {1,0,0}, {0,1,0}, {0,0,1} };
+    // solver->setMatrixStencil( stencil, true );
+
+    // // Cajita::Create the laplacian matrix entries. The stencil is defined
+    // // over cells.
+    // double rdx_2 = 1.0 / (cell_size * cell_size);
+    // auto matrix_entry_layout = Cajita::createArrayLayout( local_grid, 4, Cajita::Cell() );
+    // auto matrix_entries = Cajita::createArray<double,device_type>(
+    //     "matrix_entries", matrix_entry_layout );
+    // auto entry_view = matrix_entries->view();
+    // Kokkos::parallel_for(
+    //     "fill_matrix_entries",
+    //     createExecutionPolicy( cell_space, execution_space() ),
+    //     KOKKOS_LAMBDA( const int i, const int j, const int k ){
+    //         entry_view(i,j,k,0) = -6.0 * rdx_2;
+    //         entry_view(i,j,k,1) = rdx_2;
+    //         entry_view(i,j,k,2) = rdx_2;
+    //         entry_view(i,j,k,3) = rdx_2;
+    //     } );
+
+    // solver->setMatrixValues( *matrix_entries );
+
+    // // Set the tolerance.
+    // solver->setTolerance( 1.0e-9 );
+
+    // // Set the maximum iterations.
+    // solver->setMaxIter( 5000 );
+
+    // // Set the print level.
+    // solver->setPrintLevel( 0 );
+
+    // // Setup the problem.
+    // solver->setup();
+
     auto solver =
-        Cajita::createStructuredSolver<double,device_type>( "PCG", *cell_layout );
-
-    // Create a grid preconditioner.
-    auto preconditioner =
-        Cajita::createStructuredSolver<double,device_type>( "Diagonal", *cell_layout, true );
-    solver->setPreconditioner( preconditioner );
-
-    // Create a 7-point 3d laplacian stencil (symmetric).
-    std::vector<std::array<int,3> > stencil =
-        { {0,0,0}, {1,0,0}, {0,1,0}, {0,0,1} };
-    solver->setMatrixStencil( stencil, true );
-
-    // Cajita::Create the laplacian matrix entries. The stencil is defined
-    // over cells.
-    int rdx_2 = 1.0 / (cell_size * cell_size);
-    auto matrix_entry_layout = Cajita::createArrayLayout( local_grid, 4, Cajita::Cell() );
-    auto matrix_entries = Cajita::createArray<double,device_type>(
-        "matrix_entries", matrix_entry_layout );
-    auto entry_view = matrix_entries->view();
+        Cajita::createReferenceConjugateGradient<double,device_type>( *cell_layout );
+    std::vector<std::array<int,3> > matrix_stencil =
+        { {0,0,0}, {-1,0,0}, {1,0,0}, {0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1} };
+    solver->setMatrixStencil( matrix_stencil );
+    double rdx_2 = 1.0 / (cell_size * cell_size);
+    const auto& matrix_entries = solver->getMatrixValues();
+    auto matrix_view = matrix_entries.view();
     Kokkos::parallel_for(
         "fill_matrix_entries",
         createExecutionPolicy( cell_space, execution_space() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
-            entry_view(i,j,k,0) = -6.0 * rdx_2;
-            entry_view(i,j,k,1) = rdx_2;
-            entry_view(i,j,k,2) = rdx_2;
-            entry_view(i,j,k,3) = rdx_2;
+            matrix_view(i,j,k,0) = -6.0 * rdx_2;
+            matrix_view(i,j,k,1) =
+                ( i + global_space.min(Dim::I) > 0 ) ? rdx_2 : 0.0;
+            matrix_view(i,j,k,2) =
+                ( i + global_space.min(Dim::I) < global_space.max(Dim::I) - 1 ) ? rdx_2 : 0.0;
+            matrix_view(i,j,k,3) =
+                ( j + global_space.min(Dim::J) > 0 ) ? rdx_2 : 0.0;
+            matrix_view(i,j,k,4) =
+                ( j + global_space.min(Dim::J) < global_space.max(Dim::J) - 1 ) ? rdx_2 : 0.0;
+            matrix_view(i,j,k,5) = rdx_2;
+            matrix_view(i,j,k,6) = rdx_2;
         } );
-
-    solver->setMatrixValues( *matrix_entries );
-
-    // Set the tolerance.
+    std::vector<std::array<int,3> > diag_stencil = { {0,0,0} };
+    solver->setPreconditionerStencil( diag_stencil );
+    const auto& preconditioner_entries = solver->getPreconditionerValues();
+    auto preconditioner_view = preconditioner_entries.view();
+    Kokkos::parallel_for(
+        "fill_preconditioner_entries",
+        createExecutionPolicy( cell_space, execution_space() ),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ){
+            preconditioner_view(i,j,k,0) = -1.0 / (6.0 * rdx_2);
+        } );
     solver->setTolerance( 1.0e-9 );
-
-    // Set the maximum iterations.
     solver->setMaxIter( 5000 );
-
-    // Set the print level.
     solver->setPrintLevel( 0 );
-
-    // Setup the problem.
-    solver->setup();
 
     // Time step.
     int num_step = t_final / delta_t;
     double time = 0.0;
     for ( int t = 0; t < num_step; ++t )
     {
-        std::cout << "Step " << t+1 << "/" << num_step << " - time " << time << std::endl;
+        if ( 0 == global_grid->blockId() )
+            std::cout << "Step " << t+1 << "/" << num_step << " - time " << time << std::endl;
 
         // Output particles
         Harlow::SiloParticleWriter::writeTimeStep( *global_grid, t, time, x_t, c_t );
@@ -588,10 +634,11 @@ void solve( const int num_cell,
                     ( m_i_view(i,j,k,0) > 0.0 ) ? mu_i_view(i,j,k,0) / m_i_view(i,j,k,0) : 0.0;
 
                 // Apply velocity boundary condition.
-                if ( i < 2 || face_i_space.max(Dim::I) - 2 <= i )
-                {
-                    u_i_view(i,j,k,0) = 0.0;
-                }
+                // if ( i + global_space.min(Dim::I) <= halo_width ||
+                //      num_cell + halo_width <= i + global_space.min(Dim::I) )
+                // {
+                //     u_i_view(i,i,k,0) = 0.0;
+                // }
             });
         Kokkos::parallel_for(
             "compute_initial_grid_velocity_j",
@@ -603,10 +650,11 @@ void solve( const int num_cell,
                     ( m_j_view(i,j,k,0) > 0.0 ) ? mu_j_view(i,j,k,0) / m_j_view(i,j,k,0) : 0.0;
 
                 // Apply velocity boundary condition.
-                if ( j < 2 || face_j_space.max(Dim::J) - 2 <= j )
-                {
-                    u_j_view(i,j,k,0) = 0.0;
-                }
+                // if ( j + global_space.min(Dim::J) <= halo_width ||
+                //      num_cell + halo_width <= j + global_space.min(Dim::J) )
+                // {
+                //     u_j_view(i,j,k,0) = 0.0;
+                // }
             });
         Kokkos::parallel_for(
             "compute_initial_grid_velocity_k",
@@ -733,18 +781,18 @@ void solve( const int num_cell,
         num_tracer = tracers.size();
 
         // Compute divergence.
-        // velocity_halo_i->gather( *u_i );
-        // velocity_halo_j->gather( *u_j );
-        // velocity_halo_k->gather( *u_k );
-        // Kokkos::parallel_for(
-        //     "pressure_rhs",
-        //     Cajita::createExecutionPolicy( cell_space, execution_space() ),
-        //     KOKKOS_LAMBDA( const int i, const int j, const int k ){
-        //         du_c_view(i,j,k,0) = ( ( u_i_view(i+1,j,k,0) - u_i_view(i,j,k,0) ) +
-        //                                ( u_j_view(i,j+1,k,0) - u_j_view(i,j,k,0) ) +
-        //                                ( u_k_view(i,j,k+1,0) - u_k_view(i,j,k,0) ) ) / cell_size;
-        //     });
-        // Cajita::BovWriter::writeTimeStep( t, time, *du_c );
+        velocity_halo_i->gather( *u_i );
+        velocity_halo_j->gather( *u_j );
+        velocity_halo_k->gather( *u_k );
+        Kokkos::parallel_for(
+            "pressure_rhs",
+            Cajita::createExecutionPolicy( cell_space, execution_space() ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+                du_c_view(i,j,k,0) = ( ( u_i_view(i+1,j,k,0) - u_i_view(i,j,k,0) ) +
+                                       ( u_j_view(i,j+1,k,0) - u_j_view(i,j,k,0) ) +
+                                       ( u_k_view(i,j,k+1,0) - u_k_view(i,j,k,0) ) ) / cell_size;
+            });
+        Cajita::BovWriter::writeTimeStep( t, time, *du_c );
 
         // Update time
         time += delta_t;

@@ -285,11 +285,11 @@ void solve( const int num_cell,
 
     // Create a grid solver.
     auto solver =
-        Cajita::createStructuredSolver<double,device_type>( "PCG", *cell_layout );
+        Cajita::createHypreStructuredSolver<double,device_type>( "PCG", *cell_layout );
 
     // Create a grid preconditioner.
     auto preconditioner =
-        Cajita::createStructuredSolver<double,device_type>( "Diagonal", *cell_layout, true );
+        Cajita::createHypreStructuredSolver<double,device_type>( "Diagonal", *cell_layout, true );
     solver->setPreconditioner( preconditioner );
 
     // Create a 7-point 3d laplacian stencil.
