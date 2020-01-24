@@ -1167,7 +1167,6 @@ void p2g(
     pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * sd.dx;
 
     // Loop data.
-    int entity[3];
     value_type distance[3];
     value_type mapping[3];
     value_type coeffs[N];
@@ -1179,11 +1178,6 @@ void p2g(
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
             {
-                // Get the entity index.
-                entity[Dim::I] = sd.s[Dim::I][i];
-                entity[Dim::J] = sd.s[Dim::J][j];
-                entity[Dim::K] = sd.s[Dim::K][k];
-
                 // Compute physical distance to entity.
                 distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
                 distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
@@ -1250,7 +1244,6 @@ void p2f(
     pln[Dim::K] = (sd.x[Dim::K] - int(sd.x[Dim::K])) * sd.dx;
 
     // Loop data.
-    int entity[3];
     value_type distance[3];
     value_type mapping[3];
     value_type coeffs[N];
@@ -1262,11 +1255,6 @@ void p2f(
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
             {
-                // Get the entity index.
-                entity[Dim::I] = sd.s[Dim::I][i];
-                entity[Dim::J] = sd.s[Dim::J][j];
-                entity[Dim::K] = sd.s[Dim::K][k];
-
                 // Compute physical distance to entity.
                 distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
                 distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
