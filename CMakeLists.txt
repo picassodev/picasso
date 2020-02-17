@@ -23,7 +23,7 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 # find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(MPI REQUIRED)
-find_package(KOKKOS REQUIRED)
+find_package(Kokkos 3 REQUIRED)
 find_package(Cabana REQUIRED)
 find_package(Cajita REQUIRED)
 find_package(Silo REQUIRED)

@@ -15,9 +15,9 @@ set(SOURCES
 add_library(harlow ${SOURCES})
 
 target_link_libraries(harlow
-  Kokkos::Kokkos
+  Kokkos::kokkos
   MPI::MPI_CXX
-  Cabana::core
+  Cabana::cabanacore
   Cajita::Cajita
   Silo::silo )
 
