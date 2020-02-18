@@ -107,7 +107,7 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
     // Redistribute the particles.
     ParticleCommunication::redistribute(
         *block, particles_mirror,
-        std::integral_constant<std::size_t,0>() );
+        std::integral_constant<std::size_t,0>(), true );
 
     // Copy back to check.
     particles = Cabana::create_mirror_view_and_copy(
@@ -208,7 +208,7 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
     // Redistribute the particles.
     ParticleCommunication::redistribute(
         *block, particles_mirror,
-        std::integral_constant<std::size_t,0>() );
+        std::integral_constant<std::size_t,0>(), true );
 
     // Copy back to check.
     particles = Cabana::create_mirror_view_and_copy(

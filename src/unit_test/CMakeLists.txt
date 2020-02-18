@@ -21,7 +21,7 @@ endforeach()
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
-set(HARLOW_SUPPORTED_DEVICES Serial OpenMP Cuda)
+set(HARLOW_SUPPORTED_DEVICES SERIAL OPENMP CUDA)
 
 macro(Harlow_add_tests)
   cmake_parse_arguments(HARLOW_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
@@ -39,7 +39,7 @@ macro(Harlow_add_tests)
   endforeach()
   set(HARLOW_UNIT_TEST_MAIN unit_test_main.cpp)
   foreach(_device ${HARLOW_SUPPORTED_DEVICES})
-    if(Kokkos_DEVICES MATCHES "${_device}")
+    if(Kokkos_ENABLE_${_device})
       set(_dir ${CMAKE_CURRENT_BINARY_DIR}/${_device})
       file(MAKE_DIRECTORY ${_dir})
       foreach(_test ${HARLOW_UNIT_TEST_NAMES})
@@ -72,4 +72,4 @@ macro(Harlow_add_tests)
 endmacro()
 
 Harlow_add_tests(NAMES DenseLinearAlgebra)
-Harlow_add_tests(MPI NAMES ParticleCommunication SiloParticleWriter)
+Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter)

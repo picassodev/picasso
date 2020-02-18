@@ -21,85 +21,113 @@ namespace Harlow
 namespace ParticleCommunication
 {
 //---------------------------------------------------------------------------//
-// Particle destination
+// Check for the global number of particles that must be communicated.
 //---------------------------------------------------------------------------//
-template<class BlockType,
+template<class LocalGridType,
+         class CoordSliceType>
+int communicationCount( const LocalGridType& local_grid,
+                        const CoordSliceType& coords )
+{
+    using execution_space = typename CoordSliceType::execution_space;
+
+    // Locate the particles in the local mesh and count how many have left the
+    // halo region.
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
+    Kokkos::Array<double,3> local_low = { local_mesh.lowCorner(Cajita::Ghost(),Dim::I),
+                                          local_mesh.lowCorner(Cajita::Ghost(),Dim::J),
+                                          local_mesh.lowCorner(Cajita::Ghost(),Dim::K) };
+    Kokkos::Array<double,3> local_high = { local_mesh.highCorner(Cajita::Ghost(),Dim::I),
+                                          local_mesh.highCorner(Cajita::Ghost(),Dim::J),
+                                          local_mesh.highCorner(Cajita::Ghost(),Dim::K) };
+    int comm_count = 0;
+    Kokkos::parallel_reduce(
+        "redistribute_count",
+        Kokkos::RangePolicy<execution_space>(0,coords.size()),
+        KOKKOS_LAMBDA( const int p, int& result ){
+            if ( coords(p,Dim::I) < local_low[Dim::I] ||
+                 coords(p,Dim::I) > local_high[Dim::I] ||
+                 coords(p,Dim::J) < local_low[Dim::J] ||
+                 coords(p,Dim::J) > local_high[Dim::J] ||
+                 coords(p,Dim::K) < local_low[Dim::K] ||
+                 coords(p,Dim::K) > local_high[Dim::K] )
+                result += 1;
+        },
+        comm_count );
+
+    MPI_Allreduce( MPI_IN_PLACE, &comm_count, 1, MPI_INT, MPI_SUM,
+                   local_grid.globalGrid().comm() );
+
+    return comm_count;
+}
+
+//---------------------------------------------------------------------------//
+// Compute particle destinations and shift periodic coordinates.
+//---------------------------------------------------------------------------//
+template<class LocalGridType,
          class CoordSliceType,
          class NeighborRankView,
          class DestinationRankView>
-void computeParticleDestinations(
-    const BlockType& block,
-    const CoordSliceType& coords,
+void prepareCommunication(
+    const LocalGridType& local_grid,
     const NeighborRankView& neighbor_ranks,
-    DestinationRankView& destinations )
+    DestinationRankView& destinations,
+    CoordSliceType& coords )
 {
     using execution_space = typename CoordSliceType::execution_space;
 
     // Locate the particles in the global grid and get their destination
     // rank. The particle halo should be constructed such that particles will
-    // only move to a location in the 26 neighbor halo or stay on this rank.
-    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( block );
-    auto num_particle_send = coords.size();
-    auto low_corner_i = local_mesh.lowCorner(Cajita::Own(),Dim::I);
-    auto low_corner_j = local_mesh.lowCorner(Cajita::Own(),Dim::J);
-    auto low_corner_k = local_mesh.lowCorner(Cajita::Own(),Dim::K);
-    auto high_corner_i = local_mesh.highCorner(Cajita::Own(),Dim::I);
-    auto high_corner_j = local_mesh.highCorner(Cajita::Own(),Dim::J);
-    auto high_corner_k = local_mesh.highCorner(Cajita::Own(),Dim::K);
+    // only move to a location in the 26 neighbor halo or stay on this
+    // rank. If the particle crosses a periodic boundary update it's
+    // coordinates to represent the shift.
+    auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
+    const auto& global_grid = local_grid.globalGrid();
+    const auto& global_mesh = global_grid.globalMesh();
+    Kokkos::Array<double,3> local_low = { local_mesh.lowCorner(Cajita::Own(),Dim::I),
+                                          local_mesh.lowCorner(Cajita::Own(),Dim::J),
+                                          local_mesh.lowCorner(Cajita::Own(),Dim::K) };
+    Kokkos::Array<double,3> local_high = { local_mesh.highCorner(Cajita::Own(),Dim::I),
+                                           local_mesh.highCorner(Cajita::Own(),Dim::J),
+                                           local_mesh.highCorner(Cajita::Own(),Dim::K) };
+    Kokkos::Array<bool,3> period = { global_grid.isPeriodic(Dim::I),
+                                     global_grid.isPeriodic(Dim::J),
+                                     global_grid.isPeriodic(Dim::K) };
+    Kokkos::Array<double,3> global_low = { global_mesh.lowCorner(Dim::I),
+                                           global_mesh.lowCorner(Dim::J),
+                                           global_mesh.lowCorner(Dim::K) };
+    Kokkos::Array<double,3> global_high = { global_mesh.highCorner(Dim::I),
+                                            global_mesh.highCorner(Dim::J),
+                                            global_mesh.highCorner(Dim::K) };
+    Kokkos::Array<double,3> global_span = { global_mesh.extent(Dim::I),
+                                            global_mesh.extent(Dim::J),
+                                            global_mesh.extent(Dim::K) };
     Kokkos::parallel_for(
-        "redistribute_locate",
-        Kokkos::RangePolicy<execution_space>(0,num_particle_send),
+        "redistribute_locate_shift",
+        Kokkos::RangePolicy<execution_space>(0,coords.size()),
         KOKKOS_LAMBDA( const int p ){
             // Compute the logical index of the neighbor we are sending to.
-            int ni = 1;
-            if ( coords(p,Dim::I) < low_corner_i ) ni = 0;
-            else if ( coords(p,Dim::I) > high_corner_i ) ni = 2;
+            int nid[3] = {1,1,1};
+            for ( int d = 0; d < 3; ++d )
+            {
+                if ( coords(p,d) < local_low[d] ) nid[d] = 0;
+                else if ( coords(p,d) > local_high[d] ) nid[d] = 2;
+            }
 
-            int nj = 1;
-            if ( coords(p,Dim::J) < low_corner_j ) nj = 0;
-            else if ( coords(p,Dim::J) > high_corner_j ) nj = 2;
+            // Compute the destination MPI rank.
+            destinations( p ) = neighbor_ranks( nid[Dim::I] + 3*(nid[Dim::J] + 3*nid[Dim::K]) );
 
-            int nk = 1;
-            if ( coords(p,Dim::K) < low_corner_k ) nk = 0;
-            else if ( coords(p,Dim::K) > high_corner_k ) nk = 2;
-
-            // Compute the MPI rank.
-            destinations( p ) = neighbor_ranks( ni + 3*(nj + 3*nk) );
+            // Shift periodic coordinates if needed.
+            for ( int d = 0; d < 3; ++d )
+            {
+                if ( period[d] )
+                {
+                    if ( coords(p,d) > global_high[d] )
+                        coords(p,d) -= global_span[d];
+                    else if ( coords(p,d) < global_low[d] )
+                        coords(p,d) += global_span[d];
+                }
+            }
         });
-}
-
-//---------------------------------------------------------------------------//
-// Periodic coordinate shift for communication across a periodic boundary.
-//---------------------------------------------------------------------------//
-// When particles cross a periodic boundary their coordinates must be shifted
-// to represent a new physical location.
-template<class GlobalGridType, class CoordSliceType>
-void shiftPeriodicCoordinates( const GlobalGridType& global_grid,
-                               CoordSliceType& coords )
-{
-    using execution_space = typename CoordSliceType::execution_space;
-
-    const auto& global_mesh = global_grid.globalMesh();
-
-    for ( int d = 0; d < 3; ++d )
-    {
-        if ( global_grid.isPeriodic(d) )
-        {
-            double global_low = global_mesh.lowCorner( d );
-            double global_high = global_mesh.highCorner( d );
-            double global_span = global_mesh.extent( d );
-
-            Kokkos::parallel_for(
-                "redistribute_periodic_shift",
-                Kokkos::RangePolicy<execution_space>(0,coords.size()),
-                KOKKOS_LAMBDA( const int p ){
-                    if ( coords(p,d) > global_high )
-                        coords(p,d) -= global_span;
-                    else if ( coords(p,d) < global_low )
-                        coords(p,d) += global_span;
-                } );
-        }
-    }
 }
 
 //---------------------------------------------------------------------------//
@@ -108,20 +136,39 @@ void shiftPeriodicCoordinates( const GlobalGridType& global_grid,
 /*!
   \brief Redistribute particles to new owning ranks based on their location.
 
-  \param block The block in which the particles are currently located.
+  \param local_grid The local_grid in which the particles are currently located.
 
   \param particles The particles to redistribute.
 
   \param Member index in the AoSoA of the particle coordinates.
+
+  \param force_communication If true communication will always occur even if
+  particles have not exited the halo.
  */
-template<class BlockType, class ParticleContainer, std::size_t CoordIndex>
-void redistribute( const BlockType& block,
+template<class LocalGridType, class ParticleContainer, std::size_t CoordIndex>
+void redistribute( const LocalGridType& local_grid,
                    ParticleContainer& particles,
-                   std::integral_constant<std::size_t,CoordIndex> )
+                   std::integral_constant<std::size_t,CoordIndex>,
+                   bool force_communication = false )
 {
     using device_type = typename ParticleContainer::device_type;
 
-    // Of the 27 potential blocks figure out which are in our topology. Some
+    // Get the coordinates.
+    auto coords = Cabana::slice<CoordIndex>( particles );
+
+    // If we are not forcing communication check to see if we need to
+    // communicate.
+    if ( !force_communication )
+    {
+        // Check to see if we need to communicate.
+        auto comm_count = communicationCount( local_grid, coords );
+
+        // If we have no particle communication to do then exit.
+        if ( 0 == comm_count )
+            return;
+    }
+
+    // Of the 27 potential local grids figure out which are in our topology. Some
     // of the ranks in this list may be invalid. We will update this list
     // after we compute destination ranks so it is unique and valid.
     std::vector<int> topology( 27, -1 );
@@ -129,13 +176,10 @@ void redistribute( const BlockType& block,
     for ( int k = -1; k < 2; ++k )
         for ( int j = -1; j < 2; ++j )
             for ( int i = -1; i < 2; ++i, ++nr )
-                topology[nr] = block.neighborRank(i,j,k);
-
-    // Get the coordinates.
-    auto coords = Cabana::slice<CoordIndex>( particles );
+                topology[nr] = local_grid.neighborRank(i,j,k);
 
     // Locate the particles in the global grid and get their destination
-    // rank.
+    // rank and shift periodic coordinates if necessary.
     Kokkos::View<int*,Kokkos::HostSpace,Kokkos::MemoryUnmanaged>
         neighbor_ranks( topology.data(), topology.size() );
     auto nr_mirror = Kokkos::create_mirror_view_and_copy(
@@ -143,7 +187,7 @@ void redistribute( const BlockType& block,
     Kokkos::View<int*,device_type> destinations(
         Kokkos::ViewAllocateWithoutInitializing("destinations"),
         particles.size() );
-    computeParticleDestinations( block, coords, nr_mirror, destinations );
+    prepareCommunication( local_grid, nr_mirror, destinations, coords );
 
     // Make the topology a list of unique and valid ranks.
     auto remove_end = std::remove( topology.begin(), topology.end(), -1 );
@@ -152,18 +196,12 @@ void redistribute( const BlockType& block,
     topology.resize( std::distance(topology.begin(),unique_end) );
 
     // Create the Cabana distributor.
-    Cabana::Distributor<device_type> distributor( block.globalGrid().comm(),
+    Cabana::Distributor<device_type> distributor( local_grid.globalGrid().comm(),
                                                   destinations,
                                                   topology );
 
     // Redistribute the particles.
     Cabana::migrate( distributor, particles );
-
-    // Get a new slice of the coordinates.
-    coords = Cabana::slice<CoordIndex>( particles );
-
-    // Shift the particle coordinates for movement across periodic boundaries.
-    shiftPeriodicCoordinates( block.globalGrid(), coords );
 }
 
 //---------------------------------------------------------------------------//
