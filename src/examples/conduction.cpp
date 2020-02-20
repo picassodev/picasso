@@ -176,7 +176,7 @@ void solve( const int num_cell,
     using Particle = typename ParticleList::tuple_type;
 
     // Create particles.
-    double pvolume = cell_size * cell_size * cell_size / ppc;
+    double pvolume = cell_size * cell_size * cell_size / (ppc*ppc*ppc);
     ParticleList particles( "particles" );
     auto create_func = KOKKOS_LAMBDA( double x[3], Particle& p ) {
         for ( int d = 0; d < 3; ++d )
@@ -189,7 +189,8 @@ void solve( const int num_cell,
         Cabana::get<ParticleField::t>(p) = init_temp;
         return true;
     };
-    Harlow::initializeParticles( *local_grid, ppc, create_func, particles );
+    Harlow::initializeParticles(
+        Harlow::InitUniform(), *local_grid, ppc, create_func, particles );
 
     // Get slices for each phase.
     auto x_p = Cabana::slice<ParticleField::x>( particles, "position" );
