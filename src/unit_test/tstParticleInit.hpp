@@ -14,7 +14,19 @@ using namespace Harlow;
 namespace Test
 {
 //---------------------------------------------------------------------------//
-void randomInitTest()
+int totalParticlesPerCell( InitUniform, int ppc )
+{
+    return ppc * ppc * ppc;
+}
+
+int totalParticlesPerCell( InitRandom, int ppc )
+{
+    return ppc;
+}
+
+//---------------------------------------------------------------------------//
+template<class InitType>
+void InitTest( InitType init_type, int ppc )
 {
     // Create the grid.
     double cell_size = 0.23;
@@ -73,8 +85,7 @@ void randomInitTest()
     };
 
     // Initialize particles.
-    int ppc = 17;
-    initializeParticles( *local_grid, ppc, particle_init_func, particles );
+    initializeParticles( init_type, *local_grid, ppc, particle_init_func, particles );
 
     // Check that we made particles.
     int num_p = particles.size();
@@ -85,7 +96,7 @@ void randomInitTest()
     MPI_Allreduce( MPI_IN_PLACE, &global_num_particle, 1, MPI_INT, MPI_SUM,
                    MPI_COMM_WORLD );
     int expect_num_particle =
-        ppc *
+        totalParticlesPerCell( init_type, ppc ) *
         (global_grid->globalNumEntity(Cajita::Cell(),Dim::I)-2) *
         (global_grid->globalNumEntity(Cajita::Cell(),Dim::J)-2) *
         (global_grid->globalNumEntity(Cajita::Cell(),Dim::K)-2);
@@ -116,8 +127,14 @@ void randomInitTest()
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, random_init_test )
 {
-    randomInitTest();
+    InitTest( InitRandom(), 17 );
 }
+
+TEST( TEST_CATEGORY, uniform_init_test )
+{
+    InitTest( InitUniform(), 3 );
+}
+
 //---------------------------------------------------------------------------//
 
 } // end namespace Test
