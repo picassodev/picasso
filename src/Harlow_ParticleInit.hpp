@@ -307,30 +307,30 @@ void initializeParticles( InitUniform,
             for ( int ip = 0; ip < particles_per_cell_dim; ++ip )
                 for ( int jp = 0; jp < particles_per_cell_dim; ++jp )
                     for ( int kp = 0; kp < particles_per_cell_dim; ++kp )
-            {
-                // Local particle id.
-                int pid = cell_id * particles_per_cell +
-                          ip + particles_per_cell_dim * (
-                              jp + particles_per_cell_dim * kp );
+                    {
+                        // Local particle id.
+                        int pid = cell_id * particles_per_cell +
+                                  ip + particles_per_cell_dim * (
+                                      jp + particles_per_cell_dim * kp );
 
-                // Set the particle position.
-                px[Dim::I] = 0.5 * spacing[Dim::I] + ip * spacing[Dim::I] +
-                             low_coords[Dim::I];
-                px[Dim::J] = 0.5 * spacing[Dim::J] + jp * spacing[Dim::J] +
-                             low_coords[Dim::J];
-                px[Dim::K] = 0.5 * spacing[Dim::K] + kp * spacing[Dim::K] +
-                             low_coords[Dim::K];
+                        // Set the particle position.
+                        px[Dim::I] = 0.5 * spacing[Dim::I] + ip * spacing[Dim::I] +
+                                     low_coords[Dim::I];
+                        px[Dim::J] = 0.5 * spacing[Dim::J] + jp * spacing[Dim::J] +
+                                     low_coords[Dim::J];
+                        px[Dim::K] = 0.5 * spacing[Dim::K] + kp * spacing[Dim::K] +
+                                     low_coords[Dim::K];
 
-                // Create a new particle.
-                particle_created(pid) = create_functor( px, particle );
+                        // Create a new particle.
+                        particle_created(pid) = create_functor( px, particle );
 
-                // If we created a new particle insert it into the list.
-                if ( particle_created(pid) )
-                {
-                    particles.setTuple( pid, particle );
-                    ++create_count;
-                }
-            }
+                        // If we created a new particle insert it into the list.
+                        if ( particle_created(pid) )
+                        {
+                            particles.setTuple( pid, particle );
+                            ++create_count;
+                        }
+                    }
         },
         local_num_create );
 
