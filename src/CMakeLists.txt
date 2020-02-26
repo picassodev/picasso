@@ -2,6 +2,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_DenseLinearAlgebra.hpp
+  Harlow_GeometricPrimitives.hpp
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp

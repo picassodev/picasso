@@ -83,5 +83,5 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES DenseLinearAlgebra)
+Harlow_add_tests(NAMES DenseLinearAlgebra GeometricPrimitives)
 Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter)
