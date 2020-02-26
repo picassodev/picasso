@@ -12,11 +12,23 @@ set(gtest_args --gtest_color=yes)
 ##--------------------------------------------------------------------------##
 ## General tests.
 ##--------------------------------------------------------------------------##
-foreach(_test Version )
-  add_executable(${_test}_test tst${_test}.cpp unit_test_main.cpp)
-  target_link_libraries(${_test}_test harlow gtest)
-  add_test(NAME ${_test}_test COMMAND ${_test}_test --gtest_color=yes)
-endforeach()
+add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
+target_link_libraries(Version_test harlow gtest)
+add_test(
+  NAME Version_test
+  COMMAND Version_test --gtest_color=yes)
+
+add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
+target_link_libraries(InputParser_test harlow gtest)
+add_test(
+  NAME InputParser_test
+  COMMAND InputParser_test --gtest_color=yes)
+add_custom_command(
+  TARGET InputParser_test POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json)
+
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
