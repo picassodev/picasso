@@ -27,6 +27,7 @@ find_package(Kokkos 3 REQUIRED)
 find_package(Cabana REQUIRED)
 find_package(Cajita REQUIRED)
 find_package(Silo REQUIRED)
+find_package(nlohmann_json 3 REQUIRED)
 
 # enable testing
 option(Harlow_ENABLE_TESTING "Build tests" OFF)
