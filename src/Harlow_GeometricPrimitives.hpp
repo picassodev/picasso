@@ -20,7 +20,7 @@ struct ObjectBase
     using memory_space = MemorySpace;
 
     KOKKOS_FUNCTION
-    virtual ~ObjectBase() = default;
+    virtual ~ObjectBase() {}
 
     // Determine if a point is inside the primitive
     KOKKOS_FUNCTION

@@ -24,7 +24,7 @@ target_link_libraries(harlow
   Cabana::cabanacore
   Cajita::Cajita
   Silo::silo
-  nlohmann_json::nlohmann_json )
+  Boost::boost )
 
 target_include_directories(harlow
   PUBLIC

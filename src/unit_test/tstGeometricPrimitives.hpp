@@ -18,7 +18,7 @@ void constructionTest()
         objects( "geometry", 5 );
 
     // Create brick 1.
-    Kokkos::Array<double,3> b1e = { 1.0, 1.0, 1.0 };
+    Kokkos::Array<double,3> b1e = { 1.001, 1.001, 1.001 };
     Kokkos::Array<double,3> b1o = { -0.5, 0.5, 0.5 };
     Geometry::Primitives::create(
         objects(0),
@@ -26,7 +26,7 @@ void constructionTest()
         b1e, b1o );
 
     // Create brick 2.
-    Kokkos::Array<double,3> b2e = { 2.0, 2.0, 2.0 };
+    Kokkos::Array<double,3> b2e = { 2.001, 2.001, 2.001 };
     Kokkos::Array<double,3> b2o = { -1.0, -1.0, 0.5 };
     Geometry::Primitives::create(
         objects(1),
@@ -142,8 +142,8 @@ void constructionTest()
     EXPECT_FALSE( inside_host(0,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( box_host(0,d), b1o[d] - 0.5*b1e[d] );
-        EXPECT_EQ( box_host(0,d+3), b1o[d] + 0.5*b1e[d] );
+        EXPECT_FLOAT_EQ( box_host(0,d), b1o[d] - 0.5*b1e[d] );
+        EXPECT_FLOAT_EQ( box_host(0,d+3), b1o[d] + 0.5*b1e[d] );
     }
 
     // brick 2
@@ -151,38 +151,38 @@ void constructionTest()
     EXPECT_FALSE( inside_host(1,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( box_host(1,d), b2o[d] - 0.5*b2e[d] );
-        EXPECT_EQ( box_host(1,d+3), b2o[d] + 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d), b2o[d] - 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d+3), b2o[d] + 0.5*b2e[d] );
     }
 
     // union
     EXPECT_TRUE( inside_host(2,0) );
     EXPECT_FALSE( inside_host(2,1) );
-    EXPECT_EQ( box_host(2,0), b2o[0] - 0.5*b2e[0] );
-    EXPECT_EQ( box_host(2,1), b2o[1] - 0.5*b2e[1] );
-    EXPECT_EQ( box_host(2,2), b2o[2] - 0.5*b2e[2] );
-    EXPECT_EQ( box_host(2,3), b1o[0] + 0.5*b1e[0] );
-    EXPECT_EQ( box_host(2,4), b1o[1] + 0.5*b1e[1] );
-    EXPECT_EQ( box_host(2,5), b2o[2] + 0.5*b2e[2] );
+    EXPECT_FLOAT_EQ( box_host(2,0), b2o[0] - 0.5*b2e[0] );
+    EXPECT_FLOAT_EQ( box_host(2,1), b2o[1] - 0.5*b2e[1] );
+    EXPECT_FLOAT_EQ( box_host(2,2), b2o[2] - 0.5*b2e[2] );
+    EXPECT_FLOAT_EQ( box_host(2,3), b1o[0] + 0.5*b1e[0] );
+    EXPECT_FLOAT_EQ( box_host(2,4), b1o[1] + 0.5*b1e[1] );
+    EXPECT_FLOAT_EQ( box_host(2,5), b2o[2] + 0.5*b2e[2] );
 
     // difference
     EXPECT_TRUE( inside_host(3,0) );
     EXPECT_FALSE( inside_host(3,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_EQ( box_host(3,d), b2o[d] - 0.5*b2e[d] );
-        EXPECT_EQ( box_host(3,d+3), b2o[d] + 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(3,d), b2o[d] - 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(3,d+3), b2o[d] + 0.5*b2e[d] );
     }
 
     // intersection
     EXPECT_TRUE( inside_host(4,0) );
     EXPECT_FALSE( inside_host(4,1) );
-    EXPECT_EQ( box_host(4,0), b1o[0] - 0.5*b1e[0] );
-    EXPECT_EQ( box_host(4,1), b1o[1] - 0.5*b1e[1] );
-    EXPECT_EQ( box_host(4,2), b1o[2] - 0.5*b1e[2] );
-    EXPECT_EQ( box_host(4,3), b2o[0] + 0.5*b2e[0] );
-    EXPECT_EQ( box_host(4,4), b2o[1] + 0.5*b2e[1] );
-    EXPECT_EQ( box_host(4,5), b1o[2] + 0.5*b1e[2] );
+    EXPECT_FLOAT_EQ( box_host(4,0), b1o[0] - 0.5*b1e[0] );
+    EXPECT_FLOAT_EQ( box_host(4,1), b1o[1] - 0.5*b1e[1] );
+    EXPECT_FLOAT_EQ( box_host(4,2), b1o[2] - 0.5*b1e[2] );
+    EXPECT_FLOAT_EQ( box_host(4,3), b2o[0] + 0.5*b2e[0] );
+    EXPECT_FLOAT_EQ( box_host(4,4), b2o[1] + 0.5*b2e[1] );
+    EXPECT_FLOAT_EQ( box_host(4,5), b1o[2] + 0.5*b1e[2] );
 
     // Cleanup.
     for ( int i = 0; i < 5; ++i )

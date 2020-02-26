@@ -1,7 +1,7 @@
 #ifndef HARLOW_INPUTPARSER_HPP
 #define HARLOW_INPUTPARSER_HPP
 
-#include <nlohmann/json.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace Harlow
 {
@@ -13,12 +13,12 @@ class InputParser
     //! Input argument constructor.
     InputParser( int argc, char* argv[] );
 
-    //! Get the database.
-    const nlohmann::json& database() const;
+    //! Get the ptree.
+    const boost::property_tree::ptree& propertyTree() const;
 
   private:
 
-    nlohmann::json _json;
+    boost::property_tree::ptree _ptree;
 };
 
 //---------------------------------------------------------------------------//

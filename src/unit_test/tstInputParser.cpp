@@ -18,22 +18,22 @@ TEST( input_parser, parser_test )
         argv[n] = const_cast<char*>(args[n].data());
 
     Harlow::InputParser parser( argc, argv );
-    const auto& db = parser.database();
+    const auto& pt = parser.propertyTree();
 
-    EXPECT_EQ( db["pi"], 3.141 );
-    EXPECT_TRUE( db["happy"] );
-    EXPECT_EQ(db["name"], "Niels");
-    EXPECT_EQ( db["nothing"], nullptr );
-    EXPECT_EQ( db["answer"]["everything"], 42 );
+    EXPECT_EQ( pt.get<double>("pi"), 3.141 );
+    EXPECT_TRUE( pt.get<bool>("happy") );
+    EXPECT_EQ(pt.get<std::string>("name"), "Niels");
+    EXPECT_EQ( pt.get<int>("answer.everything"), 42 );
 
-    auto vec = db["list"];
-    EXPECT_EQ( vec[0], 1 );
-    EXPECT_EQ( vec[1], 0 );
-    EXPECT_EQ( vec[2], 2 );
+    int counter = 0;
+    for ( auto& element : pt.get_child("list") )
+    {
+        EXPECT_EQ( element.second.get_value<int>(), counter );
+        ++counter;
+    }
 
-    auto obj = db["object"];
-    EXPECT_EQ( obj["currency"], "USD" );
-    EXPECT_EQ( obj["value"], 42.99 );
+    EXPECT_EQ( pt.get<std::string>("object.currency"), "USD" );
+    EXPECT_EQ( pt.get<double>("object.value"), 42.99 );
 }
 
 //---------------------------------------------------------------------------//

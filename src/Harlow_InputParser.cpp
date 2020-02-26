@@ -1,5 +1,7 @@
 #include <Harlow_InputParser.hpp>
 
+#include <boost/property_tree/json_parser.hpp>
+
 #include <fstream>
 #include <string>
 
@@ -28,15 +30,14 @@ InputParser::InputParser( int argc, char* argv[] )
             "No Harlow input file specified: --harlow-input-file [file name] is required.");
 
     // Read the file.
-    std::ifstream file(filename);
-    file >> _json;
+    boost::property_tree::read_json( filename, _ptree );
 }
 
 //---------------------------------------------------------------------------//
-//! Get the database.
-const nlohmann::json& InputParser::database() const
+//! Get the ptree.
+const boost::property_tree::ptree& InputParser::propertyTree() const
 {
-    return _json;
+    return _ptree;
 }
 
 //---------------------------------------------------------------------------//
