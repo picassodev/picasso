@@ -24,10 +24,17 @@ add_test(
   NAME InputParser_test
   COMMAND InputParser_test --gtest_color=yes)
 add_custom_command(
-  TARGET InputParser_test POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy
-  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json
-  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json)
+  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json)
+add_custom_command(
+  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml)
+add_custom_command(
+  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info)
 
 
 ##--------------------------------------------------------------------------##
@@ -66,7 +73,7 @@ macro(Harlow_add_tests)
           foreach(_np ${HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS})
             add_test(NAME ${_target}_${_np} COMMAND
               ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
-              ${_target} ${MPIEXEC_POSTFLAGS} ${gtest_args})
+              ${_target} ${MPIEXEC_PREFLAGS} ${gtest_args})
           endforeach()
         else()
           if(_device STREQUAL OpenMP)

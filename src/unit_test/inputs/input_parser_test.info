@@ -1,0 +1,13 @@
+pi 3.141
+happy true
+name Niels
+answer
+{
+    everything 42
+}
+list 0 1 2
+object
+{
+    currency "USD"
+    value 42.99
+}

@@ -19,6 +19,8 @@ struct ObjectBase
 {
     using memory_space = MemorySpace;
 
+    // Note that using "= default" caused a CUDA segfault so we explictly put
+    // the "{}" here.
     KOKKOS_FUNCTION
     virtual ~ObjectBase() {}
 

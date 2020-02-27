@@ -7,11 +7,8 @@ namespace Test
 //---------------------------------------------------------------------------//
 // TESTS
 //---------------------------------------------------------------------------//
-TEST( input_parser, parser_test )
+void testParser( const std::vector<std::string>& args )
 {
-    std::vector<std::string> args =
-        { "other_thing", "--harlow-input-file",
-          "input_parser_test.json", "something_else" };
     const int argc = 4;
     char* argv[argc];
     for ( int n = 0; n < argc; ++n )
@@ -34,6 +31,33 @@ TEST( input_parser, parser_test )
 
     EXPECT_EQ( pt.get<std::string>("object.currency"), "USD" );
     EXPECT_EQ( pt.get<double>("object.value"), 42.99 );
+}
+
+//---------------------------------------------------------------------------//
+TEST( input_parser, json_test )
+{
+    std::vector<std::string> args =
+        { "other_thing", "--harlow-input-json",
+          "input_parser_test.json", "something_else" };
+    testParser( args );
+}
+
+//---------------------------------------------------------------------------//
+TEST( input_parser, xml_test )
+{
+    std::vector<std::string> args =
+        { "other_thing", "--harlow-input-xml",
+          "input_parser_test.xml", "something_else" };
+    testParser( args );
+}
+
+//---------------------------------------------------------------------------//
+TEST( input_parser, info_test )
+{
+    std::vector<std::string> args =
+        { "other_thing", "--harlow-input-info",
+          "input_parser_test.info", "something_else" };
+    testParser( args );
 }
 
 //---------------------------------------------------------------------------//

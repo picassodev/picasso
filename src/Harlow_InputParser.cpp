@@ -1,6 +1,8 @@
 #include <Harlow_InputParser.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/info_parser.hpp>
 
 #include <fstream>
 #include <string>
@@ -16,10 +18,25 @@ InputParser::InputParser( int argc, char* argv[] )
     std::string filename;
     for ( int n = 0; n < argc-1; ++n )
     {
-        if( 0 == std::strcmp(argv[n],"--harlow-input-file") )
+        if( 0 == std::strcmp(argv[n],"--harlow-input-json") )
         {
             filename = std::string(argv[n+1]);
             found_arg = true;
+            boost::property_tree::read_json( filename, _ptree );
+            break;
+        }
+        else if( 0 == std::strcmp(argv[n],"--harlow-input-xml") )
+        {
+            filename = std::string(argv[n+1]);
+            found_arg = true;
+            boost::property_tree::read_xml( filename, _ptree );
+            break;
+        }
+        else if( 0 == std::strcmp(argv[n],"--harlow-input-info") )
+        {
+            filename = std::string(argv[n+1]);
+            found_arg = true;
+            boost::property_tree::read_info( filename, _ptree );
             break;
         }
     }
@@ -27,10 +44,8 @@ InputParser::InputParser( int argc, char* argv[] )
     // Check that we found the filename.
     if ( !found_arg )
         throw std::runtime_error(
-            "No Harlow input file specified: --harlow-input-file [file name] is required.");
-
-    // Read the file.
-    boost::property_tree::read_json( filename, _ptree );
+            "No Harlow input file specified: --harlow-input-*type* [file name] is required.\
+             Where *type* can be json, xml, or info" );
 }
 
 //---------------------------------------------------------------------------//
