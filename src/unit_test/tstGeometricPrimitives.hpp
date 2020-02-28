@@ -21,19 +21,17 @@ void constructionTest()
 
     // Create brick 1.
     Kokkos::Array<double,3> b1e = { 1.001, 1.001, 1.001 };
-    Kokkos::Array<double,3> b1o = { -0.5, 0.5, 0.5 };
     Geometry::Primitives::create(
         objects(0),
         Geometry::Primitives::BrickBuilder<TEST_MEMSPACE>(),
-        b1e, b1o );
+        b1e );
 
     // Create brick 2.
     Kokkos::Array<double,3> b2e = { 2.001, 2.001, 2.001 };
-    Kokkos::Array<double,3> b2o = { -1.0, -1.0, 0.5 };
     Geometry::Primitives::create(
         objects(1),
         Geometry::Primitives::BrickBuilder<TEST_MEMSPACE>(),
-        b2e, b2o );
+        b2e );
 
     // Unite the bricks.
     Geometry::Primitives::create(
@@ -65,15 +63,15 @@ void constructionTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ){
             double x[3];
-            double box[3];
+            double box[6];
 
             // Check brick 1
-            x[0] = -0.25;
-            x[1] = 0.75;
-            x[2] = 0.25;
+            x[0] = 0.25;
+            x[1] = 0.25;
+            x[2] = -0.25;
             inside_results(0,0) = objects_device(0).inside(x);
 
-            x[0] = -22.2;
+            x[0] = 0.55;
             inside_results(0,1) = objects_device(0).inside(x);
 
             objects_device(0).boundingBox(box);
@@ -81,12 +79,12 @@ void constructionTest()
                 box_results(0,i) = box[i];
 
             // Check brick 2
-            x[0] = -1.25;
+            x[0] = -0.85;
             x[1] = -0.75;
             x[2] = -0.25;
             inside_results(1,0) = objects_device(1).inside(x);
 
-            x[1] = -22.2;
+            x[1] = -1.5;
             inside_results(1,1) = objects_device(1).inside(x);
 
             objects_device(1).boundingBox(box);
@@ -94,7 +92,7 @@ void constructionTest()
                 box_results(1,i) = box[i];
 
             // Check the union.
-            x[0] = -1.25;
+            x[0] = -0.25;
             x[1] = -0.75;
             x[2] = -0.25;
             inside_results(2,0) = objects_device(2).inside(x);
@@ -107,7 +105,7 @@ void constructionTest()
                 box_results(2,i) = box[i];
 
             // Check the difference.
-            x[0] = -1.7;
+            x[0] = -0.7;
             x[1] = -0.1;
             x[2] = -0.1;
             inside_results(3,0) = objects_device(3).inside(x);
@@ -144,8 +142,8 @@ void constructionTest()
     EXPECT_FALSE( inside_host(0,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_FLOAT_EQ( box_host(0,d), b1o[d] - 0.5*b1e[d] );
-        EXPECT_FLOAT_EQ( box_host(0,d+3), b1o[d] + 0.5*b1e[d] );
+        EXPECT_FLOAT_EQ( box_host(0,d), -0.5*b1e[d] );
+        EXPECT_FLOAT_EQ( box_host(0,d+3), 0.5*b1e[d] );
     }
 
     // brick 2
@@ -153,38 +151,38 @@ void constructionTest()
     EXPECT_FALSE( inside_host(1,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_FLOAT_EQ( box_host(1,d), b2o[d] - 0.5*b2e[d] );
-        EXPECT_FLOAT_EQ( box_host(1,d+3), b2o[d] + 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d), -0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d+3), 0.5*b2e[d] );
     }
 
     // union
     EXPECT_TRUE( inside_host(2,0) );
     EXPECT_FALSE( inside_host(2,1) );
-    EXPECT_FLOAT_EQ( box_host(2,0), b2o[0] - 0.5*b2e[0] );
-    EXPECT_FLOAT_EQ( box_host(2,1), b2o[1] - 0.5*b2e[1] );
-    EXPECT_FLOAT_EQ( box_host(2,2), b2o[2] - 0.5*b2e[2] );
-    EXPECT_FLOAT_EQ( box_host(2,3), b1o[0] + 0.5*b1e[0] );
-    EXPECT_FLOAT_EQ( box_host(2,4), b1o[1] + 0.5*b1e[1] );
-    EXPECT_FLOAT_EQ( box_host(2,5), b2o[2] + 0.5*b2e[2] );
+    EXPECT_FLOAT_EQ( box_host(2,0), -0.5*b2e[0] );
+    EXPECT_FLOAT_EQ( box_host(2,1), -0.5*b2e[1] );
+    EXPECT_FLOAT_EQ( box_host(2,2), -0.5*b2e[2] );
+    EXPECT_FLOAT_EQ( box_host(2,3), 0.5*b2e[0] );
+    EXPECT_FLOAT_EQ( box_host(2,4), 0.5*b2e[1] );
+    EXPECT_FLOAT_EQ( box_host(2,5), 0.5*b2e[2] );
 
     // difference
     EXPECT_TRUE( inside_host(3,0) );
     EXPECT_FALSE( inside_host(3,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_FLOAT_EQ( box_host(3,d), b2o[d] - 0.5*b2e[d] );
-        EXPECT_FLOAT_EQ( box_host(3,d+3), b2o[d] + 0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(3,d), -0.5*b2e[d] );
+        EXPECT_FLOAT_EQ( box_host(3,d+3), 0.5*b2e[d] );
     }
 
     // intersection
     EXPECT_TRUE( inside_host(4,0) );
     EXPECT_FALSE( inside_host(4,1) );
-    EXPECT_FLOAT_EQ( box_host(4,0), b1o[0] - 0.5*b1e[0] );
-    EXPECT_FLOAT_EQ( box_host(4,1), b1o[1] - 0.5*b1e[1] );
-    EXPECT_FLOAT_EQ( box_host(4,2), b1o[2] - 0.5*b1e[2] );
-    EXPECT_FLOAT_EQ( box_host(4,3), b2o[0] + 0.5*b2e[0] );
-    EXPECT_FLOAT_EQ( box_host(4,4), b2o[1] + 0.5*b2e[1] );
-    EXPECT_FLOAT_EQ( box_host(4,5), b1o[2] + 0.5*b1e[2] );
+    EXPECT_FLOAT_EQ( box_host(4,0), -0.5*b1e[0] );
+    EXPECT_FLOAT_EQ( box_host(4,1), -0.5*b1e[1] );
+    EXPECT_FLOAT_EQ( box_host(4,2), -0.5*b1e[2] );
+    EXPECT_FLOAT_EQ( box_host(4,3), 0.5*b1e[0] );
+    EXPECT_FLOAT_EQ( box_host(4,4), 0.5*b1e[1] );
+    EXPECT_FLOAT_EQ( box_host(4,5), 0.5*b1e[2] );
 
     // Cleanup.
     for ( int i = 0; i < 5; ++i )
@@ -202,11 +200,10 @@ void moveTest()
 
     // Create sphere
     double radius = 1.001;
-    Kokkos::Array<double,3> origin = { 1.001, -1.001, 1.001 };
     Geometry::Primitives::create(
         objects(0),
         Geometry::Primitives::SphereBuilder<TEST_MEMSPACE>(),
-        radius, origin );
+        radius );
 
     // Move the sphere.
     Kokkos::Array<double,3> distance = { -2.001, 2.001, -2.001 };
@@ -226,13 +223,13 @@ void moveTest()
         "test_objects",
         Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ){
-            double box[3];
+            double box[6];
 
             // In sphere but not move
-            double x0[3] = { 1.2, -0.99, 0.75 };
+            double x0[3] = { -0.85, 0.35, -0.1 };
 
             // In move but not sphere
-            double x1[3] = { -0.85, 0.95, -1.1 };
+            double x1[3] = { -1.2, 1.99, -1.75 };
 
             // Check sphere
             inside_results(0,0) = objects_device(0).inside(x0);
@@ -262,8 +259,8 @@ void moveTest()
     EXPECT_FALSE( inside_host(0,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_FLOAT_EQ( box_host(0,d), origin[d] - radius );
-        EXPECT_FLOAT_EQ( box_host(0,d+3), origin[d] + radius );
+        EXPECT_FLOAT_EQ( box_host(0,d), -radius );
+        EXPECT_FLOAT_EQ( box_host(0,d+3), radius );
     }
 
     // move
@@ -271,8 +268,8 @@ void moveTest()
     EXPECT_FALSE( inside_host(1,1) );
     for ( int d = 0; d < 3; ++d )
     {
-        EXPECT_FLOAT_EQ( box_host(1,d), origin[d] - radius + distance[d] );
-        EXPECT_FLOAT_EQ( box_host(1,d+3), origin[d] + radius + distance[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d), -radius + distance[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d+3), radius + distance[d] );
     }
 
     // Cleanup.
@@ -289,17 +286,16 @@ void rotateTest()
     Kokkos::View<Geometry::Primitives::Object<TEST_MEMSPACE>*,Kokkos::HostSpace>
         objects( "geometry", nprimitive );
 
-    // Create brick
+    // Create brick at the origin
     Kokkos::Array<double,3> be = { 1.001, 2.001, 3.001 };
-    Kokkos::Array<double,3> bo = { -0.5, 0.5, 0.5 };
     Geometry::Primitives::create(
         objects(0),
         Geometry::Primitives::BrickBuilder<TEST_MEMSPACE>(),
-        be, bo );
+        be );
 
     // Rotate the brick 90 degrees about x.
     double angle1 = 2.0 * atan(1.0);
-    Kokkos::Array<double,3> axis1 = { 1.0, 0.0, 0.0 };
+    Kokkos::Array<double,3> axis1 = { 2.0, 0.0, 0.0 };
     Geometry::Primitives::create(
         objects(1),
         Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
@@ -307,7 +303,7 @@ void rotateTest()
 
     // Rotate the brick 90 degrees about y.
     double angle2 = 2.0 * atan(1.0);
-    Kokkos::Array<double,3> axis2 = { 0.0, 1.0, 0.0 };
+    Kokkos::Array<double,3> axis2 = { 0.0, 2.0, 0.0 };
     Geometry::Primitives::create(
         objects(2),
         Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
@@ -315,7 +311,7 @@ void rotateTest()
 
     // Rotate the brick 90 degrees about z.
     double angle3 = 2.0 * atan(1.0);
-    Kokkos::Array<double,3> axis3 = { 0.0, 0.0, 1.0 };
+    Kokkos::Array<double,3> axis3 = { 0.0, 0.0, 2.0 };
     Geometry::Primitives::create(
         objects(3),
         Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
@@ -332,18 +328,18 @@ void rotateTest()
         "test_objects",
         Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ){
-            double box[3];
+            double box[6];
             double x0[3];
             double x1[3];
 
             // Check rotate 1
             x0[0] = -0.5;
-            x0[1] = 1.99;
-            x0[2] = 1.499;
+            x0[1] = 1.49;
+            x0[2] = 0.99;
             inside_results(0,0) = objects_device(1).inside(x0);
             x1[0] = -0.5;
-            x1[1] = 1.499;
-            x1[2] = 1.99;
+            x1[1] = 1.99;
+            x1[2] = 1.49;
             inside_results(0,1) = objects_device(1).inside(x1);
 
             objects_device(1).boundingBox(box);
@@ -351,13 +347,13 @@ void rotateTest()
                 box_results(0,i) = box[i];
 
             // Check rotate 2
-            x0[0] = 1.99;
+            x0[0] = 1.49;
             x0[1] = 0.5;
-            x0[2] = 0.01;
+            x0[2] = 0.49;
             inside_results(1,0) = objects_device(2).inside(x0);
-            x1[0] = 0.01;
+            x1[0] = 0.49;
             x1[1] = 0.5;
-            x1[2] = 1.99;
+            x1[2] = 1.49;
             inside_results(1,1) = objects_device(2).inside(x1);
 
             objects_device(2).boundingBox(box);
@@ -365,12 +361,12 @@ void rotateTest()
                 box_results(1,i) = box[i];
 
             // Check rotate 3
-            x0[0] = 0.499;
-            x0[1] = 0.99;
+            x0[0] = 0.99;
+            x0[1] = 0.49;
             x0[2] = 0.5;
             inside_results(2,0) = objects_device(3).inside(x0);
-            x1[0] = 0.99;
-            x1[1] = 0.499;
+            x1[0] = 0.49;
+            x1[1] = 0.99;
             x1[2] = 0.5;
             inside_results(2,1) = objects_device(3).inside(x1);
 
@@ -388,32 +384,32 @@ void rotateTest()
     // rotate 1
     EXPECT_TRUE( inside_host(0,0) );
     EXPECT_FALSE( inside_host(0,1) );
-    EXPECT_EQ( box_host(0,0), bo[0] - 0.5 * be[0] );
-    EXPECT_EQ( box_host(0,1), bo[2] - 0.5 * be[2] );
-    EXPECT_EQ( box_host(0,2), bo[1] - 0.5 * be[1] );
-    EXPECT_EQ( box_host(0,3), bo[0] + 0.5 * be[0] );
-    EXPECT_EQ( box_host(0,4), bo[2] + 0.5 * be[2] );
-    EXPECT_EQ( box_host(0,5), bo[1] + 0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(0,0), -0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(0,1), -0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(0,2), -0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(0,3), 0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(0,4), 0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(0,5), 0.5 * be[1] );
 
     // rotate 2
     EXPECT_TRUE( inside_host(1,0) );
     EXPECT_FALSE( inside_host(1,1) );
-    EXPECT_EQ( box_host(0,0), bo[2] - 0.5 * be[2] );
-    EXPECT_EQ( box_host(0,1), bo[1] - 0.5 * be[1] );
-    EXPECT_EQ( box_host(0,2), bo[0] - 0.5 * be[0] );
-    EXPECT_EQ( box_host(0,3), bo[2] + 0.5 * be[2] );
-    EXPECT_EQ( box_host(0,4), bo[1] + 0.5 * be[1] );
-    EXPECT_EQ( box_host(0,5), bo[0] + 0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(1,0), -0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(1,1), -0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(1,2), -0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(1,3), 0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(1,4), 0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(1,5), 0.5 * be[0] );
 
     // rotate 3
     EXPECT_TRUE( inside_host(2,0) );
     EXPECT_FALSE( inside_host(2,1) );
-    EXPECT_EQ( box_host(0,0), bo[1] - 0.5 * be[1] );
-    EXPECT_EQ( box_host(0,1), bo[0] - 0.5 * be[0] );
-    EXPECT_EQ( box_host(0,2), bo[2] - 0.5 * be[2] );
-    EXPECT_EQ( box_host(0,3), bo[1] + 0.5 * be[1] );
-    EXPECT_EQ( box_host(0,4), bo[0] + 0.5 * be[0] );
-    EXPECT_EQ( box_host(0,5), bo[2] + 0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(2,0), -0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(2,1), -0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(2,2), -0.5 * be[2] );
+    EXPECT_FLOAT_EQ( box_host(2,3), 0.5 * be[1] );
+    EXPECT_FLOAT_EQ( box_host(2,4), 0.5 * be[0] );
+    EXPECT_FLOAT_EQ( box_host(2,5), 0.5 * be[2] );
 
     // Cleanup.
     for ( int i = 0; i < nprimitive; ++i )

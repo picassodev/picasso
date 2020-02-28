@@ -336,8 +336,9 @@ struct Rotate : public ObjectBase<MemorySpace>
 {
     using memory_space = MemorySpace;
 
-    // Rotate A a given angle about the given axis. Angle is in
-    // radians. (0-2pi or multiples thereof).
+    // Rotate A a given angle about the given axis which passes through the
+    // origin of the coordinate system (0,0,0). Angle is in
+    // radians (0-2*PI).
     KOKKOS_FUNCTION
     Rotate( const Object<MemorySpace>& a,
             const double angle,
@@ -447,10 +448,21 @@ struct Rotate : public ObjectBase<MemorySpace>
     KOKKOS_FUNCTION
     void boundingBox( double box[6] ) const override
     {
+        // Get the original box.
         _a.boundingBox( box );
+
+        // Rotate it.
         double boxr[6];
         rotateForward( &box[0], &boxr[0] );
         rotateForward( &box[3], &boxr[3] );
+
+        // Determine the bounding box of the rotated box. This isn't optimal
+        // in terms of the smallest possible box but it is safe.
+        for ( int d = 0; d < 3; ++d )
+        {
+            box[d] = fmin( boxr[d], boxr[d+3] );
+            box[d+3] = fmax( boxr[d], boxr[d+3] );
+        }
     }
 
     Object<MemorySpace> _a;
@@ -482,22 +494,21 @@ struct RotateBuilder
 };
 
 //---------------------------------------------------------------------------//
-// Shapes
+// Shapes. All primitive shapes have their center of mass at the origin.
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
 struct Brick : public ObjectBase<MemorySpace>
 {
     using memory_space = MemorySpace;
 
-    // Axis-aligned brick centered at a given origin.
+    // Axis-aligned brick with the given extents.
     KOKKOS_FUNCTION
-    Brick( const Kokkos::Array<double,3> extent,
-           const Kokkos::Array<double,3> origin )
+    Brick( const Kokkos::Array<double,3> extent )
     {
         for ( int d = 0; d < 3; ++d )
         {
-            _brick[d] = origin[d] - extent[d] * 0.5;
-            _brick[d+3] = _brick[d] + extent[d];
+            _brick[d] = -extent[d] * 0.5;
+            _brick[d+3] = extent[d] * 0.5;
         }
     }
 
@@ -531,15 +542,14 @@ struct BrickBuilder
     using execution_space = typename memory_space::execution_space;
 
     static
-    type* create( const Kokkos::Array<double,3> extent,
-                  const Kokkos::Array<double,3> origin )
+    type* create( const Kokkos::Array<double,3> extent )
     {
         auto obj = (type*) Kokkos::kokkos_malloc<MemorySpace>(sizeof(type));
         Kokkos::parallel_for(
             "create_union",
             Kokkos::RangePolicy<execution_space>(0,1),
             KOKKOS_LAMBDA( const int ){
-                new ((type*)obj) type(extent,origin);
+                new ((type*)obj) type(extent);
             });
         return obj;
     }
@@ -551,22 +561,18 @@ struct Sphere : public ObjectBase<MemorySpace>
 {
     using memory_space = MemorySpace;
 
-    // Axis-aligned sphere centered at a given origin.
+    // Sphere of the given radius.
     KOKKOS_FUNCTION
-    Sphere( const double radius,
-            const Kokkos::Array<double,3> origin )
+    Sphere( const double radius )
         : _radius( radius )
         , _r2( radius*radius )
-        , _origin( origin )
     {}
 
     // Determine if a point is inside the primitive
     KOKKOS_FUNCTION
     bool inside( const double x[3] ) const override
     {
-        double d2 = (x[0]-_origin[0])*(x[0]-_origin[0]) +
-                    (x[1]-_origin[1])*(x[1]-_origin[1]) +
-                    (x[2]-_origin[2])*(x[2]-_origin[2]);
+        double d2 = x[0]*x[0] + x[1]*x[1] + x[2]*x[2];
         return ( d2 <= _r2 );
     }
 
@@ -576,8 +582,8 @@ struct Sphere : public ObjectBase<MemorySpace>
     {
         for ( int d = 0; d < 3; ++d )
         {
-            box[d] = _origin[d] - _radius;
-            box[d+3] = _origin[d] + _radius;
+            box[d] = -_radius;
+            box[d+3] = _radius;
         }
     }
 
@@ -596,15 +602,14 @@ struct SphereBuilder
     using execution_space = typename memory_space::execution_space;
 
     static
-    type* create( const double radius,
-                  const Kokkos::Array<double,3> origin )
+    type* create( const double radius )
     {
         auto obj = (type*) Kokkos::kokkos_malloc<MemorySpace>(sizeof(type));
         Kokkos::parallel_for(
             "create_union",
             Kokkos::RangePolicy<execution_space>(0,1),
             KOKKOS_LAMBDA( const int ){
-                new ((type*)obj) type(radius,origin);
+                new ((type*)obj) type(radius);
             });
         return obj;
     }
