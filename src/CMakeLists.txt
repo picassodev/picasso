@@ -12,6 +12,7 @@ set(HEADERS
   )
 
 set(SOURCES
+  Harlow_GeometricPrimitives.cpp
   Harlow_InputParser.cpp
   Harlow_Version.cpp
   )

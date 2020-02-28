@@ -4,6 +4,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <utility>
+#include <cmath>
 
 namespace Harlow
 {
@@ -12,7 +13,7 @@ namespace Geometry
 namespace Primitives
 {
 //---------------------------------------------------------------------------//
-// Base class.
+// Base class
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
 struct ObjectBase
@@ -35,7 +36,7 @@ struct ObjectBase
 };
 
 //---------------------------------------------------------------------------//
-// Interface.
+// Interface
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
 struct Object
@@ -61,7 +62,7 @@ struct Object
 };
 
 //---------------------------------------------------------------------------//
-// Creation and destruction.
+// Creation and destruction
 //---------------------------------------------------------------------------//
 template<class MemorySpace, class Builder, class ... Args>
 void create( Object<MemorySpace>& obj, Builder, Args&& ... args )
@@ -172,9 +173,11 @@ struct Difference : public ObjectBase<MemorySpace>
     KOKKOS_FUNCTION
     void boundingBox( double box[6] ) const override
     {
+        // This implementation is not an optimal one but it is "safe" such
+        // that the bounding box of (A-B) can't be larger than the bounding
+        // box of A.
         _a.boundingBox( box );
     }
-
 
     Object<MemorySpace> _a;
     Object<MemorySpace> _b;
@@ -264,7 +267,222 @@ struct IntersectionBuilder
 };
 
 //---------------------------------------------------------------------------//
-// Shapes.
+// Transformations
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+struct Move : public ObjectBase<MemorySpace>
+{
+    using memory_space = MemorySpace;
+
+    // Move A a given distance in x, y, and z.
+    KOKKOS_FUNCTION
+    Move( const Object<MemorySpace>& a,
+          const Kokkos::Array<double,3>& distance )
+        : _a( a )
+        , _dist( distance )
+    {}
+
+    // Determine if a point is inside the primitive.
+    KOKKOS_FUNCTION
+    bool inside( const double x[3] ) const override
+    {
+        // Note we move the point back by the distance vector to achieve the
+        // affect of the underlying object actually being moved.
+        double xd[3] = { x[0]-_dist[0], x[1]-_dist[1], x[2]-_dist[2] };
+        return _a.inside(xd);
+    }
+
+    // Get the axis-aligned bounding box of the primitive
+    KOKKOS_FUNCTION
+    void boundingBox( double box[6] ) const override
+    {
+        _a.boundingBox( box );
+        for ( int d = 0; d < 3; ++d )
+        {
+            box[d] += _dist[d];
+            box[d+3] += _dist[d];
+        }
+    }
+
+    Object<MemorySpace> _a;
+    Kokkos::Array<double,3> _dist;
+};
+
+template<class MemorySpace>
+struct MoveBuilder
+{
+    using type = Move<MemorySpace>;
+    using memory_space = MemorySpace;
+    using execution_space = typename memory_space::execution_space;
+
+    static
+    type* create( const Object<MemorySpace>& a,
+                  const Kokkos::Array<double,3>& distance )
+    {
+        auto obj = (type*) Kokkos::kokkos_malloc<MemorySpace>(sizeof(type));
+        Kokkos::parallel_for(
+            "create_union",
+            Kokkos::RangePolicy<execution_space>(0,1),
+            KOKKOS_LAMBDA( const int ){
+                new ((type*)obj) type(a,distance);
+            });
+        return obj;
+    }
+};
+
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+struct Rotate : public ObjectBase<MemorySpace>
+{
+    using memory_space = MemorySpace;
+
+    // Rotate A a given angle about the given axis. Angle is in
+    // radians. (0-2pi or multiples thereof).
+    KOKKOS_FUNCTION
+    Rotate( const Object<MemorySpace>& a,
+            const double angle,
+            const Kokkos::Array<double,3>& axis )
+        : _a( a )
+    {
+        // Create a unit axis vector.
+        double al = sqrt(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+        double u[3] = { axis[0] / al, axis[1] / al, axis[2] / al };
+
+        // Forward Cosine/Sine
+        double caf = cos(angle);
+        double saf = sin(angle);
+
+        // Build the forward rotation matrix.
+        // (0,0)
+        _rmf[0] = u[0]*u[0]*(1.0-caf) + caf;
+
+        // (0,1)
+        _rmf[1] = u[0]*u[1]*(1.0-caf) - u[2]*saf;
+
+        // (0,2)
+        _rmf[2] = u[2]*u[0]*(1.0-caf) + u[1]*saf;
+
+        // (1,0)
+        _rmf[3] = u[0]*u[1]*(1.0-caf) + u[2]*saf;
+
+        // (1,1)
+        _rmf[4] = u[1]*u[1]*(1.0-caf) + caf;
+
+        // (1,2)
+        _rmf[5] = u[1]*u[2]*(1.0-caf) - u[0]*saf;
+
+        // (2,0)
+        _rmf[6] = u[2]*u[0]*(1.0-caf) - u[1]*saf;
+
+        // (2,1)
+        _rmf[7] = u[1]*u[2]*(1.0-caf) + u[0]*saf;
+
+        // (2,2)
+        _rmf[8] = u[2]*u[2]*(1.0-caf) + caf;
+
+        // Reverse Cosine/Sine
+        double car = cos(-angle);
+        double sar = sin(-angle);
+
+        // Build the reverse rotation matrix.
+        // (0,0)
+        _rmr[0] = u[0]*u[0]*(1.0-car) + car;
+
+        // (0,1)
+        _rmr[1] = u[0]*u[1]*(1.0-car) - u[2]*sar;
+
+        // (0,2)
+        _rmr[2] = u[2]*u[0]*(1.0-car) + u[1]*sar;
+
+        // (1,0)
+        _rmr[3] = u[0]*u[1]*(1.0-car) + u[2]*sar;
+
+        // (1,1)
+        _rmr[4] = u[1]*u[1]*(1.0-car) + car;
+
+        // (1,2)
+        _rmr[5] = u[1]*u[2]*(1.0-car) - u[0]*sar;
+
+        // (2,0)
+        _rmr[6] = u[2]*u[0]*(1.0-car) - u[1]*sar;
+
+        // (2,1)
+        _rmr[7] = u[1]*u[2]*(1.0-car) + u[0]*sar;
+
+        // (2,2)
+        _rmr[8] = u[2]*u[2]*(1.0-car) + car;
+    }
+
+    // Rotate a point about the axis in the direction of the given angle.
+    KOKKOS_FUNCTION
+    void rotateForward( const double x[3], double xr[3] ) const
+    {
+        xr[0] = _rmf[0]*x[0] + _rmf[1]*x[1] + _rmf[2]*x[2];
+        xr[1] = _rmf[3]*x[0] + _rmf[4]*x[1] + _rmf[5]*x[2];
+        xr[2] = _rmf[6]*x[0] + _rmf[7]*x[1] + _rmf[8]*x[2];
+    }
+
+    // Rotate a point about the axis in the opposite direction of the given
+    // angle.
+    KOKKOS_FUNCTION
+    void rotateReverse( const double x[3], double xr[3] ) const
+    {
+        xr[0] = _rmr[0]*x[0] + _rmr[1]*x[1] + _rmr[2]*x[2];
+        xr[1] = _rmr[3]*x[0] + _rmr[4]*x[1] + _rmr[5]*x[2];
+        xr[2] = _rmr[6]*x[0] + _rmr[7]*x[1] + _rmr[8]*x[2];
+    }
+
+    // Determine if a point is inside the primitive
+    KOKKOS_FUNCTION
+    bool inside( const double x[3] ) const override
+    {
+        // Note we rotate the point in the reverse direction to achieve the
+        // effect of the underlying object being rotated.
+        double xr[3];
+        rotateReverse( x, xr );
+        return (_a.inside(xr));
+    }
+
+    // Get the axis-aligned bounding box of the primitive
+    KOKKOS_FUNCTION
+    void boundingBox( double box[6] ) const override
+    {
+        _a.boundingBox( box );
+        double boxr[6];
+        rotateForward( &box[0], &boxr[0] );
+        rotateForward( &box[3], &boxr[3] );
+    }
+
+    Object<MemorySpace> _a;
+    Kokkos::Array<double,9> _rmf;
+    Kokkos::Array<double,9> _rmr;
+};
+
+template<class MemorySpace>
+struct RotateBuilder
+{
+    using type = Rotate<MemorySpace>;
+    using memory_space = MemorySpace;
+    using execution_space = typename memory_space::execution_space;
+
+    static
+    type* create( const Object<MemorySpace>& a,
+                  const double angle,
+                  const Kokkos::Array<double,3>& axis )
+    {
+        auto obj = (type*) Kokkos::kokkos_malloc<MemorySpace>(sizeof(type));
+        Kokkos::parallel_for(
+            "create_union",
+            Kokkos::RangePolicy<execution_space>(0,1),
+            KOKKOS_LAMBDA( const int ){
+                new ((type*)obj) type(a,angle,axis);
+            });
+        return obj;
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Shapes
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
 struct Brick : public ObjectBase<MemorySpace>
@@ -322,6 +540,71 @@ struct BrickBuilder
             Kokkos::RangePolicy<execution_space>(0,1),
             KOKKOS_LAMBDA( const int ){
                 new ((type*)obj) type(extent,origin);
+            });
+        return obj;
+    }
+};
+
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+struct Sphere : public ObjectBase<MemorySpace>
+{
+    using memory_space = MemorySpace;
+
+    // Axis-aligned sphere centered at a given origin.
+    KOKKOS_FUNCTION
+    Sphere( const double radius,
+            const Kokkos::Array<double,3> origin )
+        : _radius( radius )
+        , _r2( radius*radius )
+        , _origin( origin )
+    {}
+
+    // Determine if a point is inside the primitive
+    KOKKOS_FUNCTION
+    bool inside( const double x[3] ) const override
+    {
+        double d2 = (x[0]-_origin[0])*(x[0]-_origin[0]) +
+                    (x[1]-_origin[1])*(x[1]-_origin[1]) +
+                    (x[2]-_origin[2])*(x[2]-_origin[2]);
+        return ( d2 <= _r2 );
+    }
+
+    // Get the axis-aligned bounding box of the primitive
+    KOKKOS_FUNCTION
+    void boundingBox( double box[6] ) const override
+    {
+        for ( int d = 0; d < 3; ++d )
+        {
+            box[d] = _origin[d] - _radius;
+            box[d+3] = _origin[d] + _radius;
+        }
+    }
+
+  private:
+
+    double _radius;
+    double _r2;
+    Kokkos::Array<double,3> _origin;
+};
+
+template<class MemorySpace>
+struct SphereBuilder
+{
+    using type = Sphere<MemorySpace>;
+    using memory_space = MemorySpace;
+    using execution_space = typename memory_space::execution_space;
+
+    static
+    type* create( const double radius,
+                  const Kokkos::Array<double,3> origin )
+    {
+        auto obj = (type*) Kokkos::kokkos_malloc<MemorySpace>(sizeof(type));
+        Kokkos::parallel_for(
+            "create_union",
+            Kokkos::RangePolicy<execution_space>(0,1),
+            KOKKOS_LAMBDA( const int ){
+                new ((type*)obj) type(radius,origin);
             });
         return obj;
     }

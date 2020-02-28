@@ -19,7 +19,7 @@ void testParser( const std::vector<std::string>& args )
 
     EXPECT_EQ( pt.get<double>("pi"), 3.141 );
     EXPECT_TRUE( pt.get<bool>("happy") );
-    EXPECT_EQ(pt.get<std::string>("name"), "Niels");
+    EXPECT_EQ( pt.get<std::string>("name"), "Niels" );
     EXPECT_EQ( pt.get<int>("answer.everything"), 42 );
 
     int counter = 0;

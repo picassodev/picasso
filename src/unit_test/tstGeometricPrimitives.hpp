@@ -3,6 +3,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <cmath>
+
 #include <gtest/gtest.h>
 
 using namespace Harlow;
@@ -190,11 +192,252 @@ void constructionTest()
 }
 
 //---------------------------------------------------------------------------//
+void moveTest()
+{
+    // Create primitives. Note this array is on the host but we will actually
+    // make the primitives on the device.
+    int nprimitive = 2;
+    Kokkos::View<Geometry::Primitives::Object<TEST_MEMSPACE>*,Kokkos::HostSpace>
+        objects( "geometry", nprimitive );
+
+    // Create sphere
+    double radius = 1.001;
+    Kokkos::Array<double,3> origin = { 1.001, -1.001, 1.001 };
+    Geometry::Primitives::create(
+        objects(0),
+        Geometry::Primitives::SphereBuilder<TEST_MEMSPACE>(),
+        radius, origin );
+
+    // Move the sphere.
+    Kokkos::Array<double,3> distance = { -2.001, 2.001, -2.001 };
+    Geometry::Primitives::create(
+        objects(1),
+        Geometry::Primitives::MoveBuilder<TEST_MEMSPACE>(),
+        objects(0), distance );
+
+    // Make the objects device accessible.
+    auto objects_device = Kokkos::create_mirror_view_and_copy(
+        TEST_MEMSPACE(), objects );
+
+    // Evaluate the objects on device.
+    Kokkos::View<bool*[2],TEST_MEMSPACE> inside_results( "inside_results", nprimitive );
+    Kokkos::View<double*[6],TEST_MEMSPACE> box_results( "box_results", nprimitive );
+    Kokkos::parallel_for(
+        "test_objects",
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int ){
+            double box[3];
+
+            // In sphere but not move
+            double x0[3] = { 1.2, -0.99, 0.75 };
+
+            // In move but not sphere
+            double x1[3] = { -0.85, 0.95, -1.1 };
+
+            // Check sphere
+            inside_results(0,0) = objects_device(0).inside(x0);
+            inside_results(0,1) = objects_device(0).inside(x1);
+
+            objects_device(0).boundingBox(box);
+            for ( int i = 0; i < 6; ++i )
+                box_results(0,i) = box[i];
+
+            // Check move
+            inside_results(1,0) = objects_device(1).inside(x1);
+            inside_results(1,1) = objects_device(1).inside(x0);
+
+            objects_device(1).boundingBox(box);
+            for ( int i = 0; i < 6; ++i )
+                box_results(1,i) = box[i];
+        });
+
+    // Check the results.
+    auto inside_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), inside_results );
+    auto box_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), box_results );
+
+    // sphere
+    EXPECT_TRUE( inside_host(0,0) );
+    EXPECT_FALSE( inside_host(0,1) );
+    for ( int d = 0; d < 3; ++d )
+    {
+        EXPECT_FLOAT_EQ( box_host(0,d), origin[d] - radius );
+        EXPECT_FLOAT_EQ( box_host(0,d+3), origin[d] + radius );
+    }
+
+    // move
+    EXPECT_TRUE( inside_host(1,0) );
+    EXPECT_FALSE( inside_host(1,1) );
+    for ( int d = 0; d < 3; ++d )
+    {
+        EXPECT_FLOAT_EQ( box_host(1,d), origin[d] - radius + distance[d] );
+        EXPECT_FLOAT_EQ( box_host(1,d+3), origin[d] + radius + distance[d] );
+    }
+
+    // Cleanup.
+    for ( int i = 0; i < nprimitive; ++i )
+        Geometry::Primitives::destroy( objects(i) );
+}
+
+//---------------------------------------------------------------------------//
+void rotateTest()
+{
+    // Create primitives. Note this array is on the host but we will actually
+    // make the primitives on the device.
+    int nprimitive = 4;
+    Kokkos::View<Geometry::Primitives::Object<TEST_MEMSPACE>*,Kokkos::HostSpace>
+        objects( "geometry", nprimitive );
+
+    // Create brick
+    Kokkos::Array<double,3> be = { 1.001, 2.001, 3.001 };
+    Kokkos::Array<double,3> bo = { -0.5, 0.5, 0.5 };
+    Geometry::Primitives::create(
+        objects(0),
+        Geometry::Primitives::BrickBuilder<TEST_MEMSPACE>(),
+        be, bo );
+
+    // Rotate the brick 90 degrees about x.
+    double angle1 = 2.0 * atan(1.0);
+    Kokkos::Array<double,3> axis1 = { 1.0, 0.0, 0.0 };
+    Geometry::Primitives::create(
+        objects(1),
+        Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
+        objects(0), angle1, axis1 );
+
+    // Rotate the brick 90 degrees about y.
+    double angle2 = 2.0 * atan(1.0);
+    Kokkos::Array<double,3> axis2 = { 0.0, 1.0, 0.0 };
+    Geometry::Primitives::create(
+        objects(2),
+        Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
+        objects(0), angle2, axis2 );
+
+    // Rotate the brick 90 degrees about z.
+    double angle3 = 2.0 * atan(1.0);
+    Kokkos::Array<double,3> axis3 = { 0.0, 0.0, 1.0 };
+    Geometry::Primitives::create(
+        objects(3),
+        Geometry::Primitives::RotateBuilder<TEST_MEMSPACE>(),
+        objects(0), angle3, axis3 );
+
+    // Make the objects device accessible.
+    auto objects_device = Kokkos::create_mirror_view_and_copy(
+        TEST_MEMSPACE(), objects );
+
+    // Evaluate the objects on device.
+    Kokkos::View<bool*[2],TEST_MEMSPACE> inside_results( "inside_results", 3 );
+    Kokkos::View<double*[6],TEST_MEMSPACE> box_results( "box_results", 3 );
+    Kokkos::parallel_for(
+        "test_objects",
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int ){
+            double box[3];
+            double x0[3];
+            double x1[3];
+
+            // Check rotate 1
+            x0[0] = -0.5;
+            x0[1] = 1.99;
+            x0[2] = 1.499;
+            inside_results(0,0) = objects_device(1).inside(x0);
+            x1[0] = -0.5;
+            x1[1] = 1.499;
+            x1[2] = 1.99;
+            inside_results(0,1) = objects_device(1).inside(x1);
+
+            objects_device(1).boundingBox(box);
+            for ( int i = 0; i < 6; ++i )
+                box_results(0,i) = box[i];
+
+            // Check rotate 2
+            x0[0] = 1.99;
+            x0[1] = 0.5;
+            x0[2] = 0.01;
+            inside_results(1,0) = objects_device(2).inside(x0);
+            x1[0] = 0.01;
+            x1[1] = 0.5;
+            x1[2] = 1.99;
+            inside_results(1,1) = objects_device(2).inside(x1);
+
+            objects_device(2).boundingBox(box);
+            for ( int i = 0; i < 6; ++i )
+                box_results(1,i) = box[i];
+
+            // Check rotate 3
+            x0[0] = 0.499;
+            x0[1] = 0.99;
+            x0[2] = 0.5;
+            inside_results(2,0) = objects_device(3).inside(x0);
+            x1[0] = 0.99;
+            x1[1] = 0.499;
+            x1[2] = 0.5;
+            inside_results(2,1) = objects_device(3).inside(x1);
+
+            objects_device(3).boundingBox(box);
+            for ( int i = 0; i < 6; ++i )
+                box_results(2,i) = box[i];
+        });
+
+    // Check the results.
+    auto inside_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), inside_results );
+    auto box_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), box_results );
+
+    // rotate 1
+    EXPECT_TRUE( inside_host(0,0) );
+    EXPECT_FALSE( inside_host(0,1) );
+    EXPECT_EQ( box_host(0,0), bo[0] - 0.5 * be[0] );
+    EXPECT_EQ( box_host(0,1), bo[2] - 0.5 * be[2] );
+    EXPECT_EQ( box_host(0,2), bo[1] - 0.5 * be[1] );
+    EXPECT_EQ( box_host(0,3), bo[0] + 0.5 * be[0] );
+    EXPECT_EQ( box_host(0,4), bo[2] + 0.5 * be[2] );
+    EXPECT_EQ( box_host(0,5), bo[1] + 0.5 * be[1] );
+
+    // rotate 2
+    EXPECT_TRUE( inside_host(1,0) );
+    EXPECT_FALSE( inside_host(1,1) );
+    EXPECT_EQ( box_host(0,0), bo[2] - 0.5 * be[2] );
+    EXPECT_EQ( box_host(0,1), bo[1] - 0.5 * be[1] );
+    EXPECT_EQ( box_host(0,2), bo[0] - 0.5 * be[0] );
+    EXPECT_EQ( box_host(0,3), bo[2] + 0.5 * be[2] );
+    EXPECT_EQ( box_host(0,4), bo[1] + 0.5 * be[1] );
+    EXPECT_EQ( box_host(0,5), bo[0] + 0.5 * be[0] );
+
+    // rotate 3
+    EXPECT_TRUE( inside_host(2,0) );
+    EXPECT_FALSE( inside_host(2,1) );
+    EXPECT_EQ( box_host(0,0), bo[1] - 0.5 * be[1] );
+    EXPECT_EQ( box_host(0,1), bo[0] - 0.5 * be[0] );
+    EXPECT_EQ( box_host(0,2), bo[2] - 0.5 * be[2] );
+    EXPECT_EQ( box_host(0,3), bo[1] + 0.5 * be[1] );
+    EXPECT_EQ( box_host(0,4), bo[0] + 0.5 * be[0] );
+    EXPECT_EQ( box_host(0,5), bo[2] + 0.5 * be[2] );
+
+    // Cleanup.
+    for ( int i = 0; i < nprimitive; ++i )
+        Geometry::Primitives::destroy( objects(i) );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, construction_test )
 {
     constructionTest();
+}
+
+//---------------------------------------------------------------------------//
+TEST( TEST_CATEGORY, move_test )
+{
+    moveTest();
+}
+
+//---------------------------------------------------------------------------//
+TEST( TEST_CATEGORY, rotate_test )
+{
+    rotateTest();
 }
 
 //---------------------------------------------------------------------------//
