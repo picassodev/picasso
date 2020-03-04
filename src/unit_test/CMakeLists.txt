@@ -23,19 +23,22 @@ target_link_libraries(InputParser_test harlow gtest)
 add_test(
   NAME InputParser_test
   COMMAND InputParser_test --gtest_color=yes)
-add_custom_command(
-  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json)
-add_custom_command(
-  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml)
-add_custom_command(
-  OUTPUT $  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info)
-
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/stl_reader_test.stl
+  ${CMAKE_CURRENT_BINARY_DIR}/stl_reader_test.stl
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
@@ -90,5 +93,5 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES DenseLinearAlgebra GeometricPrimitives)
+Harlow_add_tests(NAMES DenseLinearAlgebra FacetGeometry)
 Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter)

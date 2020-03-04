@@ -5,6 +5,7 @@
 
 #include <utility>
 #include <cmath>
+#include <limits>
 
 namespace Harlow
 {
@@ -12,6 +13,150 @@ namespace Geometry
 {
 namespace Primitives
 {
+//---------------------------------------------------------------------------//
+// Quadric surface.
+//
+// Creates a quadric surface defined by the equation:
+// f(x,y,z) = a*x^2 + b*x*y + c*x*z + d*x + e*y^2 + f*y*z + g*y +
+//            h*z^2 + i*z + j
+//          = 0
+//---------------------------------------------------------------------------//
+template<class Scalar>
+struct Surface
+{
+    // Given a point compute the closest orthogonal projection to the
+    // surface given by the unit normal vector and signed distance.
+    KOKKOS_INLINE_FUNCTION
+    Scalar closestProjection( const Scalar x[3],
+                              Scalar n[3],
+                              Scalar& distance ) const
+    {
+        // Use the tetrahedron height intersection approximation. Start by
+        // computing the base of the tetrahedron (r,y,z), (x,s,z), (x,y,t).
+        Scalar ra = _a;
+        Scalar rb = _b*x[1] + _c*x[2] + _d;
+        Scalar rc = _e*x[1]*x[1] + _f*x[1]*x[2] + _g*x[1] + _h*x[2]*x[2] +
+                    +_i*x[2] + j;
+        Scalar rd = sqrt(rb*rb-4.0*ra*rc);
+        Scalar r[3] = { fmin(-rb+rd,-rb-rd), x[1], x[2]};
+        r[0] /= 2.0 * ra;
+
+        Scalar sa = _e;
+        Scalar sb = _b*x[0] + _f*x[2] + _g;
+        Scalar sc = _a*x[0]x[0] + _c*x[0]*x[2] + _d*x[0] + _h*x[2]*x[2] +
+                    +_i*x[2] + j;
+        Scalar sd = sqrt(sb*sb-4.0*sa*sc);
+        Scalar s[3] = { x[0], fmin(-sb+sd,-sb-sd), x[2] };
+        s[1] /= 2.0 * sa;
+
+        Scalar ta = _h;
+        Scalar tb = _c*x[0] + _f*x[1] + _i;
+        Scalar tc = _a*x[0]x[0] + _b*x[0]*x[1] + _d*x[0] + _e*x[1]*x[1] +
+                    _g*x[1] + j;
+        Scalar td = sqrt(tb*tb-4.0*ta*tc);
+        Scalar t[3] = { x[0], x[1], fmin(-tb+td,-tb-td) };
+        t[2] /= 2.0 * ta;
+
+        // Compute the unit normal of the plane formed by the tetrahedron
+        // base.
+        Scalar sr[3] = { s[0]-r[0], s[1]-r[1], s[2]-r[2] };
+        Scalar tr[3] = { t[0]-r[0], t[1]-r[1], t[2]-r[2] };
+        n[0] = sr[1]*tr[2] - sr[2]*tr[1];
+        n[1] = sr[2]*tr[0] - sr[0]*tr[2];
+        n[2] = sr[0]*tr[1] - sr[1]*tr[0];
+        Scalar nmag_inv = 1.0 / sqrt( n[0]*n[0] + n[1]*n[1] + n[2]*n[2] );
+        for ( int d = 0; d < 3; ++d )
+            n[d] *= nmag_inv;
+
+        // Compute the signed distance.
+        distance = (x[0]-r[0])*n[0] + (x[1]-r[1])*n[1] + (x[2]-r[2])*n[2];
+    }
+
+    Scalar _a;
+    Scalar _b;
+    Scalar _c;
+    Scalar _d;
+    Scalar _e;
+    Scalar _f;
+    Scalar _g;
+    Scalar _h;
+    Scalar _i;
+    Scalar _j;
+};
+
+//---------------------------------------------------------------------------//
+// Primitive surfaces.
+//---------------------------------------------------------------------------//
+// Create a general plane: ax + by + cz + d = 0
+template<class Scalar>
+void createPlane( const Scalar a, const Scalar b, const Scalar c,
+                  const Scalar d, Surface<Scalar>& s )
+{
+    s._a = 0.0;
+    s._b = 0.0;
+    s._c = 0.0;
+    s._d = a;
+    s._e = 0.0;
+    s._f = 0.0;
+    s._g = b;
+    s._h = 0.0;
+    s._i = c;
+    s._j = d;
+}
+
+//---------------------------------------------------------------------------//
+// Create a plane in XY at the given coordinate: z = constant
+template<class Scalar>
+void createPlaneXY( const Scalar c, Surface<Scalar>& s )
+{
+    createPlane( 0.0, 0.0, 1.0, c, s );
+}
+
+//---------------------------------------------------------------------------//
+// Create a plane in XZ at the given coordinate: y = constant
+template<class Scalar>
+void createPlaneXZ( const Scalar c, Surface<Scalar>& s )
+{
+    createPlane( 0.0, 1.0, 0.0, c, s );
+}
+
+//---------------------------------------------------------------------------//
+// Create a plane in YZ at the given coordinate: x = constant
+template<class Scalar>
+void createPlaneYZ( const Scalar c, Surface<Scalar>& s )
+{
+    createPlane( 1.0, 0.0, 0.0, c, s );
+}
+
+//---------------------------------------------------------------------------//
+// Create a general ellipsoid: x^2/a^2 + y^2/b^2 + z^2/c^2 = 1
+template<class Scalar>
+void createEllipsoid( const Scalar a, const Scalar b, const Scalar c,
+                      Surface<Scalar>& s )
+{
+    s._a = 1.0 / (a*a);
+    s._b = 0.0;
+    s._c = 0.0;
+    s._d = 0.0;
+    s._e = 1.0 / (b*b);
+    s._f = 0.0;
+    s._g = 0.0;
+    s._h = 1.0 / (c*c);
+    s._i = 0.0;
+    s._j = -1.0;
+}
+
+//---------------------------------------------------------------------------//
+// Create a sphere: x^2/r^2 + y^2/r^2 + z^2/r^2 = 1
+template<class Scalar>
+void createSphere( const Scalar r, Surface<Scalar>& s )
+{
+    createEllipsoid( r, r, r, s );
+}
+
+//---------------------------------------------------------------------------//
+// Create an elliptic cylinder:
+
 //---------------------------------------------------------------------------//
 // Base class
 //---------------------------------------------------------------------------//

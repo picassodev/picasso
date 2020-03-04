@@ -2,7 +2,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_DenseLinearAlgebra.hpp
-  Harlow_GeometricPrimitives.hpp
+  Harlow_FacetGeometry.hpp
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
@@ -12,7 +12,7 @@ set(HEADERS
   )
 
 set(SOURCES
-  Harlow_GeometricPrimitives.cpp
+  Harlow_FacetGeometry.cpp
   Harlow_InputParser.cpp
   Harlow_Version.cpp
   )

@@ -4,7 +4,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/info_parser.hpp>
 
-#include <fstream>
 #include <string>
 
 namespace Harlow
