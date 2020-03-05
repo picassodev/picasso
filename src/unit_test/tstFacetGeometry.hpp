@@ -119,9 +119,9 @@ void constructionTest()
 //---------------------------------------------------------------------------//
 void initExample()
 {
-    std::array<int,3> global_num_cell = { 24, 24, 24 };
+    std::array<int,3> global_num_cell = { 40, 40, 40 };
     std::array<double,3> global_low_corner = { -12.0, -12.0, -12.0 };
-    std::array<double,3> global_high_corner = { 12.0, 12.0, 12.0 };
+    std::array<double,3> global_high_corner = { 20.0, 20.0, 20.0 };
     auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
                                                         global_high_corner,
                                                         global_num_cell );
@@ -139,23 +139,31 @@ void initExample()
     particle_list particles( "particles" );
 
     FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
-    auto facets = geometry.volumeFacets( 1 );
     auto init_func =
-        KOKKOS_LAMBDA( const double x[3], particle_type& p ){
+        KOKKOS_LAMBDA( const double x[3], particle_type& p ) {
+        float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
         for ( int d = 0; d < 3; ++d )
             Cabana::get<0>(p,d) = x[d];
-        Cabana::get<1>(p) = 0;
-        bool inside = true;
-        for ( std::size_t f = 0; f < facets.extent(0); ++f )
+        for ( int g = 0; g < geometry.numVolume(); ++g )
         {
-            float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
-            if ( FacetGeometryOps::distanceToFacetPlane(xf,facets,f) > 0.0 )
+            bool inside = true;
+            auto facets = geometry.volumeFacets( g );
+            for ( std::size_t f = 0; f < facets.extent(0); ++f )
             {
-                inside = false;
-                break;
+                if ( FacetGeometryOps::distanceToFacetPlane(xf,facets,f) > 0.0 )
+                {
+                    inside = false;
+                    break;
+                }
+            }
+            if ( inside )
+            {
+                Cabana::get<1>(p) = g;
+                return true;
             }
         }
-        return inside;
+        return false;
+
     };
     initializeParticles( InitUniform(), *local_grid, 3, init_func, particles );
 
