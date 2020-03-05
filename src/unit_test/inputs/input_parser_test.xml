@@ -1,0 +1,11 @@
+<pi>3.141</pi>
+<happy>true</happy>
+<name>Niels</name>
+<answer>
+    <everything>42</everything>
+</answer>
+<list>0 1 2</list>
+<object>
+    <currency>USD</currency>
+    <value>42.99</value>
+</object>

@@ -2,6 +2,7 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_DenseLinearAlgebra.hpp
+  Harlow_FacetGeometry.hpp
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
@@ -11,6 +12,7 @@ set(HEADERS
   )
 
 set(SOURCES
+  Harlow_FacetGeometry.cpp
   Harlow_InputParser.cpp
   Harlow_Version.cpp
   )
@@ -23,7 +25,7 @@ target_link_libraries(harlow
   Cabana::cabanacore
   Cajita::Cajita
   Silo::silo
-  nlohmann_json::nlohmann_json )
+  Boost::boost )
 
 target_include_directories(harlow
   PUBLIC

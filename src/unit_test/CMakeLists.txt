@@ -23,12 +23,22 @@ target_link_libraries(InputParser_test harlow gtest)
 add_test(
   NAME InputParser_test
   COMMAND InputParser_test --gtest_color=yes)
-add_custom_command(
-  TARGET InputParser_test POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy
+configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json
-  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json)
-
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info
+  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/stl_reader_test.stl
+  ${CMAKE_CURRENT_BINARY_DIR}/stl_reader_test.stl
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
@@ -66,7 +76,7 @@ macro(Harlow_add_tests)
           foreach(_np ${HARLOW_UNIT_TEST_MPIEXEC_NUMPROCS})
             add_test(NAME ${_target}_${_np} COMMAND
               ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
-              ${_target} ${MPIEXEC_POSTFLAGS} ${gtest_args})
+              ${_target} ${MPIEXEC_PREFLAGS} ${gtest_args})
           endforeach()
         else()
           if(_device STREQUAL OpenMP)
@@ -83,5 +93,5 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES DenseLinearAlgebra)
+Harlow_add_tests(NAMES DenseLinearAlgebra FacetGeometry)
 Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter)
