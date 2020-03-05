@@ -18,20 +18,27 @@ namespace Test
 void constructionTest()
 {
     // Create the geometry from the test file. It contains a sphere of radius
-    // 10 centered at the origin. The sphere is saved as both a surface and
-    // volume.
+    // 10 centered at the origin and a 4x4x4 cube centered at (15,15,15).
+    // The sphere and box are saved as both surfaces and volumes.
     FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
 
     // Check that we got the right number of volumes and surfaces.
-    EXPECT_EQ( geometry.numVolume(), 1 );
-    EXPECT_EQ( geometry.numSurface(), 1 );
+    EXPECT_EQ( geometry.numVolume(), 2 );
+    EXPECT_EQ( geometry.numSurface(), 7 );
 
     // Check the global-to-local id conversion.
     EXPECT_EQ( geometry.localVolumeId(1), 0 );
+    EXPECT_EQ( geometry.localVolumeId(2), 1 );
     EXPECT_EQ( geometry.localSurfaceId(1), 0 );
+    EXPECT_EQ( geometry.localSurfaceId(2), 1 );
+    EXPECT_EQ( geometry.localSurfaceId(3), 2 );
+    EXPECT_EQ( geometry.localSurfaceId(4), 3 );
+    EXPECT_EQ( geometry.localSurfaceId(5), 4 );
+    EXPECT_EQ( geometry.localSurfaceId(6), 5 );
+    EXPECT_EQ( geometry.localSurfaceId(7), 6 );
 
-    // Get the facets for the volume.
-    auto volume_facets = geometry.volumeFacets( 0 );
+    // Get the facets for the sphere volume.
+    auto volume_facets = geometry.volumeFacets( 1 );
     auto num_volume_facet = volume_facets.extent(0);
     EXPECT_TRUE( num_volume_facet > 0 );
 
@@ -70,8 +77,8 @@ void constructionTest()
         volume_outside );
     EXPECT_TRUE( volume_outside > 0 );
 
-    // Get the facets for the surface.
-    auto surface_facets = geometry.surfaceFacets( 0 );
+    // Get the facets for the sphere surface.
+    auto surface_facets = geometry.surfaceFacets( 6 );
     auto num_surface_facet = surface_facets.extent(0);
     EXPECT_TRUE( num_surface_facet > 0 );
 
@@ -132,7 +139,7 @@ void initExample()
     particle_list particles( "particles" );
 
     FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
-    auto facets = geometry.volumeFacets( 0 );
+    auto facets = geometry.volumeFacets( 1 );
     auto init_func =
         KOKKOS_LAMBDA( const double x[3], particle_type& p ){
         for ( int d = 0; d < 3; ++d )
