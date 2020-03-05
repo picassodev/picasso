@@ -26,8 +26,6 @@ struct FacetGeometry
         std::vector<int> surface_facet_counts;
         std::vector<float> volume_facets;
         std::vector<float> surface_facets;
-        std::vector<float> volume_normals;
-        std::vector<float> surface_normals;
 
         // Load the file.
         std::ifstream file( stl_ascii_filename );
@@ -94,22 +92,16 @@ struct FacetGeometry
                         throw std::runtime_error(
                             "STL READER: Expected 5 facet line entries" );
 
-                    // Volume facet normal.
+                    // Volume facet.
                     if ( read_volume )
                     {
                         ++volume_facet_counts.back();
-                        volume_normals.push_back( std::atoi(tokens[2].c_str()) );
-                        volume_normals.push_back( std::atoi(tokens[3].c_str()) );
-                        volume_normals.push_back( std::atoi(tokens[4].c_str()) );
                     }
 
-                    // Surface facet normal.
+                    // Surface facet.
                     else if ( read_surface )
                     {
                         ++surface_facet_counts.back();
-                        surface_normals.push_back( std::atoi(tokens[2].c_str()) );
-                        surface_normals.push_back( std::atoi(tokens[3].c_str()) );
-                        surface_normals.push_back( std::atoi(tokens[4].c_str()) );
                     }
                 }
 
@@ -151,12 +143,10 @@ struct FacetGeometry
 
         // Put volume data on device.
         putFileDataOnDevice( volume_ids, volume_facet_counts, volume_facets,
-                             volume_normals,
                              _volume_ids, _volume_facets, _volume_offsets );
 
         // Put surface data on device.
         putFileDataOnDevice( surface_ids, surface_facet_counts, surface_facets,
-                             surface_normals,
                              _surface_ids, _surface_facets, _surface_offsets );
     }
 
@@ -214,7 +204,6 @@ struct FacetGeometry
     void putFileDataOnDevice( const std::vector<int>& solid_ids,
                               const std::vector<int>& solid_facet_counts,
                               const std::vector<float>& solid_facets,
-                              const std::vector<float>& solid_normals,
                               std::unordered_map<int,int>& id_map,
                               Kokkos::View<float*[4][3],MemorySpace>& device_facets,
                               Kokkos::View<int*,MemorySpace>& device_offsets )
@@ -225,7 +214,7 @@ struct FacetGeometry
             Kokkos::ViewAllocateWithoutInitializing("offsets"),
             num_solid );
 
-        int num_solid_facet = solid_normals.size() / 3;
+        int num_solid_facet = solid_facets.size() / 9;
         device_facets = Kokkos::View<float*[4][3],MemorySpace>(
             Kokkos::ViewAllocateWithoutInitializing("facets"),
             num_solid_facet );
@@ -252,9 +241,17 @@ struct FacetGeometry
                 for ( int d = 0; d < 3; ++d )
                     host_facets(f,v,d) = solid_facets[9*f+3*v+d];
 
-            // Extract the normals.
+            // Compute the normals.
+            float v10[3];
+            float v20[3];
             for ( int d = 0; d < 3; ++d )
-                host_facets(f,3,d) = solid_normals[3*f+d];
+            {
+                v10[d] = host_facets(f,1,d)-host_facets(f,0,d);
+                v20[d] = host_facets(f,2,d)-host_facets(f,0,d);
+            }
+            host_facets(f,3,0) = v10[1]*v20[2]-v10[2]*v20[1];
+            host_facets(f,3,1) = v10[2]*v20[0]-v10[0]*v20[2];
+            host_facets(f,3,2) = v10[0]*v20[1]-v10[1]*v20[0];
 
             // Scale them to make it a unit normal.
             float nmag = std::sqrt(

@@ -1,6 +1,9 @@
 #include <Harlow_FacetGeometry.hpp>
 #include <Harlow_Types.hpp>
 
+#include <Harlow_ParticleInit.hpp>
+#include <Harlow_SiloParticleWriter.hpp>
+
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
@@ -104,6 +107,59 @@ void constructionTest()
         },
         surface_outside );
     EXPECT_TRUE( surface_outside > 0 );
+}
+
+//---------------------------------------------------------------------------//
+void initExample()
+{
+    std::array<int,3> global_num_cell = { 24, 24, 24 };
+    std::array<double,3> global_low_corner = { -12.0, -12.0, -12.0 };
+    std::array<double,3> global_high_corner = { 12.0, 12.0, 12.0 };
+    auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
+                                                        global_high_corner,
+                                                        global_num_cell );
+    std::array<bool,3> periodic = {false,false,false};
+    auto global_grid =
+        Cajita::createGlobalGrid( MPI_COMM_WORLD,
+                                  global_mesh,
+                                  periodic,
+                                  Cajita::UniformDimPartitioner() );
+    auto local_grid = Cajita::createLocalGrid( global_grid, 0 );
+
+    using particle_fields = Cabana::MemberTypes<double[3],int>;
+    using particle_list = Cabana::AoSoA<particle_fields,TEST_DEVICE>;
+    using particle_type = typename particle_list::tuple_type;
+    particle_list particles( "particles" );
+
+    FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
+    auto facets = geometry.volumeFacets( 0 );
+    auto init_func =
+        KOKKOS_LAMBDA( const double x[3], particle_type& p ){
+        for ( int d = 0; d < 3; ++d )
+            Cabana::get<0>(p,d) = x[d];
+        Cabana::get<1>(p) = 0;
+        bool inside = true;
+        for ( std::size_t f = 0; f < facets.extent(0); ++f )
+        {
+            float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
+            if ( FacetGeometryOps::distanceToFacetPlane(xf,facets,f) > 0.0 )
+            {
+                inside = false;
+                break;
+            }
+        }
+        return inside;
+    };
+    initializeParticles( InitUniform(), *local_grid, 3, init_func, particles );
+
+    SiloParticleWriter::writeTimeStep(
+        *global_grid, 0, 0.0,
+        Cabana::slice<0>(particles,"x"), Cabana::slice<1>(particles,"i") );
+}
+
+TEST( TEST_CATEGORY, init_example )
+{
+    initExample();
 }
 
 //---------------------------------------------------------------------------//
