@@ -6,6 +6,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <boost/property_tree/ptree.hpp>
+
 #include <cmath>
 
 #include <gtest/gtest.h>
@@ -17,18 +19,25 @@ namespace Test
 //---------------------------------------------------------------------------//
 void constructionTest()
 {
+    // Create inputs.
+    boost::property_tree::ptree pt;
+    pt.put<std::string>( "geometry.stl_file", "stl_reader_test.stl" );
+    pt.put<int>( "geometry.global_bounding_volume_id", 3 );
+
     // Create the geometry from the test file. It contains a sphere of radius
     // 10 centered at the origin and a 4x4x4 cube centered at (15,15,15).
-    // The sphere and box are saved as both surfaces and volumes.
-    FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
+    // The sphere and box are saved as both surfaces and volumes. The global
+    // bounding volume is from (-12,20) in each dimension.
+    FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
 
     // Check that we got the right number of volumes and surfaces.
-    EXPECT_EQ( geometry.numVolume(), 2 );
-    EXPECT_EQ( geometry.numSurface(), 7 );
+    EXPECT_EQ( geometry.numVolume(), 3 );
+    EXPECT_EQ( geometry.numSurface(), 13 );
 
     // Check the global-to-local id conversion.
     EXPECT_EQ( geometry.localVolumeId(1), 0 );
     EXPECT_EQ( geometry.localVolumeId(2), 1 );
+    EXPECT_EQ( geometry.localVolumeId(3), 2 );
     EXPECT_EQ( geometry.localSurfaceId(1), 0 );
     EXPECT_EQ( geometry.localSurfaceId(2), 1 );
     EXPECT_EQ( geometry.localSurfaceId(3), 2 );
@@ -36,6 +45,12 @@ void constructionTest()
     EXPECT_EQ( geometry.localSurfaceId(5), 4 );
     EXPECT_EQ( geometry.localSurfaceId(6), 5 );
     EXPECT_EQ( geometry.localSurfaceId(7), 6 );
+    EXPECT_EQ( geometry.localSurfaceId(8), 7 );
+    EXPECT_EQ( geometry.localSurfaceId(9), 8 );
+    EXPECT_EQ( geometry.localSurfaceId(10), 9 );
+    EXPECT_EQ( geometry.localSurfaceId(11), 10 );
+    EXPECT_EQ( geometry.localSurfaceId(12), 11 );
+    EXPECT_EQ( geometry.localSurfaceId(13), 12 );
 
     // Get the facets for the sphere volume.
     auto volume_facets = geometry.volumeFacets( 1 );
@@ -62,7 +77,7 @@ void constructionTest()
     // Check that a point is outside the volume. Some distances will be
     // negative, some will be positive. Check that some positive distances
     // were computed indicating an outside point.
-    Kokkos::Array<float,3> point_out = {12.1, 1.4, -0.9 };
+    Kokkos::Array<float,3> point_out = {22.1, 1.4, -0.9 };
     int volume_outside = 0;
     Kokkos::parallel_reduce(
         "check_outside_volume",
@@ -114,6 +129,25 @@ void constructionTest()
         },
         surface_outside );
     EXPECT_TRUE( surface_outside > 0 );
+
+    // Check the global bounding volume.
+    EXPECT_EQ( geometry.globalBoundingVolumeId(), 2 );
+
+    auto global_box = geometry.globalBoundingBox();
+
+    EXPECT_TRUE( global_box[0] <= point_in[0] );
+    EXPECT_TRUE( global_box[1] <= point_in[1] );
+    EXPECT_TRUE( global_box[2] <= point_in[2] );
+    EXPECT_TRUE( global_box[3] >= point_in[0] );
+    EXPECT_TRUE( global_box[4] >= point_in[1] );
+    EXPECT_TRUE( global_box[5] >= point_in[2] );
+
+    EXPECT_TRUE( global_box[0] <= point_out[0] );
+    EXPECT_TRUE( global_box[1] <= point_out[1] );
+    EXPECT_TRUE( global_box[2] <= point_out[2] );
+    EXPECT_FALSE( global_box[3] >= point_out[0] );
+    EXPECT_TRUE( global_box[4] >= point_out[1] );
+    EXPECT_TRUE( global_box[5] >= point_out[2] );
 }
 
 //---------------------------------------------------------------------------//
@@ -138,32 +172,20 @@ void initExample()
     using particle_type = typename particle_list::tuple_type;
     particle_list particles( "particles" );
 
-    FacetGeometry<TEST_MEMSPACE> geometry( "stl_reader_test.stl" );
+    boost::property_tree::ptree pt;
+    pt.put<std::string>( "geometry.stl_file", "stl_reader_test.stl" );
+    pt.put<int>( "geometry.global_bounding_volume_id", 3 );
+
+    FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
     auto init_func =
         KOKKOS_LAMBDA( const double x[3], particle_type& p ) {
         float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
         for ( int d = 0; d < 3; ++d )
-            Cabana::get<0>(p,d) = x[d];
-        for ( int g = 0; g < geometry.numVolume(); ++g )
         {
-            bool inside = true;
-            auto facets = geometry.volumeFacets( g );
-            for ( std::size_t f = 0; f < facets.extent(0); ++f )
-            {
-                if ( FacetGeometryOps::distanceToFacetPlane(xf,facets,f) > 0.0 )
-                {
-                    inside = false;
-                    break;
-                }
-            }
-            if ( inside )
-            {
-                Cabana::get<1>(p) = g;
-                return true;
-            }
+            Cabana::get<0>(p,d) = x[d];
         }
-        return false;
-
+        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geometry);
+        return (Cabana::get<1>(p) > -2);
     };
     initializeParticles( InitUniform(), *local_grid, 3, init_func, particles );
 
