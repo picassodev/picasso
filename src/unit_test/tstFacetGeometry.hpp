@@ -74,6 +74,19 @@ void constructionTest()
         volume_inside );
     EXPECT_EQ( volume_inside, num_volume_facet );
 
+    // Check again with the point-in-volume primitive.
+    volume_inside = 0;
+    Kokkos::parallel_reduce(
+        "check_inside_volume",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            if ( FacetGeometryOps::pointInVolume(
+                     point_in.data(),volume_facets) )
+                ++result;
+        },
+        volume_inside );
+    EXPECT_EQ( volume_inside, 1 );
+
     // Check that a point is outside the volume. Some distances will be
     // negative, some will be positive. Check that some positive distances
     // were computed indicating an outside point.
@@ -91,6 +104,19 @@ void constructionTest()
         },
         volume_outside );
     EXPECT_TRUE( volume_outside > 0 );
+
+    // Check again with the point-in-volume primitive.
+    volume_outside = 0;
+    Kokkos::parallel_reduce(
+        "check_outside_volume",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            if ( !FacetGeometryOps::pointInVolume(
+                     point_out.data(),volume_facets) )
+                ++result;
+        },
+        volume_outside );
+    EXPECT_EQ( volume_outside, 1 );
 
     // Get the facets for the sphere surface.
     auto surface_facets = geometry.surfaceFacets( 6 );
@@ -148,6 +174,58 @@ void constructionTest()
     EXPECT_FALSE( global_box[3] >= point_out[0] );
     EXPECT_TRUE( global_box[4] >= point_out[1] );
     EXPECT_TRUE( global_box[5] >= point_out[2] );
+
+    // Locate a point in the sphere.
+    int volume_id = -100;
+    Kokkos::Array<float,3> p1 = {0.0,0.0,0.0};
+    Kokkos::parallel_reduce(
+        "check_point_location",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            result =
+                FacetGeometryOps::locatePoint(p1.data(),geometry);
+        },
+        volume_id );
+    EXPECT_EQ( volume_id, 1 );
+
+    // Locate a point in the box.
+    volume_id = -100;
+    Kokkos::Array<float,3> p2 = {14.0,14.0,14.0};
+    Kokkos::parallel_reduce(
+        "check_point_location",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            result =
+                FacetGeometryOps::locatePoint(p2.data(),geometry);
+        },
+        volume_id );
+    EXPECT_EQ( volume_id, 0 );
+
+    // Locate a point in the implicit complement
+    volume_id = -100;
+    Kokkos::Array<float,3> p3 = {-11.0, -11.0, -11.0};
+    Kokkos::parallel_reduce(
+        "check_point_location",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            result =
+                FacetGeometryOps::locatePoint(p3.data(),geometry);
+        },
+        volume_id );
+    EXPECT_EQ( volume_id, -1 );
+
+    // Locate a point outside the domain.
+    volume_id = -100;
+    Kokkos::Array<float,3> p4 = {-20.0, 0.0, 0.0};
+    Kokkos::parallel_reduce(
+        "check_point_location",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
+        KOKKOS_LAMBDA( const int, int& result ){
+            result =
+                FacetGeometryOps::locatePoint(p4.data(),geometry);
+        },
+        volume_id );
+    EXPECT_EQ( volume_id, -2 );
 }
 
 //---------------------------------------------------------------------------//
