@@ -36,6 +36,10 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/stl_reader_test.stl
   COPYONLY)
 configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/facet_geometry_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/facet_geometry_test.json
+  COPYONLY)
+configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/uniform_mesh_test_1.json
   ${CMAKE_CURRENT_BINARY_DIR}/uniform_mesh_test_1.json
   COPYONLY)

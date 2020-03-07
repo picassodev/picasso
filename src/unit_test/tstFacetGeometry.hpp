@@ -7,6 +7,7 @@
 #include <Kokkos_Core.hpp>
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <cmath>
 
@@ -21,8 +22,7 @@ void constructionTest()
 {
     // Create inputs.
     boost::property_tree::ptree pt;
-    pt.put<std::string>( "geometry.stl_file", "stl_reader_test.stl" );
-    pt.put<int>( "geometry.global_bounding_volume_id", 3 );
+    boost::property_tree::read_json( "facet_geometry_test.json", pt );
 
     // Create the geometry from the test file. It contains a sphere of radius
     // 10 centered at the origin and a 4x4x4 cube centered at (15,15,15).
@@ -251,8 +251,7 @@ void initExample()
     particle_list particles( "particles" );
 
     boost::property_tree::ptree pt;
-    pt.put<std::string>( "geometry.stl_file", "stl_reader_test.stl" );
-    pt.put<int>( "geometry.global_bounding_volume_id", 3 );
+    boost::property_tree::read_json( "facet_geometry_test.json", pt );
 
     FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
     auto init_func =
