@@ -32,13 +32,16 @@ class UniformMesh
                  const int minimum_halo_cell_width,
                  MPI_Comm comm )
     {
+        // Get the mesh property tree.
+        const auto& params = ptree.get_child("mesh");
+
         // Get the global number of cells in each direction and the cell
         // size.
         std::array<int,3> global_num_cell;
         double cell_size;
-        if ( ptree.count("mesh.cell_size") )
+        if ( params.count("cell_size") )
         {
-            cell_size = ptree.get<double>("mesh.cell_size");
+            cell_size = params.get<double>("cell_size");
             for ( int d = 0 ; d < 3; ++d )
             {
                 global_num_cell[d] =
@@ -46,10 +49,10 @@ class UniformMesh
                     cell_size;
             }
         }
-        else if ( ptree.count("mesh.global_num_cell") )
+        else if ( params.count("global_num_cell") )
         {
             int d = 0;
-            for ( auto& element : ptree.get_child("mesh.global_num_cell") )
+            for ( auto& element : params.get_child("global_num_cell") )
             {
                 global_num_cell[d] = element.second.get_value<int>();
                 ++d;
@@ -64,10 +67,10 @@ class UniformMesh
         // error. This will let us do cheaper math for particle location.
         for ( int d = 0; d < 3; ++d )
         {
-            double ext = global_num_cell[d] * cell_size;
+            double extent = global_num_cell[d] * cell_size;
             if ( std::abs(
-                     ext - (global_bounding_box[d+3]-
-                            global_bounding_box[d]) ) >
+                     extent - (global_bounding_box[d+3]-
+                               global_bounding_box[d]) ) >
                  double( 100.0 ) * std::numeric_limits<double>::epsilon() )
                 throw std::logic_error(
                     "Extent not evenly divisible by uniform cell size" );
@@ -85,7 +88,7 @@ class UniformMesh
         std::array<bool,3> periodic;
         {
             int d = 0;
-            for ( auto& element : ptree.get_child("mesh.periodic") )
+            for ( auto& element : params.get_child("periodic") )
             {
                 periodic[d] = element.second.get_value<bool>();
                 ++d;
@@ -109,19 +112,20 @@ class UniformMesh
             global_low_corner, global_high_corner, global_num_cell );
 
         // Create the partitioner.
+        const auto& part_params = params.get_child("partitioner");
         std::shared_ptr<Cajita::Partitioner> partitioner;
-        if ( ptree.get<std::string>("mesh.partitioner.type").compare(
+        if ( part_params.get<std::string>("type").compare(
                  "uniform_dim") == 0 )
         {
             partitioner = std::make_shared<Cajita::UniformDimPartitioner>();
         }
-        else if ( ptree.get<std::string>("mesh.partitioner.type").compare(
+        else if ( part_params.get<std::string>("type").compare(
                  "manual") == 0 )
         {
             std::array<int,3> ranks_per_dim;
             int d = 0;
             for ( auto& element :
-                      ptree.get_child("mesh.partitioner.ranks_per_dim") )
+                      part_params.get_child("ranks_per_dim") )
             {
                 ranks_per_dim[d] = element.second.get_value<int>();
                 ++d;
@@ -134,20 +138,26 @@ class UniformMesh
         auto global_grid = Cajita::createGlobalGrid(
             comm, global_mesh, periodic, *partitioner );
 
-        // Get the halo cell width.
+        // Get the halo cell width. If the user does not assign one then it is
+        // assumed the minimum halo cell width will be used.
         auto halo_cell_width = std::max(
             minimum_halo_cell_width,
-            ptree.get<int>("mesh.halo_cell_width") );
+            params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
-        auto local_grid =
-            Cajita::createLocalGrid( global_grid, halo_cell_width );
+        _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
     }
 
     // Get the local grid.
     const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
     {
         return *_local_grid;
+    }
+
+    // Get the cell size.
+    double cellSize() const
+    {
+        return _local_grid->globalGrid().globalMesh().uniformCellSize();
     }
 
   public:

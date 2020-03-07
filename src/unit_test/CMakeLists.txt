@@ -32,12 +32,16 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.xml
   COPYONLY)
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.info
-  ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.info
-  COPYONLY)
-configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/stl_reader_test.stl
   ${CMAKE_CURRENT_BINARY_DIR}/stl_reader_test.stl
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/uniform_mesh_test_1.json
+  ${CMAKE_CURRENT_BINARY_DIR}/uniform_mesh_test_1.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/uniform_mesh_test_2.json
+  ${CMAKE_CURRENT_BINARY_DIR}/uniform_mesh_test_2.json
   COPYONLY)
 
 ##--------------------------------------------------------------------------##
@@ -94,4 +98,4 @@ macro(Harlow_add_tests)
 endmacro()
 
 Harlow_add_tests(NAMES DenseLinearAlgebra FacetGeometry)
-Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter)
+Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter UniformMesh)

@@ -167,7 +167,7 @@ class AdaptiveMesh
         return *_local_grid;
     }
 
-    // Get the mesh nodes.
+    // Get the mesh node coordinates.
     const Cajita::Array<
         double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>&
     nodes() const
@@ -175,7 +175,7 @@ class AdaptiveMesh
         return *_nodes;
     }
 
-    // Make nodes parallel consistent with a gather.
+    // Make node coordinates parallel consistent with a gather.
     void gatherNodes()
     {
         _node_halo->gather( *_nodes );

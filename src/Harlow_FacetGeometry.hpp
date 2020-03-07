@@ -92,10 +92,11 @@ class FacetGeometry
     FacetGeometry( const boost::property_tree::ptree& ptree,
                    const ExecutionSpace& exec_space )
     {
+        // Get the geometry parameters.
+        const auto& params = ptree.get_child("geometry");
 
         // Read the stl file and create the facet geometry.
-        auto stl_ascii_filename =
-            ptree.get<std::string>( "geometry.stl_file" );
+        auto stl_ascii_filename = params.get<std::string>( "stl_file" );
 
         // Containers.
         std::vector<int> volume_ids;
@@ -232,7 +233,7 @@ class FacetGeometry
         // the global bounds of the problem. The user input is the global id
         // of this volume.
         _global_bounding_volume_id = localVolumeId(
-            ptree.get<int>("geometry.global_bounding_volume_id") );
+            params.get<int>("global_bounding_volume_id") );
 
         // Compute the bounding boxes of all the volumes.
         _volume_bounding_boxes = Kokkos::View<float*[6],MemorySpace>(

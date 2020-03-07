@@ -2,7 +2,6 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/info_parser.hpp>
 
 #include <string>
 
@@ -31,20 +30,13 @@ InputParser::InputParser( int argc, char* argv[] )
             boost::property_tree::read_xml( filename, _ptree );
             break;
         }
-        else if( 0 == std::strcmp(argv[n],"--harlow-input-info") )
-        {
-            filename = std::string(argv[n+1]);
-            found_arg = true;
-            boost::property_tree::read_info( filename, _ptree );
-            break;
-        }
     }
 
     // Check that we found the filename.
     if ( !found_arg )
         throw std::runtime_error(
             "No Harlow input file specified: --harlow-input-*type* [file name] is required.\
-             Where *type* can be json, xml, or info" );
+             Where *type* can be json or xml" );
 }
 
 //---------------------------------------------------------------------------//
