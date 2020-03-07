@@ -35,22 +35,10 @@ void constructionTest()
     EXPECT_EQ( geometry.numSurface(), 13 );
 
     // Check the global-to-local id conversion.
-    EXPECT_EQ( geometry.localVolumeId(1), 0 );
-    EXPECT_EQ( geometry.localVolumeId(2), 1 );
-    EXPECT_EQ( geometry.localVolumeId(3), 2 );
-    EXPECT_EQ( geometry.localSurfaceId(1), 0 );
-    EXPECT_EQ( geometry.localSurfaceId(2), 1 );
-    EXPECT_EQ( geometry.localSurfaceId(3), 2 );
-    EXPECT_EQ( geometry.localSurfaceId(4), 3 );
-    EXPECT_EQ( geometry.localSurfaceId(5), 4 );
-    EXPECT_EQ( geometry.localSurfaceId(6), 5 );
-    EXPECT_EQ( geometry.localSurfaceId(7), 6 );
-    EXPECT_EQ( geometry.localSurfaceId(8), 7 );
-    EXPECT_EQ( geometry.localSurfaceId(9), 8 );
-    EXPECT_EQ( geometry.localSurfaceId(10), 9 );
-    EXPECT_EQ( geometry.localSurfaceId(11), 10 );
-    EXPECT_EQ( geometry.localSurfaceId(12), 11 );
-    EXPECT_EQ( geometry.localSurfaceId(13), 12 );
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_EQ( geometry.localVolumeId(i+1), i );
+    for ( int i = 0; i < 13; ++i )
+        EXPECT_EQ( geometry.localSurfaceId(i+1), i );
 
     // Get the facets for the sphere volume.
     auto volume_facets = geometry.volumeFacets( 1 );

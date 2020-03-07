@@ -32,7 +32,7 @@ class UniformMesh
                  const int minimum_halo_cell_width,
                  MPI_Comm comm )
     {
-        // Get the mesh property tree.
+        // Get the mesh parameters.
         const auto& params = ptree.get_child("mesh");
 
         // Get the global number of cells in each direction and the cell

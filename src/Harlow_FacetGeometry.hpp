@@ -357,7 +357,7 @@ class FacetGeometry
             Kokkos::ViewAllocateWithoutInitializing("facets"),
             num_solid_facet );
 
-        // Populate the geometry data.
+        // Compute the offsets for the facet-to-solid mapping.
         auto host_offsets = Kokkos::create_mirror_view(
             Kokkos::HostSpace(), device_offsets );
         for ( int i = 0; i < num_solid; ++i )
@@ -370,6 +370,8 @@ class FacetGeometry
                 (0 == i) ? solid_facet_counts[i]
                 : solid_facet_counts[i] + host_offsets(i-1);
         }
+
+        // Build the facets.
         auto host_facets = Kokkos::create_mirror_view(
             Kokkos::HostSpace(), device_facets );
         for ( int f = 0; f < num_solid_facet; ++f )
