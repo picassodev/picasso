@@ -47,6 +47,14 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/uniform_mesh_test_2.json
   ${CMAKE_CURRENT_BINARY_DIR}/uniform_mesh_test_2.json
   COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/adaptive_mesh_test_1.json
+  ${CMAKE_CURRENT_BINARY_DIR}/adaptive_mesh_test_1.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/adaptive_mesh_test_2.json
+  ${CMAKE_CURRENT_BINARY_DIR}/adaptive_mesh_test_2.json
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
@@ -102,4 +110,9 @@ macro(Harlow_add_tests)
 endmacro()
 
 Harlow_add_tests(NAMES DenseLinearAlgebra FacetGeometry)
-Harlow_add_tests(MPI NAMES ParticleInit ParticleCommunication SiloParticleWriter UniformMesh)
+Harlow_add_tests(MPI NAMES
+  ParticleInit
+  ParticleCommunication
+  SiloParticleWriter
+  UniformMesh
+  AdaptiveMesh)
