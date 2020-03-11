@@ -34,13 +34,20 @@ class AdaptiveMesh
                   MPI_Comm comm,
                   const ExecutionSpace& exec_space )
     {
+        // Get the mesh parameters.
+        const auto& mesh_params = ptree.get_child("mesh");
+
         // Get the global number of cells and cell sizes in each direction.
         std::array<int,3> global_num_cell;
         Kokkos::Array<double,3> cell_size;
-        if ( ptree.count("mesh.cell_size") )
+        if ( mesh_params.count("cell_size") )
         {
+            if ( mesh_params.get_child("cell_size").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.cell_size" );
+
             int d = 0;
-            for ( auto& element : ptree.get_child("mesh.cell_size") )
+            for ( auto& element : mesh_params.get_child("cell_size") )
             {
                 cell_size[d] = element.second.get_value<double>();
                 global_num_cell[d] =
@@ -49,10 +56,14 @@ class AdaptiveMesh
                 ++d;
             }
         }
-        else if ( ptree.count("mesh.global_num_cell") )
+        else if ( mesh_params.count("global_num_cell") )
         {
+            if ( mesh_params.get_child("global_num_cell").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.global_num_cell" );
+
             int d = 0;
-            for ( auto& element : ptree.get_child("mesh.global_num_cell") )
+            for ( auto& element : mesh_params.get_child("global_num_cell") )
             {
                 global_num_cell[d] = element.second.get_value<int>();
                 cell_size[d] =
@@ -68,12 +79,19 @@ class AdaptiveMesh
             { static_cast<double>(global_num_cell[0]),
               static_cast<double>(global_num_cell[1]),
               static_cast<double>(global_num_cell[2]) };
+        std::array<double,3> physical_low_corner = { global_bounding_box[0],
+                                                     global_bounding_box[1],
+                                                     global_bounding_box[2] };
 
         // Get the periodicity.
         std::array<bool,3> periodic;
         {
+            if ( mesh_params.get_child("periodic").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.periodic" );
+
             int d = 0;
-            for ( auto& element : ptree.get_child("mesh.periodic") )
+            for ( auto& element : mesh_params.get_child("periodic") )
             {
                 periodic[d] = element.second.get_value<bool>();
                 ++d;
@@ -87,8 +105,9 @@ class AdaptiveMesh
             if ( !periodic[d] )
             {
                 global_num_cell[d] += 2*minimum_halo_cell_width;
-                global_low_corner[d] -= 2.0*minimum_halo_cell_width;
-                global_high_corner[d] += 2.0*minimum_halo_cell_width;
+                global_low_corner[d] -= minimum_halo_cell_width;
+                global_high_corner[d] += minimum_halo_cell_width;
+                physical_low_corner[d] -= cell_size[d]*minimum_halo_cell_width;
             }
         }
 
@@ -97,19 +116,24 @@ class AdaptiveMesh
             global_low_corner, global_high_corner, global_num_cell );
 
         // Create the partitioner.
+        const auto& part_params = mesh_params.get_child("partitioner");
         std::shared_ptr<Cajita::Partitioner> partitioner;
-        if ( ptree.get<std::string>("mesh.partitioner.type").compare(
+        if ( part_params.get<std::string>("type").compare(
                  "uniform_dim") == 0 )
         {
             partitioner = std::make_shared<Cajita::UniformDimPartitioner>();
         }
-        else if ( ptree.get<std::string>("mesh.partitioner.type").compare(
+        else if ( part_params.get<std::string>("type").compare(
                  "manual") == 0 )
         {
+            if ( part_params.get_child("ranks_per_dim").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.partitioner.ranks_per_dim " );
+
             std::array<int,3> ranks_per_dim;
             int d = 0;
             for ( auto& element :
-                      ptree.get_child("mesh.partitioner.ranks_per_dim") )
+                      part_params.get_child("ranks_per_dim") )
             {
                 ranks_per_dim[d] = element.second.get_value<int>();
                 ++d;
@@ -122,13 +146,14 @@ class AdaptiveMesh
         auto global_grid = Cajita::createGlobalGrid(
             comm, global_mesh, periodic, *partitioner );
 
-        // Get the halo cell width.
+        // Get the halo cell width. If the user does not assign one then it is
+        // assumed the minimum halo cell width will be used.
         auto halo_cell_width = std::max(
             minimum_halo_cell_width,
-            ptree.get<int>("mesh.halo_cell_width") );
+            mesh_params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
-        auto local_grid =
+        _local_grid =
             Cajita::createLocalGrid( global_grid, halo_cell_width );
 
         // Create the nodes. Create both owned and ghosted nodes so we don't
@@ -138,26 +163,24 @@ class AdaptiveMesh
         _nodes = Cajita::createArray<double,MemorySpace>(
             "mesh_nodes", node_layout );
         auto node_view = _nodes->view();
-        auto global_space = node_layout->indexSpace(
-            Cajita::Ghost(),Cajita::Global());
+        auto global_space = _local_grid->indexSpace(
+            Cajita::Ghost(),Cajita::Node(),Cajita::Global());
+        auto local_space = _local_grid->indexSpace(
+            Cajita::Ghost(),Cajita::Node(),Cajita::Local());
         Kokkos::parallel_for(
             "create_nodes",
-            Cajita::createExecutionPolicy(
-                local_grid->indexSpace(Cajita::Ghost(),
-                                       Cajita::Node(),
-                                       Cajita::Local()),
-                exec_space ),
+            Cajita::createExecutionPolicy(local_space,exec_space),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
                 int ig = global_space.min(0) + i;
                 int jg = global_space.min(1) + j;
                 int kg = global_space.min(2) + k;
-                node_view(i,j,k,0) = global_bounding_box[0] + cell_size[0] * ig;
-                node_view(i,j,k,1) = global_bounding_box[1] + cell_size[1] * jg;
-                node_view(i,j,k,2) = global_bounding_box[2] + cell_size[2] * kg;
+                node_view(i,j,k,0) = physical_low_corner[0] + cell_size[0] * ig;
+                node_view(i,j,k,1) = physical_low_corner[1] + cell_size[1] * jg;
+                node_view(i,j,k,2) = physical_low_corner[2] + cell_size[2] * kg;
             });
 
         // Create a halo for the nodes.
-        _node_halo = Cajita::createHalo<double,MemorySpace>(
+        _node_halo = Cajita::createHalo<double,typename MemorySpace::device_type>(
             *node_layout, Cajita::FullHaloPattern() );
     }
 

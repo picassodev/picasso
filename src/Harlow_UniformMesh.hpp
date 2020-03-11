@@ -26,22 +26,22 @@ class UniformMesh
     using memory_space = MemorySpace;
 
     // Construct a mesh manager from the problem bounding box and a property
-    // tree. The mesh is always initially uniform but it may be adaptive.
+    // tree.
     UniformMesh( const boost::property_tree::ptree& ptree,
                  const Kokkos::Array<float,6>& global_bounding_box,
                  const int minimum_halo_cell_width,
                  MPI_Comm comm )
     {
         // Get the mesh parameters.
-        const auto& params = ptree.get_child("mesh");
+        const auto& mesh_params = ptree.get_child("mesh");
 
         // Get the global number of cells in each direction and the cell
         // size.
         std::array<int,3> global_num_cell;
         double cell_size;
-        if ( params.count("cell_size") )
+        if ( mesh_params.count("cell_size") )
         {
-            cell_size = params.get<double>("cell_size");
+            cell_size = mesh_params.get<double>("cell_size");
             for ( int d = 0 ; d < 3; ++d )
             {
                 global_num_cell[d] =
@@ -49,10 +49,14 @@ class UniformMesh
                     cell_size;
             }
         }
-        else if ( params.count("global_num_cell") )
+        else if ( mesh_params.count("global_num_cell") )
         {
+            if ( mesh_params.get_child("global_num_cell").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.global_num_cell" );
+
             int d = 0;
-            for ( auto& element : params.get_child("global_num_cell") )
+            for ( auto& element : mesh_params.get_child("global_num_cell") )
             {
                 global_num_cell[d] = element.second.get_value<int>();
                 ++d;
@@ -87,8 +91,12 @@ class UniformMesh
         // Get the periodicity.
         std::array<bool,3> periodic;
         {
+            if ( mesh_params.get_child("periodic").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.periodic" );
+
             int d = 0;
-            for ( auto& element : params.get_child("periodic") )
+            for ( auto& element : mesh_params.get_child("periodic") )
             {
                 periodic[d] = element.second.get_value<bool>();
                 ++d;
@@ -112,7 +120,7 @@ class UniformMesh
             global_low_corner, global_high_corner, global_num_cell );
 
         // Create the partitioner.
-        const auto& part_params = params.get_child("partitioner");
+        const auto& part_params = mesh_params.get_child("partitioner");
         std::shared_ptr<Cajita::Partitioner> partitioner;
         if ( part_params.get<std::string>("type").compare(
                  "uniform_dim") == 0 )
@@ -122,6 +130,10 @@ class UniformMesh
         else if ( part_params.get<std::string>("type").compare(
                  "manual") == 0 )
         {
+            if ( part_params.get_child("ranks_per_dim").size() != 3 )
+                throw std::runtime_error(
+                    "3 entries required for mesh.partitioner.ranks_per_dim " );
+
             std::array<int,3> ranks_per_dim;
             int d = 0;
             for ( auto& element :
@@ -142,7 +154,7 @@ class UniformMesh
         // assumed the minimum halo cell width will be used.
         auto halo_cell_width = std::max(
             minimum_halo_cell_width,
-            params.get<int>("halo_cell_width",0) );
+            mesh_params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
