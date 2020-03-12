@@ -54,12 +54,12 @@ void InitTest( InitType init_type, int ppc )
     particle_list particles( "particles" );
 
     // Particle initialization functor.
-    Kokkos::Array<double,6> box = { global_low_corner[Dim::I] + cell_size,
-                                    global_high_corner[Dim::I] - cell_size,
-                                    global_low_corner[Dim::J] + cell_size,
-                                    global_high_corner[Dim::J] - cell_size,
-                                    global_low_corner[Dim::K] + cell_size,
-                                    global_high_corner[Dim::K] - cell_size };
+    const Kokkos::Array<double,6> box = { global_low_corner[Dim::I] + cell_size,
+                                          global_high_corner[Dim::I] - cell_size,
+                                          global_low_corner[Dim::J] + cell_size,
+                                          global_high_corner[Dim::J] - cell_size,
+                                          global_low_corner[Dim::K] + cell_size,
+                                          global_high_corner[Dim::K] - cell_size };
     auto particle_init_func =
         KOKKOS_LAMBDA( const double x[3], particle_type& p ){
         // Put particles in a box that is one cell smaller than the global

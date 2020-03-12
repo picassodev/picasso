@@ -79,9 +79,9 @@ class AdaptiveMesh
             { static_cast<double>(global_num_cell[0]),
               static_cast<double>(global_num_cell[1]),
               static_cast<double>(global_num_cell[2]) };
-        std::array<double,3> physical_low_corner = { global_bounding_box[0],
-                                                     global_bounding_box[1],
-                                                     global_bounding_box[2] };
+        Kokkos::Array<double,3> physical_low_corner = { global_bounding_box[0],
+                                                        global_bounding_box[1],
+                                                        global_bounding_box[2] };
 
         // Get the periodicity.
         std::array<bool,3> periodic;
@@ -156,8 +156,40 @@ class AdaptiveMesh
         _local_grid =
             Cajita::createLocalGrid( global_grid, halo_cell_width );
 
-        // Create the nodes. Create both owned and ghosted nodes so we don't
-        // have to gather initially.
+        // Create the nodes.
+        buildNodes( physical_low_corner, cell_size, exec_space );
+    }
+
+    // Get the local grid.
+    const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
+    {
+        return *_local_grid;
+    }
+
+    // Get the mesh node coordinates.
+    const Cajita::Array<
+        double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>&
+    nodes() const
+    {
+        return *_nodes;
+    }
+
+    // Make node coordinates parallel consistent with a gather.
+    void gatherNodes()
+    {
+        _node_halo->gather( *_nodes );
+    }
+
+  public:
+
+    // Build the mesh nodes.
+    template<class ExecutionSpace>
+    void buildNodes( const Kokkos::Array<double,3>& physical_low_corner,
+                     const Kokkos::Array<double,3>& cell_size,
+                     const ExecutionSpace& exec_space )
+    {
+        // Create both owned and ghosted nodes so we don't have to gather
+        // initially.
         auto node_layout =
             Cajita::createArrayLayout( _local_grid, 3, Cajita::Node() );
         _nodes = Cajita::createArray<double,MemorySpace>(
@@ -182,26 +214,6 @@ class AdaptiveMesh
         // Create a halo for the nodes.
         _node_halo = Cajita::createHalo<double,typename MemorySpace::device_type>(
             *node_layout, Cajita::FullHaloPattern() );
-    }
-
-    // Get the local grid.
-    const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
-    {
-        return *_local_grid;
-    }
-
-    // Get the mesh node coordinates.
-    const Cajita::Array<
-        double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>&
-    nodes() const
-    {
-        return *_nodes;
-    }
-
-    // Make node coordinates parallel consistent with a gather.
-    void gatherNodes()
-    {
-        _node_halo->gather( *_nodes );
     }
 
   public:

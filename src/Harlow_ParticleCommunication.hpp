@@ -36,12 +36,14 @@ int communicationCount( const LocalGridType& local_grid,
     // Locate the particles in the local mesh and count how many have left the
     // halo region.
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
-    Kokkos::Array<double,3> local_low = { local_mesh.lowCorner(Cajita::Ghost(),Dim::I),
-                                          local_mesh.lowCorner(Cajita::Ghost(),Dim::J),
-                                          local_mesh.lowCorner(Cajita::Ghost(),Dim::K) };
-    Kokkos::Array<double,3> local_high = { local_mesh.highCorner(Cajita::Ghost(),Dim::I),
-                                          local_mesh.highCorner(Cajita::Ghost(),Dim::J),
-                                          local_mesh.highCorner(Cajita::Ghost(),Dim::K) };
+    const Kokkos::Array<double,3> local_low =
+        { local_mesh.lowCorner(Cajita::Ghost(),Dim::I),
+          local_mesh.lowCorner(Cajita::Ghost(),Dim::J),
+          local_mesh.lowCorner(Cajita::Ghost(),Dim::K) };
+    const Kokkos::Array<double,3> local_high =
+        { local_mesh.highCorner(Cajita::Ghost(),Dim::I),
+          local_mesh.highCorner(Cajita::Ghost(),Dim::J),
+          local_mesh.highCorner(Cajita::Ghost(),Dim::K) };
     int comm_count = 0;
     Kokkos::parallel_reduce(
         "redistribute_count",
@@ -86,24 +88,30 @@ void prepareCommunication(
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
     const auto& global_grid = local_grid.globalGrid();
     const auto& global_mesh = global_grid.globalMesh();
-    Kokkos::Array<double,3> local_low = { local_mesh.lowCorner(Cajita::Own(),Dim::I),
-                                          local_mesh.lowCorner(Cajita::Own(),Dim::J),
-                                          local_mesh.lowCorner(Cajita::Own(),Dim::K) };
-    Kokkos::Array<double,3> local_high = { local_mesh.highCorner(Cajita::Own(),Dim::I),
-                                           local_mesh.highCorner(Cajita::Own(),Dim::J),
-                                           local_mesh.highCorner(Cajita::Own(),Dim::K) };
-    Kokkos::Array<bool,3> period = { global_grid.isPeriodic(Dim::I),
-                                     global_grid.isPeriodic(Dim::J),
-                                     global_grid.isPeriodic(Dim::K) };
-    Kokkos::Array<double,3> global_low = { global_mesh.lowCorner(Dim::I),
-                                           global_mesh.lowCorner(Dim::J),
-                                           global_mesh.lowCorner(Dim::K) };
-    Kokkos::Array<double,3> global_high = { global_mesh.highCorner(Dim::I),
-                                            global_mesh.highCorner(Dim::J),
-                                            global_mesh.highCorner(Dim::K) };
-    Kokkos::Array<double,3> global_span = { global_mesh.extent(Dim::I),
-                                            global_mesh.extent(Dim::J),
-                                            global_mesh.extent(Dim::K) };
+    const Kokkos::Array<double,3> local_low =
+        { local_mesh.lowCorner(Cajita::Own(),Dim::I),
+          local_mesh.lowCorner(Cajita::Own(),Dim::J),
+          local_mesh.lowCorner(Cajita::Own(),Dim::K) };
+    const Kokkos::Array<double,3> local_high =
+        { local_mesh.highCorner(Cajita::Own(),Dim::I),
+          local_mesh.highCorner(Cajita::Own(),Dim::J),
+          local_mesh.highCorner(Cajita::Own(),Dim::K) };
+    const Kokkos::Array<bool,3> period =
+        { global_grid.isPeriodic(Dim::I),
+          global_grid.isPeriodic(Dim::J),
+          global_grid.isPeriodic(Dim::K) };
+    const Kokkos::Array<double,3> global_low =
+        { global_mesh.lowCorner(Dim::I),
+          global_mesh.lowCorner(Dim::J),
+          global_mesh.lowCorner(Dim::K) };
+    const Kokkos::Array<double,3> global_high =
+        { global_mesh.highCorner(Dim::I),
+          global_mesh.highCorner(Dim::J),
+          global_mesh.highCorner(Dim::K) };
+    const Kokkos::Array<double,3> global_span =
+        { global_mesh.extent(Dim::I),
+          global_mesh.extent(Dim::J),
+          global_mesh.extent(Dim::K) };
     Kokkos::parallel_for(
         "redistribute_locate_shift",
         Kokkos::RangePolicy<execution_space>(0,coords.size()),
@@ -117,7 +125,8 @@ void prepareCommunication(
             }
 
             // Compute the destination MPI rank.
-            destinations( p ) = neighbor_ranks( nid[Dim::I] + 3*(nid[Dim::J] + 3*nid[Dim::K]) );
+            destinations( p ) =
+                neighbor_ranks( nid[Dim::I] + 3*(nid[Dim::J] + 3*nid[Dim::K]) );
 
             // Shift periodic coordinates if needed.
             for ( int d = 0; d < 3; ++d )

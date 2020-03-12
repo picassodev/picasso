@@ -7,12 +7,104 @@
 
 #include <fstream>
 #include <cmath>
-#include <unordered_map>
 #include <vector>
-#include <limits>
+#include <cfloat>
+#include <unordered_map>
 
 namespace Harlow
 {
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+struct FacetGeometryData
+{
+    // Get the number of volumes.
+    KOKKOS_FUNCTION
+    int numVolume() const
+    {
+        return volume_offsets.extent(0);
+    }
+
+    // Given a local volume id get the facets associated with the volume.
+    KOKKOS_FUNCTION
+    Kokkos::View<float*[4][3],MemorySpace>
+    volumeFacets( const int volume_id ) const
+    {
+        Kokkos::pair<int,int> facet_bounds(
+            (0 == volume_id) ? 0 : volume_offsets(volume_id-1),
+            volume_offsets(volume_id) );
+        return Kokkos::subview(
+            volume_facets, facet_bounds, Kokkos::ALL(), Kokkos::ALL() );
+    }
+
+    // Get the number of surfaces.
+    KOKKOS_FUNCTION
+    int numSurface() const
+    {
+        return surface_offsets.extent(0);
+    }
+
+    // Given a local surface id get the facets associated with the surface.
+    KOKKOS_FUNCTION
+    Kokkos::View<float*[4][3],MemorySpace>
+    surfaceFacets( const int surface_id ) const
+    {
+        Kokkos::pair<int,int> facet_bounds(
+            (0 == surface_id) ? 0 : surface_offsets(surface_id-1),
+            surface_offsets(surface_id) );
+        return Kokkos::subview(
+            surface_facets, facet_bounds, Kokkos::ALL(), Kokkos::ALL() );
+    }
+
+    // Get the local id of the global bounding volume.
+    KOKKOS_FUNCTION
+    int globalBoundingVolumeId() const
+    {
+        return global_bounding_volume_id;
+    }
+
+    // Get the global bounding box of the domain.
+    KOKKOS_FUNCTION
+    const Kokkos::Array<float,6>& globalBoundingBox() const
+    {
+        return global_bounding_box;
+    }
+
+    // Get the bounding boxes of all the volumes.
+    KOKKOS_FUNCTION
+    Kokkos::View<float*[6],MemorySpace> volumeBoundingBoxes() const
+    {
+        return volume_bounding_boxes;
+    }
+
+    // Volume facets. Ordered as (facet,vector,dim) where vector=0,1,2 are the
+    // vertices and vector=3 is the unit normal facing outward from the
+    // volume.
+    Kokkos::View<float*[4][3],MemorySpace> volume_facets;
+
+    // Volume face offsets. Inclusive scan of volume counts giving the offset
+    // into the facet array for each volume.
+    Kokkos::View<int*,MemorySpace> volume_offsets;
+
+    // Surface facets. Ordered as (facet,vector,dim) where vector=0,1,2 are the
+    // vertices and vector=3 is the unit normal facing outward from the
+    // surface.
+    Kokkos::View<float*[4][3],MemorySpace> surface_facets;
+
+    // Surface face offsets. Inclusive scan of surface counts giving the offset
+    // into the facet array for each surface.
+    Kokkos::View<int*,MemorySpace> surface_offsets;
+
+    // Local id of the volume the representes the global axis-aligned bounding
+    // box.
+    int global_bounding_volume_id;
+
+    // The global axis-aligned bounding box.
+    Kokkos::Array<float,6> global_bounding_box;
+
+    // Axis aligned bounding box for all volumes.
+    Kokkos::View<float*[6],MemorySpace> volume_bounding_boxes;
+};
+
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
 class FacetGeometry
@@ -23,7 +115,7 @@ class FacetGeometry
     struct BoundingBoxReduce
     {
         typedef float value_type[];
-        typedef Kokkos::View<float*[4][3]> view_type;
+        typedef Kokkos::View<float*[4][3],MemorySpace> view_type;
         typedef typename view_type::size_type size_type;
         size_type value_count;
 
@@ -71,12 +163,12 @@ class FacetGeometry
         KOKKOS_INLINE_FUNCTION
         void init( value_type v ) const
         {
-            v[0] = std::numeric_limits<float>::max();
-            v[1] = std::numeric_limits<float>::max();
-            v[2] = std::numeric_limits<float>::max();
-            v[3] = -std::numeric_limits<float>::max();
-            v[4] = -std::numeric_limits<float>::max();
-            v[5] = -std::numeric_limits<float>::max();
+            v[0] = FLT_MAX;
+            v[1] = FLT_MAX;
+            v[2] = FLT_MAX;
+            v[3] = -FLT_MAX;
+            v[4] = -FLT_MAX;
+            v[5] = -FLT_MAX;
         }
     };
 
@@ -221,29 +313,31 @@ class FacetGeometry
         file.close();
 
         // Put volume data on device.
-        putFileDataOnDevice( volume_ids, volume_facet_counts, volume_facets,
-                             _volume_ids, _volume_facets, _volume_offsets );
+        putFileDataOnDevice(
+            volume_ids, volume_facet_counts, volume_facets,
+            _volume_ids, _data.volume_facets, _data.volume_offsets );
 
         // Put surface data on device.
-        putFileDataOnDevice( surface_ids, surface_facet_counts, surface_facets,
-                             _surface_ids, _surface_facets, _surface_offsets );
+        putFileDataOnDevice(
+            surface_ids, surface_facet_counts, surface_facets,
+            _surface_ids, _data.surface_facets, _data.surface_offsets );
 
         // Get the volume id of the global bounding box. The user is required
         // to make an axis-aligned bounding box of their geometry that defines
         // the global bounds of the problem. The user input is the global id
         // of this volume.
-        _global_bounding_volume_id = localVolumeId(
+        _data.global_bounding_volume_id = localVolumeId(
             params.get<int>("global_bounding_volume_id") );
 
         // Compute the bounding boxes of all the volumes.
-        _volume_bounding_boxes = Kokkos::View<float*[6],MemorySpace>(
+        _data.volume_bounding_boxes = Kokkos::View<float*[6],MemorySpace>(
             Kokkos::ViewAllocateWithoutInitializing("volume_bounding_boxes"),
-            _volume_ids.size() );
+            volume_ids.size() );
         auto host_boxes = Kokkos::create_mirror_view(
-            Kokkos::HostSpace(), _volume_bounding_boxes );
-        for ( int v = 0; v < numVolume(); ++v )
+            Kokkos::HostSpace(), _data.volume_bounding_boxes );
+        for ( int v = 0; v < _data.numVolume(); ++v )
         {
-            auto facets = volumeFacets(v);
+            auto facets = _data.volumeFacets(v);
             BoundingBoxReduce reducer( facets );
             float box[6];
             Kokkos::parallel_reduce(
@@ -255,20 +349,13 @@ class FacetGeometry
             for ( int i = 0; i < 6; ++i )
                 host_boxes(v,i) = box[i];
         }
-        Kokkos::deep_copy( _volume_bounding_boxes, host_boxes );
+        Kokkos::deep_copy( _data.volume_bounding_boxes, host_boxes );
 
         // Extract the global bounding box to the host.
         auto global_box = Kokkos::subview(
-            host_boxes, _global_bounding_volume_id, Kokkos::ALL() );
+            host_boxes, _data.global_bounding_volume_id, Kokkos::ALL() );
         for ( int i = 0; i < 6; ++i )
-            _global_bounding_box[i] = global_box(i);
-    }
-
-    // Get the number of volumes.
-    KOKKOS_FUNCTION
-    int numVolume() const
-    {
-        return _volume_offsets.extent(0);
+            _data.global_bounding_box[i] = global_box(i);
     }
 
     // Given a global volume id get the local volume id.
@@ -277,65 +364,19 @@ class FacetGeometry
         return _volume_ids.find(global_id)->second;
     }
 
-    // Given a local volume id get the facets associated with the volume.
-    KOKKOS_FUNCTION
-    Kokkos::View<float*[4][3],MemorySpace>
-    volumeFacets( const int volume_id ) const
-    {
-        Kokkos::pair<int,int> facet_bounds(
-            (0 == volume_id) ? 0 : _volume_offsets(volume_id-1),
-            _volume_offsets(volume_id) );
-        return Kokkos::subview(
-            _volume_facets, facet_bounds, Kokkos::ALL(), Kokkos::ALL() );
-    }
-
-    // Get the number of surfaces.
-    KOKKOS_FUNCTION
-    int numSurface() const
-    {
-        return _surface_offsets.extent(0);
-    }
-
     // Given a global surface id get the local surface id.
     int localSurfaceId( const int global_id ) const
     {
         return _surface_ids.find(global_id)->second;
     }
 
-    // Given a local surface id get the facets associated with the surface.
-    KOKKOS_FUNCTION
-    Kokkos::View<float*[4][3],MemorySpace>
-    surfaceFacets( const int surface_id ) const
+    // Get the geometry data.
+    const FacetGeometryData<MemorySpace>& data() const
     {
-        Kokkos::pair<int,int> facet_bounds(
-            (0 == surface_id) ? 0 : _surface_offsets(surface_id-1),
-            _surface_offsets(surface_id) );
-        return Kokkos::subview(
-            _surface_facets, facet_bounds, Kokkos::ALL(), Kokkos::ALL() );
+        return _data;
     }
 
-    // Get the local id of the global bounding volume.
-    KOKKOS_FUNCTION
-    int globalBoundingVolumeId() const
-    {
-        return _global_bounding_volume_id;
-    }
-
-    // Get the global bounding box of the domain.
-    KOKKOS_FUNCTION
-    const Kokkos::Array<float,6>& globalBoundingBox() const
-    {
-        return _global_bounding_box;
-    }
-
-    // Get the bounding boxes of all the volumes.
-    KOKKOS_FUNCTION
-    Kokkos::View<float*[6],MemorySpace> volumeBoundingBoxes() const
-    {
-        return _volume_bounding_boxes;
-    }
-
-  public:
+  private:
 
     // Put file data on device.
     void putFileDataOnDevice(
@@ -412,36 +453,11 @@ class FacetGeometry
     // Volume ids - global-to-local mapping.
     std::unordered_map<int,int> _volume_ids;
 
-    // Volume facets. Ordered as (facet,vector,dim) where vector=0,1,2 are the
-    // vertices and vector=3 is the unit normal facing outward from the
-    // volume.
-    Kokkos::View<float*[4][3],MemorySpace> _volume_facets;
-
-    // Volume face offsets. Inclusive scan of volume counts giving the offset
-    // into the facet array for each volume.
-    Kokkos::View<int*,MemorySpace> _volume_offsets;
-
     // Surface ids - global-to-local mapping.
     std::unordered_map<int,int> _surface_ids;
 
-    // Surface facets. Ordered as (facet,vector,dim) where vector=0,1,2 are the
-    // vertices and vector=3 is the unit normal facing outward from the
-    // surface.
-    Kokkos::View<float*[4][3],MemorySpace> _surface_facets;
-
-    // Surface face offsets. Inclusive scan of surface counts giving the offset
-    // into the facet array for each surface.
-    Kokkos::View<int*,MemorySpace> _surface_offsets;
-
-    // Local id of the volume the representes the global axis-aligned bounding
-    // box.
-    int _global_bounding_volume_id;
-
-    // The global axis-aligned bounding box.
-    Kokkos::Array<float,6> _global_bounding_box;
-
-    // Axis aligned bounding box for all volumes.
-    Kokkos::View<float*[6],MemorySpace> _volume_bounding_boxes;
+    // Data.
+    FacetGeometryData<MemorySpace> _data;
 };
 
 //---------------------------------------------------------------------------//
@@ -485,7 +501,8 @@ bool pointInVolume( const float x[3], const FacetView& volume_facets )
 // the entire domain, return -2;
 template<class MemorySpace>
 KOKKOS_FUNCTION
-int locatePoint( const float x[3], const FacetGeometry<MemorySpace>& geometry )
+int locatePoint( const float x[3],
+                 const FacetGeometryData<MemorySpace>& geometry )
 {
     auto boxes = geometry.volumeBoundingBoxes();
     auto global_bounding_volume_id = geometry.globalBoundingVolumeId();

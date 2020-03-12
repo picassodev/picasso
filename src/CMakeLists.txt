@@ -15,8 +15,6 @@ set(HEADERS
   )
 
 set(SOURCES
-  Harlow_AdaptiveMesh.cpp
-  Harlow_FacetGeometry.cpp
   Harlow_InputParser.cpp
   Harlow_UniformMesh.cpp
   Harlow_Version.cpp

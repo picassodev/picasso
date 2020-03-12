@@ -30,9 +30,12 @@ void constructionTest()
     // bounding volume is from (-12,20) in each dimension.
     FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
 
+    // Get the device data.
+    const auto& geom_data = geometry.data();
+
     // Check that we got the right number of volumes and surfaces.
-    EXPECT_EQ( geometry.numVolume(), 3 );
-    EXPECT_EQ( geometry.numSurface(), 13 );
+    EXPECT_EQ( geom_data.numVolume(), 3 );
+    EXPECT_EQ( geom_data.numSurface(), 13 );
 
     // Check the global-to-local id conversion.
     for ( int i = 0; i < 3; ++i )
@@ -41,7 +44,7 @@ void constructionTest()
         EXPECT_EQ( geometry.localSurfaceId(i+1), i );
 
     // Get the facets for the sphere volume.
-    auto volume_facets = geometry.volumeFacets( 1 );
+    auto volume_facets = geom_data.volumeFacets( 1 );
     auto num_volume_facet = volume_facets.extent(0);
     EXPECT_TRUE( num_volume_facet > 0 );
 
@@ -107,7 +110,7 @@ void constructionTest()
     EXPECT_EQ( volume_outside, 1 );
 
     // Get the facets for the sphere surface.
-    auto surface_facets = geometry.surfaceFacets( 6 );
+    auto surface_facets = geom_data.surfaceFacets( 6 );
     auto num_surface_facet = surface_facets.extent(0);
     EXPECT_TRUE( num_surface_facet > 0 );
 
@@ -145,9 +148,9 @@ void constructionTest()
     EXPECT_TRUE( surface_outside > 0 );
 
     // Check the global bounding volume.
-    EXPECT_EQ( geometry.globalBoundingVolumeId(), 2 );
+    EXPECT_EQ( geom_data.globalBoundingVolumeId(), 2 );
 
-    auto global_box = geometry.globalBoundingBox();
+    auto global_box = geom_data.globalBoundingBox();
 
     EXPECT_TRUE( global_box[0] <= point_in[0] );
     EXPECT_TRUE( global_box[1] <= point_in[1] );
@@ -171,7 +174,7 @@ void constructionTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
             result =
-                FacetGeometryOps::locatePoint(p1.data(),geometry);
+                FacetGeometryOps::locatePoint(p1.data(),geom_data);
         },
         volume_id );
     EXPECT_EQ( volume_id, 1 );
@@ -184,7 +187,7 @@ void constructionTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
             result =
-                FacetGeometryOps::locatePoint(p2.data(),geometry);
+                FacetGeometryOps::locatePoint(p2.data(),geom_data);
         },
         volume_id );
     EXPECT_EQ( volume_id, 0 );
@@ -197,7 +200,7 @@ void constructionTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
             result =
-                FacetGeometryOps::locatePoint(p3.data(),geometry);
+                FacetGeometryOps::locatePoint(p3.data(),geom_data);
         },
         volume_id );
     EXPECT_EQ( volume_id, -1 );
@@ -210,7 +213,7 @@ void constructionTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
             result =
-                FacetGeometryOps::locatePoint(p4.data(),geometry);
+                FacetGeometryOps::locatePoint(p4.data(),geom_data);
         },
         volume_id );
     EXPECT_EQ( volume_id, -2 );
@@ -242,6 +245,7 @@ void initExample()
     boost::property_tree::read_json( "facet_geometry_test.json", pt );
 
     FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
+    const auto& geom_data = geometry.data();
     auto init_func =
         KOKKOS_LAMBDA( const double x[3], particle_type& p ) {
         float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
@@ -249,7 +253,7 @@ void initExample()
         {
             Cabana::get<0>(p,d) = x[d];
         }
-        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geometry);
+        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geom_data);
         return (Cabana::get<1>(p) > -2);
     };
     initializeParticles( InitUniform(), *local_grid, 3, init_func, particles );
