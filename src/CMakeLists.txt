@@ -7,6 +7,7 @@ set(HEADERS
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
+  Harlow_ParticleList.hpp
   Harlow_SiloParticleWriter.hpp
   Harlow_Types.hpp
   Harlow_UniformMesh.hpp

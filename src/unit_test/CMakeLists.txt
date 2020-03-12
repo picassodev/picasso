@@ -111,6 +111,7 @@ endmacro()
 
 Harlow_add_tests(NAMES DenseLinearAlgebra FacetGeometry)
 Harlow_add_tests(MPI NAMES
+  ParticleList
   ParticleInit
   ParticleCommunication
   SiloParticleWriter

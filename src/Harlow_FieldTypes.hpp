@@ -17,85 +17,87 @@ struct Scalar
     using particle_member_type = value_type;
 };
 
+template<class T>
 struct Vector
 {
     using value_type = T;
     static constexpr int dim = 3;
-    static constexpr particle_member_type = value_type[3];
+    using particle_member_type = value_type[3];
 };
 
+template<class T>
 struct Tensor
 {
     using value_type = T;
     static constexpr int dim = 9;
-    static constexpr particle_member_type = value_type[3][3];
+    using particle_member_type = value_type[3][3];
 };
 
 //---------------------------------------------------------------------------//
 // Fields.
 struct PhysicalPosition : public Vector<double>
 {
-    static std::string label() { return "physical_position" };
+    static std::string label() { return "physical_position"; };
 };
 
 struct LogicalPosition : public Vector<double>
 {
-    static std::string label() { return "logical_position" };
+    static std::string label() { return "logical_position"; };
 };
 
 struct Mass : public Scalar<double>
 {
-    static std::string label() { return "mass" };
+    static std::string label() { return "mass"; };
 };
 
 struct Volume : public Scalar<double>
 {
-    static std::string label() { return "volume" };
+    static std::string label() { return "volume"; };
 };
 
 struct Momentum : public Vector<double>
 {
-    static std::string label() { return "momentum" };
+    static std::string label() { return "momentum"; };
 };
 
 struct Velocity : public Vector<double>
 {
-    static std::string label() { return "velocity" };
+    static std::string label() { return "velocity"; };
 };
 
 struct Temperature : public Scalar<double>
 {
-    static std::string label() { return "temperature" };
+    static std::string label() { return "temperature"; };
 };
 
 struct InternalEnergy : public Scalar<double>
 {
-    static std::string label() { return "internal_energy" };
+    static std::string label() { return "internal_energy"; };
 };
 
 struct Density : public Scalar<double>
 {
-    static std::string label() { return "density" };
+    static std::string label() { return "density"; };
 };
 
 struct DeformationGradient : public Tensor<double>
 {
-    static std::string label() { return "deformation_gradient" };
+    static std::string label() { return "deformation_gradient"; };
 };
 
 struct DeformationGradientDeterminant : public Tensor<double>
 {
-    static std::string label() { return "deformation_gradient_det" };
+    static std::string label() { return "deformation_gradient_det"; };
 };
 
 struct MaterialId : public Scalar<int>
 {
-    static std::string label() { return "material_id" };
+    static std::string label() { return "material_id"; };
 };
 
 struct Color : public Scalar<int>
 {
-    static std::string label() { return "color" };
+    static std::string label() { return "color"; };
 };
 
 //---------------------------------------------------------------------------//

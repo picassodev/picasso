@@ -4,6 +4,9 @@
 #include <Cajita.hpp>
 
 #include <Harlow_Types.hpp>
+#include <Harlow_UniformMesh.hpp>
+#include <Harlow_AdaptiveMesh.hpp>
+#include <Harlow_ParticleList.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -149,7 +152,7 @@ template<class LocalGridType, class ParticleContainer, std::size_t CoordIndex>
 void redistribute( const LocalGridType& local_grid,
                    ParticleContainer& particles,
                    std::integral_constant<std::size_t,CoordIndex>,
-                   bool force_communication = false )
+                   const bool force_communication = false )
 {
     using device_type = typename ParticleContainer::device_type;
 
