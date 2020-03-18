@@ -508,9 +508,8 @@ bool pointInVolume( const float x[3], const FacetView& volume_facets )
 
 //---------------------------------------------------------------------------//
 // Given a point determine the volume in the given facet geometry in which it
-// is located. We require the input point to be inside of the bounding box
-// volume. If it is in the implicit complement, return -1. If it is outside of
-// the entire domain, return -2;
+// is located.If it is in the implicit complement, return -1. If it is outside
+// of the entire domain, return -2;
 template<class MemorySpace>
 KOKKOS_FUNCTION
 int locatePoint( const float x[3],
