@@ -52,14 +52,5 @@ TEST( input_parser, xml_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST( input_parser, info_test )
-{
-    std::vector<std::string> args =
-        { "other_thing", "--harlow-input-info",
-          "input_parser_test.info", "something_else" };
-    testParser( args );
-}
-
-//---------------------------------------------------------------------------//
 
 } // end namespace Test

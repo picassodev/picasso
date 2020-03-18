@@ -1,12 +1,12 @@
-#include <Harlow_FacetGeometry.hpp>
+#include <Harlow_UniformMesh.hpp>
 
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
-template struct FacetGeometry<Kokkos::HostSpace>;
+template class UniformMesh<Kokkos::HostSpace>;
 
 #ifdef KOKKOS_ENABLE_CUDA
-template struct FacetGeometry<Kokkos::CudaSpace>;
+template class UniformMesh<Kokkos::CudaSpace>;
 #endif
 
 //---------------------------------------------------------------------------//

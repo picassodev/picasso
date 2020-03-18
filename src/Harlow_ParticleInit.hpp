@@ -18,24 +18,21 @@ struct InitRandom {};
 
 //---------------------------------------------------------------------------//
 // Filter out empty particles that weren't created.
-template<class CreationView, class ParticleList>
-void filterEmpties( const int local_num_create,
+template<class CreationView, class ParticleList, class ExecutionSpace>
+void filterEmpties( const ExecutionSpace& exec_space,
+                    const int local_num_create,
                     const CreationView& particle_created,
                     ParticleList& particles )
 {
-    // Device type.
-    using device_type = typename ParticleList::device_type;
-
-    // Execution space.
-    using execution_space = typename ParticleList::execution_space;
+    using memory_space = typename CreationView::memory_space;
 
     // Determine the empty particle positions in the compaction zone.
     int num_particles = particles.size();
-    Kokkos::View<int*,device_type> empties(
+    Kokkos::View<int*,memory_space> empties(
         Kokkos::ViewAllocateWithoutInitializing("empties"),
         std::min(num_particles-local_num_create,local_num_create) );
     Kokkos::parallel_scan(
-        Kokkos::RangePolicy<execution_space>(0,local_num_create),
+        Kokkos::RangePolicy<ExecutionSpace>(exec_space,0,local_num_create),
         KOKKOS_LAMBDA( const int i, int& count, const bool final_pass ){
             if ( !particle_created(i) )
             {
@@ -49,7 +46,7 @@ void filterEmpties( const int local_num_create,
 
     // Compact the list so the it only has real particles.
     Kokkos::parallel_scan(
-        Kokkos::RangePolicy<execution_space>(local_num_create,num_particles),
+        Kokkos::RangePolicy<ExecutionSpace>(exec_space,local_num_create,num_particles),
         KOKKOS_LAMBDA( const int i, int& count, const bool final_pass ){
             if ( particle_created(i) )
             {
@@ -95,8 +92,9 @@ void filterEmpties( const int local_num_create,
   filled with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList>
+template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
 void initializeParticles( InitRandom,
+                          const ExecutionSpace& exec_space,
                           const LocalGridType& local_grid,
                           const int particles_per_cell,
                           const InitFunctor& create_functor,
@@ -105,9 +103,6 @@ void initializeParticles( InitRandom,
     // Device type.
     using device_type = typename ParticleList::device_type;
 
-    // Execution space.
-    using execution_space = typename ParticleList::execution_space;
-
     // Particle type.
     using particle_type = typename ParticleList::tuple_type;
 
@@ -115,7 +110,7 @@ void initializeParticles( InitRandom,
     const auto& global_grid = local_grid.globalGrid();
 
     // Create a local mesh.
-    auto local_mesh = Cajita::createLocalMesh<device_type>( local_grid );
+    auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
 
     // Get the local set of owned cell indices.
     auto owned_cells =
@@ -142,7 +137,7 @@ void initializeParticles( InitRandom,
     int local_num_create = 0;
     Kokkos::parallel_reduce(
         "init_particles_random",
-        Cajita::createExecutionPolicy( owned_cells, execution_space() ),
+        Cajita::createExecutionPolicy( owned_cells, exec_space ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, int& create_count ){
             // Compute the owned local cell id.
             int i_own = i - owned_cells.min(Dim::I);
@@ -197,7 +192,7 @@ void initializeParticles( InitRandom,
         local_num_create );
 
     // Filter empties.
-    filterEmpties( local_num_create, particle_created, particles );
+    filterEmpties( exec_space, local_num_create, particle_created, particles );
 }
 
 //---------------------------------------------------------------------------//
@@ -232,24 +227,22 @@ void initializeParticles( InitRandom,
   filled with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList>
+template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
 void initializeParticles( InitUniform,
+                          const ExecutionSpace& exec_space,
                           const LocalGridType& local_grid,
                           const int particles_per_cell_dim,
                           const InitFunctor& create_functor,
                           ParticleList& particles )
 {
-    // Device type.
-    using device_type = typename ParticleList::device_type;
-
-    // Execution space.
-    using execution_space = typename ParticleList::execution_space;
+    // Memory space.
+    using memory_space = typename ParticleList::memory_space;
 
     // Particle type.
     using particle_type = typename ParticleList::tuple_type;
 
     // Create a local mesh.
-    auto local_mesh = Cajita::createLocalMesh<device_type>( local_grid );
+    auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
 
     // Get the local set of owned cell indices.
     auto owned_cells =
@@ -264,7 +257,7 @@ void initializeParticles( InitUniform,
     particles.resize( num_particles );
 
     // Creation status.
-    auto particle_created = Kokkos::View<bool*,device_type>(
+    auto particle_created = Kokkos::View<bool*,memory_space>(
         Kokkos::ViewAllocateWithoutInitializing("particle_created"),
         num_particles );
 
@@ -272,7 +265,7 @@ void initializeParticles( InitUniform,
     int local_num_create = 0;
     Kokkos::parallel_reduce(
         "init_particles_uniform",
-        Cajita::createExecutionPolicy( owned_cells, execution_space() ),
+        Cajita::createExecutionPolicy( owned_cells, exec_space ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, int& create_count ){
             // Compute the owned local cell id.
             int i_own = i - owned_cells.min(Dim::I);
@@ -335,7 +328,7 @@ void initializeParticles( InitUniform,
         local_num_create );
 
     // Filter empties.
-    filterEmpties( local_num_create, particle_created, particles );
+    filterEmpties( exec_space, local_num_create, particle_created, particles );
 }
 
 //---------------------------------------------------------------------------//
