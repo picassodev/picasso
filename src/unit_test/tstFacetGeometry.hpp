@@ -44,8 +44,7 @@ void constructionTest()
         EXPECT_EQ( geometry.localSurfaceId(i+1), i );
 
     // Get the facets for the sphere volume.
-    auto volume_facets = geom_data.volumeFacets( 1 );
-    auto num_volume_facet = volume_facets.extent(0);
+    auto num_volume_facet = geometry.numVolumeFacet( 1 );
     EXPECT_TRUE( num_volume_facet > 0 );
 
     // Check that a point is in the volume. All normals point outward if a
@@ -56,6 +55,7 @@ void constructionTest()
         "check_inside_volume",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_volume_facet),
         KOKKOS_LAMBDA( const int f, int& result ){
+            auto volume_facets = geom_data.volumeFacets( 1 );
             auto dist =
                 FacetGeometryOps::distanceToFacetPlane(point_in.data(),
                                                        volume_facets, f);
@@ -71,6 +71,7 @@ void constructionTest()
         "check_inside_volume",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
+            auto volume_facets = geom_data.volumeFacets( 1 );
             if ( FacetGeometryOps::pointInVolume(
                      point_in.data(),volume_facets) )
                 ++result;
@@ -87,6 +88,7 @@ void constructionTest()
         "check_outside_volume",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_volume_facet),
         KOKKOS_LAMBDA( const int f, int& result ){
+            auto volume_facets = geom_data.volumeFacets( 1 );
             auto dist =
                 FacetGeometryOps::distanceToFacetPlane(point_out.data(),
                                                        volume_facets, f);
@@ -102,6 +104,7 @@ void constructionTest()
         "check_outside_volume",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
         KOKKOS_LAMBDA( const int, int& result ){
+            auto volume_facets = geom_data.volumeFacets( 1 );
             if ( !FacetGeometryOps::pointInVolume(
                      point_out.data(),volume_facets) )
                 ++result;
@@ -110,8 +113,7 @@ void constructionTest()
     EXPECT_EQ( volume_outside, 1 );
 
     // Get the facets for the sphere surface.
-    auto surface_facets = geom_data.surfaceFacets( 6 );
-    auto num_surface_facet = surface_facets.extent(0);
+    auto num_surface_facet = geometry.numSurfaceFacet( 6 );
     EXPECT_TRUE( num_surface_facet > 0 );
 
     // Check that a point is in the surface. All normals point outward if a
@@ -121,6 +123,7 @@ void constructionTest()
         "check_inside_surface",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_surface_facet),
         KOKKOS_LAMBDA( const int f, int& result ){
+            auto surface_facets = geom_data.surfaceFacets( 6 );
             auto dist =
                 FacetGeometryOps::distanceToFacetPlane(point_in.data(),
                                                        surface_facets, f);
@@ -138,6 +141,7 @@ void constructionTest()
         "check_outside_surface",
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_surface_facet),
         KOKKOS_LAMBDA( const int f, int& result ){
+            auto surface_facets = geom_data.surfaceFacets( 6 );
             auto dist =
                 FacetGeometryOps::distanceToFacetPlane(point_out.data(),
                                                        surface_facets, f);
@@ -148,9 +152,9 @@ void constructionTest()
     EXPECT_TRUE( surface_outside > 0 );
 
     // Check the global bounding volume.
-    EXPECT_EQ( geom_data.globalBoundingVolumeId(), 2 );
+    EXPECT_EQ( geom_data.global_bounding_volume_id, 2 );
 
-    auto global_box = geom_data.globalBoundingBox();
+    auto global_box = geometry.globalBoundingBox();
 
     EXPECT_TRUE( global_box[0] <= point_in[0] );
     EXPECT_TRUE( global_box[1] <= point_in[1] );
@@ -220,6 +224,33 @@ void constructionTest()
 }
 
 //---------------------------------------------------------------------------//
+// RUN TESTS
+//---------------------------------------------------------------------------//
+TEST( TEST_CATEGORY, construction_test )
+{
+    constructionTest();
+}
+
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+struct LocateFunctor
+{
+    FacetGeometryData<MemorySpace> geom;
+
+    template<class ParticleType>
+    KOKKOS_INLINE_FUNCTION
+    bool operator()( const double x[3], ParticleType& p ) const
+    {
+        float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
+        for ( int d = 0; d < 3; ++d )
+        {
+            Cabana::get<0>(p,d) = x[d];
+        }
+        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geom);
+        return (Cabana::get<1>(p) > -2);
+    }
+};
+
 void initExample()
 {
     std::array<int,3> global_num_cell = { 40, 40, 40 };
@@ -245,18 +276,11 @@ void initExample()
     boost::property_tree::read_json( "facet_geometry_test.json", pt );
 
     FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
-    const auto& geom_data = geometry.data();
-    auto init_func =
-        KOKKOS_LAMBDA( const double x[3], particle_type& p ) {
-        float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
-        for ( int d = 0; d < 3; ++d )
-        {
-            Cabana::get<0>(p,d) = x[d];
-        }
-        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geom_data);
-        return (Cabana::get<1>(p) > -2);
-    };
-    initializeParticles( InitUniform(), *local_grid, 3, init_func, particles );
+
+    LocateFunctor<TEST_MEMSPACE> init_func;
+    init_func.geom = geometry.data();
+    initializeParticles(
+        InitUniform(), TEST_EXECSPACE(), *local_grid, 3, init_func, particles );
 
     SiloParticleWriter::writeTimeStep(
         *global_grid, 0, 0.0,
@@ -266,14 +290,6 @@ void initExample()
 TEST( TEST_CATEGORY, init_example )
 {
     initExample();
-}
-
-//---------------------------------------------------------------------------//
-// RUN TESTS
-//---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, construction_test )
-{
-    constructionTest();
 }
 
 //---------------------------------------------------------------------------//

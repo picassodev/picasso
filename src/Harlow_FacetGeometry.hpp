@@ -55,27 +55,6 @@ struct FacetGeometryData
             surface_facets, facet_bounds, Kokkos::ALL(), Kokkos::ALL() );
     }
 
-    // Get the local id of the global bounding volume.
-    KOKKOS_FUNCTION
-    int globalBoundingVolumeId() const
-    {
-        return global_bounding_volume_id;
-    }
-
-    // Get the global bounding box of the domain.
-    KOKKOS_FUNCTION
-    const Kokkos::Array<float,6>& globalBoundingBox() const
-    {
-        return global_bounding_box;
-    }
-
-    // Get the bounding boxes of all the volumes.
-    KOKKOS_FUNCTION
-    Kokkos::View<float*[6],MemorySpace> volumeBoundingBoxes() const
-    {
-        return volume_bounding_boxes;
-    }
-
     // Volume facets. Ordered as (facet,vector,dim) where vector=0,1,2 are the
     // vertices and vector=3 is the unit normal facing outward from the
     // volume.
@@ -98,9 +77,6 @@ struct FacetGeometryData
     // box.
     int global_bounding_volume_id;
 
-    // The global axis-aligned bounding box.
-    Kokkos::Array<float,6> global_bounding_box;
-
     // Axis aligned bounding box for all volumes.
     Kokkos::View<float*[6],MemorySpace> volume_bounding_boxes;
 };
@@ -115,20 +91,29 @@ class FacetGeometry
     struct BoundingBoxReduce
     {
         typedef float value_type[];
-        typedef Kokkos::View<float*[4][3],MemorySpace> view_type;
-        typedef typename view_type::size_type size_type;
+        typedef Kokkos::View<float*[4][3],MemorySpace> facet_view_type;
+        typedef Kokkos::View<int*,MemorySpace> offset_view_type;
+        typedef typename facet_view_type::size_type size_type;
         size_type value_count;
 
-        view_type facets;
+        facet_view_type facets;
+        offset_view_type offsets;
+        int volume_id;
 
-        BoundingBoxReduce( const view_type& f )
+        BoundingBoxReduce( const facet_view_type& f,
+                           const offset_view_type& o,
+                           int v )
             : value_count(6)
             , facets(f)
+            , offsets(o)
+            , volume_id(v)
         {}
 
-        KOKKOS_INLINE_FUNCTION
-        void operator()( const size_type f, value_type result ) const
+        KOKKOS_FUNCTION
+        void operator()( const size_type facet_id, value_type result ) const
         {
+            auto f_start = ( volume_id == 0 ) ? 0 : offsets(volume_id-1);
+            auto f = f_start + facet_id;
             result[0] = fmin( result[0],
                               fmin( facets(f,0,0),
                                     fmin( facets(f,1,0), facets(f,2,0) ) ) );
@@ -149,7 +134,7 @@ class FacetGeometry
                                     fmax( facets(f,1,2), facets(f,2,2) ) ) );
         }
 
-        KOKKOS_INLINE_FUNCTION
+        KOKKOS_FUNCTION
         void join( volatile value_type dst, const volatile value_type src ) const
         {
             dst[0] = fmin( dst[0], src[0] );
@@ -160,7 +145,7 @@ class FacetGeometry
             dst[5] = fmax( dst[5], src[5] );
         }
 
-        KOKKOS_INLINE_FUNCTION
+        KOKKOS_FUNCTION
         void init( value_type v ) const
         {
             v[0] = FLT_MAX;
@@ -193,8 +178,6 @@ class FacetGeometry
         // Containers.
         std::vector<int> volume_ids;
         std::vector<int> surface_ids;
-        std::vector<int> volume_facet_counts;
-        std::vector<int> surface_facet_counts;
         std::vector<float> volume_facets;
         std::vector<float> surface_facets;
 
@@ -237,7 +220,7 @@ class FacetGeometry
                     if ( tokens[1].compare("Volume") == 0 )
                     {
                         volume_ids.push_back( std::atoi(tokens[2].c_str()) );
-                        volume_facet_counts.push_back( 0 );
+                        _volume_facet_count.push_back( 0 );
                         read_volume = true;
                     }
 
@@ -245,7 +228,7 @@ class FacetGeometry
                     else if ( tokens[1].compare("Surface") == 0 )
                     {
                         surface_ids.push_back( std::atoi(tokens[2].c_str()) );
-                        surface_facet_counts.push_back( 0 );
+                        _surface_facet_count.push_back( 0 );
                         read_surface = true;
                     }
 
@@ -266,13 +249,13 @@ class FacetGeometry
                     // Volume facet.
                     if ( read_volume )
                     {
-                        ++volume_facet_counts.back();
+                        ++_volume_facet_count.back();
                     }
 
                     // Surface facet.
                     else if ( read_surface )
                     {
-                        ++surface_facet_counts.back();
+                        ++_surface_facet_count.back();
                     }
                 }
 
@@ -314,12 +297,12 @@ class FacetGeometry
 
         // Put volume data on device.
         putFileDataOnDevice(
-            volume_ids, volume_facet_counts, volume_facets,
+            volume_ids, _volume_facet_count, volume_facets,
             _volume_ids, _data.volume_facets, _data.volume_offsets );
 
         // Put surface data on device.
         putFileDataOnDevice(
-            surface_ids, surface_facet_counts, surface_facets,
+            surface_ids, _surface_facet_count, surface_facets,
             _surface_ids, _data.surface_facets, _data.surface_offsets );
 
         // Get the volume id of the global bounding box. The user is required
@@ -337,13 +320,13 @@ class FacetGeometry
             Kokkos::HostSpace(), _data.volume_bounding_boxes );
         for ( int v = 0; v < _data.numVolume(); ++v )
         {
-            auto facets = _data.volumeFacets(v);
-            BoundingBoxReduce reducer( facets );
+            BoundingBoxReduce reducer(
+                _data.volume_facets, _data.volume_offsets, v );
             float box[6];
             Kokkos::parallel_reduce(
                 "volume_bounding_box",
                 Kokkos::RangePolicy<ExecutionSpace>(
-                    exec_space,0,facets.extent(0)),
+                    exec_space,0,_volume_facet_count[v]),
                 reducer,
                 box );
             for ( int i = 0; i < 6; ++i )
@@ -355,7 +338,7 @@ class FacetGeometry
         auto global_box = Kokkos::subview(
             host_boxes, _data.global_bounding_volume_id, Kokkos::ALL() );
         for ( int i = 0; i < 6; ++i )
-            _data.global_bounding_box[i] = global_box(i);
+            _global_bounding_box[i] = global_box(i);
     }
 
     // Given a global volume id get the local volume id.
@@ -368,6 +351,26 @@ class FacetGeometry
     int localSurfaceId( const int global_id ) const
     {
         return _surface_ids.find(global_id)->second;
+    }
+
+    // Given a local volume id get the number of facets that compose the
+    // volume.
+    int numVolumeFacet( const int local_id ) const
+    {
+        return _volume_facet_count[local_id];
+    }
+
+    // Given a local surface id get the number of facets that compose the
+    // surface.
+    int numSurfaceFacet( const int local_id ) const
+    {
+        return _surface_facet_count[local_id];
+    }
+
+    // Get the global bounding box.
+    const Kokkos::Array<float,6>& globalBoundingBox() const
+    {
+        return _global_bounding_box;
     }
 
     // Get the geometry data.
@@ -456,6 +459,15 @@ class FacetGeometry
     // Surface ids - global-to-local mapping.
     std::unordered_map<int,int> _surface_ids;
 
+    // Volume facet counts.
+    std::vector<int> _volume_facet_count;
+
+    // Surface facet counts.
+    std::vector<int> _surface_facet_count;
+
+    // Global bounding box.
+    Kokkos::Array<float,6> _global_bounding_box;
+
     // Data.
     FacetGeometryData<MemorySpace> _data;
 };
@@ -502,39 +514,39 @@ bool pointInVolume( const float x[3], const FacetView& volume_facets )
 template<class MemorySpace>
 KOKKOS_FUNCTION
 int locatePoint( const float x[3],
-                 const FacetGeometryData<MemorySpace>& geometry )
+                 const FacetGeometryData<MemorySpace>& geom )
 {
-    auto boxes = geometry.volumeBoundingBoxes();
-    auto global_bounding_volume_id = geometry.globalBoundingVolumeId();
+    // Get the global bounding volume id.
+    int gbv = geom.global_bounding_volume_id;
 
     // Start by checking that the point is in the global bounding volume.
-    if ( boxes(global_bounding_volume_id,0) <= x[0] &&
-         boxes(global_bounding_volume_id,1) <= x[1] &&
-         boxes(global_bounding_volume_id,2) <= x[2] &&
-         boxes(global_bounding_volume_id,3) >= x[0] &&
-         boxes(global_bounding_volume_id,4) >= x[1] &&
-         boxes(global_bounding_volume_id,5) >= x[2] )
+    if ( geom.volume_bounding_boxes(gbv,0) <= x[0] &&
+         geom.volume_bounding_boxes(gbv,1) <= x[1] &&
+         geom.volume_bounding_boxes(gbv,2) <= x[2] &&
+         geom.volume_bounding_boxes(gbv,3) >= x[0] &&
+         geom.volume_bounding_boxes(gbv,4) >= x[1] &&
+         geom.volume_bounding_boxes(gbv,5) >= x[2] )
     {
         // Check each volume except the global bounding volume for point
         // inclusion.
-        for ( int g = 0; g < geometry.numVolume(); ++g )
+        for ( int v = 0; v < geom.numVolume(); ++v )
         {
-            if ( g != global_bounding_volume_id )
+            if ( v != gbv )
             {
                 // First check if the point is in the axis-aligned
                 // bounding box of the volume.
-                if ( boxes(g,0) <= x[0] &&
-                     boxes(g,1) <= x[1] &&
-                     boxes(g,2) <= x[2] &&
-                     boxes(g,3) >= x[0] &&
-                     boxes(g,4) >= x[1] &&
-                     boxes(g,5) >= x[2] )
+                if ( geom.volume_bounding_boxes(v,0) <= x[0] &&
+                     geom.volume_bounding_boxes(v,1) <= x[1] &&
+                     geom.volume_bounding_boxes(v,2) <= x[2] &&
+                     geom.volume_bounding_boxes(v,3) >= x[0] &&
+                     geom.volume_bounding_boxes(v,4) >= x[1] &&
+                     geom.volume_bounding_boxes(v,5) >= x[2] )
                 {
                     // If in the bounding box, check against each volume
                     // facet for point inclusion.
-                    if ( pointInVolume(x,geometry.volumeFacets(g)) )
+                    if ( pointInVolume(x,geom.volumeFacets(v)) )
                     {
-                        return g;
+                        return v;
                     }
                 }
             }

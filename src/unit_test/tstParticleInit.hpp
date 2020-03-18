@@ -85,7 +85,8 @@ void InitTest( InitType init_type, int ppc )
     };
 
     // Initialize particles.
-    initializeParticles( init_type, *local_grid, ppc, particle_init_func, particles );
+    initializeParticles(
+        init_type, TEST_EXECSPACE(), *local_grid, ppc, particle_init_func, particles );
 
     // Check that we made particles.
     int num_p = particles.size();

@@ -109,8 +109,8 @@ macro(Harlow_add_tests)
   endforeach()
 endmacro()
 
-Harlow_add_tests(NAMES FacetGeometry)
 Harlow_add_tests(MPI NAMES
+  FacetGeometry
   ParticleList
   ParticleInit
   ParticleCommunication
