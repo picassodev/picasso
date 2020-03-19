@@ -269,7 +269,6 @@ void initExample()
 
     using particle_fields = Cabana::MemberTypes<double[3],int>;
     using particle_list = Cabana::AoSoA<particle_fields,TEST_DEVICE>;
-    using particle_type = typename particle_list::tuple_type;
     particle_list particles( "particles" );
 
     boost::property_tree::ptree pt;

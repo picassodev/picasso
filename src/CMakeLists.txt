@@ -35,7 +35,3 @@ target_include_directories(harlow
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
   )
-
-add_subdirectory(unit_test)
-
-add_subdirectory(examples)

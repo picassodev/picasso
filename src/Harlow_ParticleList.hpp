@@ -20,7 +20,7 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 
@@ -46,8 +46,8 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type,
-                                             typename Tag1::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 
@@ -80,9 +80,9 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type,
-                                             typename Tag1::particle_member_type,
-                                             typename Tag2::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 
@@ -122,10 +122,10 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type,
-                                             typename Tag1::particle_member_type,
-                                             typename Tag2::particle_member_type,
-                                             typename Tag3::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type,
+                                             typename Tag3::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 
@@ -172,11 +172,11 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type,
-                                             typename Tag1::particle_member_type,
-                                             typename Tag2::particle_member_type,
-                                             typename Tag3::particle_member_type,
-                                             typename Tag4::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type,
+                                             typename Tag3::data_type,
+                                             typename Tag4::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 
@@ -230,12 +230,12 @@ struct ParticleTraits<MemorySpace,
 {
     using memory_space = MemorySpace;
 
-    using member_types = Cabana::MemberTypes<typename Tag0::particle_member_type,
-                                             typename Tag1::particle_member_type,
-                                             typename Tag2::particle_member_type,
-                                             typename Tag3::particle_member_type,
-                                             typename Tag4::particle_member_type,
-                                             typename Tag5::particle_member_type>;
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type,
+                                             typename Tag3::data_type,
+                                             typename Tag4::data_type,
+                                             typename Tag5::data_type>;
 
     using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
 

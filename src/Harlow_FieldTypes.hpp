@@ -14,7 +14,7 @@ struct Scalar
 {
     using value_type = T;
     static constexpr int dim = 1;
-    using particle_member_type = value_type;
+    using data_type = value_type;
 };
 
 template<class T>
@@ -22,7 +22,7 @@ struct Vector
 {
     using value_type = T;
     static constexpr int dim = 3;
-    using particle_member_type = value_type[3];
+    using data_type = value_type[3];
 };
 
 template<class T>
@@ -30,7 +30,7 @@ struct Tensor
 {
     using value_type = T;
     static constexpr int dim = 9;
-    using particle_member_type = value_type[3][3];
+    using data_type = value_type[3][3];
 };
 
 //---------------------------------------------------------------------------//
@@ -70,6 +70,11 @@ struct Temperature : public Scalar<double>
     static std::string label() { return "temperature"; };
 };
 
+struct Pressure : public Scalar<double>
+{
+    static std::string label() { return "pressure"; };
+};
+
 struct InternalEnergy : public Scalar<double>
 {
     static std::string label() { return "internal_energy"; };
@@ -78,6 +83,11 @@ struct InternalEnergy : public Scalar<double>
 struct Density : public Scalar<double>
 {
     static std::string label() { return "density"; };
+};
+
+struct Stress : public Tensor<double>
+{
+    static std::string label() { return "stress"; };
 };
 
 struct DeformationGradient : public Tensor<double>
