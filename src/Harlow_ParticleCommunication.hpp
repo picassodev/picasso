@@ -163,17 +163,14 @@ void prepareCommunication(
   \param force_communication If true communication will always occur even if
   particles have not exited the halo.
  */
-template<class LocalGridType, class ParticleContainer, std::size_t CoordIndex>
+template<class LocalGridType, class ParticleContainer, class Coordinates>
 void redistribute( const LocalGridType& local_grid,
                    const int minimum_halo_width,
+                   const Coordinates& coords,
                    ParticleContainer& particles,
-                   std::integral_constant<std::size_t,CoordIndex>,
                    const bool force_communication = false )
 {
     using device_type = typename ParticleContainer::device_type;
-
-    // Get the coordinates.
-    auto coords = Cabana::slice<CoordIndex>( particles );
 
     // If we are not forcing communication check to see if we need to
     // communicate.

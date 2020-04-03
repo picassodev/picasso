@@ -3,6 +3,7 @@
 
 #include <Harlow_Types.hpp>
 #include <Harlow_ParticleList.hpp>
+#include <Harlow_AdaptiveMesh.hpp>
 
 #include <Cajita.hpp>
 
@@ -127,7 +128,17 @@ class FieldManager
     // Constructor.
     FieldManager( const std::shared_ptr<Mesh>& mesh )
         : _mesh( mesh )
-    {}
+    {
+        // If the mesh is adaptive add the physical position of its nodes as a
+        // field.
+        if ( is_adaptive_mesh<Mesh>::value )
+        {
+            _node_fields.emplace( Field::PhysicalPosition::label(),
+                                  _mesh->nodes() );
+            _node_halo = Cajita::createHalo( *(_mesh->nodes()->layout()),
+                                             Cajita::FullHaloPattern() );
+        }
+    }
 
     // Get the mesh.
     const Mesh& mesh() const

@@ -179,6 +179,25 @@ class UniformMesh
 };
 
 //---------------------------------------------------------------------------//
+// Static type checker.
+template <class>
+struct is_uniform_mesh_impl : public std::false_type
+{
+};
+
+template <class MemorySpace>
+struct is_uniform_mesh_impl<UniformMesh<UniformMesh>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_uniform_mesh
+    : public is_uniform_mesh_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+//---------------------------------------------------------------------------//
 
 } // end namespace Harlow
 

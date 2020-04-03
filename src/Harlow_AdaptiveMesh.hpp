@@ -167,17 +167,12 @@ class AdaptiveMesh
     }
 
     // Get the mesh node coordinates.
-    const Cajita::Array<
-        double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>&
+    std::shared_ptr<
+        Cajita::Array<
+            double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>>
     nodes() const
     {
-        return *_nodes;
-    }
-
-    // Make node coordinates parallel consistent with a gather.
-    void gatherNodes()
-    {
-        _node_halo->gather( *_nodes );
+        return _nodes;
     }
 
   public:
@@ -210,10 +205,6 @@ class AdaptiveMesh
                 node_view(i,j,k,1) = physical_low_corner[1] + cell_size[1] * jg;
                 node_view(i,j,k,2) = physical_low_corner[2] + cell_size[2] * kg;
             });
-
-        // Create a halo for the nodes.
-        _node_halo = Cajita::createHalo<double,typename MemorySpace::device_type>(
-            *node_layout, Cajita::FullHaloPattern() );
     }
 
   public:
@@ -223,8 +214,25 @@ class AdaptiveMesh
     std::shared_ptr<
         Cajita::Array<double,Cajita::Node,
                       Cajita::UniformMesh<double>,MemorySpace>> _nodes;
-    std::shared_ptr<
-        Cajita::Halo<double,typename MemorySpace::device_type>> _node_halo;
+};
+
+//---------------------------------------------------------------------------//
+// Static type checker.
+template <class>
+struct is_adaptive_mesh_impl : public std::false_type
+{
+};
+
+template <class MemorySpace>
+struct is_adaptive_mesh_impl<AdaptiveMesh<AdaptiveMesh>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_adaptive_mesh
+    : public is_adaptive_mesh_impl<typename std::remove_cv<T>::type>::type
+{
 };
 
 //---------------------------------------------------------------------------//

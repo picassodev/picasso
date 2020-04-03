@@ -5,6 +5,8 @@
 
 #include <Cabana_Core.hpp>
 
+#include <memory>
+
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
@@ -276,19 +278,22 @@ struct ParticleTraits<MemorySpace,
 };
 
 //---------------------------------------------------------------------------//
-template<class MemorySpace, class ... FieldTags>
+template<class Mesh, class ... FieldTags>
 class ParticleList
 {
   public:
 
-    using traits = ParticleTraits<MemorySpace,FieldTags...>;
-    using memory_space = typename traits::memory_space;
+    using mesh_type = Mesh;
+    using memory_space = typename Mesh::memory_space;
+    using traits = ParticleTraits<memory_space,FieldTags...>;
     using aosoa_type = typename traits::aosoa_type;
     using particle_type = typename traits::particle_type;
 
     // Default constructor.
-    ParticleList( const std::string& label )
+    ParticleList( const std::string& label,
+                  const std::shared_ptr<Mesh>& mesh)
         : _aosoa(label)
+        , _mesh(mesh)
     {}
 
     // Get the AoSoA
@@ -303,9 +308,34 @@ class ParticleList
         return traits::slice(_aosoa,tag);
     }
 
+    // Redistribute particles to new owning domains.
+    void redistribute( const int minimum_halo_width )
+    {
+        // Particles move in logical coordinates in adaptive meshes.
+        if ( is_adaptive_mesh<Mesh>::value )
+        {
+            ParticleCommunication::redistribute(
+                _mesh->localGrid(),
+                minimum_halo_width,
+                this->slice(Field::LogicalPosition()),
+                _aosoa );
+        }
+
+        // Particles move in physical coordinates in uniform meshes.
+        else if ( is_uniform_mesh<Mesh>::value )
+        {
+            ParticleCommunication::redistribute(
+                _mesh->localGrid(),
+                minimum_halo_width,
+                this->slice(Field::PhysicalPosition()),
+                _aosoa );
+        }
+    }
+
   private:
 
     aosoa_type _aosoa;
+    std::shared_ptr<Mesh> _mesh;
 };
 
 //---------------------------------------------------------------------------//
