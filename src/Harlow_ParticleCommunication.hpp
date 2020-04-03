@@ -29,21 +29,23 @@ namespace ParticleCommunication
 template<class LocalGridType,
          class CoordSliceType>
 int communicationCount( const LocalGridType& local_grid,
-                        const CoordSliceType& coords )
+                        const CoordSliceType& coords,
+                        const int minimum_halo_width )
 {
     using execution_space = typename CoordSliceType::execution_space;
 
     // Locate the particles in the local mesh and count how many have left the
     // halo region.
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
+    auto dx = local_grid.globalGrid().globalMesh().uniformCellSize();
     const Kokkos::Array<double,3> local_low =
-        { local_mesh.lowCorner(Cajita::Ghost(),Dim::I),
-          local_mesh.lowCorner(Cajita::Ghost(),Dim::J),
-          local_mesh.lowCorner(Cajita::Ghost(),Dim::K) };
+        { local_mesh.lowCorner(Cajita::Ghost(),Dim::I) + minimum_halo_width*dx,
+          local_mesh.lowCorner(Cajita::Ghost(),Dim::J) + minimum_halo_width*dx,
+          local_mesh.lowCorner(Cajita::Ghost(),Dim::K) + minimum_halo_width*dx };
     const Kokkos::Array<double,3> local_high =
-        { local_mesh.highCorner(Cajita::Ghost(),Dim::I),
-          local_mesh.highCorner(Cajita::Ghost(),Dim::J),
-          local_mesh.highCorner(Cajita::Ghost(),Dim::K) };
+        { local_mesh.highCorner(Cajita::Ghost(),Dim::I) - minimum_halo_width*dx,
+          local_mesh.highCorner(Cajita::Ghost(),Dim::J) - minimum_halo_width*dx,
+          local_mesh.highCorner(Cajita::Ghost(),Dim::K) - minimum_halo_width*dx };
     int comm_count = 0;
     Kokkos::parallel_reduce(
         "redistribute_count",
@@ -148,7 +150,11 @@ void prepareCommunication(
 /*!
   \brief Redistribute particles to new owning ranks based on their location.
 
-  \param local_grid The local_grid in which the particles are currently located.
+  \param local_grid The local_grid in which the particles are currently
+  located.
+
+  \param minimum_halo_width The minimum halo size needed for local
+  operations.
 
   \param particles The particles to redistribute.
 
@@ -159,6 +165,7 @@ void prepareCommunication(
  */
 template<class LocalGridType, class ParticleContainer, std::size_t CoordIndex>
 void redistribute( const LocalGridType& local_grid,
+                   const int minimum_halo_width,
                    ParticleContainer& particles,
                    std::integral_constant<std::size_t,CoordIndex>,
                    const bool force_communication = false )
@@ -173,7 +180,8 @@ void redistribute( const LocalGridType& local_grid,
     if ( !force_communication )
     {
         // Check to see if we need to communicate.
-        auto comm_count = communicationCount( local_grid, coords );
+        auto comm_count =
+            communicationCount( local_grid, coords, minimum_halo_width );
 
         // If we have no particle communication to do then exit.
         if ( 0 == comm_count )

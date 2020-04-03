@@ -11,6 +11,7 @@ set(HEADERS
   Harlow_SiloParticleWriter.hpp
   Harlow_Types.hpp
   Harlow_UniformMesh.hpp
+  Harlow_VelocityInterpolation.hpp
   Harlow_Version.hpp
   )
 

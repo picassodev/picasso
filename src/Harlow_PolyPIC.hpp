@@ -1,5 +1,5 @@
-#ifndef HARLOW_VELOCITYINTERPOLATION_HPP
-#define HARLOW_VELOCITYINTERPOLATION_HPP
+#ifndef HARLOW_POLYPIC_HPP
+#define HARLOW_POLYPIC_HPP
 
 #include <Cajita.hpp>
 
@@ -13,9 +13,11 @@
 
 namespace Harlow
 {
+//---------------------------------------------------------------------------//
+// Polynomial Particle-in-Cell
+//---------------------------------------------------------------------------//
 namespace PolyPIC
 {
-
 //---------------------------------------------------------------------------//
 // Grid-to-Particle
 //---------------------------------------------------------------------------//
@@ -633,9 +635,9 @@ void g2p(
                 mod_k = ( 1 == k ) ? -2 : 1;
 
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
+                distance[Dim::I] = sd.d[Dim::I][i];
+                distance[Dim::J] = sd.d[Dim::J][j];
+                distance[Dim::K] = sd.d[Dim::K][k];
 
                 // Compute the mode weights.
                 polyPicModeWeights(
@@ -688,9 +690,9 @@ void f2p(
                 mod_k = ( 1 == k ) ? -2 : 1;
 
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
+                distance[Dim::I] = sd.d[Dim::I][i];
+                distance[Dim::J] = sd.d[Dim::J][j];
+                distance[Dim::K] = sd.d[Dim::K][k];
 
                 // Compute the mode weights.
                 polyPicModeWeights(
@@ -1179,9 +1181,9 @@ void p2g(
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
             {
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
+                distance[Dim::I] = sd.d[Dim::I][i];
+                distance[Dim::J] = sd.d[Dim::J][j];
+                distance[Dim::K] = sd.d[Dim::K][k];
 
                 // Compute the mapping.
                 DenseLinearAlgebra::matVecMultiply( c_inv, distance, mapping );
@@ -1256,9 +1258,9 @@ void p2f(
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
             {
                 // Compute physical distance to entity.
-                distance[Dim::I] = ( sd.s[Dim::I][i] - sd.x[Dim::I] ) * sd.dx;
-                distance[Dim::J] = ( sd.s[Dim::J][j] - sd.x[Dim::J] ) * sd.dx;
-                distance[Dim::K] = ( sd.s[Dim::K][k] - sd.x[Dim::K] ) * sd.dx;
+                distance[Dim::I] = sd.d[Dim::I][i];
+                distance[Dim::J] = sd.d[Dim::J][j];
+                distance[Dim::K] = sd.d[Dim::K][k];
 
                 // Compute the mapping.
                 DenseLinearAlgebra::matVecMultiply( c_inv, distance, mapping );
@@ -1334,4 +1336,4 @@ void p2g(
 } // end namespace PolyPIC
 } // end namespace Harlow
 
-#endif // end HARLOW_VELOCITYINTERPOLATION_HPP
+#endif // end HARLOW_POLYPIC_HPP
