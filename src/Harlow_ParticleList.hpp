@@ -2,6 +2,9 @@
 #define HARLOW_PARTICLELIST_HPP
 
 #include <Harlow_ParticleCommunication.hpp>
+#include <Harlow_FieldTypes.hpp>
+#include <Harlow_AdaptiveMesh.hpp>
+#include <Harlow_UniformMesh.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -308,7 +311,7 @@ class ParticleList
         return traits::slice(_aosoa,tag);
     }
 
-    // Redistribute particles to new owning domains.
+    // Redistribute particles to new owning grids.
     void redistribute( const int minimum_halo_width )
     {
         // Particles move in logical coordinates in adaptive meshes.

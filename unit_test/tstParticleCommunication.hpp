@@ -107,6 +107,7 @@ void redistributeTest( const Cajita::ManualPartitioner& partitioner,
     // Redistribute the particles.
     ParticleCommunication::redistribute(
         *block,
+        0,
         Cabana::slice<0>(particles_mirror),
         particles_mirror,
         true );
@@ -210,6 +211,7 @@ void localOnlyTest( const Cajita::ManualPartitioner& partitioner,
     // Redistribute the particles.
     ParticleCommunication::redistribute(
         *block,
+        0,
         Cabana::slice<0>(particles_mirror),
         particles_mirror,
         true );

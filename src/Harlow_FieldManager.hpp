@@ -378,7 +378,7 @@ class FieldManager
             Layout::field_tag::label() )->second;
     }
 
-    // Get a view of a node field.
+    // Get a view of a field with the given layout.
     template<class Layout>
     view_type view( Layout ) const
     {

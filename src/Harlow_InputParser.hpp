@@ -3,6 +3,8 @@
 
 #include <boost/property_tree/ptree.hpp>
 
+#include <string>
+
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
@@ -13,8 +15,15 @@ class InputParser
     //! Input argument constructor.
     InputParser( int argc, char* argv[] );
 
+    //! Filename constructor.
+    InputParser( const std::string& filename, const std::string& type );
+
     //! Get the ptree.
     const boost::property_tree::ptree& propertyTree() const;
+
+  private:
+
+    void parse( const std::string& filename, const std::string& type );
 
   private:
 

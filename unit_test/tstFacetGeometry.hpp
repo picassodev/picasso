@@ -1,13 +1,11 @@
 #include <Harlow_FacetGeometry.hpp>
 #include <Harlow_Types.hpp>
+#include <Harlow_InputParser.hpp>
 
 #include <Harlow_ParticleInit.hpp>
 #include <Harlow_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <cmath>
 
@@ -21,8 +19,8 @@ namespace Test
 void constructionTest()
 {
     // Create inputs.
-    boost::property_tree::ptree pt;
-    boost::property_tree::read_json( "facet_geometry_test.json", pt );
+    InputParser parser( "facet_geometry_test.json", "json" );
+    auto pt = parser.propertyTree();
 
     // Create the geometry from the test file. It contains a sphere of radius
     // 10 centered at the origin and a 4x4x4 cube centered at (15,15,15).
@@ -271,8 +269,8 @@ void initExample()
     using particle_list = Cabana::AoSoA<particle_fields,TEST_DEVICE>;
     particle_list particles( "particles" );
 
-    boost::property_tree::ptree pt;
-    boost::property_tree::read_json( "facet_geometry_test.json", pt );
+    InputParser parser( "facet_geometry_test.json", "json" );
+    auto pt = parser.propertyTree();
 
     FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
 

@@ -224,7 +224,7 @@ struct is_adaptive_mesh_impl : public std::false_type
 };
 
 template <class MemorySpace>
-struct is_adaptive_mesh_impl<AdaptiveMesh<AdaptiveMesh>>
+struct is_adaptive_mesh_impl<AdaptiveMesh<MemorySpace>>
     : public std::true_type
 {
 };

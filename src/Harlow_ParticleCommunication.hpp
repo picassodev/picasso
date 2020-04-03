@@ -4,9 +4,6 @@
 #include <Cajita.hpp>
 
 #include <Harlow_Types.hpp>
-#include <Harlow_UniformMesh.hpp>
-#include <Harlow_AdaptiveMesh.hpp>
-#include <Harlow_ParticleList.hpp>
 
 #include <Cabana_Core.hpp>
 

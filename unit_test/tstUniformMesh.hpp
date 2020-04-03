@@ -1,13 +1,11 @@
 #include <Harlow_UniformMesh.hpp>
 #include <Harlow_Types.hpp>
+#include <Harlow_InputParser.hpp>
 
 #include <Harlow_ParticleInit.hpp>
 #include <Harlow_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <cmath>
 
@@ -28,8 +26,8 @@ void constructionTest()
     int minimum_halo_size = 1;
 
     // Get inputs for mesh 1.
-    boost::property_tree::ptree pt1;
-    boost::property_tree::read_json( "uniform_mesh_test_1.json", pt1 );
+    InputParser parser_1( "uniform_mesh_test_1.json", "json" );
+    auto pt1 = parser_1.propertyTree();
 
     // Make mesh 1.
     UniformMesh<TEST_MEMSPACE> mesh_1(
@@ -61,8 +59,8 @@ void constructionTest()
     EXPECT_EQ( mesh_1.localGrid().haloCellWidth(), 2 );
 
     // Get inputs for mesh 2.
-    boost::property_tree::ptree pt2;
-    boost::property_tree::read_json( "uniform_mesh_test_2.json", pt2 );
+    InputParser parser_2( "uniform_mesh_test_2.json", "json" );
+    auto pt2 = parser_2.propertyTree();
 
     // Make mesh 2.
     UniformMesh<TEST_MEMSPACE> mesh_2(

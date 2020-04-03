@@ -186,7 +186,7 @@ struct is_uniform_mesh_impl : public std::false_type
 };
 
 template <class MemorySpace>
-struct is_uniform_mesh_impl<UniformMesh<UniformMesh>>
+struct is_uniform_mesh_impl<UniformMesh<MemorySpace>>
     : public std::true_type
 {
 };

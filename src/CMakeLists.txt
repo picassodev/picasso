@@ -2,16 +2,19 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_AdaptiveMesh.hpp
+  Harlow_APIC.hpp
   Harlow_DenseLinearAlgebra.hpp
   Harlow_FacetGeometry.hpp
+  Harlow_FieldManager.hpp
+  Harlow_FieldTypes.hpp
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
   Harlow_ParticleList.hpp
+  Harlow_PolyPIC.hpp
   Harlow_SiloParticleWriter.hpp
   Harlow_Types.hpp
   Harlow_UniformMesh.hpp
-  Harlow_VelocityInterpolation.hpp
   Harlow_Version.hpp
   )
 
