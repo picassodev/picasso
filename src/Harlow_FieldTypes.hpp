@@ -76,6 +76,11 @@ struct PolynomialVelocity : public Tensor<double,N,3>
     static std::string label() { return "polynomial_velocity"; };
 };
 
+struct Normal : public Vector<double,3>
+{
+    static std::string label() { return "normal"; };
+};
+
 struct Temperature : public Scalar<double>
 {
     static std::string label() { return "temperature"; };
@@ -116,9 +121,14 @@ struct MaterialId : public Scalar<int>
     static std::string label() { return "material_id"; };
 };
 
-struct Color : public Scalar<int>
+struct Color : public Scalar<double>
 {
     static std::string label() { return "color"; };
+};
+
+struct BoundaryId : public Scalar<int>
+{
+    static std::string label() { return "boundary_id"; };
 };
 
 //---------------------------------------------------------------------------//

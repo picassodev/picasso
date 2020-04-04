@@ -10,19 +10,8 @@ include_directories(${CMAKE_PROJECT_BINARY_DIR}/googletest-src/googletest/includ
 set(gtest_args --gtest_color=yes)
 
 ##--------------------------------------------------------------------------##
-## General tests.
+## Input files.
 ##--------------------------------------------------------------------------##
-add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
-target_link_libraries(Version_test harlow gtest)
-add_test(
-  NAME Version_test
-  COMMAND Version_test --gtest_color=yes)
-
-add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
-target_link_libraries(InputParser_test harlow gtest)
-add_test(
-  NAME InputParser_test
-  COMMAND InputParser_test --gtest_color=yes)
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/input_parser_test.json
   ${CMAKE_CURRENT_BINARY_DIR}/input_parser_test.json
@@ -55,6 +44,21 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/adaptive_mesh_test_2.json
   ${CMAKE_CURRENT_BINARY_DIR}/adaptive_mesh_test_2.json
   COPYONLY)
+
+##--------------------------------------------------------------------------##
+## General tests.
+##--------------------------------------------------------------------------##
+add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
+target_link_libraries(Version_test harlow gtest)
+add_test(
+  NAME Version_test
+  COMMAND Version_test --gtest_color=yes)
+
+add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
+target_link_libraries(InputParser_test harlow gtest)
+add_test(
+  NAME InputParser_test
+  COMMAND InputParser_test --gtest_color=yes)
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
@@ -116,4 +120,5 @@ Harlow_add_tests(MPI NAMES
   ParticleCommunication
   SiloParticleWriter
   UniformMesh
-  AdaptiveMesh)
+  AdaptiveMesh
+  FieldManager)

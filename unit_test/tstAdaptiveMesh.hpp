@@ -35,7 +35,7 @@ void constructionTest()
         pt1, global_box, minimum_halo_size, MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check grid 1.
-    const auto& global_grid_1 = mesh_1.localGrid().globalGrid();
+    const auto& global_grid_1 = mesh_1.localGrid()->globalGrid();
     const auto& global_mesh_1 = global_grid_1.globalMesh();
 
     EXPECT_EQ( global_mesh_1.lowCorner(0), 0.0 );
@@ -54,7 +54,7 @@ void constructionTest()
     EXPECT_FALSE( global_grid_1.isPeriodic(1) );
     EXPECT_TRUE( global_grid_1.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_1.localGrid().haloCellWidth(), 2 );
+    EXPECT_EQ( mesh_1.localGrid()->haloCellWidth(), 2 );
 
     // Check grid 1 nodes.
     const auto& nodes_1 = mesh_1.nodes();
@@ -88,7 +88,7 @@ void constructionTest()
         pt2, global_box, minimum_halo_size, MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check grid 2.
-    const auto& global_grid_2 = mesh_2.localGrid().globalGrid();
+    const auto& global_grid_2 = mesh_2.localGrid()->globalGrid();
     const auto& global_mesh_2 = global_grid_2.globalMesh();
 
     EXPECT_EQ( global_mesh_2.lowCorner(0), -1.0 );
@@ -107,7 +107,7 @@ void constructionTest()
     EXPECT_TRUE( global_grid_2.isPeriodic(1) );
     EXPECT_FALSE( global_grid_2.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_2.localGrid().haloCellWidth(), 1 );
+    EXPECT_EQ( mesh_2.localGrid()->haloCellWidth(), 1 );
 
     // Check grid 2 nodes.
     const auto& nodes_2 = mesh_2.nodes();

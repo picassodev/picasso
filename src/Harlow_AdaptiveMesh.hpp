@@ -25,6 +25,11 @@ class AdaptiveMesh
 
     using memory_space = MemorySpace;
 
+    using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
+
+    using node_array = Cajita::Array<double,Cajita::Node,
+                                     Cajita::UniformMesh<double>,MemorySpace>;
+
     // Construct an adaptive mesh from the problem bounding box and a property
     // tree.
     template<class ExecutionSpace>
@@ -161,16 +166,13 @@ class AdaptiveMesh
     }
 
     // Get the local grid.
-    const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
+    std::shared_ptr<local_grid> localGrid() const
     {
-        return *_local_grid;
+        return _local_grid;
     }
 
     // Get the mesh node coordinates.
-    std::shared_ptr<
-        Cajita::Array<
-            double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>>
-    nodes() const
+    std::shared_ptr<node_array> nodes() const
     {
         return _nodes;
     }
@@ -209,11 +211,8 @@ class AdaptiveMesh
 
   public:
 
-    std::shared_ptr<
-      Cajita::LocalGrid<Cajita::UniformMesh<double>>> _local_grid;
-    std::shared_ptr<
-        Cajita::Array<double,Cajita::Node,
-                      Cajita::UniformMesh<double>,MemorySpace>> _nodes;
+    std::shared_ptr<local_grid> _local_grid;
+    std::shared_ptr<node_array> _nodes;
 };
 
 //---------------------------------------------------------------------------//

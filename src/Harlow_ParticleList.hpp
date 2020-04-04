@@ -318,7 +318,7 @@ class ParticleList
         if ( is_adaptive_mesh<Mesh>::value )
         {
             ParticleCommunication::redistribute(
-                _mesh->localGrid(),
+                *(_mesh->localGrid()),
                 minimum_halo_width,
                 this->slice(Field::LogicalPosition()),
                 _aosoa );
