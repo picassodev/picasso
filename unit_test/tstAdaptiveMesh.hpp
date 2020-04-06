@@ -1,13 +1,12 @@
 #include <Harlow_AdaptiveMesh.hpp>
 #include <Harlow_Types.hpp>
+#include <Harlow_InputParser.hpp>
 
 #include <Harlow_ParticleInit.hpp>
 #include <Harlow_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <cmath>
 
@@ -27,16 +26,16 @@ void constructionTest()
     int num_cell = 20.0 / cell_size;
     int minimum_halo_size = 1;
 
-    // Get inputs for mesh 1.
-    boost::property_tree::ptree pt1;
-    boost::property_tree::read_json( "adaptive_mesh_test_1.json", pt1 );
+    // Get inputs for mesh.
+    InputParser parser_1( "adaptive_mesh_test_1.json", "json" );
+    auto pt1 = parser_1.propertyTree();
 
     // Make mesh 1.
     AdaptiveMesh<TEST_MEMSPACE> mesh_1(
         pt1, global_box, minimum_halo_size, MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check grid 1.
-    const auto& global_grid_1 = mesh_1.localGrid().globalGrid();
+    const auto& global_grid_1 = mesh_1.localGrid()->globalGrid();
     const auto& global_mesh_1 = global_grid_1.globalMesh();
 
     EXPECT_EQ( global_mesh_1.lowCorner(0), 0.0 );
@@ -55,15 +54,15 @@ void constructionTest()
     EXPECT_FALSE( global_grid_1.isPeriodic(1) );
     EXPECT_TRUE( global_grid_1.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_1.localGrid().haloCellWidth(), 2 );
+    EXPECT_EQ( mesh_1.localGrid()->haloCellWidth(), 2 );
 
     // Check grid 1 nodes.
     const auto& nodes_1 = mesh_1.nodes();
     auto host_coords_1 = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), nodes_1.view() );
-    auto global_space_1 = nodes_1.layout()->localGrid()->indexSpace(
+        Kokkos::HostSpace(), nodes_1->view() );
+    auto global_space_1 = nodes_1->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Global() );
-    auto local_space_1 = nodes_1.layout()->localGrid()->indexSpace(
+    auto local_space_1 = nodes_1->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
     for ( int i = local_space_1.min(0); i < local_space_1.max(0); ++i )
         for ( int j = local_space_1.min(1); j < local_space_1.max(1); ++j )
@@ -81,15 +80,15 @@ void constructionTest()
             }
 
     // Get inputs for mesh 2.
-    boost::property_tree::ptree pt2;
-    boost::property_tree::read_json( "adaptive_mesh_test_2.json", pt2 );
+    InputParser parser_2( "adaptive_mesh_test_2.json", "json" );
+    auto pt2 = parser_2.propertyTree();
 
     // Make mesh 2.
     AdaptiveMesh<TEST_MEMSPACE> mesh_2(
         pt2, global_box, minimum_halo_size, MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check grid 2.
-    const auto& global_grid_2 = mesh_2.localGrid().globalGrid();
+    const auto& global_grid_2 = mesh_2.localGrid()->globalGrid();
     const auto& global_mesh_2 = global_grid_2.globalMesh();
 
     EXPECT_EQ( global_mesh_2.lowCorner(0), -1.0 );
@@ -108,15 +107,15 @@ void constructionTest()
     EXPECT_TRUE( global_grid_2.isPeriodic(1) );
     EXPECT_FALSE( global_grid_2.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_2.localGrid().haloCellWidth(), 1 );
+    EXPECT_EQ( mesh_2.localGrid()->haloCellWidth(), 1 );
 
     // Check grid 2 nodes.
     const auto& nodes_2 = mesh_2.nodes();
     auto host_coords_2 = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace(), nodes_2.view() );
-    auto global_space_2 = nodes_2.layout()->localGrid()->indexSpace(
+        Kokkos::HostSpace(), nodes_2->view() );
+    auto global_space_2 = nodes_2->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Global() );
-    auto local_space_2 = nodes_2.layout()->localGrid()->indexSpace(
+    auto local_space_2 = nodes_2->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
     for ( int i = local_space_2.min(0); i < local_space_2.max(0); ++i )
         for ( int j = local_space_2.min(1); j < local_space_2.max(1); ++j )

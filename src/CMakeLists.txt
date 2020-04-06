@@ -2,12 +2,16 @@ configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
 
 set(HEADERS
   Harlow_AdaptiveMesh.hpp
+  Harlow_APIC.hpp
   Harlow_DenseLinearAlgebra.hpp
   Harlow_FacetGeometry.hpp
+  Harlow_FieldManager.hpp
+  Harlow_FieldTypes.hpp
   Harlow_InputParser.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
   Harlow_ParticleList.hpp
+  Harlow_PolyPIC.hpp
   Harlow_SiloParticleWriter.hpp
   Harlow_Types.hpp
   Harlow_UniformMesh.hpp
@@ -35,7 +39,3 @@ target_include_directories(harlow
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
   )
-
-add_subdirectory(unit_test)
-
-add_subdirectory(examples)

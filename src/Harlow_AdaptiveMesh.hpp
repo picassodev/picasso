@@ -25,6 +25,11 @@ class AdaptiveMesh
 
     using memory_space = MemorySpace;
 
+    using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
+
+    using node_array = Cajita::Array<double,Cajita::Node,
+                                     Cajita::UniformMesh<double>,MemorySpace>;
+
     // Construct an adaptive mesh from the problem bounding box and a property
     // tree.
     template<class ExecutionSpace>
@@ -161,23 +166,15 @@ class AdaptiveMesh
     }
 
     // Get the local grid.
-    const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
+    std::shared_ptr<local_grid> localGrid() const
     {
-        return *_local_grid;
+        return _local_grid;
     }
 
     // Get the mesh node coordinates.
-    const Cajita::Array<
-        double,Cajita::Node,Cajita::UniformMesh<double>,MemorySpace>&
-    nodes() const
+    std::shared_ptr<node_array> nodes() const
     {
-        return *_nodes;
-    }
-
-    // Make node coordinates parallel consistent with a gather.
-    void gatherNodes()
-    {
-        _node_halo->gather( *_nodes );
+        return _nodes;
     }
 
   public:
@@ -210,21 +207,31 @@ class AdaptiveMesh
                 node_view(i,j,k,1) = physical_low_corner[1] + cell_size[1] * jg;
                 node_view(i,j,k,2) = physical_low_corner[2] + cell_size[2] * kg;
             });
-
-        // Create a halo for the nodes.
-        _node_halo = Cajita::createHalo<double,typename MemorySpace::device_type>(
-            *node_layout, Cajita::FullHaloPattern() );
     }
 
   public:
 
-    std::shared_ptr<
-      Cajita::LocalGrid<Cajita::UniformMesh<double>>> _local_grid;
-    std::shared_ptr<
-        Cajita::Array<double,Cajita::Node,
-                      Cajita::UniformMesh<double>,MemorySpace>> _nodes;
-    std::shared_ptr<
-        Cajita::Halo<double,typename MemorySpace::device_type>> _node_halo;
+    std::shared_ptr<local_grid> _local_grid;
+    std::shared_ptr<node_array> _nodes;
+};
+
+//---------------------------------------------------------------------------//
+// Static type checker.
+template <class>
+struct is_adaptive_mesh_impl : public std::false_type
+{
+};
+
+template <class MemorySpace>
+struct is_adaptive_mesh_impl<AdaptiveMesh<MemorySpace>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_adaptive_mesh
+    : public is_adaptive_mesh_impl<typename std::remove_cv<T>::type>::type
+{
 };
 
 //---------------------------------------------------------------------------//

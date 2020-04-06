@@ -35,5 +35,11 @@ if(Harlow_ENABLE_TESTING)
   enable_testing()
 endif()
 
-# add source
+# library
 add_subdirectory(src)
+
+# tests
+add_subdirectory(unit_test)
+
+# examples
+add_subdirectory(examples)

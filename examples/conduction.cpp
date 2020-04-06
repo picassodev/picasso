@@ -369,7 +369,7 @@ void solve( const int num_cell,
         return true;
     };
     Harlow::initializeParticles(
-        Harlow::InitUniform(), *local_grid, ppc, create_func_s, particles_s );
+        Harlow::InitUniform(), execution_space(), *local_grid, ppc, create_func_s, particles_s );
 
     // Get slices for each solid particle field.
     auto x_p_s = Cabana::slice<SolidParticleField::x>( particles_s, "position" );
@@ -425,7 +425,7 @@ void solve( const int num_cell,
         return true;
     };
     Harlow::initializeParticles(
-        Harlow::InitUniform(), *local_grid, ppc, create_func_l, particles_l );
+        Harlow::InitUniform(), execution_space(), *local_grid, ppc, create_func_l, particles_l );
 
     // Get slices for each liquid particle field.
     auto x_p_l = Cabana::slice<LiquidParticleField::x>( particles_l, "position" );

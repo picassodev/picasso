@@ -1,5 +1,6 @@
 #include <Harlow_ParticleList.hpp>
 #include <Harlow_FieldTypes.hpp>
+#include <Harlow_InputParser.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -14,12 +15,24 @@ namespace Test
 //---------------------------------------------------------------------------//
 void sliceTest()
 {
+    // Get inputs for mesh.
+    InputParser parser( "uniform_mesh_test_1.json", "json" );
+    Kokkos::Array<float,6> global_box = { -10.0, -10.0, -10.0,
+                                          10.0, 10.0, 10.0 };
+    int minimum_halo_size = 0;
+
+    // Make mesh.
+    auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
+        parser.propertyTree(),
+        global_box, minimum_halo_size, MPI_COMM_WORLD );
+
     // Make a particle list.
-    ParticleList<TEST_MEMSPACE,
+    ParticleList<UniformMesh<TEST_MEMSPACE>,
                  Field::PhysicalPosition,
                  Field::Mass,
                  Field::Color,
-                 Field::DeformationGradient> particles( "test_particles" );
+                 Field::DeformationGradient>
+        particles( "test_particles", mesh );
 
     // Resize the aosoa.
     auto& aosoa = particles.aosoa();

@@ -1,13 +1,11 @@
 #include <Harlow_UniformMesh.hpp>
 #include <Harlow_Types.hpp>
+#include <Harlow_InputParser.hpp>
 
 #include <Harlow_ParticleInit.hpp>
 #include <Harlow_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <cmath>
 
@@ -28,8 +26,8 @@ void constructionTest()
     int minimum_halo_size = 1;
 
     // Get inputs for mesh 1.
-    boost::property_tree::ptree pt1;
-    boost::property_tree::read_json( "uniform_mesh_test_1.json", pt1 );
+    InputParser parser_1( "uniform_mesh_test_1.json", "json" );
+    auto pt1 = parser_1.propertyTree();
 
     // Make mesh 1.
     UniformMesh<TEST_MEMSPACE> mesh_1(
@@ -39,7 +37,7 @@ void constructionTest()
     EXPECT_EQ( mesh_1.cellSize(), cell_size );
 
     // Check grid 1.
-    const auto& global_grid_1 = mesh_1.localGrid().globalGrid();
+    const auto& global_grid_1 = mesh_1.localGrid()->globalGrid();
     const auto& global_mesh_1 = global_grid_1.globalMesh();
 
     EXPECT_EQ( global_mesh_1.lowCorner(0), global_box[0] );
@@ -58,11 +56,11 @@ void constructionTest()
     EXPECT_FALSE( global_grid_1.isPeriodic(1) );
     EXPECT_TRUE( global_grid_1.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_1.localGrid().haloCellWidth(), 2 );
+    EXPECT_EQ( mesh_1.localGrid()->haloCellWidth(), 2 );
 
     // Get inputs for mesh 2.
-    boost::property_tree::ptree pt2;
-    boost::property_tree::read_json( "uniform_mesh_test_2.json", pt2 );
+    InputParser parser_2( "uniform_mesh_test_2.json", "json" );
+    auto pt2 = parser_2.propertyTree();
 
     // Make mesh 2.
     UniformMesh<TEST_MEMSPACE> mesh_2(
@@ -72,7 +70,7 @@ void constructionTest()
     EXPECT_EQ( mesh_2.cellSize(), cell_size );
 
     // Check grid 2.
-    const auto& global_grid_2 = mesh_2.localGrid().globalGrid();
+    const auto& global_grid_2 = mesh_2.localGrid()->globalGrid();
     const auto& global_mesh_2 = global_grid_2.globalMesh();
 
     EXPECT_EQ( global_mesh_2.lowCorner(0), global_box[0]-cell_size );
@@ -91,7 +89,7 @@ void constructionTest()
     EXPECT_TRUE( global_grid_2.isPeriodic(1) );
     EXPECT_FALSE( global_grid_2.isPeriodic(2) );
 
-    EXPECT_EQ( mesh_2.localGrid().haloCellWidth(), 1 );
+    EXPECT_EQ( mesh_2.localGrid()->haloCellWidth(), 1 );
 }
 
 //---------------------------------------------------------------------------//

@@ -3,8 +3,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include <string>
-
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
@@ -20,14 +18,14 @@ InputParser::InputParser( int argc, char* argv[] )
         {
             filename = std::string(argv[n+1]);
             found_arg = true;
-            boost::property_tree::read_json( filename, _ptree );
+            parse( filename, "json" );
             break;
         }
         else if( 0 == std::strcmp(argv[n],"--harlow-input-xml") )
         {
             filename = std::string(argv[n+1]);
             found_arg = true;
-            boost::property_tree::read_xml( filename, _ptree );
+            parse( filename, "xml" );
             break;
         }
     }
@@ -40,10 +38,40 @@ InputParser::InputParser( int argc, char* argv[] )
 }
 
 //---------------------------------------------------------------------------//
+//! Filename constructor.
+InputParser::InputParser( const std::string& filename,
+                          const std::string& type )
+{
+    parse( filename, type );
+}
+
+//---------------------------------------------------------------------------//
 //! Get the ptree.
 const boost::property_tree::ptree& InputParser::propertyTree() const
 {
     return _ptree;
+}
+
+//---------------------------------------------------------------------------//
+// Parse the field.
+void InputParser::parse( const std::string& filename,
+                         const std::string& type )
+{
+    // Get the filename from the input.
+    if ( 0 == type.compare("json") )
+    {
+        boost::property_tree::read_json( filename, _ptree );
+    }
+    else if ( 0 == type.compare("xml") )
+    {
+        boost::property_tree::read_xml( filename, _ptree );
+    }
+    else
+    // Check that we found the filename.
+    {
+        throw std::runtime_error(
+            "Only json or xml inputs supported" );
+    }
 }
 
 //---------------------------------------------------------------------------//

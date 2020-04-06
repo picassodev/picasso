@@ -25,6 +25,8 @@ class UniformMesh
 
     using memory_space = MemorySpace;
 
+    using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
+
     // Construct a mesh manager from the problem bounding box and a property
     // tree.
     UniformMesh( const boost::property_tree::ptree& ptree,
@@ -161,9 +163,9 @@ class UniformMesh
     }
 
     // Get the local grid.
-    const Cajita::LocalGrid<Cajita::UniformMesh<double>>& localGrid() const
+    std::shared_ptr<local_grid> localGrid() const
     {
-        return *_local_grid;
+        return _local_grid;
     }
 
     // Get the cell size.
@@ -174,8 +176,26 @@ class UniformMesh
 
   public:
 
-    std::shared_ptr<
-      Cajita::LocalGrid<Cajita::UniformMesh<double>>> _local_grid;
+    std::shared_ptr<local_grid> _local_grid;
+};
+
+//---------------------------------------------------------------------------//
+// Static type checker.
+template <class>
+struct is_uniform_mesh_impl : public std::false_type
+{
+};
+
+template <class MemorySpace>
+struct is_uniform_mesh_impl<UniformMesh<MemorySpace>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_uniform_mesh
+    : public is_uniform_mesh_impl<typename std::remove_cv<T>::type>::type
+{
 };
 
 //---------------------------------------------------------------------------//
