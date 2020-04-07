@@ -16,6 +16,261 @@ using namespace Harlow;
 namespace Test
 {
 //---------------------------------------------------------------------------//
+void rayFireTestXY()
+{
+    // Create a facet in the XY plane
+    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+
+    facet(0,0,0) = 0.0;
+    facet(0,0,1) = 0.0;
+    facet(0,0,2) = 0.0;
+
+    facet(0,1,0) = 1.0;
+    facet(0,1,1) = 0.0;
+    facet(0,1,2) = 0.0;
+
+    facet(0,2,0) = 0.0;
+    facet(0,2,1) = 1.0;
+    facet(0,2,2) = 0.0;
+
+    // Rays will be perpendicular in z.
+    float r[3] = { 0.0, 0.0, 1.0 };
+
+    // Pick a point in the triangle first.
+    float p[3] = { 0.25, 0.25, 0.0 };
+
+    // Check the projection.
+    float y[3];
+    auto result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 0.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle.
+    p[2] = -1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point above the triangle.
+    p[2] = 1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( -1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle at the  origin.
+    p[0] = 0.0;
+    p[1] = 0.0;
+    p[2] = -1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+}
+
+//---------------------------------------------------------------------------//
+void rayFireTestYZ()
+{
+    // Create a facet in the YZ plane
+    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+
+    facet(0,0,0) = 0.0;
+    facet(0,0,1) = 0.0;
+    facet(0,0,2) = 0.0;
+
+    facet(0,1,0) = 0.0;
+    facet(0,1,1) = 1.0;
+    facet(0,1,2) = 0.0;
+
+    facet(0,2,0) = 0.0;
+    facet(0,2,1) = 0.0;
+    facet(0,2,2) = 1.0;
+
+    // Rays will be perpendicular in x.
+    float r[3] = { 1.0, 0.0, 0.0 };
+
+    // Pick a point in the triangle first.
+    float p[3] = { 0.0, 0.25, 0.25 };
+
+    // Check the projection.
+    float y[3];
+    auto result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 0.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle.
+    p[0] = -1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point above the triangle.
+    p[0] = 1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( -1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle at the  origin.
+    p[0] = -1.0;
+    p[1] = 0.0;
+    p[2] = 0.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+}
+
+//---------------------------------------------------------------------------//
+void rayFireTestXZ()
+{
+    // Create a facet in the XZ plane
+    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+
+    facet(0,0,0) = 0.0;
+    facet(0,0,1) = 0.0;
+    facet(0,0,2) = 0.0;
+
+    facet(0,1,0) = 1.0;
+    facet(0,1,1) = 0.0;
+    facet(0,1,2) = 0.0;
+
+    facet(0,2,0) = 0.0;
+    facet(0,2,1) = 0.0;
+    facet(0,2,2) = 1.0;
+
+    // Rays will be perpendicular in y.
+    float r[3] = { 0.0, 1.0, 0.0 };
+
+    // Pick a point in the triangle first.
+    float p[3] = { 0.25, 0.0, 0.25 };
+
+    // Check the projection.
+    float y[3];
+    auto result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 0.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle.
+    p[1] = -1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point above the triangle.
+    p[1] = 1.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( -1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+
+    // Move the point below the triangle at the  origin.
+    p[0] = 0.0;
+    p[1] = -1.0;
+    p[2] = 0.0;
+
+    // Check the projection.
+    result =
+        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    EXPECT_TRUE( result );
+
+    // Check distance.
+    EXPECT_EQ( 1.0, y[2] );
+
+    // Check the ray facet intersection - a point on the surface is not
+    // included.
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+}
+
+//---------------------------------------------------------------------------//
 void constructionTest()
 {
     // Create inputs.
@@ -223,6 +478,14 @@ void constructionTest()
 
 //---------------------------------------------------------------------------//
 // RUN TESTS
+//---------------------------------------------------------------------------//
+TEST( TEST_CATEGORY, ray_fire_test )
+{
+    rayFireTestXY();
+    rayFireTestYZ();
+    rayFireTestXZ();
+}
+
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, construction_test )
 {
