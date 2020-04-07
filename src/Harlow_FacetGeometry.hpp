@@ -567,6 +567,10 @@ bool pointInVolume( const float x[3], const FacetView& volume_facets )
     // determination. The facet geometry has no connectivity so it is
     // difficult to resolve multiple intersections without accumulating the
     // intersection points and checking for duplicates within some tolerance.
+    //
+    // Note: Duan has indicated that doing tests with 3 different random rays
+    // has been enough to be robust as one is likely to pass out of the 3 if
+    // is a true intersection.
     using rand_type = Kokkos::Random_XorShift64<typename FacetView::device_type>;
     rand_type rng( 0 );
     float r[3] = { Kokkos::rand<rand_type,float>::draw(rng),

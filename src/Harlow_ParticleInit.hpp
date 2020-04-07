@@ -18,11 +18,11 @@ struct InitRandom {};
 
 //---------------------------------------------------------------------------//
 // Filter out empty particles that weren't created.
-template<class CreationView, class ParticleList, class ExecutionSpace>
+template<class CreationView, class ParticleAoSoA, class ExecutionSpace>
 void filterEmpties( const ExecutionSpace& exec_space,
                     const int local_num_create,
                     const CreationView& particle_created,
-                    ParticleList& particles )
+                    ParticleAoSoA& particles )
 {
     using memory_space = typename CreationView::memory_space;
 
@@ -71,7 +71,7 @@ void filterEmpties( const ExecutionSpace& exec_space,
   \tparam InitFunctor Initialization functor type. See the documentation below
   for the create_functor parameter on the signature of this functor.
 
-  \tparam ParticleList A Cabana::AoSoA type for holding particles. The tuple
+  \tparam ParticleAoSoA A Cabana::AoSoA type for holding particles. The tuple
   type in this AoSoA is the particle type.
 
   \param Initialization type tag.
@@ -86,25 +86,25 @@ void filterEmpties( const ExecutionSpace& exec_space,
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
-                          typename ParticleList::tuple_type& particle );
+                          typename ParticleAoSoA::tuple_type& particle );
 
   \param particles The Cabana AoSoA of particles to populate. This will be
   filled with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
+template<class LocalGridType, class InitFunctor, class ParticleAoSoA, class ExecutionSpace>
 void initializeParticles( InitRandom,
                           const ExecutionSpace& exec_space,
                           const LocalGridType& local_grid,
                           const int particles_per_cell,
                           const InitFunctor& create_functor,
-                          ParticleList& particles )
+                          ParticleAoSoA& particles )
 {
     // Device type.
-    using device_type = typename ParticleList::device_type;
+    using device_type = typename ParticleAoSoA::device_type;
 
     // Particle type.
-    using particle_type = typename ParticleList::tuple_type;
+    using particle_type = typename ParticleAoSoA::tuple_type;
 
     // Get the global grid.
     const auto& global_grid = local_grid.globalGrid();
@@ -205,7 +205,7 @@ void initializeParticles( InitRandom,
   \tparam InitFunctor Initialization functor type. See the documentation below
   for the create_functor parameter on the signature of this functor.
 
-  \tparam ParticleList A Cabana::AoSoA type for holding particles. The tuple
+  \tparam ParticleAoSoA A Cabana::AoSoA type for holding particles. The tuple
   type in this AoSoA is the particle type.
 
   \param Initialization type tag.
@@ -221,25 +221,25 @@ void initializeParticles( InitRandom,
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
-                          typename ParticleList::tuple_type& particle );
+                          typename ParticleAoSoA::tuple_type& particle );
 
   \param particles The Cabana AoSoA of particles to populate. This will be
   filled with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
+template<class LocalGridType, class InitFunctor, class ParticleAoSoA, class ExecutionSpace>
 void initializeParticles( InitUniform,
                           const ExecutionSpace& exec_space,
                           const LocalGridType& local_grid,
                           const int particles_per_cell_dim,
                           const InitFunctor& create_functor,
-                          ParticleList& particles )
+                          ParticleAoSoA& particles )
 {
     // Memory space.
-    using memory_space = typename ParticleList::memory_space;
+    using memory_space = typename ParticleAoSoA::memory_space;
 
     // Particle type.
-    using particle_type = typename ParticleList::tuple_type;
+    using particle_type = typename ParticleAoSoA::tuple_type;
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
