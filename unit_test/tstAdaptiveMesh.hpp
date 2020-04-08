@@ -20,8 +20,8 @@ namespace Test
 void constructionTest()
 {
     // Global parameters.
-    Kokkos::Array<float,6> global_box = { -10.0, -10.0, -10.0,
-                                          10.0, 10.0, 10.0 };
+    Kokkos::Array<double,6> global_box = { -10.0, -10.0, -10.0,
+                                           10.0, 10.0, 10.0 };
     double cell_size = 0.5;
     int num_cell = 20.0 / cell_size;
     int minimum_halo_size = 1;

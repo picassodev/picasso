@@ -8,6 +8,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <memory>
+#include <cmath>
 
 #include <mpi.h>
 
@@ -30,7 +31,7 @@ class UniformMesh
     // Construct a mesh manager from the problem bounding box and a property
     // tree.
     UniformMesh( const boost::property_tree::ptree& ptree,
-                 const Kokkos::Array<float,6>& global_bounding_box,
+                 const Kokkos::Array<double,6>& global_bounding_box,
                  const int minimum_halo_cell_width,
                  MPI_Comm comm )
     {
@@ -47,8 +48,9 @@ class UniformMesh
             for ( int d = 0 ; d < 3; ++d )
             {
                 global_num_cell[d] =
-                    (global_bounding_box[d+3] - global_bounding_box[d]) /
-                    cell_size;
+                    std::rint(
+                        (global_bounding_box[d+3] - global_bounding_box[d]) /
+                        cell_size );
             }
         }
         else if ( mesh_params.count("global_num_cell") )

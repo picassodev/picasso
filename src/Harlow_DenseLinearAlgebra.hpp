@@ -11,6 +11,26 @@ namespace Harlow
 namespace DenseLinearAlgebra
 {
 //---------------------------------------------------------------------------//
+// Dot product of two vectors.
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+Real dot( const Real a[3], const Real b[3] )
+{
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+//---------------------------------------------------------------------------//
+// Cross product of two vectors.
+template<class Real>
+KOKKOS_INLINE_FUNCTION
+void cross( const Real a[3], const Real b[3], Real c[3] )
+{
+    c[0] = a[1]*b[2] - a[2]*b[1];
+    c[1] = a[2]*b[0] - a[0]*b[2];
+    c[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+//---------------------------------------------------------------------------//
 // Compute the determinant of a 3x3 matrix.
 template<class Real>
 KOKKOS_INLINE_FUNCTION

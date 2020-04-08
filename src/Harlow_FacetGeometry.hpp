@@ -1,7 +1,10 @@
 #ifndef HARLOW_FACETGEOMETRY_HPP
 #define HARLOW_FACETGEOMETRY_HPP
 
+#include <Harlow_DenseLinearAlgebra.hpp>
+
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -478,6 +481,67 @@ class FacetGeometry
 namespace FacetGeometryOps
 {
 //---------------------------------------------------------------------------//
+// Project a point x along the given direction, r, and determine if it
+// projects to the facet. If returns true, the projection solution is
+// valid.
+//
+// y[0] = projection barycentric coordinate 1
+// y[1] = projection barycentric coordinate 2
+// y[2] = distance to triangle
+template<class FacetView>
+KOKKOS_FUNCTION
+bool pointFacetProjection( const float x[3],
+                           const float r[3],
+                           const FacetView& facets,
+                           const int f,
+                           float y[3] )
+{
+    // Build the system of equations to solve for intersection. Fire the ray
+    // in the Y direction - this choice is arbitary.
+    float A[3][3];
+    float b[3];
+    for ( int i = 0; i < 3; ++i )
+    {
+        A[i][0] = facets(f,1,i) - facets(f,0,i);
+        A[i][1] = facets(f,2,i) - facets(f,0,i);
+        A[i][2] = -r[i];
+        b[i] = x[i] - facets(f,0,i);
+    }
+
+    // Check the determinant of the matrix. If zero then the ray is parallel
+    // so no intersection.
+    auto det_A = DenseLinearAlgebra::determinant( A );
+    if ( 0.0 == det_A )
+        return false;
+
+    // Invert the matrix.
+    float A_inv[3][3];
+    DenseLinearAlgebra::inverse( A, det_A, A_inv );
+
+    // Solve the system.
+    DenseLinearAlgebra::matVecMultiply( A_inv, b, y );
+
+    // Check the solution for inclusion in the triangle.
+    return ( y[0] >= 0.0 && y[1] >= 0.0 && y[0]+y[1] <= 1.0 );
+}
+
+//---------------------------------------------------------------------------//
+// Fire a ray from point x along the given direction, r, and determine if it
+// intersects the facet.
+template<class FacetView>
+KOKKOS_FUNCTION
+bool rayFacetIntersect( const float x[3],
+                        const float r[3],
+                        const FacetView& facets,
+                        const int f)
+{
+    // Project the point and check the distance.
+    float y[3];
+    auto projects = pointFacetProjection(x,r,facets,f,y);
+    return projects && (y[2] > 0.0);
+}
+
+//---------------------------------------------------------------------------//
 // Compute the signed distance from a point to the plane defined by a facet.
 template<class FacetView>
 KOKKOS_FUNCTION
@@ -496,14 +560,34 @@ template<class FacetView>
 KOKKOS_FUNCTION
 bool pointInVolume( const float x[3], const FacetView& volume_facets )
 {
+    // The choice of ray direction is arbitrary so generate a random one. This
+    // could potentially help with robustness as floating point noise may
+    // avoid edge and vertex intersections which could lead to multiple
+    // positive intersections and therefore an incorrect point-in-volume
+    // determination. The facet geometry has no connectivity so it is
+    // difficult to resolve multiple intersections without accumulating the
+    // intersection points and checking for duplicates within some tolerance.
+    //
+    // Note: Duan has indicated that doing tests with 3 different random rays
+    // has been enough to be robust as one is likely to pass out of the 3 if
+    // is a true intersection.
+    using rand_type = Kokkos::Random_XorShift64<typename FacetView::device_type>;
+    rand_type rng( 0 );
+    float r[3] = { Kokkos::rand<rand_type,float>::draw(rng),
+                   Kokkos::rand<rand_type,float>::draw(rng),
+                   Kokkos::rand<rand_type,float>::draw(rng) };
+    float r_mag_inv = 1.0 / sqrt( r[0]*r[0] + r[1]*r[1] + r[2]*r[2] );
+    for ( int d = 0; d < 3; ++d )
+        r[d] *= r_mag_inv;
+
+    // Fire rays through each facet and count intersections. If an
+    // odd number of intersections, the point is in the volume. This works for
+    // convex and non-convex volumes.
+    int count = 0;
     for ( std::size_t f = 0; f < volume_facets.extent(0); ++f )
-    {
-        if ( distanceToFacetPlane(x,volume_facets,f) > 0.0 )
-        {
-            return false;
-        }
-    }
-    return true;
+        if ( rayFacetIntersect(x,r,volume_facets,f) )
+            ++count;
+    return (1 == count % 2);
 }
 
 //---------------------------------------------------------------------------//

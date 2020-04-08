@@ -18,11 +18,11 @@ struct InitRandom {};
 
 //---------------------------------------------------------------------------//
 // Filter out empty particles that weren't created.
-template<class CreationView, class ParticleList, class ExecutionSpace>
+template<class CreationView, class ParticleAoSoA, class ExecutionSpace>
 void filterEmpties( const ExecutionSpace& exec_space,
                     const int local_num_create,
                     const CreationView& particle_created,
-                    ParticleList& particles )
+                    ParticleAoSoA& particles )
 {
     using memory_space = typename CreationView::memory_space;
 
@@ -66,18 +66,12 @@ void filterEmpties( const ExecutionSpace& exec_space,
   \brief Initialize a random number of particles in each cell given an
   initialization functor.
 
-  \tparam LocalGridType The local grid type to use for construction
+  \tparam ParticleListType The type of particle list to initialize.
 
   \tparam InitFunctor Initialization functor type. See the documentation below
   for the create_functor parameter on the signature of this functor.
 
-  \tparam ParticleList A Cabana::AoSoA type for holding particles. The tuple
-  type in this AoSoA is the particle type.
-
   \param Initialization type tag.
-
-  \param local_grid The local grid to use for initialization. Particles will
-  not be initialized in the halo - only in the owned cells.
 
   \param particles_per_cell The number of particles to sample each cell with.
 
@@ -86,31 +80,30 @@ void filterEmpties( const ExecutionSpace& exec_space,
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
-                          typename ParticleList::tuple_type& particle );
+                          typename ParticleAoSoA::tuple_type& particle );
 
-  \param particles The Cabana AoSoA of particles to populate. This will be
-  filled with particles and resized to a size equal to the number of particles
+  \param particle_list The list of particles to populate. This will be filled
+  with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
+template<class ParticleListType, class InitFunctor, class ExecutionSpace>
 void initializeParticles( InitRandom,
                           const ExecutionSpace& exec_space,
-                          const LocalGridType& local_grid,
                           const int particles_per_cell,
                           const InitFunctor& create_functor,
-                          ParticleList& particles )
+                          ParticleListType& particle_list )
 {
-    // Device type.
-    using device_type = typename ParticleList::device_type;
-
     // Particle type.
-    using particle_type = typename ParticleList::tuple_type;
+    using particle_type = typename ParticleListType::particle_type;
 
-    // Get the global grid.
-    const auto& global_grid = local_grid.globalGrid();
+    // Get the local grid.
+    const auto& local_grid = *(particle_list.mesh().localGrid());
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
+
+    // Get the global grid.
+    const auto& global_grid = local_grid.globalGrid();
 
     // Get the local set of owned cell indices.
     auto owned_cells =
@@ -119,9 +112,12 @@ void initializeParticles( InitRandom,
     // Create a random number generator.
     uint64_t seed = global_grid.blockId() +
                     ( 19383747 % (global_grid.blockId() + 1) );
-    using rnd_type = Kokkos::Random_XorShift64_Pool<device_type>;
+    using rnd_type = Kokkos::Random_XorShift64_Pool<ExecutionSpace>;
     rnd_type pool;
     pool.init( seed, owned_cells.size() );
+
+    // Get the particles.
+    auto& particles = particle_list.aosoa();
 
     // Allocate enough space for the case the particles consume the entire
     // local grid.
@@ -129,7 +125,7 @@ void initializeParticles( InitRandom,
     particles.resize( num_particles );
 
     // Creation status.
-    auto particle_created = Kokkos::View<bool*,device_type>(
+    auto particle_created = Kokkos::View<bool*,ExecutionSpace>(
         Kokkos::ViewAllocateWithoutInitializing("particle_created"),
         num_particles );
 
@@ -184,7 +180,7 @@ void initializeParticles( InitRandom,
                 // If we created a new particle insert it into the list.
                 if ( particle_created(pid) )
                 {
-                    particles.setTuple( pid, particle );
+                    particles.setTuple( pid, particle.tuple() );
                     ++create_count;
                 }
             }
@@ -200,18 +196,12 @@ void initializeParticles( InitRandom,
   \brief Initialize a uniform number of particles in each cell given an
   initialization functor.
 
-  \tparam LocalGridType The local grid type to use for construction
+  \tparam ParticleListType The type of particle list to initialize.
 
   \tparam InitFunctor Initialization functor type. See the documentation below
   for the create_functor parameter on the signature of this functor.
 
-  \tparam ParticleList A Cabana::AoSoA type for holding particles. The tuple
-  type in this AoSoA is the particle type.
-
   \param Initialization type tag.
-
-  \param local_grid The local grid to use for initialization. Particles will
-  not be initialized in the halo - only in the owned cells.
 
   \param particles_per_cell_dim The number of particles to populate each cell
   dimension with.
@@ -221,25 +211,27 @@ void initializeParticles( InitRandom,
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
-                          typename ParticleList::tuple_type& particle );
+                          typename ParticleAoSoA::tuple_type& particle );
 
-  \param particles The Cabana AoSoA of particles to populate. This will be
-  filled with particles and resized to a size equal to the number of particles
+  \param particle_list The list of particles to populate. This will be filled
+  with particles and resized to a size equal to the number of particles
   created.
 */
-template<class LocalGridType, class InitFunctor, class ParticleList, class ExecutionSpace>
+template<class ParticleListType, class InitFunctor, class ExecutionSpace>
 void initializeParticles( InitUniform,
                           const ExecutionSpace& exec_space,
-                          const LocalGridType& local_grid,
                           const int particles_per_cell_dim,
                           const InitFunctor& create_functor,
-                          ParticleList& particles )
+                          ParticleListType& particle_list )
 {
     // Memory space.
-    using memory_space = typename ParticleList::memory_space;
+    using memory_space = typename ParticleListType::memory_space;
 
     // Particle type.
-    using particle_type = typename ParticleList::tuple_type;
+    using particle_type = typename ParticleListType::particle_type;
+
+    // Get the local grid.
+    const auto& local_grid = *(particle_list.mesh().localGrid());
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -247,6 +239,9 @@ void initializeParticles( InitUniform,
     // Get the local set of owned cell indices.
     auto owned_cells =
         local_grid.indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
+
+    // Get the particles.
+    auto& particles = particle_list.aosoa();
 
     // Allocate enough space for the case the particles consume the entire
     // local grid.
@@ -320,7 +315,7 @@ void initializeParticles( InitUniform,
                         // If we created a new particle insert it into the list.
                         if ( particle_created(pid) )
                         {
-                            particles.setTuple( pid, particle );
+                            particles.setTuple( pid, particle.tuple() );
                             ++create_count;
                         }
                     }

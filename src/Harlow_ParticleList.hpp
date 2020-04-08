@@ -9,277 +9,384 @@
 #include <Cabana_Core.hpp>
 
 #include <memory>
+#include <type_traits>
+#include <string>
 
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
-template<class MemorySpace, class ... FieldTags>
-struct ParticleTraits;
+// Field tag indexer.
+//---------------------------------------------------------------------------//
+template<class Tag, class ... FieldTags>
+struct FieldTagIndexer;
 
 //---------------------------------------------------------------------------//
-// 1-Field particle
-template<class MemorySpace,
-         class Tag0>
-struct ParticleTraits<MemorySpace,
-                      Tag0>
+// 1-field particle
+template<class Tag0>
+struct FieldTagIndexer<Tag0,Tag0>
 {
-    using memory_space = MemorySpace;
-
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type>;
-
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
-
-    using particle_type = typename aosoa_type::tuple_type;
-
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
+    static constexpr std::size_t index = 0;
 };
 
 //---------------------------------------------------------------------------//
-// 2-field particle.
-template<class MemorySpace,
-         class Tag0,
+// 2-field particle
+template<class Tag0,
          class Tag1>
-struct ParticleTraits<MemorySpace,
-                      Tag0,
-                      Tag1>
+struct FieldTagIndexer<Tag0,Tag0,Tag1>
 {
-    using memory_space = MemorySpace;
+    static constexpr std::size_t index = 0;
+};
 
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type>;
-
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
-
-    using particle_type = typename aosoa_type::tuple_type;
-
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
-
-    static slice_type<1> slice( const aosoa_type& aosoa, Tag1 )
-    {
-        return Cabana::slice<1>( aosoa, Tag1::label() );
-    }
+template<class Tag0,
+         class Tag1>
+struct FieldTagIndexer<Tag1,Tag0,Tag1>
+{
+    static constexpr std::size_t index = 1;
 };
 
 //---------------------------------------------------------------------------//
-// 3-field particle.
-template<class MemorySpace,
-         class Tag0,
+// 3-field particle
+template<class Tag0,
          class Tag1,
          class Tag2>
-struct ParticleTraits<MemorySpace,
-                      Tag0,
-                      Tag1,
-                      Tag2>
+struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2>
 {
-    using memory_space = MemorySpace;
+    static constexpr std::size_t index = 0;
+};
 
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type>;
+template<class Tag0,
+         class Tag1,
+         class Tag2>
+struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2>
+{
+    static constexpr std::size_t index = 1;
+};
 
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
-
-    using particle_type = typename aosoa_type::tuple_type;
-
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
-
-    static slice_type<1> slice( const aosoa_type& aosoa, Tag1 )
-    {
-        return Cabana::slice<1>( aosoa, Tag1::label() );
-    }
-
-    static slice_type<2> slice( const aosoa_type& aosoa, Tag2 )
-    {
-        return Cabana::slice<2>( aosoa, Tag2::label() );
-    }
+template<class Tag0,
+         class Tag1,
+         class Tag2>
+struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2>
+{
+    static constexpr std::size_t index = 2;
 };
 
 //---------------------------------------------------------------------------//
-// 4-field particle.
-template<class MemorySpace,
-         class Tag0,
+// 4-field particle
+template<class Tag0,
          class Tag1,
          class Tag2,
          class Tag3>
-struct ParticleTraits<MemorySpace,
-                      Tag0,
-                      Tag1,
-                      Tag2,
-                      Tag3>
+struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3>
 {
-    using memory_space = MemorySpace;
+    static constexpr std::size_t index = 0;
+};
 
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type,
-                                             typename Tag3::data_type>;
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3>
+struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3>
+{
+    static constexpr std::size_t index = 1;
+};
 
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3>
+struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3>
+{
+    static constexpr std::size_t index = 2;
+};
 
-    using particle_type = typename aosoa_type::tuple_type;
-
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
-
-    static slice_type<1> slice( const aosoa_type& aosoa, Tag1 )
-    {
-        return Cabana::slice<1>( aosoa, Tag1::label() );
-    }
-
-    static slice_type<2> slice( const aosoa_type& aosoa, Tag2 )
-    {
-        return Cabana::slice<2>( aosoa, Tag2::label() );
-    }
-
-    static slice_type<3> slice( const aosoa_type& aosoa, Tag3 )
-    {
-        return Cabana::slice<3>( aosoa, Tag3::label() );
-    }
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3>
+struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3>
+{
+    static constexpr std::size_t index = 3;
 };
 
 //---------------------------------------------------------------------------//
-// 5-field particle.
-template<class MemorySpace,
-         class Tag0,
+// 5-field particle
+template<class Tag0,
          class Tag1,
          class Tag2,
          class Tag3,
          class Tag4>
-struct ParticleTraits<MemorySpace,
-                      Tag0,
-                      Tag1,
-                      Tag2,
-                      Tag3,
-                      Tag4>
+struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3,Tag4>
 {
-    using memory_space = MemorySpace;
+    static constexpr std::size_t index = 0;
+};
 
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type,
-                                             typename Tag3::data_type,
-                                             typename Tag4::data_type>;
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4>
+struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3,Tag4>
+{
+    static constexpr std::size_t index = 1;
+};
 
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4>
+struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3,Tag4>
+{
+    static constexpr std::size_t index = 2;
+};
 
-    using particle_type = typename aosoa_type::tuple_type;
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4>
+struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3,Tag4>
+{
+    static constexpr std::size_t index = 3;
+};
 
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
-
-    static slice_type<1> slice( const aosoa_type& aosoa, Tag1 )
-    {
-        return Cabana::slice<1>( aosoa, Tag1::label() );
-    }
-
-    static slice_type<2> slice( const aosoa_type& aosoa, Tag2 )
-    {
-        return Cabana::slice<2>( aosoa, Tag2::label() );
-    }
-
-    static slice_type<3> slice( const aosoa_type& aosoa, Tag3 )
-    {
-        return Cabana::slice<3>( aosoa, Tag3::label() );
-    }
-
-    static slice_type<4> slice( const aosoa_type& aosoa, Tag4 )
-    {
-        return Cabana::slice<4>( aosoa, Tag4::label() );
-    }
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4>
+struct FieldTagIndexer<Tag4,Tag0,Tag1,Tag2,Tag3,Tag4>
+{
+    static constexpr std::size_t index = 4;
 };
 
 //---------------------------------------------------------------------------//
-// 6-field particle.
-template<class MemorySpace,
-         class Tag0,
+// 6-field particle
+template<class Tag0,
          class Tag1,
          class Tag2,
          class Tag3,
          class Tag4,
          class Tag5>
-struct ParticleTraits<MemorySpace,
-                      Tag0,
+struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 0;
+};
+
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 1;
+};
+
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 2;
+};
+
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 3;
+};
+
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct FieldTagIndexer<Tag4,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 4;
+};
+
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct FieldTagIndexer<Tag5,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
+{
+    static constexpr std::size_t index = 5;
+};
+
+//---------------------------------------------------------------------------//
+// Particle Traits
+//---------------------------------------------------------------------------//
+template<class ... FieldTags>
+struct ParticleTraits;
+
+//---------------------------------------------------------------------------//
+// 1-Field particle
+template<class Tag0>
+struct ParticleTraits<Tag0>
+{
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type>;
+};
+
+//---------------------------------------------------------------------------//
+// 2-field particle.
+template<class Tag0,
+         class Tag1>
+struct ParticleTraits<Tag0,
+                      Tag1>
+{
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type>;
+};
+
+//---------------------------------------------------------------------------//
+// 3-field particle.
+template<class Tag0,
+         class Tag1,
+         class Tag2>
+struct ParticleTraits<Tag0,
+                      Tag1,
+                      Tag2>
+{
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type>;
+};
+
+//---------------------------------------------------------------------------//
+// 4-field particle.
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3>
+struct ParticleTraits<Tag0,
+                      Tag1,
+                      Tag2,
+                      Tag3>
+{
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type,
+                                             typename Tag3::data_type>;
+};
+
+//---------------------------------------------------------------------------//
+// 5-field particle.
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4>
+struct ParticleTraits<Tag0,
+                      Tag1,
+                      Tag2,
+                      Tag3,
+                      Tag4>
+{
+    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
+                                             typename Tag1::data_type,
+                                             typename Tag2::data_type,
+                                             typename Tag3::data_type,
+                                             typename Tag4::data_type>;
+};
+
+//---------------------------------------------------------------------------//
+// 6-field particle.
+template<class Tag0,
+         class Tag1,
+         class Tag2,
+         class Tag3,
+         class Tag4,
+         class Tag5>
+struct ParticleTraits<Tag0,
                       Tag1,
                       Tag2,
                       Tag3,
                       Tag4,
                       Tag5>
 {
-    using memory_space = MemorySpace;
-
     using member_types = Cabana::MemberTypes<typename Tag0::data_type,
                                              typename Tag1::data_type,
                                              typename Tag2::data_type,
                                              typename Tag3::data_type,
                                              typename Tag4::data_type,
                                              typename Tag5::data_type>;
-
-    using aosoa_type = Cabana::AoSoA<member_types,memory_space>;
-
-    using particle_type = typename aosoa_type::tuple_type;
-
-    template<std::size_t M>
-    using slice_type = typename aosoa_type::template member_slice_type<M>;
-
-    static slice_type<0> slice( const aosoa_type& aosoa, Tag0 )
-    {
-        return Cabana::slice<0>( aosoa, Tag0::label() );
-    }
-
-    static slice_type<1> slice( const aosoa_type& aosoa, Tag1 )
-    {
-        return Cabana::slice<1>( aosoa, Tag1::label() );
-    }
-
-    static slice_type<2> slice( const aosoa_type& aosoa, Tag2 )
-    {
-        return Cabana::slice<2>( aosoa, Tag2::label() );
-    }
-
-    static slice_type<3> slice( const aosoa_type& aosoa, Tag3 )
-    {
-        return Cabana::slice<3>( aosoa, Tag3::label() );
-    }
-
-    static slice_type<4> slice( const aosoa_type& aosoa, Tag4 )
-    {
-        return Cabana::slice<4>( aosoa, Tag4::label() );
-    }
-
-    static slice_type<5> slice( const aosoa_type& aosoa, Tag5 )
-    {
-        return Cabana::slice<5>( aosoa, Tag5::label() );
-    }
 };
 
+//---------------------------------------------------------------------------//
+// Particle
+//---------------------------------------------------------------------------//
+template<class ... FieldTags>
+struct Particle
+{
+    using traits = ParticleTraits<FieldTags...>;
+    using tuple_type = Cabana::Tuple<typename traits::member_types>;
+
+    // Default constructor.
+    KOKKOS_FORCEINLINE_FUNCTION
+    Particle() = default;
+
+    // Tuple wrapper constructor.
+    KOKKOS_FORCEINLINE_FUNCTION
+    Particle( const tuple_type& tuple )
+        : _tuple( tuple )
+    {}
+
+    // Get the underlying tuple.
+    KOKKOS_FORCEINLINE_FUNCTION
+    tuple_type& tuple() { return _tuple; }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    const tuple_type& tuple() const { return _tuple; }
+
+    // The tuple this particle wraps.
+    tuple_type _tuple;
+};
+
+//---------------------------------------------------------------------------//
+// Particle accessor.
+//---------------------------------------------------------------------------//
+namespace ParticleAccess
+{
+
+template<class FieldTag, class ... FieldTags, class ... IndexTypes>
+KOKKOS_FORCEINLINE_FUNCTION
+typename Particle<FieldTags...>::tuple_type::template member_value_type<
+    FieldTagIndexer<FieldTag,FieldTags...>::index>
+get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
+{
+    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+        particle.tuple(), indices...);
+}
+
+template<class FieldTag, class ... FieldTags, class ... IndexTypes>
+KOKKOS_FORCEINLINE_FUNCTION
+typename Particle<FieldTags...>::tuple_type::template member_reference_type<
+    FieldTagIndexer<FieldTag,FieldTags...>::index>
+get( Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
+{
+    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+        particle.tuple(), indices...);
+}
+
+} // end namespace ParticleAccessor
+
+//---------------------------------------------------------------------------//
+// Particle List
 //---------------------------------------------------------------------------//
 template<class Mesh, class ... FieldTags>
 class ParticleList
@@ -287,10 +394,19 @@ class ParticleList
   public:
 
     using mesh_type = Mesh;
+
     using memory_space = typename Mesh::memory_space;
-    using traits = ParticleTraits<memory_space,FieldTags...>;
-    using aosoa_type = typename traits::aosoa_type;
-    using particle_type = typename traits::particle_type;
+
+    using traits = ParticleTraits<FieldTags...>;
+
+    using aosoa_type = Cabana::AoSoA<typename traits::member_types,memory_space>;
+
+    using tuple_type = typename aosoa_type::tuple_type;
+
+    template<std::size_t M>
+    using slice_type = typename aosoa_type::template member_slice_type<M>;
+
+    using particle_type = Particle<FieldTags...>;
 
     // Default constructor.
     ParticleList( const std::string& label,
@@ -299,16 +415,26 @@ class ParticleList
         , _mesh(mesh)
     {}
 
+    // Get the number of particles in the list.
+    std::size_t size() const
+    {
+        return _aosoa.size();
+    }
+
     // Get the AoSoA
     aosoa_type& aosoa() { return _aosoa; }
     const aosoa_type& aosoa() const { return _aosoa; }
 
+    // Get the mesh.
+    const Mesh& mesh() { return *_mesh; }
+
     // Get a slice of a given field.
     template<class FieldTag>
-    auto slice( FieldTag tag ) const
-        -> decltype(traits::slice(aosoa_type(),FieldTag()))
+    slice_type<FieldTagIndexer<FieldTag,FieldTags...>::index>
+    slice( FieldTag ) const
     {
-        return traits::slice(_aosoa,tag);
+        return Cabana::slice<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+            _aosoa, FieldTag::label() );
     }
 
     // Redistribute particles to new owning grids.
