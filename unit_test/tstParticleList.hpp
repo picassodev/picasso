@@ -17,8 +17,8 @@ void sliceTest()
 {
     // Get inputs for mesh.
     InputParser parser( "uniform_mesh_test_1.json", "json" );
-    Kokkos::Array<float,6> global_box = { -10.0, -10.0, -10.0,
-                                          10.0, 10.0, 10.0 };
+    Kokkos::Array<double,6> global_box = { -10.0, -10.0, -10.0,
+                                           10.0, 10.0, 10.0 };
     int minimum_halo_size = 0;
 
     // Make mesh.

@@ -1,6 +1,7 @@
 #include <Harlow_FacetGeometry.hpp>
 #include <Harlow_Types.hpp>
 #include <Harlow_InputParser.hpp>
+#include <Harlow_ParticleList.hpp>
 
 #include <Harlow_ParticleInit.hpp>
 #include <Harlow_SiloParticleWriter.hpp>
@@ -505,46 +506,52 @@ struct LocateFunctor
         float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
         for ( int d = 0; d < 3; ++d )
         {
-            Cabana::get<0>(p,d) = x[d];
+            ParticleAccess::get( p, Field::PhysicalPosition(), d ) = x[d];
         }
-        Cabana::get<1>(p) = FacetGeometryOps::locatePoint(xf,geom);
-        return (Cabana::get<1>(p) > -2);
+        auto volume_id = FacetGeometryOps::locatePoint(xf,geom);
+        ParticleAccess::get( p, Field::VolumeId() ) = volume_id;
+        return (volume_id > -2);
     }
 };
 
 void initExample()
 {
-    std::array<int,3> global_num_cell = { 40, 40, 40 };
+    // Get inputs.
+    InputParser parser( "facet_init_example.json", "json" );
+
+    // Make mesh.
     std::array<double,3> global_low_corner = { -12.0, -12.0, -12.0 };
     std::array<double,3> global_high_corner = { 20.0, 20.0, 20.0 };
-    auto global_mesh = Cajita::createUniformGlobalMesh( global_low_corner,
-                                                        global_high_corner,
-                                                        global_num_cell );
-    std::array<bool,3> periodic = {false,false,false};
-    auto global_grid =
-        Cajita::createGlobalGrid( MPI_COMM_WORLD,
-                                  global_mesh,
-                                  periodic,
-                                  Cajita::UniformDimPartitioner() );
-    auto local_grid = Cajita::createLocalGrid( global_grid, 0 );
+    Kokkos::Array<double,6> global_box = { global_low_corner[0],
+                                           global_low_corner[1],
+                                           global_low_corner[2],
+                                           global_high_corner[0],
+                                           global_high_corner[1],
+                                           global_high_corner[2] };
+    int minimum_halo_size = 0;
+    auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
+        parser.propertyTree(),
+        global_box, minimum_halo_size, MPI_COMM_WORLD );
 
-    using particle_fields = Cabana::MemberTypes<double[3],int>;
-    using particle_list = Cabana::AoSoA<particle_fields,TEST_DEVICE>;
-    particle_list particles( "particles" );
+    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
+                                   Field::PhysicalPosition,
+                                   Field::VolumeId>;
+    list_type particles( "particles", mesh );
 
-    InputParser parser( "facet_geometry_test.json", "json" );
-    auto pt = parser.propertyTree();
-
-    FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
+    FacetGeometry<TEST_MEMSPACE> geometry(
+        parser.propertyTree(), TEST_EXECSPACE() );
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
     initializeParticles(
-        InitUniform(), TEST_EXECSPACE(), *local_grid, 3, init_func, particles );
+        InitUniform(), TEST_EXECSPACE(), 1, init_func, particles );
 
     SiloParticleWriter::writeTimeStep(
-        *global_grid, 0, 0.0,
-        Cabana::slice<0>(particles,"x"), Cabana::slice<1>(particles,"i") );
+        mesh->localGrid()->globalGrid(),
+        0,
+        0.0,
+        particles.slice(Field::PhysicalPosition()),
+        particles.slice(Field::VolumeId()) );
 }
 
 TEST( TEST_CATEGORY, init_example )

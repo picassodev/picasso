@@ -34,7 +34,7 @@ class AdaptiveMesh
     // tree.
     template<class ExecutionSpace>
     AdaptiveMesh( const boost::property_tree::ptree& ptree,
-                  const Kokkos::Array<float,6>& global_bounding_box,
+                  const Kokkos::Array<double,6>& global_bounding_box,
                   const int minimum_halo_cell_width,
                   MPI_Comm comm,
                   const ExecutionSpace& exec_space )
@@ -56,8 +56,9 @@ class AdaptiveMesh
             {
                 cell_size[d] = element.second.get_value<double>();
                 global_num_cell[d] =
-                    (global_bounding_box[d+3] - global_bounding_box[d]) /
-                    cell_size[d];
+                    std::rint(
+                        (global_bounding_box[d+3] - global_bounding_box[d]) /
+                        cell_size[d] );
                 ++d;
             }
         }

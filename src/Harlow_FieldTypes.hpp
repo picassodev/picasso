@@ -116,14 +116,29 @@ struct DeformationGradientDeterminant : public Scalar<double>
     static std::string label() { return "deformation_gradient_det"; };
 };
 
-struct MaterialId : public Scalar<int>
+struct SignedDistance : public Scalar<double>
 {
-    static std::string label() { return "material_id"; };
+    static std::string label() { return "signed_distance"; };
 };
 
 struct Color : public Scalar<double>
 {
     static std::string label() { return "color"; };
+};
+
+struct MaterialId : public Scalar<int>
+{
+    static std::string label() { return "material_id"; };
+};
+
+struct PartId : public Scalar<int>
+{
+    static std::string label() { return "part_id"; };
+};
+
+struct VolumeId : public Scalar<int>
+{
+    static std::string label() { return "volume_id"; };
 };
 
 struct BoundaryId : public Scalar<int>

@@ -1,0 +1,13 @@
+{
+    "geometry": {
+        "stl_file": "stl_reader_test.stl",
+        "global_bounding_volume_id": 3
+    },
+    "mesh": {
+        "global_num_cell": [40, 40, 40],
+        "periodic": [false, true, false],
+        "partitioner": {
+            "type": "uniform_dim"
+        }
+    }
+}

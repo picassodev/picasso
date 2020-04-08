@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <type_traits>
+#include <string>
 
 namespace Harlow
 {
@@ -19,6 +20,7 @@ namespace Harlow
 template<class Tag, class ... FieldTags>
 struct FieldTagIndexer;
 
+//---------------------------------------------------------------------------//
 // 1-field particle
 template<class Tag0>
 struct FieldTagIndexer<Tag0,Tag0>
@@ -26,6 +28,7 @@ struct FieldTagIndexer<Tag0,Tag0>
     static constexpr std::size_t index = 0;
 };
 
+//---------------------------------------------------------------------------//
 // 2-field particle
 template<class Tag0,
          class Tag1>
@@ -41,6 +44,7 @@ struct FieldTagIndexer<Tag1,Tag0,Tag1>
     static constexpr std::size_t index = 1;
 };
 
+//---------------------------------------------------------------------------//
 // 3-field particle
 template<class Tag0,
          class Tag1,
@@ -66,6 +70,7 @@ struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2>
     static constexpr std::size_t index = 2;
 };
 
+//---------------------------------------------------------------------------//
 // 4-field particle
 template<class Tag0,
          class Tag1,
@@ -103,6 +108,7 @@ struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3>
     static constexpr std::size_t index = 3;
 };
 
+//---------------------------------------------------------------------------//
 // 5-field particle
 template<class Tag0,
          class Tag1,
@@ -154,6 +160,7 @@ struct FieldTagIndexer<Tag4,Tag0,Tag1,Tag2,Tag3,Tag4>
     static constexpr std::size_t index = 4;
 };
 
+//---------------------------------------------------------------------------//
 // 6-field particle
 template<class Tag0,
          class Tag1,
@@ -408,9 +415,18 @@ class ParticleList
         , _mesh(mesh)
     {}
 
+    // Get the number of particles in the list.
+    std::size_t size() const
+    {
+        return _aosoa.size();
+    }
+
     // Get the AoSoA
     aosoa_type& aosoa() { return _aosoa; }
     const aosoa_type& aosoa() const { return _aosoa; }
+
+    // Get the mesh.
+    const Mesh& mesh() { return *_mesh; }
 
     // Get a slice of a given field.
     template<class FieldTag>

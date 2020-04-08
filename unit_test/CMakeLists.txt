@@ -44,6 +44,14 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/adaptive_mesh_test_2.json
   ${CMAKE_CURRENT_BINARY_DIR}/adaptive_mesh_test_2.json
   COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/particle_init_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/particle_init_test.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/facet_init_example.json
+  ${CMAKE_CURRENT_BINARY_DIR}/facet_init_example.json
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## General tests.
