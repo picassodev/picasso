@@ -440,25 +440,11 @@ class ParticleList
     // Redistribute particles to new owning grids.
     void redistribute( const int minimum_halo_width )
     {
-        // Particles move in logical coordinates in adaptive meshes.
-        if ( is_adaptive_mesh<Mesh>::value )
-        {
-            ParticleCommunication::redistribute(
-                *(_mesh->localGrid()),
-                minimum_halo_width,
-                this->slice(Field::LogicalPosition()),
-                _aosoa );
-        }
-
-        // Particles move in physical coordinates in uniform meshes.
-        else if ( is_uniform_mesh<Mesh>::value )
-        {
-            ParticleCommunication::redistribute(
-                _mesh->localGrid(),
-                minimum_halo_width,
-                this->slice(Field::PhysicalPosition()),
-                _aosoa );
-        }
+        ParticleCommunication::redistribute(
+            *(_mesh->localGrid()),
+            minimum_halo_width,
+            this->slice(Field::LogicalPosition()),
+            _aosoa );
     }
 
   private:
@@ -466,6 +452,17 @@ class ParticleList
     aosoa_type _aosoa;
     std::shared_ptr<Mesh> _mesh;
 };
+
+//---------------------------------------------------------------------------//
+// Creation function.
+template<class Mesh, class ... FieldTags>
+std::shared_ptr<ParticleList<Mesh,FieldTags...>>
+createParticleList( const std::string& label,
+                    const std::shared_ptr<Mesh>& mesh,
+                    ParticleTraits<FieldTags...> )
+{
+    return std::make_shared<ParticleList<Mesh,FieldTags...>>( label, mesh );
+}
 
 //---------------------------------------------------------------------------//
 
