@@ -1,0 +1,19 @@
+{
+    "geometry": {
+        "stl_file": "zalesaks_disk.stl",
+        "global_bounding_volume_id": 3
+    },
+    "mesh": {
+        "global_num_cell": [100, 100, 25],
+        "periodic": [false, false, true],
+        "partitioner": {
+            "type": "uniform_dim"
+        }
+    },
+    "particle_level_set": {
+        "particle_radius": 0.3,
+        "redistance_num_secant_iter": 10,
+        "redistance_num_random_guess": 5,
+        "redistance_num_eval_projection": 100
+    }
+}

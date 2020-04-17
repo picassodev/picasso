@@ -371,7 +371,7 @@ class FacetGeometry
     }
 
     // Get the global bounding box.
-    const Kokkos::Array<float,6>& globalBoundingBox() const
+    const Kokkos::Array<double,6>& globalBoundingBox() const
     {
         return _global_bounding_box;
     }
@@ -469,7 +469,7 @@ class FacetGeometry
     std::vector<int> _surface_facet_count;
 
     // Global bounding box.
-    Kokkos::Array<float,6> _global_bounding_box;
+    Kokkos::Array<double,6> _global_bounding_box;
 
     // Data.
     FacetGeometryData<MemorySpace> _data;

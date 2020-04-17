@@ -1,5 +1,5 @@
-#ifndef HARLOW_LEVELSET_HPP
-#define HARLOW_LEVELSET_HPP
+#ifndef HARLOW_LEVELSETREDISTANCE_HPP
+#define HARLOW_LEVELSETREDISTANCE_HPP
 
 #include <Harlow_Types.hpp>
 
@@ -126,10 +126,10 @@ double globalMin( const SignedDistanceView& phi_0,
 // method.
 template<class EntityType,
          class SignedDistanceView,
-         class LocalMeshType,
-         class RandState>
+         class LocalMeshType>
 KOKKOS_INLINE_FUNCTION
-double redistanceEntity( const SignedDistanceView& phi_0,
+double redistanceEntity( EntityType,
+                         const SignedDistanceView& phi_0,
                          const LocalMeshType& local_mesh,
                          const int entity_index[3],
                          const int num_secant_iter,
@@ -138,7 +138,7 @@ double redistanceEntity( const SignedDistanceView& phi_0,
                          const double init_guess = 0.0 )
 {
     // Grid interpolant.
-    Cajita::SplineDataType<double,1,EntityType> sd;
+    Cajita::SplineData<double,1,EntityType> sd;
 
     // Random number generator.
     using rand_type =
@@ -160,7 +160,7 @@ double redistanceEntity( const SignedDistanceView& phi_0,
                                 num_eval_iter, num_random, rng, sd, y );
 
     // First step is of size dx to get the iteration started.
-    double t_new = dx
+    double t_new = dx;
     double phi_new;
 
     // Secant step.
@@ -169,7 +169,7 @@ double redistanceEntity( const SignedDistanceView& phi_0,
 
     // Perform a fixed number of secant iterations to compute the signed
     // distance.
-    for ( int i = 0; i < num_secant_iter )
+    for ( int i = 0; i < num_secant_iter; ++i )
     {
         // Find the global minimum on the current ball.
         phi_new = globalMin( phi_0, local_mesh, x, t_new,
@@ -207,4 +207,4 @@ double redistanceEntity( const SignedDistanceView& phi_0,
 } // end namespace LevelSet
 } // end namespace Harlow
 
-#endif // end HARLOW_LEVELSET_HPP
+#endif // end HARLOW_LEVELSETREDISTANCE_HPP
