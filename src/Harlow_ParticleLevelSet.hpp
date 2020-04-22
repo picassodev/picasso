@@ -131,7 +131,7 @@ struct Access<PredicateData,PredicatesTag>
         return attach(
             nearest(Point{static_cast<float>(x[0]),
                           static_cast<float>(x[1]),
-                          static_cast<float>(x[2])}),
+                          static_cast<float>(x[2])}, 1),
             ijk );
     }
 };
@@ -182,15 +182,19 @@ class ParticleLevelSet
         // Particles have an analytic spherical level set. Get the radius as a
         // fraction of the cell size.
         auto dx = mesh.localGrid()->globalGrid().globalMesh().uniformCellSize();
-        _radius = dx * params.get<double>("particle_radius",0.4);
+        _radius = dx * params.get<double>("particle_radius",0.5);
 
         // Get the Hopf-Lax redistancing parameters.
-        _redistance_num_secant_iter =
-            params.get<int>("redistance_num_secant_iter",10);
+        _redistance_secant_tol =
+            params.get<double>("redistance_secant_tol",1.0e-8);
+        _redistance_max_secant_iter =
+            params.get<int>("redistance_max_secant_iter",10);
         _redistance_num_random_guess =
             params.get<int>("redistance_num_random_guess",5);
-        _redistance_num_eval_projection =
-            params.get<int>("redistance_num_eval_projection",100);
+        _redistance_projection_tol =
+            params.get<double>("redistance_projection_tol",1.0e-8);
+        _redistance_max_projection_iter =
+            params.get<int>("redistance_max_projection_iter",100);
     }
 
     // Update the set of particle indices for the color we are building the
@@ -250,8 +254,7 @@ class ParticleLevelSet
         primitive_data.x = x_p;
         primitive_data.c = _color_indices;
         primitive_data.num_color = _color_count;
-        ArborX::BVH<device_type>
-            bvh( primitive_data );
+        ArborX::BVH<device_type> bvh( primitive_data );
 
         // Make the search predicates.
         auto local_mesh = Cajita::createLocalMesh<memory_space>(
@@ -277,35 +280,44 @@ class ParticleLevelSet
         // Do a reduction to get the global minimum.
 //        _halo->scatter( *_distance_estimate, Cajita::ReduceMin() );
 
-        // // Compute new negative values.
-        // auto distance_view = _signed_distance->view();
-        // auto own_entities = _particles->mesh().localGrid()->indexSpace(
-        //     Cajita::Own(), entity_type(), Cajita::Local() );
-        // Kokkos::parallel_for(
-        //     "redistance",
-        //     Cajita::createExecutionPolicy(own_entities,exec_space),
-        //     KOKKOS_LAMBDA( const int i, const int j, const int k ){
-        //         if ( estimate_view(i,j,k,0) < 0.0 )
-        //         {
-        //             int entity_index[3] = {i,j,k};
-        //             distance_view(i,j,k,0) =
-        //                 LevelSet::redistanceEntity(
-        //                     entity_type(),
-        //                     estimate_view,
-        //                     local_mesh,
-        //                     entity_index,
-        //                     _redistance_num_secant_iter,
-        //                     _redistance_num_random_guess,
-        //                     _redistance_num_eval_projection,
-        //                     0.0 );
-        //         }
-        //     });
+        // Gather to get updated ghost values.
+        _halo->gather( *_distance_estimate );
+
+        // The positive values are correct but the negative values are
+        // wrong. Correct the negative values with redistancing.
+        auto distance_view = _signed_distance->view();
+        auto own_entities = _particles->mesh().localGrid()->indexSpace(
+            Cajita::Own(), entity_type(), Cajita::Local() );
+        Kokkos::parallel_for(
+            "redistance",
+            Cajita::createExecutionPolicy(own_entities,exec_space),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ){
+                if ( estimate_view(i,j,k,0) < 0.0 )
+                {
+                    int entity_index[3] = {i,j,k};
+                    distance_view(i,j,k,0) =
+                        LevelSet::redistanceEntity(
+                            entity_type(),
+                            estimate_view,
+                            local_mesh,
+                            entity_index,
+                            _redistance_secant_tol,
+                            _redistance_max_secant_iter,
+                            _redistance_num_random_guess,
+                            _redistance_projection_tol,
+                            _redistance_max_projection_iter );
+                }
+                else
+                {
+                    distance_view(i,j,k,0) = estimate_view(i,j,k,0);
+                }
+            });
     }
 
     // Get the signed distance function.
     std::shared_ptr<array_type> getSignedDistance() const
     {
-        return _distance_estimate;
+        return _signed_distance;
     }
 
   private:
@@ -315,10 +327,12 @@ class ParticleLevelSet
     std::shared_ptr<array_type> _distance_estimate;
     std::shared_ptr<array_type> _signed_distance;
     std::shared_ptr<halo_type> _halo;
-    int _radius;
-    int _redistance_num_secant_iter;
+    double _radius;
+    double _redistance_secant_tol;
+    int _redistance_max_secant_iter;
     int _redistance_num_random_guess;
-    int _redistance_num_eval_projection;
+    double _redistance_projection_tol;
+    int _redistance_max_projection_iter;
     Kokkos::View<int*,memory_space> _color_indices;
     int _color_count;
 };

@@ -15,7 +15,19 @@ namespace Harlow
 namespace LevelSet
 {
 //---------------------------------------------------------------------------//
-// Hopf-Lax projection onto the ball about x.
+// Clamp a point into the local domain.
+template<class LocalMeshType>
+void clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
+{
+    for ( int d = 0; d < 3; ++d )
+    {
+        x[d] = fmin( local_mesh.highCorner(Cajita::Ghost(),d),
+                     fmax( local_mesh.lowCorner(Cajita::Ghost(),d), x[d] ) );
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Hopf-Lax projection innto the ball about x.
 KOKKOS_INLINE_FUNCTION
 void projectToBall( const double x[3],
                     const double t_k,
@@ -33,36 +45,76 @@ void projectToBall( const double x[3],
 }
 
 //---------------------------------------------------------------------------//
+// Hopf-Lax projection onto the boundary of the ball about x.
+KOKKOS_INLINE_FUNCTION
+void projectToBallBoundary( const double x[3],
+                            const double t_k,
+                            double y[3] )
+{
+    // Compute the distance from the node to the argument on the ball.
+    double distance = sqrt( (x[0]-y[0])*(x[0]-y[0]) +
+                            (x[1]-y[1])*(x[1]-y[1]) +
+                            (x[2]-y[2])*(x[2]-y[2]) );
+
+    // Project to the boundary.
+    if ( distance > 0.0 )
+        for ( int d = 0; d < 3; ++ d )
+            y[d] = x[d] - t_k * (x[d] - y[d]) / distance;
+}
+
+//---------------------------------------------------------------------------//
 // Evaluate the Hopf-Lax formula for the signed distance estimate via gradient
 // projection. Find the argmin of phi_0 on the ball and return phi_0 evaluated
 // at the argmin.
 template<class SignedDistanceView, class LocalMeshType, class SplineDataType>
 KOKKOS_INLINE_FUNCTION
 double evaluate( const SignedDistanceView& phi_0,
+                 const double sign,
                  const LocalMeshType& local_mesh,
                  const double x[3],
                  const double t_k,
-                 const int num_iter,
+                 const double tol,
+                 const int max_iter,
                  SplineDataType& sd,
                  double y[3] )
 {
-    // Perform a fixed number of gradient projections to get the minimum
-    // argument on the ball.
+    // Perform gradient projections to get the minimum argument on the ball.
     double grad_phi_0[3];
-    for ( int i = 0; i < num_iter; ++i )
+    double step;
+    double step_mag;
+    double y_j[3];
+    for ( int i = 0; i < max_iter; ++i )
     {
+        // Do a gradient projection.
+        clampPointToLocalDomain( local_mesh, y );
         Cajita::evaluateSpline( local_mesh, y, sd );
         Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
-            y[d] -= sd.dx * grad_phi_0[d];
-        projectToBall( x, t_k, y );
+            y_j[d] = y[d] - sign * sd.dx * grad_phi_0[d];
+
+        // Project the estimate to the ball.
+        projectToBall( x, t_k, y_j );
+
+        // Update the iterate.
+        step_mag = 0.0;
+        for ( int d = 0; d < 3; ++d )
+        {
+            step = y_j[d] - y[d];
+            step_mag += step*step;
+            y[d] = y_j[d];
+        }
+
+        // Check for convergence.
+        if ( step_mag < tol )
+            break;
     }
 
-    // Evaluate the minimum argument on the ball.
+    // Evaluate the signed distance function at the minimum argument.
+    clampPointToLocalDomain( local_mesh, y );
     double phi_argmin_eval;
     Cajita::evaluateSpline( local_mesh, y, sd );
     Cajita::G2P::value( phi_0, sd, phi_argmin_eval );
-    return phi_argmin_eval;
+    return sign * phi_argmin_eval;
 }
 
 //---------------------------------------------------------------------------//
@@ -73,39 +125,66 @@ template<class SignedDistanceView,
          class RandState>
 KOKKOS_INLINE_FUNCTION
 double globalMin( const SignedDistanceView& phi_0,
+                  const double sign,
                   const LocalMeshType& local_mesh,
                   const double x[3],
                   const double t_k,
-                  const int num_eval_iter,
+                  const double projection_tol,
+                  const int max_projection_iter,
                   const int num_random,
                   RandState& rand_state,
                   SplineDataType& sd,
                   double y[3] )
 {
-    // Use y_0 as the first argmin evaluation.
+    // Use project y_0 to the boundary as the first argmin evaluation.
     double y_trial[3] = { y[0], y[1], y[2] };
-    projectToBall( x, t_k, y_trial );
+    projectToBallBoundary( x, t_k, y_trial );
+    clampPointToLocalDomain( local_mesh, y_trial );
+    double phi_trial;
+    Cajita::evaluateSpline( local_mesh, y_trial, sd );
+    Cajita::G2P::value( phi_0, sd, phi_trial );
+    phi_trial *= sign;
+
+    // Find the argmin from the initial point.
     double phi_min =
-        evaluate( phi_0, local_mesh, x, t_k, num_eval_iter, sd, y_trial );
+        evaluate( phi_0, sign, local_mesh, x, t_k,
+                  projection_tol, max_projection_iter, sd, y );
+
+    // If less than the current value assign the results as the new
+    // minimum.
+    if ( phi_trial < phi_min )
+    {
+        phi_min = phi_trial;
+        for ( int d = 0; d < 3; ++d )
+            y[d] = y_trial[d];
+    }
 
     // Evaluate at random points.
-    double phi_trial;
+    double ray[3];
+    double mag;
     for ( int n = 0; n < num_random; ++n )
     {
-        // Create a random point.
-        y_trial[0] =
-            Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 1.0 );
-        y_trial[1] =
-            Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 1.0 );
-        y_trial[2] =
-            Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 1.0 );
-
-        // Project random point to the ball.
+        // Create a random ray with random length in a sphere larger than the
+        // current t_k. The project back to the ball of t_k so a larger
+        // fraction of points will end up on the boundary of the ball while
+        // some are still in the interior.
+        mag = 0.0;
+        for ( int d = 0; d < 3; ++d )
+        {
+            ray[d] = Kokkos::rand<RandState,double>::draw( rand_state, -1.0, 1.0 );
+            mag += ray[d]*ray[d];
+        }
+        mag = Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 2.0*t_k ) / sqrt(mag);
+        for ( int d = 0; d < 3; ++d )
+        {
+            y_trial[d] = x[d] + ray[d]*mag;
+        }
         projectToBall( x, t_k, y_trial );
 
         // Compute the random point argmin.
         phi_trial =
-            evaluate( phi_0, local_mesh, x, t_k, num_eval_iter, sd, y_trial );
+            evaluate( phi_0, sign, local_mesh, x, t_k,
+                      projection_tol, max_projection_iter, sd, y_trial );
 
         // If less than the current value assign the results as the new
         // minimum.
@@ -132,10 +211,11 @@ double redistanceEntity( EntityType,
                          const SignedDistanceView& phi_0,
                          const LocalMeshType& local_mesh,
                          const int entity_index[3],
-                         const int num_secant_iter,
+                         const double secant_tol,
+                         const int max_secant_iter,
                          const int num_random,
-                         const int num_eval_iter,
-                         const double init_guess = 0.0 )
+                         const double projection_tol,
+                         const int max_projection_iter )
 {
     // Grid interpolant.
     Cajita::SplineData<double,1,EntityType> sd;
@@ -153,44 +233,64 @@ double redistanceEntity( EntityType,
     int low_id[3] = {0, 0, 0};
     double dx = local_mesh.measure( Cajita::Edge<Dim::I>(), low_id );
 
-    // Compute initial guess.
-    double t_old = init_guess;
-    double y[3] = { 0.0, 0.0, 0.0 };
-    double phi_old = globalMin( phi_0, local_mesh, x, t_old,
-                                num_eval_iter, num_random, rng, sd, y );
+    // Initial guess. The signed distance estimate is the phi value at time
+    // zero.
+    double t_old = 0.0;
+    double phi_old =
+        phi_0( entity_index[0], entity_index[1], entity_index[2], 0 );
+
+    // Sign of phi - the secant iteration is only written in terms of positive
+    // values so we need to temporarily turn negative values positive.
+    double sign = copysign( 1.0, phi_old );
+    phi_old *= sign;
 
     // First step is of size dx to get the iteration started.
     double t_new = dx;
     double phi_new;
 
+    // Initial argmin at the entity location. The ball radius starts at 0 so
+    // this is the only point that would be in the ball.
+    double y[3] = { x[0], x[1], x[2] };
+
     // Secant step.
     double delta_t;
     double delta_t_max = 5.0 * dx;
 
-    // Perform a fixed number of secant iterations to compute the signed
-    // distance.
-    for ( int i = 0; i < num_secant_iter; ++i )
+    // Perform secant iterations to compute the signed distance.
+    for ( int i = 0; i < max_secant_iter; ++i )
     {
         // Find the global minimum on the current ball.
-        phi_new = globalMin( phi_0, local_mesh, x, t_new,
-                             num_eval_iter, num_random, rng, sd, y );
+        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
+                             projection_tol, max_projection_iter,
+                             num_random, rng, sd, y );
 
-        // Update the secant step size.
-        delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
-
-        // Check that we don't violate the maximum step size. If we did,
-        // restrict the step size to the maximum.
-        if ( fabs(delta_t) > delta_t_max )
+        // Update the secant step size. Check first to see if we divide by
+        // zero. If we don't then we haven't reached a minimum yet.
+        if ( fabs(phi_new-phi_old) > secant_tol )
         {
-            if ( phi_new > 0.0 )
+            delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
+        }
+
+        // Division by zero means a possible minimum.
+        else
+        {
+            // Check for a false local minimum. If phi isn't small enough to
+            // stop the iteration step one cell farther outward to see if we
+            // find a better minimum.
+            if ( fabs(phi_new) > secant_tol )
             {
-                delta_t = delta_t_max;
+                delta_t = (phi_new > 0.0) ? dx : -dx;
             }
+
+            // Otherwise we are at a real minimum so no need to step further.
             else
             {
-                delta_t = -delta_t_max;
+                break;
             }
         }
+
+        // Clamp the step size.
+        delta_t = fmin( delta_t_max, fmax(-delta_t_max,delta_t) );
 
         // Step.
         t_old = t_new;
@@ -199,7 +299,7 @@ double redistanceEntity( EntityType,
     }
 
     // Return the distance.
-    return t_new;
+    return t_new * sign;
 }
 
 //---------------------------------------------------------------------------//

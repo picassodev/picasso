@@ -72,7 +72,7 @@ void zalesaksDiskTest()
 
     // Assign particles a color equal to the volume id in which they are
     // located. The implicit complement is not constructed.
-    int ppc = 2;
+    int ppc = 3;
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
     initializeParticles(

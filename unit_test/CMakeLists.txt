@@ -60,6 +60,10 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/zalesaks_disk.stl
   ${CMAKE_CURRENT_BINARY_DIR}/zalesaks_disk.stl
   COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/level_set_redistance_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/level_set_redistance_test.json
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## General tests.
@@ -138,4 +142,5 @@ Harlow_add_tests(MPI NAMES
   UniformMesh
   AdaptiveMesh
   FieldManager
+  LevelSetRedistance
   ParticleLevelSet)
