@@ -174,10 +174,10 @@ double globalMin( const SignedDistanceView& phi_0,
     double mag;
     for ( int n = 0; n < num_random; ++n )
     {
-        // Create a random ray with random length in a sphere larger than the
-        // current t_k. The project back to the ball of t_k so a larger
-        // fraction of points will end up on the boundary of the ball while
-        // some are still in the interior.
+        // Create a random points in a sphere about x larger than the current
+        // t_k. Then project back to the ball of t_k so a larger fraction of
+        // points will end up on the boundary of the ball while some are still
+        // in the interior.
         mag = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
@@ -316,9 +316,10 @@ double redistanceEntity( EntityType,
     // should just be able to return (sign * t_k) here as t_k is the
     // distance. However, I found that the sign of t_k could switch at times
     // and therefore this was unreliable, even though the correct location of
-    // the minimum, y, was found. This could still be due to robustness issues
-    // in the implementation but for now returning the explicit signed
-    // distance to the minimum location we found was more robust.
+    // the minimum, y, was found. This could be due to the fact that we have
+    // no good estimate for the signed distance when it is negative - we just
+    // know that it is negative. So for now returning the explicit signed
+    // distance to the minimum location was found to be more robust.
     return sign * distance(x,y);
 }
 

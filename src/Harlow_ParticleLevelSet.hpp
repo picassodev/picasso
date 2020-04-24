@@ -206,13 +206,13 @@ class ParticleLevelSet
 
         // Get the Hopf-Lax redistancing parameters.
         _redistance_secant_tol =
-            params.get<double>("redistance_secant_tol",0.01);
+            params.get<double>("redistance_secant_tol",0.1);
         _redistance_max_secant_iter =
-            params.get<int>("redistance_max_secant_iter",50);
+            params.get<int>("redistance_max_secant_iter",100);
         _redistance_num_random_guess =
             params.get<int>("redistance_num_random_guess",10);
         _redistance_projection_tol =
-            params.get<double>("redistance_projection_tol",0.05);
+            params.get<double>("redistance_projection_tol",0.1);
         _redistance_max_projection_iter =
             params.get<int>("redistance_max_projection_iter",200);
     }
