@@ -74,6 +74,7 @@ struct ParticleLevelSetCallback
 {
     DistanceEstimateView distance_estimate;
     float radius;
+    float dx;
     using tag = ArborX::Details::InlineCallbackTag;
     template <typename Predicate, typename OutputFunctor>
     KOKKOS_FUNCTION void operator()(Predicate const &predicate,
@@ -81,8 +82,18 @@ struct ParticleLevelSetCallback
                                     float distance,
                                     OutputFunctor const &) const
     {
+        // Get the entity index.
         auto ijk = getData( predicate );
-        distance_estimate( ijk.i, ijk.j, ijk.k, 0 ) = distance - radius;
+
+        // Compute the distance from the grid entity to the particle sphere.
+        auto estimate = distance - radius;
+
+        // If a distance is negative we are going to correct it so clamp all
+        // negative distances to the cell size. This will allow for the
+        // projected iterations to converge quickly when the entire region in
+        // the ball is negative as we will need to extend the ball anyway.
+        distance_estimate( ijk.i, ijk.j, ijk.k, 0 ) =
+            ( estimate > 0.0 ) ? estimate : -dx;
     }
 };
 
@@ -104,7 +115,10 @@ struct Access<PrimitiveData,PrimitivesTag>
     }
     static KOKKOS_FUNCTION Point get( const PrimitiveData& data, size_type i )
     {
+        // Get the actual index of the particle.
         auto p = data.c(i);
+
+        // Return a point made from the particles.
         return { static_cast<float>(data.x(p,0)),
                  static_cast<float>(data.x(p,1)),
                  static_cast<float>(data.x(p,2)) };
@@ -123,11 +137,17 @@ struct Access<PredicateData,PredicatesTag>
     }
     static KOKKOS_FUNCTION auto get( const PredicateData& data, size_type i )
     {
+        // Get the entity index.
         Harlow::ParticleLevelSetPredicateIndex<size_type> ijk;
         data.convertIndexTo3d( i, ijk );
         int index[3] = { ijk.i, ijk.j, ijk.k };
+
+        // Get the coordinates of the entity.
         double x[3];
         data.local_mesh.coordinates( entity_type(), index, x );
+
+        // Find the nearest particle to the entity. Attach the entity index to
+        // use in the callback.
         return attach(
             nearest(Point{static_cast<float>(x[0]),
                           static_cast<float>(x[1]),
@@ -170,7 +190,7 @@ class ParticleLevelSet
         // Create array data.
         const auto& mesh = _particles->mesh();
         _distance_estimate = createArray(
-            mesh, location_type(), Field::SignedDistance() );
+            mesh, location_type(), Field::Color() );
         _signed_distance = createArray(
             mesh, location_type(), Field::SignedDistance() );
         _halo = Cajita::createHalo<double,memory_space>(
@@ -181,20 +201,20 @@ class ParticleLevelSet
 
         // Particles have an analytic spherical level set. Get the radius as a
         // fraction of the cell size.
-        auto dx = mesh.localGrid()->globalGrid().globalMesh().uniformCellSize();
-        _radius = dx * params.get<double>("particle_radius",0.5);
+        _dx = mesh.localGrid()->globalGrid().globalMesh().uniformCellSize();
+        _radius = _dx * params.get<double>("particle_radius",0.5);
 
         // Get the Hopf-Lax redistancing parameters.
         _redistance_secant_tol =
-            params.get<double>("redistance_secant_tol",1.0e-8);
+            params.get<double>("redistance_secant_tol",0.01);
         _redistance_max_secant_iter =
-            params.get<int>("redistance_max_secant_iter",10);
+            params.get<int>("redistance_max_secant_iter",50);
         _redistance_num_random_guess =
-            params.get<int>("redistance_num_random_guess",5);
+            params.get<int>("redistance_num_random_guess",10);
         _redistance_projection_tol =
-            params.get<double>("redistance_projection_tol",1.0e-8);
+            params.get<double>("redistance_projection_tol",0.05);
         _redistance_max_projection_iter =
-            params.get<int>("redistance_max_projection_iter",100);
+            params.get<int>("redistance_max_projection_iter",200);
     }
 
     // Update the set of particle indices for the color we are building the
@@ -267,6 +287,7 @@ class ParticleLevelSet
         ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
         distance_callback.distance_estimate = estimate_view;
         distance_callback.radius = static_cast<float>(_radius);
+        distance_callback.dx = static_cast<float>(_dx);
 
         // Query the particle tree with the mesh entities to find the closest
         // particle and compute the initial signed distance estimate. Dummy
@@ -314,6 +335,12 @@ class ParticleLevelSet
             });
     }
 
+    // Get the signed distance initial estimate.
+    std::shared_ptr<array_type> getDistanceEstimate() const
+    {
+        return _distance_estimate;
+    }
+
     // Get the signed distance function.
     std::shared_ptr<array_type> getSignedDistance() const
     {
@@ -328,6 +355,7 @@ class ParticleLevelSet
     std::shared_ptr<array_type> _signed_distance;
     std::shared_ptr<halo_type> _halo;
     double _radius;
+    double _dx;
     double _redistance_secant_tol;
     int _redistance_max_secant_iter;
     int _redistance_num_random_guess;

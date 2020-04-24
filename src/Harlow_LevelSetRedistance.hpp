@@ -15,8 +15,19 @@ namespace Harlow
 namespace LevelSet
 {
 //---------------------------------------------------------------------------//
+// Distance between two points.
+KOKKOS_INLINE_FUNCTION
+double distance( const double x[3], const double y[3] )
+{
+    return sqrt( (x[0]-y[0])*(x[0]-y[0]) +
+                 (x[1]-y[1])*(x[1]-y[1]) +
+                 (x[2]-y[2])*(x[2]-y[2]) );
+}
+
+//---------------------------------------------------------------------------//
 // Clamp a point into the local domain.
 template<class LocalMeshType>
+KOKKOS_INLINE_FUNCTION
 void clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
 {
     for ( int d = 0; d < 3; ++d )
@@ -33,15 +44,14 @@ void projectToBall( const double x[3],
                     const double t_k,
                     double y[3] )
 {
-    // Compute the distance from the node to the argument on the ball.
-    double distance = sqrt( (x[0]-y[0])*(x[0]-y[0]) +
-                            (x[1]-y[1])*(x[1]-y[1]) +
-                            (x[2]-y[2])*(x[2]-y[2]) );
+    // Compute the dist from the node to the argument on the ball.
+    double dist = distance(x,y);
 
-    // Check the distance against the current secant root.
-    if ( distance > t_k )
+    // Check the dist against the current secant root and project to the
+    // boundary if outside the ball.
+    if ( dist > t_k )
         for ( int d = 0; d < 3; ++ d )
-            y[d] = x[d] - t_k * (x[d] - y[d]) / distance;
+            y[d] = x[d] - t_k * (x[d] - y[d]) / dist;
 }
 
 //---------------------------------------------------------------------------//
@@ -52,14 +62,12 @@ void projectToBallBoundary( const double x[3],
                             double y[3] )
 {
     // Compute the distance from the node to the argument on the ball.
-    double distance = sqrt( (x[0]-y[0])*(x[0]-y[0]) +
-                            (x[1]-y[1])*(x[1]-y[1]) +
-                            (x[2]-y[2])*(x[2]-y[2]) );
+    double dist = distance(x,y);
 
     // Project to the boundary.
-    if ( distance > 0.0 )
+    if ( dist > 0.0 )
         for ( int d = 0; d < 3; ++ d )
-            y[d] = x[d] - t_k * (x[d] - y[d]) / distance;
+            y[d] = x[d] - t_k * (x[d] - y[d]) / dist;
 }
 
 //---------------------------------------------------------------------------//
@@ -80,9 +88,9 @@ double evaluate( const SignedDistanceView& phi_0,
 {
     // Perform gradient projections to get the minimum argument on the ball.
     double grad_phi_0[3];
+    double y_j[3];
     double step;
     double step_mag;
-    double y_j[3];
     for ( int i = 0; i < max_iter; ++i )
     {
         // Do a gradient projection.
@@ -104,8 +112,9 @@ double evaluate( const SignedDistanceView& phi_0,
             y[d] = y_j[d];
         }
 
-        // Check for convergence.
-        if ( step_mag < tol )
+        // Check for convergence. We converge when we step some small amount
+        // relative to the grid size.
+        if ( step_mag < (tol * sd.dx) * (tol * sd.dx) )
             break;
     }
 
@@ -118,7 +127,8 @@ double evaluate( const SignedDistanceView& phi_0,
 }
 
 //---------------------------------------------------------------------------//
-// Evaluate the Hopf-Lax formula multiple times to find a global minimizer.
+// Evaluate the Hopf-Lax formula multiple times to find a global minimizer for
+// the given secant iterate.
 template<class SignedDistanceView,
          class LocalMeshType,
          class SplineDataType,
@@ -136,7 +146,7 @@ double globalMin( const SignedDistanceView& phi_0,
                   SplineDataType& sd,
                   double y[3] )
 {
-    // Use project y_0 to the boundary as the first argmin evaluation.
+    // Project y_0 to the boundary as the first argmin evaluation.
     double y_trial[3] = { y[0], y[1], y[2] };
     projectToBallBoundary( x, t_k, y_trial );
     clampPointToLocalDomain( local_mesh, y_trial );
@@ -171,10 +181,12 @@ double globalMin( const SignedDistanceView& phi_0,
         mag = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
-            ray[d] = Kokkos::rand<RandState,double>::draw( rand_state, -1.0, 1.0 );
+            ray[d] = Kokkos::rand<RandState,double>::draw(
+                rand_state, -1.0, 1.0 );
             mag += ray[d]*ray[d];
         }
-        mag = Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 2.0*t_k ) / sqrt(mag);
+        mag = Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 2.0*t_k ) /
+              sqrt(mag);
         for ( int d = 0; d < 3; ++d )
         {
             y_trial[d] = x[d] + ray[d]*mag;
@@ -244,8 +256,8 @@ double redistanceEntity( EntityType,
     double sign = copysign( 1.0, phi_old );
     phi_old *= sign;
 
-    // First step is of size dx to get the iteration started.
-    double t_new = dx;
+    // First step is of size 2*dx to get the iteration started.
+    double t_new = 2.0*dx;
     double phi_new;
 
     // Initial argmin at the entity location. The ball radius starts at 0 so
@@ -257,6 +269,7 @@ double redistanceEntity( EntityType,
     double delta_t_max = 5.0 * dx;
 
     // Perform secant iterations to compute the signed distance.
+    double div_0_tol = 1.0e-5;
     for ( int i = 0; i < max_secant_iter; ++i )
     {
         // Find the global minimum on the current ball.
@@ -265,8 +278,9 @@ double redistanceEntity( EntityType,
                              num_random, rng, sd, y );
 
         // Update the secant step size. Check first to see if we divide by
-        // zero. If we don't then we haven't reached a minimum yet.
-        if ( fabs(phi_new-phi_old) > secant_tol )
+        // zero to within some tolerance. If we don't then we haven't reached
+        // a minimum yet.
+        if ( fabs(phi_new-phi_old) > div_0_tol )
         {
             delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
         }
@@ -275,9 +289,9 @@ double redistanceEntity( EntityType,
         else
         {
             // Check for a false local minimum. If phi isn't small enough to
-            // stop the iteration step one cell farther outward to see if we
-            // find a better minimum.
-            if ( fabs(phi_new) > secant_tol )
+            // stop the iteration step farther outward by one cell to see if
+            // we find a better minimum.
+            if ( fabs(phi_new) > secant_tol*dx )
             {
                 delta_t = (phi_new > 0.0) ? dx : -dx;
             }
@@ -289,7 +303,7 @@ double redistanceEntity( EntityType,
             }
         }
 
-        // Clamp the step size.
+        // // Clamp the step size.
         delta_t = fmin( delta_t_max, fmax(-delta_t_max,delta_t) );
 
         // Step.
@@ -298,8 +312,14 @@ double redistanceEntity( EntityType,
         phi_old = phi_new;
     }
 
-    // Return the distance.
-    return t_new * sign;
+    // Return the signed distance. Note here that the literature indicates we
+    // should just be able to return (sign * t_k) here as t_k is the
+    // distance. However, I found that the sign of t_k could switch at times
+    // and therefore this was unreliable, even though the correct location of
+    // the minimum, y, was found. This could still be due to robustness issues
+    // in the implementation but for now returning the explicit signed
+    // distance to the minimum location we found was more robust.
+    return sign * distance(x,y);
 }
 
 //---------------------------------------------------------------------------//

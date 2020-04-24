@@ -12,10 +12,10 @@
     },
     "particle_level_set": {
         "particle_radius": 0.5,
-        "redistance_secant_tol": 1.0e-6,
+        "redistance_secant_tol": 1.0e-8,
         "redistance_max_secant_iter": 25,
         "redistance_num_random_guess": 5,
-        "redistance_projection_tol": 1.0e-8,
+        "redistance_projection_tol": 1.0e-12,
         "redistance_max_projection_iter": 200
     }
 }
