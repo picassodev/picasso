@@ -1,15 +1,15 @@
 {
     "geometry": {
-        "stl_file": "zalesaks_disk.stl",
-        "global_bounding_volume_id": 3
+        "stl_file": "zalesaks_sphere.stl",
+        "global_bounding_volume_id": 4
     },
     "mesh": {
-        "global_num_cell": [100, 100, 25],
-        "periodic": [false, false, true],
+        "global_num_cell": [100, 100, 50],
+        "periodic": [false, false, false],
         "halo_cell_width": 10,
         "partitioner": {
             "type": "manual",
-            "ranks_per_dim": [1,1,1]
+            "ranks_per_dim": [4,4,1]
         }
     },
     "particle_level_set": {

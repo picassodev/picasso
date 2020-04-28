@@ -220,7 +220,8 @@ class FacetGeometry
                             "STL READER: Expected 3 solid line entries" );
 
                     // New volume.
-                    if ( tokens[1].compare("Volume") == 0 )
+                    if ( tokens[1].compare("Volume") == 0 ||
+                         tokens[1].compare("Body") == 0 )
                     {
                         volume_ids.push_back( std::atoi(tokens[2].c_str()) );
                         _volume_facet_count.push_back( 0 );
@@ -238,7 +239,7 @@ class FacetGeometry
                     else
                     {
                         throw std::runtime_error(
-                            "STL READER: Solids execpted to be Volume or Surface" );
+                            "STL READER: Solids execpted to be Volume/Body or Surface" );
                     }
                 }
 

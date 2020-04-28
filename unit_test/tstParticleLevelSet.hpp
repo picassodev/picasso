@@ -44,14 +44,14 @@ struct LocateFunctor
 };
 
 //---------------------------------------------------------------------------//
-void zalesaksDiskTest()
+void zalesaksTest( const std::string& filename )
 {
     // Get the communicator rank.
     int comm_rank;
     MPI_Comm_rank( MPI_COMM_WORLD, &comm_rank );
 
     // Get inputs.
-    InputParser parser( "particle_level_set_zalesaks_disk.json", "json" );
+    InputParser parser( filename, "json" );
 
     // Get the geometry.
     FacetGeometry<TEST_MEMSPACE> geometry(
@@ -184,9 +184,14 @@ void zalesaksDiskTest()
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, zalesaks_disk_test )
+// TEST( TEST_CATEGORY, zalesaks_disk_test )
+// {
+//     zalesaksTest( "particle_level_set_zalesaks_disk.json" );
+// }
+
+TEST( TEST_CATEGORY, zalesaks_sphere_test )
 {
-    zalesaksDiskTest();
+    zalesaksTest( "particle_level_set_zalesaks_sphere.json" );
 }
 
 //---------------------------------------------------------------------------//
