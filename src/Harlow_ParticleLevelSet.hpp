@@ -201,7 +201,7 @@ class ParticleLevelSet
 
         // Particles have an analytic spherical level set. Get the radius as a
         // fraction of the cell size.
-        _dx = mesh.localGrid()->globalGrid().globalMesh().uniformCellSize();
+        _dx = mesh.localGrid()->globalGrid().globalMesh().cellSize(0);
         _radius = _dx * params.get<double>("particle_radius",0.5);
 
         // Get the Hopf-Lax redistancing parameters.
@@ -231,9 +231,16 @@ class ParticleLevelSet
             Kokkos::ViewAllocateWithoutInitializing("color_indices"),
             c_p.size() );
 
+        // If we dont have any particles on this rank we have nothing to do.
+        if ( 0 == c_p.size() )
+        {
+            _color_count = 0;
+            return;
+        }
+
         // If the color is not negative then count how many particles have the
         // color we want and compute the indices.
-        if ( _color >= 0 )
+        else if ( _color >= 0 )
         {
             _color_count = 0;
             Kokkos::parallel_for(
@@ -247,6 +254,7 @@ class ParticleLevelSet
                     }
                 });
         }
+
         // Otherwise a negative color means all particles are included in the
         // level set so we can more efficiently generate the array.
         else
@@ -266,46 +274,68 @@ class ParticleLevelSet
     template<class ExecutionSpace>
     void updateSignedDistance( const ExecutionSpace& exec_space )
     {
-        using device_type = Kokkos::Device<ExecutionSpace,memory_space>;
+        // View of the distance estimate.
+        auto estimate_view = _distance_estimate->view();
 
-        // Build a tree from the particles of the given color.
-        auto x_p = _particles->slice( Field::LogicalPosition() );
-        ParticleLevelSetPrimitiveData<decltype(x_p)> primitive_data;
-        primitive_data.x = x_p;
-        primitive_data.c = _color_indices;
-        primitive_data.num_color = _color_count;
-        ArborX::BVH<device_type> bvh( primitive_data );
-
-        // Make the search predicates.
+        // Local mesh.
         auto local_mesh = Cajita::createLocalMesh<memory_space>(
             *(_particles->mesh().localGrid()) );
-        ParticleLevelSetPredicateData<decltype(local_mesh),entity_type>
-            predicate_data( local_mesh, *(_particles->mesh().localGrid()) );
 
-        // Make the distance callback.
-        auto estimate_view = _distance_estimate->view();
-        ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
-        distance_callback.distance_estimate = estimate_view;
-        distance_callback.radius = static_cast<float>(_radius);
-        distance_callback.dx = static_cast<float>(_dx);
+        // If we have no particles of the given color on this rank then we are
+        // in a region of positive distance. Estimate the signed distance
+        // everywhere to be the minimum halo width as this is the minimum
+        // distance to a particle surface we could have resolved that wouldn't
+        // show up in the min-reduce operation.
+        if ( 0 == _color_count )
+        {
+            double min_dist =
+                _dx * _particles->mesh().localGrid()->haloCellWidth();
+            Cajita::ArrayOp::assign(
+                *_distance_estimate, min_dist, Cajita::Ghost() );
+        }
 
-        // Query the particle tree with the mesh entities to find the closest
-        // particle and compute the initial signed distance estimate. Dummy
-        // arguments are needed even though we don't care about the output.
-        Kokkos::View<int *, device_type> indices(
-            Kokkos::view_alloc( "indices", Kokkos::WithoutInitializing ), 0 );
-        Kokkos::View<int *, device_type> offset(
-            Kokkos::view_alloc( "offset", Kokkos::WithoutInitializing ), 0 );
-        bvh.query( predicate_data, distance_callback, indices, offset );
+        // Otherwise we have particles so build a tree from the particles of
+        // the given color and estimate the distance.
+        else
+        {
+            // Build the tree
+            auto x_p = _particles->slice( Field::LogicalPosition() );
+            ParticleLevelSetPrimitiveData<decltype(x_p)> primitive_data;
+            primitive_data.x = x_p;
+            primitive_data.c = _color_indices;
+            primitive_data.num_color = _color_count;
+            using device_type = Kokkos::Device<ExecutionSpace,memory_space>;
+            ArborX::BVH<device_type> bvh( primitive_data );
+
+            // Make the search predicates.
+            ParticleLevelSetPredicateData<decltype(local_mesh),entity_type>
+                predicate_data( local_mesh, *(_particles->mesh().localGrid()) );
+
+            // Make the distance callback.
+            ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
+            distance_callback.distance_estimate = estimate_view;
+            distance_callback.radius = static_cast<float>(_radius);
+            distance_callback.dx = static_cast<float>(_dx);
+
+            // Query the particle tree with the mesh entities to find the closest
+            // particle and compute the initial signed distance estimate. Dummy
+            // arguments are needed even though we don't care about the output.
+            Kokkos::View<int *, device_type> indices(
+                Kokkos::view_alloc( "indices", Kokkos::WithoutInitializing ), 0 );
+            Kokkos::View<int *, device_type> offset(
+                Kokkos::view_alloc( "offset", Kokkos::WithoutInitializing ), 0 );
+            bvh.query( predicate_data, distance_callback, indices, offset );
+        }
 
         // Do a reduction to get the global minimum.
-//        _halo->scatter( *_distance_estimate, Cajita::ReduceMin() );
+        _halo->scatter( *_distance_estimate, Cajita::ScatterReduce::Min() );
 
         // Gather to get updated ghost values.
         _halo->gather( *_distance_estimate );
 
-        // The positive values are correct but the negative values are
-        // wrong. Correct the negative values with redistancing.
+        // The positive values are correct (at least on those ranks with
+        // particles) but the negative values are wrong. Correct the negative
+        // values with redistancing.
         auto distance_view = _signed_distance->view();
         auto own_entities = _particles->mesh().localGrid()->indexSpace(
             Cajita::Own(), entity_type(), Cajita::Local() );

@@ -98,7 +98,7 @@ double evaluate( const SignedDistanceView& phi_0,
         Cajita::evaluateSpline( local_mesh, y, sd );
         Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
-            y_j[d] = y[d] - sign * sd.dx * grad_phi_0[d];
+            y_j[d] = y[d] - sign * sd.dx[0] * grad_phi_0[d];
 
         // Project the estimate to the ball.
         projectToBall( x, t_k, y_j );
@@ -114,7 +114,7 @@ double evaluate( const SignedDistanceView& phi_0,
 
         // Check for convergence. We converge when we step some small amount
         // relative to the grid size.
-        if ( step_mag < (tol * sd.dx) * (tol * sd.dx) )
+        if ( step_mag < (tol * sd.dx[0]) * (tol * sd.dx[0]) )
             break;
     }
 
@@ -317,9 +317,10 @@ double redistanceEntity( EntityType,
     // distance. However, I found that the sign of t_k could switch at times
     // and therefore this was unreliable, even though the correct location of
     // the minimum, y, was found. This could be due to the fact that we have
-    // no good estimate for the signed distance when it is negative - we just
-    // know that it is negative. So for now returning the explicit signed
-    // distance to the minimum location was found to be more robust.
+    // no good estimate for the magnitude of the signed distance when it is
+    // negative - we just know that it is negative. So for now returning the
+    // explicit signed distance to the minimum location was found to be more
+    // robust.
     return sign * distance(x,y);
 }
 

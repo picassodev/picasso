@@ -437,14 +437,16 @@ class ParticleList
             _aosoa, FieldTag::label() );
     }
 
-    // Redistribute particles to new owning grids.
-    void redistribute( const int minimum_halo_width )
+    // Redistribute particles to new owning grids. Return true if the
+    // particles were actually redistributed.
+    bool redistribute( const bool force_redistribute = false )
     {
-        ParticleCommunication::redistribute(
+        return ParticleCommunication::redistribute(
             *(_mesh->localGrid()),
-            minimum_halo_width,
+            _mesh->minimumHaloWidth(),
             this->slice(Field::LogicalPosition()),
-            _aosoa );
+            _aosoa,
+            force_redistribute );
     }
 
   private:
