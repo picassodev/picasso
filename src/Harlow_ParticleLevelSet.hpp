@@ -327,7 +327,8 @@ class ParticleLevelSet
             bvh.query( predicate_data, distance_callback, indices, offset );
         }
 
-        // Do a reduction to get the global minimum.
+        // Do a reduction to get the minimum distance within the minimum halo
+        // width.
         _halo->scatter( *_distance_estimate, Cajita::ScatterReduce::Min() );
 
         // Gather to get updated ghost values.
@@ -343,6 +344,8 @@ class ParticleLevelSet
             "redistance",
             Cajita::createExecutionPolicy(own_entities,exec_space),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
+
+                // Redistance the value if it is negative
                 if ( estimate_view(i,j,k,0) < 0.0 )
                 {
                     int entity_index[3] = {i,j,k};
@@ -358,10 +361,16 @@ class ParticleLevelSet
                             _redistance_projection_tol,
                             _redistance_max_projection_iter );
                 }
+
+                // Otherwise just assign it if positive.
                 else
                 {
                     distance_view(i,j,k,0) = estimate_view(i,j,k,0);
                 }
+
+                // Subtract the radius to get the true distance to the
+                // zero-isocontour on the outer-most particles.
+                distance_view(i,j,k,0) -= _radius;
             });
     }
 
