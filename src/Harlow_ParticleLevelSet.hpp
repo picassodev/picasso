@@ -74,7 +74,6 @@ struct ParticleLevelSetCallback
 {
     DistanceEstimateView distance_estimate;
     float radius;
-    float dx;
     using tag = ArborX::Details::InlineCallbackTag;
     template <typename Predicate, typename OutputFunctor>
     KOKKOS_FUNCTION void operator()(Predicate const &predicate,
@@ -88,12 +87,15 @@ struct ParticleLevelSetCallback
         // Compute the distance from the grid entity to the particle sphere.
         auto estimate = distance - radius;
 
-        // If a distance is negative we are going to correct it so clamp all
-        // negative distances to the cell size. This will allow for the
-        // projected iterations to converge quickly when the entire region in
-        // the ball is negative as we will need to extend the ball anyway.
+        // If a distance is negative we are going to correct via redistancing
+        // it so clamp all negative distances to the radius because it can't
+        // be farther away than that if it is inside the spehere. This will
+        // allow for the projected gradient iterations in the redistancing
+        // algorithm to converge quickly when the entire region in the ball is
+        // negative as we will need to extend the ball anyway to find the zero
+        // isocontour.
         distance_estimate( ijk.i, ijk.j, ijk.k, 0 ) =
-            ( estimate > 0.0 ) ? estimate : -dx;
+            ( estimate >= 0.0 ) ? estimate : -radius;
     }
 };
 
@@ -156,7 +158,7 @@ struct Access<PredicateData,PredicatesTag>
     }
 };
 
-} // end namespace Traits
+5B5B} // end namespace Traits
 } // end namespace ArborX
 
 //---------------------------------------------------------------------------//
@@ -315,7 +317,6 @@ class ParticleLevelSet
             ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
             distance_callback.distance_estimate = estimate_view;
             distance_callback.radius = static_cast<float>(_radius);
-            distance_callback.dx = static_cast<float>(_dx);
 
             // Query the particle tree with the mesh entities to find the closest
             // particle and compute the initial signed distance estimate. Dummy
