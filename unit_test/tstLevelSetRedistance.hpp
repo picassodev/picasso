@@ -116,12 +116,16 @@ void signedDistanceTest( const InitFunc& init_func,
 //     signedDistanceTest( init_func, 10, 4, 200, "square" );
 // }
 
-TEST( TEST_CATEGORY, sine_test )
+KOKKOS_INLINE_FUNCTION
+double sine_func( const double x[3] )
 {
     double pi = 4.0 * atan(1.0);
-    auto init_func = KOKKOS_LAMBDA( const double x[3] ){
-        return sin(4.0 * pi * x[0]) * sin(4.0 * pi * x[1]) - 0.01; };
-    signedDistanceTest( init_func, 10, 5, 200, "sine" );
+    return sin(4.0 * pi * x[0]) * sin(4.0 * pi * x[1]) - 0.01;
+}
+
+TEST( TEST_CATEGORY, sine_test )
+{
+    signedDistanceTest( sine_func, 10, 5, 200, "sine" );
 }
 
 //---------------------------------------------------------------------------//

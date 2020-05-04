@@ -158,7 +158,7 @@ struct Access<PredicateData,PredicatesTag>
     }
 };
 
-5B5B} // end namespace Traits
+} // end namespace Traits
 } // end namespace ArborX
 
 //---------------------------------------------------------------------------//
