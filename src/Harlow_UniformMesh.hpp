@@ -42,7 +42,7 @@ class UniformMesh
         // Get the global number of cells in each direction and the cell
         // size.
         std::array<int,3> global_num_cell;
-        double cell_size;
+        double cell_size = 0.0;
         if ( mesh_params.count("cell_size") )
         {
             cell_size = mesh_params.get<double>("cell_size");
@@ -69,6 +69,10 @@ class UniformMesh
             cell_size =
                 (global_bounding_box[3] - global_bounding_box[0]) /
                 global_num_cell[0];
+        }
+        else
+        {
+            throw std::runtime_error("Invalid uniform mesh size parameters");
         }
 
         // Because the mesh is uniform check that the domain is evenly

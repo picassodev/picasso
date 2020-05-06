@@ -1,9 +1,0 @@
-{
-    "mesh": {
-        "global_num_cell": [512, 512, 1],
-        "periodic": [false, false, false],
-        "partitioner": {
-            "type": "uniform_dim"
-        }
-    }
-}

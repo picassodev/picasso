@@ -337,7 +337,6 @@ struct Particle
     using tuple_type = Cabana::Tuple<typename traits::member_types>;
 
     // Default constructor.
-    KOKKOS_FORCEINLINE_FUNCTION
     Particle() = default;
 
     // Tuple wrapper constructor.
