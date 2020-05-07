@@ -15,6 +15,10 @@
 #include <cmath>
 
 //---------------------------------------------------------------------------//
+// ArborX Data
+//---------------------------------------------------------------------------//
+// Search primitives. We build the tree from particles of the color we want
+// the level set for.
 namespace Harlow
 {
 template<class CoordinateSlice>
@@ -27,6 +31,8 @@ struct ParticleLevelSetPrimitiveData
     int num_color;
 };
 
+// Predicate index - store the the 3d index of the mesh entity we are going to
+// search the tree with.
 template<class IndexType>
 struct ParticleLevelSetPredicateIndex
 {
@@ -36,6 +42,8 @@ struct ParticleLevelSetPredicateIndex
     size_type k;
 };
 
+// Search predicates. We search the tree with the mesh entities on which we
+// want to build the level set.
 template<class LocalMesh, class EntityType>
 struct ParticleLevelSetPredicateData
 {
@@ -69,6 +77,10 @@ struct ParticleLevelSetPredicateData
     }
 };
 
+//---------------------------------------------------------------------------//
+// Query callback. When the query occurs we store the distance to the closest
+// point. We don't use the tree graph so we don't insert anything into the
+// graph.
 template<class DistanceEstimateView>
 struct ParticleLevelSetCallback
 {
@@ -102,10 +114,14 @@ struct ParticleLevelSetCallback
 } // end namespace Harlow
 
 //---------------------------------------------------------------------------//
+// ArborX traits.
 namespace ArborX
 {
 namespace Traits
 {
+
+// Create the primitives we build the tree from. These are the particle
+// coordinates of the color we build the level set for.
 template<class PrimitiveData>
 struct Access<PrimitiveData,PrimitivesTag>
 {
@@ -127,6 +143,8 @@ struct Access<PrimitiveData,PrimitivesTag>
     }
 };
 
+// Create the predicates we search the tree with. These are the mesh entities
+// on which we build the level set.
 template<class PredicateData>
 struct Access<PredicateData,PredicatesTag>
 {
@@ -165,6 +183,8 @@ struct Access<PredicateData,PredicatesTag>
 namespace Harlow
 {
 //---------------------------------------------------------------------------//
+// Particle level set. Composes a signed distance function for particles of a
+// given color.
 template<class ParticleListType, class SignedDistanceLocation>
 class ParticleLevelSet
 {

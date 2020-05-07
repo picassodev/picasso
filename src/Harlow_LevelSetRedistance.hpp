@@ -232,6 +232,12 @@ double globalMin( const SignedDistanceView& phi_0,
 //---------------------------------------------------------------------------//
 // Redistance a signed distance function at a single entity with the Hopf-Lax
 // method.
+//
+// NOTE - this implementation is specifically implimented for uniform grids
+// with Cubic cells. For adaptive grids that should be fine as we can map from
+// the distance function from the natural system to the reference system. For
+// uniform grids with general distances in each cell dimension, we will need
+// some small adjustments. Particularly to how we use dx in different places.
 template<class EntityType,
          class SignedDistanceView,
          class LocalMeshType>
