@@ -34,6 +34,7 @@ class UniformMesh
                  const Kokkos::Array<double,6>& global_bounding_box,
                  const int minimum_halo_cell_width,
                  MPI_Comm comm )
+        : _minimum_halo_width( minimum_halo_cell_width )
     {
         // Get the mesh parameters.
         const auto& mesh_params = ptree.get_child("mesh");
@@ -41,7 +42,7 @@ class UniformMesh
         // Get the global number of cells in each direction and the cell
         // size.
         std::array<int,3> global_num_cell;
-        double cell_size;
+        double cell_size = 0.0;
         if ( mesh_params.count("cell_size") )
         {
             cell_size = mesh_params.get<double>("cell_size");
@@ -68,6 +69,10 @@ class UniformMesh
             cell_size =
                 (global_bounding_box[3] - global_bounding_box[0]) /
                 global_num_cell[0];
+        }
+        else
+        {
+            throw std::runtime_error("Invalid uniform mesh size parameters");
         }
 
         // Because the mesh is uniform check that the domain is evenly
@@ -113,9 +118,9 @@ class UniformMesh
         {
             if ( !periodic[d] )
             {
-                global_num_cell[d] += 2*minimum_halo_cell_width;
-                global_low_corner[d] -= cell_size*minimum_halo_cell_width;
-                global_high_corner[d] += cell_size*minimum_halo_cell_width;
+                global_num_cell[d] += 2*_minimum_halo_width;
+                global_low_corner[d] -= cell_size*_minimum_halo_width;
+                global_high_corner[d] += cell_size*_minimum_halo_width;
             }
         }
 
@@ -157,11 +162,17 @@ class UniformMesh
         // Get the halo cell width. If the user does not assign one then it is
         // assumed the minimum halo cell width will be used.
         auto halo_cell_width = std::max(
-            minimum_halo_cell_width,
+            _minimum_halo_width,
             mesh_params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
+    }
+
+    // Get the minimum required numober of cells in the halo.
+    int minimumHaloWidth() const
+    {
+        return _minimum_halo_width;
     }
 
     // Get the local grid.
@@ -173,11 +184,12 @@ class UniformMesh
     // Get the cell size.
     double cellSize() const
     {
-        return _local_grid->globalGrid().globalMesh().uniformCellSize();
+        return _local_grid->globalGrid().globalMesh().cellSize(0);
     }
 
   public:
 
+    int _minimum_halo_width;
     std::shared_ptr<local_grid> _local_grid;
 };
 

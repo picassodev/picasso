@@ -52,6 +52,22 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/facet_init_example.json
   ${CMAKE_CURRENT_BINARY_DIR}/facet_init_example.json
   COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/particle_level_set_zalesaks_disk.json
+  ${CMAKE_CURRENT_BINARY_DIR}/particle_level_set_zalesaks_disk.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/zalesaks_disk.stl
+  ${CMAKE_CURRENT_BINARY_DIR}/zalesaks_disk.stl
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/particle_level_set_zalesaks_sphere.json
+  ${CMAKE_CURRENT_BINARY_DIR}/particle_level_set_zalesaks_sphere.json
+  COPYONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/zalesaks_sphere.stl
+  ${CMAKE_CURRENT_BINARY_DIR}/zalesaks_sphere.stl
+  COPYONLY)
 
 ##--------------------------------------------------------------------------##
 ## General tests.
@@ -129,4 +145,5 @@ Harlow_add_tests(MPI NAMES
   SiloParticleWriter
   UniformMesh
   AdaptiveMesh
-  FieldManager)
+  FieldManager
+  ParticleLevelSet)

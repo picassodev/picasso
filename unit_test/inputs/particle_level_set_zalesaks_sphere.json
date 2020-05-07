@@ -1,0 +1,23 @@
+{
+    "geometry": {
+        "stl_file": "zalesaks_sphere.stl",
+        "global_bounding_volume_id": 4
+    },
+    "mesh": {
+        "global_num_cell": [100, 100, 50],
+        "periodic": [false, false, false],
+        "halo_cell_width": 10,
+        "partitioner": {
+            "type": "manual",
+            "ranks_per_dim": [4,4,1]
+        }
+    },
+    "particle_level_set": {
+        "particle_radius": 0.4,
+        "redistance_secant_tol": 0.1,
+        "redistance_max_secant_iter": 100,
+        "redistance_num_random_guess": 10,
+        "redistance_projection_tol": 0.1,
+        "redistance_max_projection_iter": 200
+    }
+}

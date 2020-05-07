@@ -8,8 +8,10 @@ set(HEADERS
   Harlow_FieldManager.hpp
   Harlow_FieldTypes.hpp
   Harlow_InputParser.hpp
+  Harlow_LevelSetRedistance.hpp
   Harlow_ParticleCommunication.hpp
   Harlow_ParticleInit.hpp
+  Harlow_ParticleLevelSet.hpp
   Harlow_ParticleList.hpp
   Harlow_PolyPIC.hpp
   Harlow_SiloParticleWriter.hpp
@@ -32,6 +34,7 @@ target_link_libraries(harlow
   Cabana::cabanacore
   Cajita::Cajita
   Silo::silo
+  ArborX::ArborX
   Boost::boost )
 
 target_include_directories(harlow

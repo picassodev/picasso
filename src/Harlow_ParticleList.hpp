@@ -337,7 +337,6 @@ struct Particle
     using tuple_type = Cabana::Tuple<typename traits::member_types>;
 
     // Default constructor.
-    KOKKOS_FORCEINLINE_FUNCTION
     Particle() = default;
 
     // Tuple wrapper constructor.
@@ -437,28 +436,16 @@ class ParticleList
             _aosoa, FieldTag::label() );
     }
 
-    // Redistribute particles to new owning grids.
-    void redistribute( const int minimum_halo_width )
+    // Redistribute particles to new owning grids. Return true if the
+    // particles were actually redistributed.
+    bool redistribute( const bool force_redistribute = false )
     {
-        // Particles move in logical coordinates in adaptive meshes.
-        if ( is_adaptive_mesh<Mesh>::value )
-        {
-            ParticleCommunication::redistribute(
-                *(_mesh->localGrid()),
-                minimum_halo_width,
-                this->slice(Field::LogicalPosition()),
-                _aosoa );
-        }
-
-        // Particles move in physical coordinates in uniform meshes.
-        else if ( is_uniform_mesh<Mesh>::value )
-        {
-            ParticleCommunication::redistribute(
-                _mesh->localGrid(),
-                minimum_halo_width,
-                this->slice(Field::PhysicalPosition()),
-                _aosoa );
-        }
+        return ParticleCommunication::redistribute(
+            *(_mesh->localGrid()),
+            _mesh->minimumHaloWidth(),
+            this->slice(Field::LogicalPosition()),
+            _aosoa,
+            force_redistribute );
     }
 
   private:
@@ -466,6 +453,17 @@ class ParticleList
     aosoa_type _aosoa;
     std::shared_ptr<Mesh> _mesh;
 };
+
+//---------------------------------------------------------------------------//
+// Creation function.
+template<class Mesh, class ... FieldTags>
+std::shared_ptr<ParticleList<Mesh,FieldTags...>>
+createParticleList( const std::string& label,
+                    const std::shared_ptr<Mesh>& mesh,
+                    ParticleTraits<FieldTags...> )
+{
+    return std::make_shared<ParticleList<Mesh,FieldTags...>>( label, mesh );
+}
 
 //---------------------------------------------------------------------------//
 

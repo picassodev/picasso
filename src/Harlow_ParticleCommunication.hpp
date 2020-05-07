@@ -34,7 +34,7 @@ int communicationCount( const LocalGridType& local_grid,
     // Locate the particles in the local mesh and count how many have left the
     // halo region.
     auto local_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>( local_grid );
-    auto dx = local_grid.globalGrid().globalMesh().uniformCellSize();
+    auto dx = local_grid.globalGrid().globalMesh().cellSize(0);
     const Kokkos::Array<double,3> local_low =
         { local_mesh.lowCorner(Cajita::Ghost(),Dim::I) + minimum_halo_width*dx,
           local_mesh.lowCorner(Cajita::Ghost(),Dim::J) + minimum_halo_width*dx,
@@ -159,9 +159,11 @@ void prepareCommunication(
 
   \param force_communication If true communication will always occur even if
   particles have not exited the halo.
+
+  \return Return true if redistribution was performed.
  */
 template<class LocalGridType, class ParticleContainer, class Coordinates>
-void redistribute( const LocalGridType& local_grid,
+bool redistribute( const LocalGridType& local_grid,
                    const int minimum_halo_width,
                    const Coordinates& coords,
                    ParticleContainer& particles,
@@ -179,7 +181,7 @@ void redistribute( const LocalGridType& local_grid,
 
         // If we have no particle communication to do then exit.
         if ( 0 == comm_count )
-            return;
+            return false;
     }
 
     // Of the 27 potential local grids figure out which are in our topology. Some
@@ -216,6 +218,9 @@ void redistribute( const LocalGridType& local_grid,
 
     // Redistribute the particles.
     Cabana::migrate( distributor, particles );
+
+    // Return true for redistribution.
+    return true;
 }
 
 //---------------------------------------------------------------------------//

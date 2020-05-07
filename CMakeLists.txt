@@ -27,6 +27,7 @@ find_package(Kokkos 3 REQUIRED)
 find_package(Cabana REQUIRED)
 find_package(Cajita REQUIRED)
 find_package(Silo REQUIRED)
+find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 
 # enable testing

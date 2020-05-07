@@ -28,7 +28,7 @@ void sliceTest()
 
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition,
+                                   Field::LogicalPosition,
                                    Field::Mass,
                                    Field::Color,
                                    Field::DeformationGradient>;
@@ -42,7 +42,7 @@ void sliceTest()
     EXPECT_EQ( particles.aosoa().size(), 10 );
 
     // Populate fields.
-    auto px = particles.slice( Field::PhysicalPosition() );
+    auto px = particles.slice( Field::LogicalPosition() );
     auto pm = particles.slice( Field::Mass() );
     auto pc = particles.slice( Field::Color() );
     auto pf = particles.slice( Field::DeformationGradient() );
@@ -53,7 +53,7 @@ void sliceTest()
     Cabana::deep_copy( pf, -1.2 );
 
     // Check the slices.
-    EXPECT_EQ( px.label(), "physical_position" );
+    EXPECT_EQ( px.label(), "logical_position" );
     EXPECT_EQ( pm.label(), "mass" );
     EXPECT_EQ( pc.label(), "color" );
     EXPECT_EQ( pf.label(), "deformation_gradient" );
@@ -66,7 +66,7 @@ void sliceTest()
 
         // Check the deep copy.
         for ( int d = 0; d < 3; ++d )
-            EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::PhysicalPosition(),d), 1.23 );
+            EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::LogicalPosition(),d), 1.23 );
 
         EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::Mass()), 3.3 );
 
@@ -78,7 +78,7 @@ void sliceTest()
 
         // Locally modify.
         for ( int d = 0; d < 3; ++d )
-            ParticleAccess::get(particle,Field::PhysicalPosition(),d) += 1.0;
+            ParticleAccess::get(particle,Field::LogicalPosition(),d) += 1.0;
 
         ParticleAccess::get(particle,Field::Mass()) += 1.0;
 
@@ -90,7 +90,7 @@ void sliceTest()
 
         // Check the modification.
         for ( int d = 0; d < 3; ++d )
-            EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::PhysicalPosition(),d), 2.23 );
+            EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::LogicalPosition(),d), 2.23 );
 
         EXPECT_DOUBLE_EQ( ParticleAccess::get(particle,Field::Mass()), 4.3 );
 

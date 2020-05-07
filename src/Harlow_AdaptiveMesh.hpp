@@ -38,6 +38,7 @@ class AdaptiveMesh
                   const int minimum_halo_cell_width,
                   MPI_Comm comm,
                   const ExecutionSpace& exec_space )
+        : _minimum_halo_width( minimum_halo_cell_width )
     {
         // Get the mesh parameters.
         const auto& mesh_params = ptree.get_child("mesh");
@@ -110,10 +111,10 @@ class AdaptiveMesh
         {
             if ( !periodic[d] )
             {
-                global_num_cell[d] += 2*minimum_halo_cell_width;
-                global_low_corner[d] -= minimum_halo_cell_width;
-                global_high_corner[d] += minimum_halo_cell_width;
-                physical_low_corner[d] -= cell_size[d]*minimum_halo_cell_width;
+                global_num_cell[d] += 2*_minimum_halo_width;
+                global_low_corner[d] -= _minimum_halo_width;
+                global_high_corner[d] += _minimum_halo_width;
+                physical_low_corner[d] -= cell_size[d]*_minimum_halo_width;
             }
         }
 
@@ -155,7 +156,7 @@ class AdaptiveMesh
         // Get the halo cell width. If the user does not assign one then it is
         // assumed the minimum halo cell width will be used.
         auto halo_cell_width = std::max(
-            minimum_halo_cell_width,
+            _minimum_halo_width,
             mesh_params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
@@ -164,6 +165,12 @@ class AdaptiveMesh
 
         // Create the nodes.
         buildNodes( physical_low_corner, cell_size, exec_space );
+    }
+
+    // Get the minimum required numober of cells in the halo.
+    int minimumHaloWidth() const
+    {
+        return _minimum_halo_width;
     }
 
     // Get the local grid.
@@ -212,6 +219,7 @@ class AdaptiveMesh
 
   public:
 
+    int _minimum_halo_width;
     std::shared_ptr<local_grid> _local_grid;
     std::shared_ptr<node_array> _nodes;
 };
