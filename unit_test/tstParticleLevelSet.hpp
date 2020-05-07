@@ -111,7 +111,7 @@ void zalesaksTest( const std::string& filename )
 
     // Advect the disk one full rotation.
     double pi = 4.0 * atan(1.0);
-    int num_step = 628;
+    int num_step = 1; // change to 628 to go one revolution.
     double delta_phi = 2.0 * pi / num_step;
     for ( int t = 0; t < num_step; ++t )
     {
@@ -189,10 +189,10 @@ void zalesaksTest( const std::string& filename )
 //     zalesaksTest( "particle_level_set_zalesaks_disk.json" );
 // }
 
-TEST( TEST_CATEGORY, zalesaks_sphere_test )
-{
-    zalesaksTest( "particle_level_set_zalesaks_sphere.json" );
-}
+// TEST( TEST_CATEGORY, zalesaks_sphere_test )
+// {
+//     zalesaksTest( "particle_level_set_zalesaks_sphere.json" );
+// }
 
 //---------------------------------------------------------------------------//
 
