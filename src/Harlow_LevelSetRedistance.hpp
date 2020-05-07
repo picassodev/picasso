@@ -15,13 +15,23 @@ namespace Harlow
 namespace LevelSet
 {
 //---------------------------------------------------------------------------//
-// Distance between two points.
+// Distance between two points. Return the scalar distance.
 KOKKOS_INLINE_FUNCTION
 double distance( const double x[3], const double y[3] )
 {
     return sqrt( (x[0]-y[0])*(x[0]-y[0]) +
                  (x[1]-y[1])*(x[1]-y[1]) +
                  (x[2]-y[2])*(x[2]-y[2]) );
+}
+
+//---------------------------------------------------------------------------//
+// Distance between two points. Return the distance vector as well.
+KOKKOS_INLINE_FUNCTION
+double distance( const double x[3], const double y[3], double z[3] )
+{
+    for ( int d = 0; d < 3; ++d )
+        z[d] = x[d] - y[d];
+    return sqrt( z[0]*z[0] + z[1]*z[1] + z[2]*z[2] );
 }
 
 //---------------------------------------------------------------------------//
@@ -45,13 +55,14 @@ void projectToBall( const double x[3],
                     double y[3] )
 {
     // Compute the dist from the node to the argument on the ball.
-    double dist = distance(x,y);
+    double z[3];
+    double dist = distance(x,y,z);
 
     // Check the dist against the current secant root and project to the
     // boundary if outside the ball.
     if ( dist > t_k )
         for ( int d = 0; d < 3; ++ d )
-            y[d] = x[d] - t_k * (x[d] - y[d]) / dist;
+            y[d] = x[d] - t_k * z[d] / dist;
 }
 
 //---------------------------------------------------------------------------//
@@ -62,12 +73,13 @@ void projectToBallBoundary( const double x[3],
                             double y[3] )
 {
     // Compute the distance from the node to the argument on the ball.
-    double dist = distance(x,y);
+    double z[3];
+    double dist = distance(x,y,z);
 
     // Project to the boundary.
     if ( dist > 0.0 )
         for ( int d = 0; d < 3; ++ d )
-            y[d] = x[d] - t_k * (x[d] - y[d]) / dist;
+            y[d] = x[d] - t_k * z[d] / dist;
 }
 
 //---------------------------------------------------------------------------//
@@ -86,6 +98,11 @@ double evaluate( const SignedDistanceView& phi_0,
                  SplineDataType& sd,
                  double y[3] )
 {
+    // Get the cell size. We assume a uniform cell size in this implementation.
+    Cajita::evaluateSpline( local_mesh, y, sd );
+    double sign_dx = sign * sd.dx[0];
+    double conv_tol = (tol * sd.dx[0]) * (tol * sd.dx[0]);
+
     // Perform gradient projections to get the minimum argument on the ball.
     double grad_phi_0[3];
     double y_j[3];
@@ -98,7 +115,7 @@ double evaluate( const SignedDistanceView& phi_0,
         Cajita::evaluateSpline( local_mesh, y, sd );
         Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
-            y_j[d] = y[d] - sign * sd.dx[0] * grad_phi_0[d];
+            y_j[d] = y[d] - sign_dx * grad_phi_0[d];
 
         // Project the estimate to the ball.
         projectToBall( x, t_k, y_j );
@@ -114,7 +131,7 @@ double evaluate( const SignedDistanceView& phi_0,
 
         // Check for convergence. We converge when we step some small amount
         // relative to the grid size.
-        if ( step_mag < (tol * sd.dx[0]) * (tol * sd.dx[0]) )
+        if ( step_mag < conv_tol )
             break;
     }
 
