@@ -65,6 +65,11 @@ struct Velocity : public Vector<double,3>
     static std::string label() { return "velocity"; };
 };
 
+struct Acceleration : public Vector<double,3>
+{
+    static std::string label() { return "acceleration"; };
+};
+
 struct AffineVelocity : public Tensor<double,3,3>
 {
     static std::string label() { return "affine_velocity"; };
