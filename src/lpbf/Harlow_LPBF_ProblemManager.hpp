@@ -1,0 +1,222 @@
+#ifndef HARLOW_LPBF_PROBLEMMANAGER_HPP
+#define HARLOW_LPBF_PROBLEMMANAGER_HPP
+
+#include <Harlow_LPBF_LaserSource.hpp>
+
+#include <Harlow_ParticleList.hpp>
+#include <Harlow_UniformMesh.hpp>
+#include <Harlow_FieldManager.hpp>
+#include <Harlow_ParticleLevelSet.hpp>
+#include <Harlow_FacetGeometry.hpp>
+#include <Harlow_ParticleInit.hpp>
+#include <Harlow_SiloParticleWriter.hpp>
+
+#include <Kokkos_Core.hpp>
+
+#include <boost/property_tree/ptree.hpp>
+
+#include <memory>
+
+namespace Harlow
+{
+namespace LPBF
+{
+//---------------------------------------------------------------------------//
+template<class MemorySpace>
+class ProblemManager
+{
+  public:
+
+    // Memory space.
+    using memory_space = MemorySpace;
+
+    // Mesh type.
+    using mesh_type = UniformMesh<memory_space>;
+
+    // Particle list.
+    using particle_list = ParticleList<mesh_type,
+                                       Field::LogicalPosition,
+                                       Field::Mass,
+                                       Field::Volume,
+                                       Field::InternalEnergy,
+                                       Field::Color>;
+
+    // Particle type
+    using particle_type = typename particle_list::particle_type;
+
+    // Field manager.
+    using field_manager = FieldManager<mesh_type>;
+
+    // Level set.
+    using level_set = ParticleLevelSet<particle_list,FieldLocation::Node>;
+
+  public:
+
+    // Constructor.
+    template<class ExecutionSpace>
+    ProblemManager( const ExecutionSpace& exec_space,
+                    const boost::property_tree::ptree& ptree,
+                    MPI_Comm comm )
+    {
+        // Get the problem parameters.
+        const auto& params = ptree.get_child("lpbf");
+        auto _halo_min = std::max(params.get<int>("minimum_halo_cell_width"),3);
+        auto ppc = params.get<int>("particle_per_cell_dim");
+        _delta_t = params.get<double>("time_step_size");
+
+        // Initial conditions.
+        auto init_temp = params.get<double>("initial_temperature");
+
+        // Get the material parameters.
+        _density = params.get<double>("material_density");
+        _specific_heat_capacity = params.get<double>("specific_heat_capacity");
+        _thermal_conductivity = params.get<double>("thermal_conductivity");
+
+        // Load the geometry.
+        FacetGeometry<MemorySpace> geom( ptree, exec_space );
+        const auto& geom_data = geom.data();
+
+        // Create the mesh.
+        _mesh = std::make_shared<mesh_type>( ptree,
+                                             geom.globalBoundingBox(),
+                                             _halo_min,
+                                             comm );
+
+        // Create particles.
+        _particles = std::make_shared<particle_list>( "solid_liquid", _mesh );
+
+        // Create the field manager.
+        _field_manager = std::make_shared<field_manager>( _mesh );
+
+        // Create fields.
+        _field_manager->add( FieldLocation::Node(), Field::Mass() );
+        _field_manager->add( FieldLocation::Node(), Field::InternalEnergy() );
+        _field_manager->add( FieldLocation::Node(),
+                             Field::Star<Field::InternalEnergy>() );
+        _field_manager->add( FieldLocation::Node(), Field::SignedDistance() );
+
+        // Create particle level set. We will create the level set over all
+        // particles.
+        int level_set_color = -1;
+        _level_set =
+            std::make_shared<level_set>( ptree, _particles, level_set_color );
+
+        // Make the laser source term.
+        _laser_source.setup( ptree );
+
+        // Particle initialization function.
+        auto init_func =
+            KOKKOS_LAMBDA( const double x[3], const double volume, particle_type& p )
+            {
+                // Put points in single precision.
+                float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
+
+                // Locate the point in the geometry.
+                auto volume_id = FacetGeometryOps::locatePoint(xf,geom_data);
+
+                // If the particle ends up in any volume other than the
+                // implicit complement create a new particle.
+                if ( volume_id >= 0 )
+                {
+                    // Assign position.
+                    for ( int d = 0; d < 3; ++d )
+                        ParticleAccess::get( p, Field::LogicalPosition(), d ) = x[d];
+
+                    // Assign mass.
+                    ParticleAccess::get( p, Field::Mass() ) = _density * volume;
+
+                    // Assign volume.
+                    ParticleAccess::get( p, Field::Volume() ) = volume;
+
+                    // Start with an internal energy at the initial
+                    // temperature using a simple equation of state.
+                    ParticleAccess::get( p, Field::InternalEnergy() ) =
+                        _specific_heat_capacity * init_temp;
+
+                    // Color
+                    ParticleAccess::get( p, Field::Color() ) = 0;
+
+                    // Return true for created particle.
+                    return true;
+                }
+
+                // Otherwise we don't create this particle.
+                else
+                {
+                    return false;
+                }
+            };
+
+        // Initialize particle data.
+        initializeParticles(
+            InitUniform(), exec_space, ppc, init_func, *_particles );
+    }
+
+    // Get the mesh.
+    std::shared_ptr<mesh_type> mesh() const { return _mesh; }
+
+    // Get the particles.
+    std::shared_ptr<particle_list> particleList() const { return _particles; }
+
+    // Get the field manager.
+    std::shared_ptr<field_manager> fieldManager() const { return _field_manager; }
+
+    // Get the free surface level set.
+    std::shared_ptr<level_set> levelSet() const { return _level_set; }
+
+    // Get the laser source term.
+    const LaserSource& laserSource() const { return _laser_source; }
+
+    // Communicate particles.
+    template<class ExecutionSpace>
+    void communicateParticles( const ExecutionSpace& exec_space )
+    {
+        auto did_comm = _particles->redistribute();
+        if ( did_comm )
+        {
+            _level_set->updateParticleIndices( exec_space );
+        }
+    }
+
+    // Write particle fields.
+    void writeParticleFields( const int step, const double time ) const
+    {
+        SiloParticleWriter::writeTimeStep(
+            _mesh->localGrid()->globalGrid(),
+            step,
+            time,
+            _particles->slice(Field::LogicalPosition()),
+            _particles->slice(Field::InternalEnergy()) );
+    }
+
+    // Time step size.
+    double timeStepSize() const { return _delta_t; }
+
+    // Material parameters.
+    double density() const { return _density; }
+    double thermalConductivity() const { return _thermal_conductivity; }
+    double specificHeatCapacity() const { return _specific_heat_capacity; }
+
+  private:
+
+    std::shared_ptr<mesh_type> _mesh;
+    std::shared_ptr<particle_list> _particles;
+    std::shared_ptr<field_manager> _field_manager;
+    std::shared_ptr<level_set> _level_set;
+
+    int _halo_min;
+
+    LaserSource _laser_source;
+
+    double _delta_t;
+    double _density;
+    double _specific_heat_capacity;
+    double _thermal_conductivity;
+};
+
+//---------------------------------------------------------------------------//
+
+} // end namespace LPBF
+} // end namespace Harlow
+
+#endif // end HARLOW_LPBF_PROBLEMMANAGER_HPP

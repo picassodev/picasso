@@ -158,6 +158,10 @@ void initializeParticles( InitRandom,
             // Particle coordinate.
             double px[3];
 
+            // Particle volume.
+            double pv = local_mesh.measure( Cajita::Cell(), low_node ) /
+                        particles_per_cell;
+
             // Particle.
             particle_type particle;
 
@@ -175,7 +179,7 @@ void initializeParticles( InitRandom,
                 }
 
                 // Create a new particle.
-                particle_created(pid) = create_functor( px, particle );
+                particle_created(pid) = create_functor( px, pv, particle );
 
                 // If we created a new particle insert it into the list.
                 if ( particle_created(pid) )
@@ -288,6 +292,10 @@ void initializeParticles( InitUniform,
             // Particle coordinate.
             double px[3];
 
+            // Particle volume.
+            double pv = local_mesh.measure( Cajita::Cell(), low_node ) /
+                        particles_per_cell;
+
             // Particle.
             particle_type particle;
 
@@ -310,7 +318,8 @@ void initializeParticles( InitUniform,
                                      low_coords[Dim::K];
 
                         // Create a new particle.
-                        particle_created(pid) = create_functor( px, particle );
+                        particle_created(pid) =
+                            create_functor( px, pv, particle );
 
                         // If we created a new particle insert it into the list.
                         if ( particle_created(pid) )
