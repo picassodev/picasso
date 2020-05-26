@@ -7,14 +7,9 @@
 #include <mpi.h>
 
 //---------------------------------------------------------------------------//
-int main( int argc, char* argv[] )
+void run( const Harlow::InputParser& input )
 {
-    // Initialize environment.
-    MPI_Init( &argc, &argv );
-    Kokkos::initialize( argc, argv );
-
-    // Parse input.
-    Harlow::InputParser input( argc, argv );
+    // Get the input.
     const auto& ptree = input.propertyTree();
 
     // Create the solver.
@@ -24,6 +19,20 @@ int main( int argc, char* argv[] )
 
     // Solve the problem.
     solver->solve();
+}
+
+//---------------------------------------------------------------------------//
+int main( int argc, char* argv[] )
+{
+    // Initialize environment.
+    MPI_Init( &argc, &argv );
+    Kokkos::initialize( argc, argv );
+
+    // Parse input.
+    Harlow::InputParser input( argc, argv );
+
+    // Run.
+    run( input );
 
     // Finalize the environment.
     Kokkos::finalize();

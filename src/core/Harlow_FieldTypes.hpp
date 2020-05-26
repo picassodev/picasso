@@ -134,6 +134,7 @@ struct AffineVelocity : public Tensor<double,3,3>
 template<int N>
 struct PolynomialVelocity : public Tensor<double,N,3>
 {
+    static constexpr int num_mode = N;
     static std::string label() { return "polynomial_velocity"; };
 };
 
@@ -210,14 +211,6 @@ struct VolumeId : public Scalar<int>
 struct BoundaryId : public Scalar<int>
 {
     static std::string label() { return "boundary_id"; };
-};
-
-//---------------------------------------------------------------------------//
-// Star decorator.
-template<class FieldTag>
-struct Star : public FieldTag
-{
-    static std::string label() { return "star_" + FieldTag::label(); }
 };
 
 //---------------------------------------------------------------------------//

@@ -25,11 +25,13 @@
 
 * $S_p^{laser}$ -laser specific energy
 
-## Grid variables ##
+## Primary grid variables ##
 
 * $m_i$ - node mass
 
 * $\tilde{e}_i$ - node Favre averaged internal energy
+
+## Auxiliary grid variables ##
 
 * $\tilde{e}_i^*$ - node updated Favre averaged internal energy
 
@@ -40,6 +42,20 @@
 * $\hat{\phi}_i$ - node regularized signed distance to zero isocontour (free
   surface)
 
+## Material Properties ##
+
+* $\rho$ - density
+
+* $C_p$ - isobaric specific heat capacity
+
+* $\kappa$ - thermal conductivity
+
+## Shape Functions ##
+
+* $N_{ip}^2$ - quadratic node-to-particle B-spline
+
+* $\nabla N_{ip}^2$ - gradient of quadratic node-to-particle B-spline
+
 \newpage
 
 ## Algorithm ##
@@ -48,6 +64,9 @@
    particle positions, $x_p$
 
     * See signed distance algorithm on how to compute $\phi_i$ from $x_p$
+
+    * All particles are used to compute the free surface. Only those that are
+      liquid will have a non-zero surface tension coefficient
 
 1. Compute a regularized signed distance function so the level set is now
    scaled to the range [-0.5,0.5] with a sharp gradient at the zero isocontour
@@ -76,6 +95,8 @@
     boundaries or is equal to the deposition from laser energy, loss due to
     evaporation, loss due to radiative flux, or re-absorption of radiative
     losses emitted from elsewhere in the problem.
+
+    NOTE: See the document on the laser source for its formulation
 
     * $\hat{\phi}_p = \sum_i N^2_{ip} \hat{\phi}_i$
 

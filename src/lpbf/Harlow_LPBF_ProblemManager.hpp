@@ -2,10 +2,12 @@
 #define HARLOW_LPBF_PROBLEMMANAGER_HPP
 
 #include <Harlow_LPBF_LaserSource.hpp>
+#include <Harlow_LPBF_FieldTypes.hpp>
 
 #include <Harlow_ParticleList.hpp>
 #include <Harlow_UniformMesh.hpp>
 #include <Harlow_FieldManager.hpp>
+#include <Harlow_FieldTypes.hpp>
 #include <Harlow_ParticleLevelSet.hpp>
 #include <Harlow_FacetGeometry.hpp>
 #include <Harlow_ParticleInit.hpp>
@@ -59,18 +61,22 @@ class ProblemManager
                     MPI_Comm comm )
     {
         // Get the problem parameters.
-        const auto& params = ptree.get_child("lpbf");
-        auto _halo_min = std::max(params.get<int>("minimum_halo_cell_width"),3);
-        auto ppc = params.get<int>("particle_per_cell_dim");
-        _delta_t = params.get<double>("time_step_size");
+        const auto& lpbf_params = ptree.get_child("lpbf");
+        auto _halo_min =
+            std::max(lpbf_params.get<int>("minimum_halo_cell_width"),3);
+        auto ppc = lpbf_params.get<int>("particle_per_cell_dim");
+        _delta_t = lpbf_params.get<double>("time_step_size");
 
         // Initial conditions.
-        auto init_temp = params.get<double>("initial_temperature");
+        auto init_temp = lpbf_params.get<double>("initial_temperature");
 
         // Get the material parameters.
-        _density = params.get<double>("material_density");
-        _specific_heat_capacity = params.get<double>("specific_heat_capacity");
-        _thermal_conductivity = params.get<double>("thermal_conductivity");
+        const auto& mat_params = ptree.get_child("material");
+        _density = mat_params.get<double>("density");
+        _specific_heat_capacity =
+            mat_params.get<double>("specific_heat_capacity");
+        _thermal_conductivity =
+            mat_params.get<double>("thermal_conductivity");
 
         // Load the geometry.
         FacetGeometry<MemorySpace> geom( ptree, exec_space );
@@ -83,17 +89,19 @@ class ProblemManager
                                              comm );
 
         // Create particles.
-        _particles = std::make_shared<particle_list>( "solid_liquid", _mesh );
+        _particles = std::make_shared<particle_list>( "lpbf_particles", _mesh );
 
         // Create the field manager.
-        _field_manager = std::make_shared<field_manager>( _mesh );
+        _state_manager = std::make_shared<field_manager>( _mesh );
+        _state_manager->add( FieldLocation::Node(), Field::Mass() );
+        _state_manager->add( FieldLocation::Node(), Field::InternalEnergy() );
 
-        // Create fields.
-        _field_manager->add( FieldLocation::Node(), Field::Mass() );
-        _field_manager->add( FieldLocation::Node(), Field::InternalEnergy() );
-        _field_manager->add( FieldLocation::Node(),
-                             Field::Star<Field::InternalEnergy>() );
-        _field_manager->add( FieldLocation::Node(), Field::SignedDistance() );
+        // Create auxiliary fields for implementation.
+        _aux_manager = std::make_shared<field_manager>( _mesh );
+        _aux_manager->add( FieldLocation::Node(),
+                           UpdatedInternalEnergy() );
+        _aux_manager->add( FieldLocation::Node(),
+                           Field::SignedDistance() );
 
         // Create particle level set. We will create the level set over all
         // particles.
@@ -106,7 +114,9 @@ class ProblemManager
 
         // Particle initialization function.
         auto init_func =
-            KOKKOS_LAMBDA( const double x[3], const double volume, particle_type& p )
+            KOKKOS_LAMBDA( const double x[3],
+                           const double volume,
+                           particle_type& p )
             {
                 // Put points in single precision.
                 float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
@@ -120,7 +130,8 @@ class ProblemManager
                 {
                     // Assign position.
                     for ( int d = 0; d < 3; ++d )
-                        ParticleAccess::get( p, Field::LogicalPosition(), d ) = x[d];
+                        ParticleAccess::get( p, Field::LogicalPosition(), d ) =
+                            x[d];
 
                     // Assign mass.
                     ParticleAccess::get( p, Field::Mass() ) = _density * volume;
@@ -150,6 +161,9 @@ class ProblemManager
         // Initialize particle data.
         initializeParticles(
             InitUniform(), exec_space, ppc, init_func, *_particles );
+
+        // Compute initial level set color indices.
+        _level_set->updateParticleIndices( exec_space );
     }
 
     // Get the mesh.
@@ -158,8 +172,13 @@ class ProblemManager
     // Get the particles.
     std::shared_ptr<particle_list> particleList() const { return _particles; }
 
-    // Get the field manager.
-    std::shared_ptr<field_manager> fieldManager() const { return _field_manager; }
+    // Get the primary state manager.
+    std::shared_ptr<field_manager> stateManager() const
+    { return _state_manager; }
+
+    // Get the auxiliary field manager. (Time step implementation details).
+    std::shared_ptr<field_manager> auxiliaryManager() const
+    { return _aux_manager; }
 
     // Get the free surface level set.
     std::shared_ptr<level_set> levelSet() const { return _level_set; }
@@ -199,18 +218,37 @@ class ProblemManager
 
   private:
 
+    // Mesh
     std::shared_ptr<mesh_type> _mesh;
+
+    // Particles.
     std::shared_ptr<particle_list> _particles;
-    std::shared_ptr<field_manager> _field_manager;
+
+    // Primary state variables.
+    std::shared_ptr<field_manager> _state_manager;
+
+    // Auxiliary field variables.
+    std::shared_ptr<field_manager> _aux_manager;
+
+    // Particle level set.
     std::shared_ptr<level_set> _level_set;
 
+    // Minimum halo width.
     int _halo_min;
 
+    // Laser source term.
     LaserSource _laser_source;
 
+    // Time step size.
     double _delta_t;
+
+    // Material density.
     double _density;
+
+    // Material specific heat capactiy.
     double _specific_heat_capacity;
+
+    // Material thermal conductivity.
     double _thermal_conductivity;
 };
 

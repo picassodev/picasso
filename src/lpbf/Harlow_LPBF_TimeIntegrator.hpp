@@ -1,6 +1,8 @@
 #ifndef HARLOW_LPBF_TIMEINTEGRATOR_HPP
 #define HARLOW_LPBF_TIMEINTEGRATOR_HPP
 
+#include <Harlow_LPBF_FieldTypes.hpp>
+
 #include <Cajita.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -20,8 +22,11 @@ void step( const ExecutionSpace& exec_space,
            const ProblemManagerType& pm,
            const double time )
 {
-    // Field manager.
-    const auto& fm = *(pm.fieldManager());
+    // Primary state manager.
+    const auto& state = *(pm.stateManager());
+
+    // Auxiliary field manager.
+    const auto& aux = *(pm.auxiliaryManager());
 
     // Particle list.
     const auto& pl = *(pm.particleList());
@@ -52,12 +57,12 @@ void step( const ExecutionSpace& exec_space,
     auto e_p = pl.slice( Field::InternalEnergy() );
 
     // Get views of grid data.
-    auto m_i = fm.view( FieldLocation::Node(), Field::Mass() );
-    auto e_i = fm.view( FieldLocation::Node(), Field::InternalEnergy() );
-    auto e_i_star = fm.view( FieldLocation::Node(),
-                              Field::Star<Field::InternalEnergy>() );
+    auto m_i = state.view( FieldLocation::Node(), Field::Mass() );
+    auto e_i = state.view( FieldLocation::Node(), Field::InternalEnergy() );
+    auto e_i_star = aux.view( FieldLocation::Node(),
+                             UpdatedInternalEnergy() );
     auto phi_i = ls.getSignedDistance()->view();
-    auto phi_hat_i = fm.view( FieldLocation::Node(), Field::SignedDistance() );
+    auto phi_hat_i = aux.view( FieldLocation::Node(), Field::SignedDistance() );
 
     // Reset write views.
     Kokkos::deep_copy( m_i, 0.0 );
@@ -97,8 +102,8 @@ void step( const ExecutionSpace& exec_space,
     Kokkos::Experimental::contribute( e_i, e_i_sv );
 
     // Complete the global energy and mass scatter.
-    fm.scatter( FieldLocation::Node(), Field::Mass() );
-    fm.scatter( FieldLocation::Node(), Field::InternalEnergy() );
+    state.scatter( FieldLocation::Node(), Field::Mass() );
+    state.scatter( FieldLocation::Node(), Field::InternalEnergy() );
 
     // Compute grid specific internal energy and regularize the signed
     // distance function.
@@ -115,12 +120,13 @@ void step( const ExecutionSpace& exec_space,
                            ? e_i(i,j,k,0) / m_i(i,j,k,0) : 0.0;
 
             // Regularize the signed distance.
-            phi_hat_i(i,j,k,0) = 0.5 - 1.0 / (1.0 + exp(phi_i(i,j,k,0)*2.0/dx) );
+            phi_hat_i(i,j,k,0) =
+                0.5 - 1.0 / (1.0 + exp(phi_i(i,j,k,0)*2.0/dx) );
         });
 
     // Gather energy and signed distance.
-    fm.gather( FieldLocation::Node(), Field::InternalEnergy() );
-    fm.gather( FieldLocation::Node(), Field::SignedDistance() );
+    state.gather( FieldLocation::Node(), Field::InternalEnergy() );
+    aux.gather( FieldLocation::Node(), Field::SignedDistance() );
 
     // Compute the energy increment.
     Kokkos::parallel_for(
@@ -147,7 +153,7 @@ void step( const ExecutionSpace& exec_space,
             // Project the heat flux divergence to the grid.
             Cajita::P2G::divergence( grad_e, sd, e_i_star_sv );
 
-            // Project signed distance to the particle.
+            // Project regularized signed distance to the particle.
             double phi_hat_p;
             Cajita::G2P::value( phi_hat_i, sd, phi_hat_p );
 
@@ -162,7 +168,7 @@ void step( const ExecutionSpace& exec_space,
     Kokkos::Experimental::contribute( e_i_star, e_i_star_sv );
 
     // Complete the global energy increment scatter.
-    fm.scatter( FieldLocation::Node(), Field::Star<Field::InternalEnergy>() );
+    aux.scatter( FieldLocation::Node(), UpdatedInternalEnergy() );
 
     // Compute updated grid energy from thermal fluxes and diffusion.
     Kokkos::parallel_for(
@@ -178,7 +184,7 @@ void step( const ExecutionSpace& exec_space,
         });
 
     // Gather energy increment.
-    fm.gather( FieldLocation::Node(), Field::Star<Field::InternalEnergy>() );
+    aux.gather( FieldLocation::Node(), UpdatedInternalEnergy() );
 
     // Update particle energy with the thermal increment.
     Kokkos::parallel_for(

@@ -43,7 +43,6 @@ class Solver : public SolverBase
         // Get the problem parameters.
         const auto& params = ptree.get_child("lpbf");
         _t_final = params.get<double>("final_time");
-        _delta_t = params.get<double>("time_step_size");
         _write_freq = params.get<int>("write_frequency");
 
         // Get the mpi rank
@@ -63,8 +62,8 @@ class Solver : public SolverBase
         _problem_manager->writeParticleFields( 0, time );
 
         // Time step
-        int num_step = _t_final / _delta_t;
-        _delta_t = _t_final / num_step;
+        int num_step = _t_final / _problem_manager->timeStepSize();
+        double delta_t = _t_final / num_step;
         for ( int t = 0; t < num_step; ++t )
         {
             // Print if at the write frequency.
@@ -72,7 +71,8 @@ class Solver : public SolverBase
                 printf( "Step %d / %d\n", t+1, num_step );
 
             // Update the particle level set for new particle positions.
-            _problem_manager->levelSet()->updateSignedDistance( execution_space() );
+            _problem_manager->levelSet()->updateSignedDistance(
+                execution_space() );
 
             // Step forward one time step.
             TimeIntegrator::step( execution_space(), *_problem_manager, time );
@@ -85,14 +85,18 @@ class Solver : public SolverBase
                 _problem_manager->writeParticleFields( t+1, time );
 
             // Update time.
-            time += _delta_t;
+            time += delta_t;
+
+            Cajita::BovWriter::writeTimeStep(
+                t, time,
+                *(_problem_manager->auxiliaryManager()->array(
+                      FieldLocation::Node(), Field::SignedDistance())) );
         }
     }
 
   private:
 
     double _t_final;
-    double _delta_t;
     int _write_freq;
     int _rank;
     std::shared_ptr<problem_manager> _problem_manager;

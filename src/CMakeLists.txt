@@ -27,6 +27,8 @@ set(CORE_SOURCES
   )
 
 set(LPBF_HEADERS
+  lpbf/Harlow_LPBF_FieldTypes.hpp
+  lpbf/Harlow_LPBF_LaserSource.hpp
   lpbf/Harlow_LPBF_ProblemManager.hpp
   lpbf/Harlow_LPBF_Solver.hpp
   lpbf/Harlow_LPBF_TimeIntegrator.hpp
