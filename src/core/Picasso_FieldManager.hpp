@@ -4,6 +4,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_AdaptiveMesh.hpp>
+#include <Picasso_FieldTypes.hpp>
 
 #include <Cajita.hpp>
 
@@ -17,43 +18,6 @@
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
-// Field locations.
-namespace FieldLocation
-{
-struct Cell
-{
-    using entity_type = Cajita::Cell;
-    static std::string label() { return "Cell"; };
-};
-
-template<int D>
-struct Face
-{
-    using entity_type = Cajita::Face<D>;
-    static std::string label() { return std::string("Face_" + D); };
-};
-
-template<int D>
-struct Edge
-{
-    using entity_type = Cajita::Edge<D>;
-    static std::string label() { return std::string("Edge_" + D); };
-};
-
-struct Node
-{
-    using entity_type = Cajita::Node;
-    static std::string label() { return "Node"; };
-};
-
-struct Particle
-{
-    static std::string label() { return "Particle"; };
-};
-
-} // end namespace FieldLocation
-
-//---------------------------------------------------------------------------//
 // Create an array from a mesh and a field layout.
 template<class Location, class FieldTag, class Mesh>
 auto createArray( const Mesh& mesh, Location, FieldTag ) ->
@@ -66,7 +30,8 @@ auto createArray( const Mesh& mesh, Location, FieldTag ) ->
     auto array_layout = Cajita::createArrayLayout(
         mesh.localGrid(), FieldTag::size,
         typename Location::entity_type() );
-    return Cajita::createArray<double,typename Mesh::memory_space>(
+    return Cajita::createArray<typename FieldTag::value_type,
+                               typename Mesh::memory_space>(
         FieldTag::label(), array_layout );
 }
 

@@ -169,7 +169,7 @@ class UniformMesh
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
     }
 
-    // Get the minimum required numober of cells in the halo.
+    // Get the minimum required number of cells in the halo.
     int minimumHaloWidth() const
     {
         return _minimum_halo_width;
