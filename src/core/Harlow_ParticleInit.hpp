@@ -75,8 +75,8 @@ void filterEmpties( const ExecutionSpace& exec_space,
 
   \param particles_per_cell The number of particles to sample each cell with.
 
-  \param create_functor A functor which populates a particle given the
-  positions of a particle. This functor returns true if a particle was created
+  \param create_functor A functor which populates a particle given the logical
+  position of a particle. This functor returns true if a particle was created
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
@@ -159,6 +159,10 @@ void initializeParticles( InitRandom,
             double px[3];
 
             // Particle volume.
+            // FIXME: this is incorrect for an adaptive mesh. We will need an
+            // overload which gets the nodes and computes the volume. We will
+            // still place particles uniformly in the logical space but we
+            // will then need to map them back to the reference space later.
             double pv = local_mesh.measure( Cajita::Cell(), low_node ) /
                         particles_per_cell;
 
@@ -171,14 +175,15 @@ void initializeParticles( InitRandom,
                 // Local particle id.
                 int pid = cell_id * particles_per_cell + p;
 
-                // Select a random point in the cell for the particle location
+                // Select a random point in the cell for the particle
+                // location. These coordinates are logical.
                 for ( int d = 0; d < 3; ++d )
                 {
                     px[d] = Kokkos::rand<decltype(rand),double>::draw(
                         rand, low_coords[d], high_coords[d] );
                 }
 
-                // Create a new particle.
+                // Create a new particle with the given logical coordinates.
                 particle_created(pid) = create_functor( px, pv, particle );
 
                 // If we created a new particle insert it into the list.
@@ -210,8 +215,8 @@ void initializeParticles( InitRandom,
   \param particles_per_cell_dim The number of particles to populate each cell
   dimension with.
 
-  \param create_functor A functor which populates a particle given the
-  positions of a particle. This functor returns true if a particle was created
+  \param create_functor A functor which populates a particle given the logical
+  position of a particle. This functor returns true if a particle was created
   and false if it was not giving the signature:
 
       bool createFunctor( const double px[3],
@@ -293,6 +298,11 @@ void initializeParticles( InitUniform,
             double px[3];
 
             // Particle volume.
+            // FIXME: this is incorrect for an adaptive mesh. We will need an
+            // overload which gets the nodes and computes the volume. We will
+            // still place particles uniformly in the logical space but we
+            // will then need to map them back to the reference space
+            // later.
             double pv = local_mesh.measure( Cajita::Cell(), low_node ) /
                         particles_per_cell;
 
@@ -309,7 +319,7 @@ void initializeParticles( InitUniform,
                                   ip + particles_per_cell_dim * (
                                       jp + particles_per_cell_dim * kp );
 
-                        // Set the particle position.
+                        // Set the particle position in logical coordinates.
                         px[Dim::I] = 0.5 * spacing[Dim::I] + ip * spacing[Dim::I] +
                                      low_coords[Dim::I];
                         px[Dim::J] = 0.5 * spacing[Dim::J] + jp * spacing[Dim::J] +
@@ -317,7 +327,7 @@ void initializeParticles( InitUniform,
                         px[Dim::K] = 0.5 * spacing[Dim::K] + kp * spacing[Dim::K] +
                                      low_coords[Dim::K];
 
-                        // Create a new particle.
+                        // Create a new particle with the given logical coordinates.
                         particle_created(pid) =
                             create_functor( px, pv, particle );
 

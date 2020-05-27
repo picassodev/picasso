@@ -1,7 +1,7 @@
 #ifndef HARLOW_LPBF_TIMEINTEGRATOR_HPP
 #define HARLOW_LPBF_TIMEINTEGRATOR_HPP
 
-#include <Harlow_LPBF_FieldTypes.hpp>
+#include <Harlow_LPBF_AuxiliaryFieldTypes.hpp>
 
 #include <Cajita.hpp>
 
@@ -23,10 +23,10 @@ void step( const ExecutionSpace& exec_space,
            const double time )
 {
     // Primary state manager.
-    const auto& state = *(pm.stateManager());
+    const auto& state = *(pm.state());
 
     // Auxiliary field manager.
-    const auto& aux = *(pm.auxiliaryManager());
+    const auto& aux = *(pm.auxiliaryFields());
 
     // Particle list.
     const auto& pl = *(pm.particleList());

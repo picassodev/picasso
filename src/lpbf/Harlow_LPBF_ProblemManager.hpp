@@ -2,7 +2,7 @@
 #define HARLOW_LPBF_PROBLEMMANAGER_HPP
 
 #include <Harlow_LPBF_LaserSource.hpp>
-#include <Harlow_LPBF_FieldTypes.hpp>
+#include <Harlow_LPBF_AuxiliaryFieldTypes.hpp>
 
 #include <Harlow_ParticleList.hpp>
 #include <Harlow_UniformMesh.hpp>
@@ -122,6 +122,15 @@ class ProblemManager
                 float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
 
                 // Locate the point in the geometry.
+                // FIXME: This only works for uniform grids. We get logical
+                // particle coordinates through this function so this location
+                // will only work for uniform grids where these are also the
+                // physical coordinates. So either we need to map the particle
+                // coordinate back to the physical frame (and provide both in
+                // the interface to the particle init functions, which is
+                // probably the best idea) or do something like generate the
+                // geometry as a level set although we would need a level set
+                // then for each geometric object to do the setup right.
                 auto volume_id = FacetGeometryOps::locatePoint(xf,geom_data);
 
                 // If the particle ends up in any volume other than the
@@ -173,11 +182,11 @@ class ProblemManager
     std::shared_ptr<particle_list> particleList() const { return _particles; }
 
     // Get the primary state manager.
-    std::shared_ptr<field_manager> stateManager() const
+    std::shared_ptr<field_manager> state() const
     { return _state_manager; }
 
     // Get the auxiliary field manager. (Time step implementation details).
-    std::shared_ptr<field_manager> auxiliaryManager() const
+    std::shared_ptr<field_manager> auxiliaryFields() const
     { return _aux_manager; }
 
     // Get the free surface level set.

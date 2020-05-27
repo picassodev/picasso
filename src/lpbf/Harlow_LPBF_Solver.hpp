@@ -89,7 +89,7 @@ class Solver : public SolverBase
 
             Cajita::BovWriter::writeTimeStep(
                 t, time,
-                *(_problem_manager->auxiliaryManager()->array(
+                *(_problem_manager->auxiliaryFields()->array(
                       FieldLocation::Node(), Field::SignedDistance())) );
         }
     }
