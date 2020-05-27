@@ -1,9 +1,9 @@
-#ifndef HARLOW_TYPES_HPP
-#define HARLOW_TYPES_HPP
+#ifndef PICASSO_TYPES_HPP
+#define PICASSO_TYPES_HPP
 
 #include <Cajita.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Logical dimension index.
@@ -11,6 +11,6 @@ using Dim = Cajita::Dim;
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // HARLOW_TYPES_HPP
+#endif // PICASSO_TYPES_HPP

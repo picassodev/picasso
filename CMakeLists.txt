@@ -1,7 +1,7 @@
 # project settings
 cmake_minimum_required(VERSION 3.12)
 
-project(Harlow LANGUAGES CXX VERSION 0.1.0)
+project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -31,8 +31,8 @@ find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 
 # enable testing
-option(Harlow_ENABLE_TESTING "Build tests" OFF)
-if(Harlow_ENABLE_TESTING)
+option(Picasso_ENABLE_TESTING "Build tests" OFF)
+if(Picasso_ENABLE_TESTING)
   enable_testing()
 endif()
 

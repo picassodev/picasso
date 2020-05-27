@@ -1,5 +1,5 @@
-#ifndef HARLOW_ADAPTIVEMESH_HPP
-#define HARLOW_ADAPTIVEMESH_HPP
+#ifndef PICASSO_ADAPTIVEMESH_HPP
+#define PICASSO_ADAPTIVEMESH_HPP
 
 #include <Cajita.hpp>
 
@@ -11,7 +11,7 @@
 
 #include <mpi.h>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -245,6 +245,6 @@ struct is_adaptive_mesh
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_ADAPTIVEMESH_HPP
+#endif // end PICASSO_ADAPTIVEMESH_HPP

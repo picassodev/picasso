@@ -1,12 +1,12 @@
-#ifndef HARLOW_DENSELINEARALGEBRA_HPP
-#define HARLOW_DENSELINEARALGEBRA_HPP
+#ifndef PICASSO_DENSELINEARALGEBRA_HPP
+#define PICASSO_DENSELINEARALGEBRA_HPP
 
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
 #include <limits>
 
-namespace Harlow
+namespace Picasso
 {
 namespace DenseLinearAlgebra
 {
@@ -294,6 +294,6 @@ void transpose( const Real a[3][3], Real transpose_a[3][3] )
 //---------------------------------------------------------------------------//
 
 } // end namespace DenseLinearAlgebra
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_DENSELINEARALGEBRA_HPP
+#endif // end PICASSO_DENSELINEARALGEBRA_HPP

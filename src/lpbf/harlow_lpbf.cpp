@@ -1,13 +1,13 @@
-#include <Harlow_LPBF_Solver.hpp>
+#include <Picasso_LPBF_Solver.hpp>
 
-#include <Harlow_InputParser.hpp>
+#include <Picasso_InputParser.hpp>
 
 #include <Kokkos_Core.hpp>
 
 #include <mpi.h>
 
 //---------------------------------------------------------------------------//
-void run( const Harlow::InputParser& input )
+void run( const Picasso::InputParser& input )
 {
     // Get the input.
     const auto& ptree = input.propertyTree();
@@ -15,7 +15,7 @@ void run( const Harlow::InputParser& input )
     // Create the solver.
     auto device_type = ptree.get<std::string>("device_type");
     auto solver =
-        Harlow::LPBF::createSolver( device_type, ptree, MPI_COMM_WORLD );
+        Picasso::LPBF::createSolver( device_type, ptree, MPI_COMM_WORLD );
 
     // Solve the problem.
     solver->solve();
@@ -29,7 +29,7 @@ int main( int argc, char* argv[] )
     Kokkos::initialize( argc, argv );
 
     // Parse input.
-    Harlow::InputParser input( argc, argv );
+    Picasso::InputParser input( argc, argv );
 
     // Run.
     run( input );

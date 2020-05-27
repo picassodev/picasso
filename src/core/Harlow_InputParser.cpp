@@ -1,9 +1,9 @@
-#include <Harlow_InputParser.hpp>
+#include <Picasso_InputParser.hpp>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 //! Input argument constructor.
@@ -14,14 +14,14 @@ InputParser::InputParser( int argc, char* argv[] )
     std::string filename;
     for ( int n = 0; n < argc-1; ++n )
     {
-        if( 0 == std::strcmp(argv[n],"--harlow-input-json") )
+        if( 0 == std::strcmp(argv[n],"--picasso-input-json") )
         {
             filename = std::string(argv[n+1]);
             found_arg = true;
             parse( filename, "json" );
             break;
         }
-        else if( 0 == std::strcmp(argv[n],"--harlow-input-xml") )
+        else if( 0 == std::strcmp(argv[n],"--picasso-input-xml") )
         {
             filename = std::string(argv[n+1]);
             found_arg = true;
@@ -33,7 +33,7 @@ InputParser::InputParser( int argc, char* argv[] )
     // Check that we found the filename.
     if ( !found_arg )
         throw std::runtime_error(
-            "No Harlow input file specified: --harlow-input-*type* [file name] is required.\
+            "No Picasso input file specified: --picasso-input-*type* [file name] is required.\
              Where *type* can be json or xml" );
 }
 
@@ -76,4 +76,4 @@ void InputParser::parse( const std::string& filename,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso

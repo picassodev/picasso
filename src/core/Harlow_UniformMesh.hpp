@@ -1,5 +1,5 @@
-#ifndef HARLOW_UNIFORMMESH_HPP
-#define HARLOW_UNIFORMMESH_HPP
+#ifndef PICASSO_UNIFORMMESH_HPP
+#define PICASSO_UNIFORMMESH_HPP
 
 #include <Cajita.hpp>
 
@@ -12,7 +12,7 @@
 
 #include <mpi.h>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 /*!
@@ -214,6 +214,6 @@ struct is_uniform_mesh
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_UNIFORMMESH_HPP
+#endif // end PICASSO_UNIFORMMESH_HPP

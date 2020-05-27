@@ -1,9 +1,9 @@
-#ifndef HARLOW_PARTICLECOMMUNICATION_HPP
-#define HARLOW_PARTICLECOMMUNICATION_HPP
+#ifndef PICASSO_PARTICLECOMMUNICATION_HPP
+#define PICASSO_PARTICLECOMMUNICATION_HPP
 
 #include <Cajita.hpp>
 
-#include <Harlow_Types.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <algorithm>
 
-namespace Harlow
+namespace Picasso
 {
 namespace ParticleCommunication
 {
@@ -226,6 +226,6 @@ bool redistribute( const LocalGridType& local_grid,
 //---------------------------------------------------------------------------//
 
 } // end namespace ParticleCommunication
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_PARTICLECOMMUNICATION_HPP
+#endif // end PICASSO_PARTICLECOMMUNICATION_HPP

@@ -1,17 +1,17 @@
-#ifndef HARLOW_VERSION_HPP
-#define HARLOW_VERSION_HPP
+#ifndef PICASSO_VERSION_HPP
+#define PICASSO_VERSION_HPP
 
-#include <Harlow_config.hpp>
+#include <Picasso_config.hpp>
 
 #include <string>
 
-namespace Harlow
+namespace Picasso
 {
 
 std::string version();
 
 std::string git_commit_hash();
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_VERSION_HPP
+#endif // end PICASSO_VERSION_HPP

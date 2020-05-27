@@ -1,9 +1,9 @@
-#ifndef HARLOW_LPBF_FIELDTYPES_HPP
-#define HARLOW_LPBF_FIELDTYPES_HPP
+#ifndef PICASSO_LPBF_FIELDTYPES_HPP
+#define PICASSO_LPBF_FIELDTYPES_HPP
 
-#include <Harlow_FieldTypes.hpp>
+#include <Picasso_FieldTypes.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LPBF
 {
@@ -17,6 +17,6 @@ struct UpdatedInternalEnergy : public Field::Scalar<double>
 //---------------------------------------------------------------------------//
 
 } // end namespace LPBF
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LPBF_FIELDTYPES_HPP
+#endif // end PICASSO_LPBF_FIELDTYPES_HPP

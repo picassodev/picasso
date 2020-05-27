@@ -1,5 +1,5 @@
-#ifndef HARLOW_SILOPARTICLEWRITER_HPP
-#define HARLOW_SILOPARTICLEWRITER_HPP
+#ifndef PICASSO_SILOPARTICLEWRITER_HPP
+#define PICASSO_SILOPARTICLEWRITER_HPP
 
 #include <Cajita.hpp>
 
@@ -18,7 +18,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace Harlow
+namespace Picasso
 {
 namespace SiloParticleWriter
 {
@@ -465,6 +465,6 @@ void writeTimeStep( const GlobalGridType& global_grid,
 //---------------------------------------------------------------------------//
 
 } // end namespace SiloParticleWriter
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // HARLOW_SILOPARTICLEWRITER_HPP
+#endif // PICASSO_SILOPARTICLEWRITER_HPP

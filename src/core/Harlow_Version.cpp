@@ -1,10 +1,10 @@
-#include <Harlow_Version.hpp>
+#include <Picasso_Version.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 
-std::string version() { return Harlow_VERSION_STRING; }
+std::string version() { return Picasso_VERSION_STRING; }
 
-std::string git_commit_hash() { return Harlow_GIT_COMMIT_HASH; }
+std::string git_commit_hash() { return Picasso_GIT_COMMIT_HASH; }
 
-} // end namespace Harlow
+} // end namespace Picasso

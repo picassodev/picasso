@@ -1,7 +1,7 @@
-#ifndef HARLOW_LPBF_TIMEINTEGRATOR_HPP
-#define HARLOW_LPBF_TIMEINTEGRATOR_HPP
+#ifndef PICASSO_LPBF_TIMEINTEGRATOR_HPP
+#define PICASSO_LPBF_TIMEINTEGRATOR_HPP
 
-#include <Harlow_LPBF_AuxiliaryFieldTypes.hpp>
+#include <Picasso_LPBF_AuxiliaryFieldTypes.hpp>
 
 #include <Cajita.hpp>
 
@@ -9,7 +9,7 @@
 
 #include <cmath>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LPBF
 {
@@ -212,6 +212,6 @@ void step( const ExecutionSpace& exec_space,
 
 } // end namespace TimeIntegrator
 } // end namespace LPBF
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LPBF_TIMEINTEGRATOR_HPP
+#endif // end PICASSO_LPBF_TIMEINTEGRATOR_HPP

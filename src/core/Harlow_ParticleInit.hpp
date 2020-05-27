@@ -1,7 +1,7 @@
-#ifndef HARLOW_PARTICLEINIT_HPP
-#define HARLOW_PARTICLEINIT_HPP
+#ifndef PICASSO_PARTICLEINIT_HPP
+#define PICASSO_PARTICLEINIT_HPP
 
-#include <Harlow_Types.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
 #include <Cabana_Core.hpp>
@@ -9,7 +9,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Initialization type tags.
@@ -347,6 +347,6 @@ void initializeParticles( InitUniform,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_PARTICLEINIT_HPP
+#endif // end PICASSO_PARTICLEINIT_HPP

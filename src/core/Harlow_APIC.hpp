@@ -1,10 +1,10 @@
-#ifndef HARLOW_APIC_HPP
-#define HARLOW_APIC_HPP
+#ifndef PICASSO_APIC_HPP
+#define PICASSO_APIC_HPP
 
 #include <Cajita.hpp>
 
-#include <Harlow_Types.hpp>
-#include <Harlow_DenseLinearAlgebra.hpp>
+#include <Picasso_Types.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ScatterView.hpp>
@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <cmath>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Affine Particle-in-Cell
@@ -216,6 +216,6 @@ void g2p(
 //---------------------------------------------------------------------------//
 
 } // end namespace APIC
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_APIC_HPP
+#endif // end PICASSO_APIC_HPP

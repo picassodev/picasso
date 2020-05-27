@@ -1,17 +1,17 @@
-#ifndef HARLOW_LPBF_PROBLEMMANAGER_HPP
-#define HARLOW_LPBF_PROBLEMMANAGER_HPP
+#ifndef PICASSO_LPBF_PROBLEMMANAGER_HPP
+#define PICASSO_LPBF_PROBLEMMANAGER_HPP
 
-#include <Harlow_LPBF_LaserSource.hpp>
-#include <Harlow_LPBF_AuxiliaryFieldTypes.hpp>
+#include <Picasso_LPBF_LaserSource.hpp>
+#include <Picasso_LPBF_AuxiliaryFieldTypes.hpp>
 
-#include <Harlow_ParticleList.hpp>
-#include <Harlow_UniformMesh.hpp>
-#include <Harlow_FieldManager.hpp>
-#include <Harlow_FieldTypes.hpp>
-#include <Harlow_ParticleLevelSet.hpp>
-#include <Harlow_FacetGeometry.hpp>
-#include <Harlow_ParticleInit.hpp>
-#include <Harlow_SiloParticleWriter.hpp>
+#include <Picasso_ParticleList.hpp>
+#include <Picasso_UniformMesh.hpp>
+#include <Picasso_FieldManager.hpp>
+#include <Picasso_FieldTypes.hpp>
+#include <Picasso_ParticleLevelSet.hpp>
+#include <Picasso_FacetGeometry.hpp>
+#include <Picasso_ParticleInit.hpp>
+#include <Picasso_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -19,7 +19,7 @@
 
 #include <memory>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LPBF
 {
@@ -264,6 +264,6 @@ class ProblemManager
 //---------------------------------------------------------------------------//
 
 } // end namespace LPBF
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LPBF_PROBLEMMANAGER_HPP
+#endif // end PICASSO_LPBF_PROBLEMMANAGER_HPP

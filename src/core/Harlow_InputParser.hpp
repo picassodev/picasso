@@ -1,11 +1,11 @@
-#ifndef HARLOW_INPUTPARSER_HPP
-#define HARLOW_INPUTPARSER_HPP
+#ifndef PICASSO_INPUTPARSER_HPP
+#define PICASSO_INPUTPARSER_HPP
 
 #include <boost/property_tree/ptree.hpp>
 
 #include <string>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 class InputParser
@@ -32,6 +32,6 @@ class InputParser
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_INPUTPARSER_HPP
+#endif // end PICASSO_INPUTPARSER_HPP

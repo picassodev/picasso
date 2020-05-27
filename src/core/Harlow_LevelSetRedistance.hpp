@@ -1,7 +1,7 @@
-#ifndef HARLOW_LEVELSETREDISTANCE_HPP
-#define HARLOW_LEVELSETREDISTANCE_HPP
+#ifndef PICASSO_LEVELSETREDISTANCE_HPP
+#define PICASSO_LEVELSETREDISTANCE_HPP
 
-#include <Harlow_Types.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
 
@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LevelSet
 {
@@ -350,6 +350,6 @@ double redistanceEntity( EntityType,
 //---------------------------------------------------------------------------//
 
 } // end namespace LevelSet
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LEVELSETREDISTANCE_HPP
+#endif // end PICASSO_LEVELSETREDISTANCE_HPP

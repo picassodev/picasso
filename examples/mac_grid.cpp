@@ -1,7 +1,7 @@
-#include <Harlow_DenseLinearAlgebra.hpp>
-#include <Harlow_ParticleCommunication.hpp>
-#include <Harlow_SiloParticleWriter.hpp>
-#include <Harlow_VelocityInterpolation.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
+#include <Picasso_ParticleCommunication.hpp>
+#include <Picasso_SiloParticleWriter.hpp>
+#include <Picasso_VelocityInterpolation.hpp>
 
 #include <Cajita.hpp>
 
@@ -484,7 +484,7 @@ void solve( const int num_cell,
             std::cout << "Step " << t+1 << "/" << num_step << " - time " << time << std::endl;
 
         // Output particles
-        Harlow::SiloParticleWriter::writeTimeStep( *global_grid, t, time, x_t, c_t );
+        Picasso::SiloParticleWriter::writeTimeStep( *global_grid, t, time, x_t, c_t );
 
         // Gather grid values.
         velocity_halo_i->gather( *u_i );
@@ -575,7 +575,7 @@ void solve( const int num_cell,
 
                 // Interpolate grid velocity to particle with PolyPIC
                 double u_p[num_mode][3];
-                Harlow::PolyPIC::g2p<num_mode>( u_i_view, u_j_view, u_k_view,
+                Picasso::PolyPIC::g2p<num_mode>( u_i_view, u_j_view, u_k_view,
                                                 sd_i, sd_j, sd_k,
                                                 u_p );
 
@@ -597,7 +597,7 @@ void solve( const int num_cell,
                 Cajita::P2G::value( m_p(p), sd_k, m_k_sv );
 
                 // Interpolate particle momentum to the grid.
-                Harlow::PolyPIC::p2g<num_mode>( m_p(p), u_p,
+                Picasso::PolyPIC::p2g<num_mode>( m_p(p), u_p,
                                                 sd_i, sd_j, sd_k, delta_t,
                                                 mu_i_sv, mu_j_sv, mu_k_sv );
 
@@ -771,12 +771,12 @@ void solve( const int num_cell,
         velocity_halo_k->scatter( *dx_k );
 
         // Redistribute particles.
-        Harlow::ParticleCommunication::redistribute(
+        Picasso::ParticleCommunication::redistribute(
             *local_grid, particles, std::integral_constant<std::size_t,ParticleField::x>() );
         num_particle = particles.size();
 
         // Redistribute tracers.
-        Harlow::ParticleCommunication::redistribute(
+        Picasso::ParticleCommunication::redistribute(
             *local_grid, tracers, std::integral_constant<std::size_t,TracerField::x>() );
         num_tracer = tracers.size();
 

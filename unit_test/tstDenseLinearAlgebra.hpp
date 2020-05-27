@@ -1,9 +1,9 @@
-#include <Harlow_DenseLinearAlgebra.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <gtest/gtest.h>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

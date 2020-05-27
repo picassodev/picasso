@@ -1,5 +1,5 @@
-#include <Harlow_SiloParticleWriter.hpp>
-#include <Harlow_Types.hpp>
+#include <Picasso_SiloParticleWriter.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
 
@@ -15,7 +15,7 @@
 
 #include <memory>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

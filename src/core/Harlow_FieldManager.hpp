@@ -1,9 +1,9 @@
-#ifndef HARLOW_FIELDMANAGER_HPP
-#define HARLOW_FIELDMANAGER_HPP
+#ifndef PICASSO_FIELDMANAGER_HPP
+#define PICASSO_FIELDMANAGER_HPP
 
-#include <Harlow_Types.hpp>
-#include <Harlow_ParticleList.hpp>
-#include <Harlow_AdaptiveMesh.hpp>
+#include <Picasso_Types.hpp>
+#include <Picasso_ParticleList.hpp>
+#include <Picasso_AdaptiveMesh.hpp>
 
 #include <Cajita.hpp>
 
@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <type_traits>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Field locations.
@@ -542,6 +542,6 @@ class FieldManager
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_FIELDMANAGER_HPP
+#endif // end PICASSO_FIELDMANAGER_HPP

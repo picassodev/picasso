@@ -1,9 +1,9 @@
-#ifndef HARLOW_POLYPIC_HPP
-#define HARLOW_POLYPIC_HPP
+#ifndef PICASSO_POLYPIC_HPP
+#define PICASSO_POLYPIC_HPP
 
 #include <Cajita.hpp>
 
-#include <Harlow_DenseLinearAlgebra.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ScatterView.hpp>
@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <cmath>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Polynomial Particle-in-Cell
@@ -1334,6 +1334,6 @@ void p2g(
 //---------------------------------------------------------------------------//
 
 } // end namespace PolyPIC
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_POLYPIC_HPP
+#endif // end PICASSO_POLYPIC_HPP

@@ -1,10 +1,10 @@
-#ifndef HARLOW_PARTICLELIST_HPP
-#define HARLOW_PARTICLELIST_HPP
+#ifndef PICASSO_PARTICLELIST_HPP
+#define PICASSO_PARTICLELIST_HPP
 
-#include <Harlow_ParticleCommunication.hpp>
-#include <Harlow_FieldTypes.hpp>
-#include <Harlow_AdaptiveMesh.hpp>
-#include <Harlow_UniformMesh.hpp>
+#include <Picasso_ParticleCommunication.hpp>
+#include <Picasso_FieldTypes.hpp>
+#include <Picasso_AdaptiveMesh.hpp>
+#include <Picasso_UniformMesh.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <string>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Field tag indexer.
@@ -467,6 +467,6 @@ createParticleList( const std::string& label,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_PARTICLELIST_HPP
+#endif // end PICASSO_PARTICLELIST_HPP
