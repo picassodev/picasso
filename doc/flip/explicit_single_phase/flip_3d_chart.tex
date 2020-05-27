@@ -1,0 +1,1032 @@
+%\documentclass[11pt,letterpaper]{article}
+%%\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+%%\geometry{letterpaper}                   % ... or a4paper or a5paper or ...
+%%\geometry{landscape}                % Activate for for rotated page geometry
+%%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+%\usepackage{graphicx}
+%\usepackage{amssymb}
+%\usepackage{epstopdf}
+%\usepackage{setspace}
+%\usepackage{mathtools}
+%
+%\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+%\usepackage{mathtools}
+%\usepackage[b]{esvect}
+%%\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirnam\sqrt{}e #1`/`basename #1 .tif`.png}
+%
+%\textwidth = 6.5 in \textheight = 9 in \oddsidemargin = 0.0 in \evensidemargin = 0.0 in \topmargin = 0.0 in \headheight = 0.0 in \headsep = 0.0 in
+%\parskip = 0.2in
+%\parindent = 0.0in
+%
+%\doublespacing
+
+\documentclass[11pt]{article}
+
+
+\usepackage[margin=1in]{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ...
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb,amsmath}
+\usepackage{epstopdf}
+\usepackage{natbib}
+\usepackage{color}
+\usepackage{subfigure}
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{amssymb}
+\usepackage{enumitem}
+
+% MACROS
+\def\usq#1{{u_{#1}}^2}
+\def\ddt#1{\frac{\mbox{d}#1}{\mbox{d}t}}
+\def\ddp#1_#2{\frac{\partial #1}{\partial #2}}
+\def\d#1_#2{\frac{\mbox{d}#1}{\mbox{d}#2}}
+%\def\bbf#1{\bi#1}
+\def\bbf#1{\mathchoice{\hbox{\boldmath$\displaystyle#1$}}
+{\hbox{\boldmath$\textstyle#1$}} {\hbox{\boldmath$\scriptstyle#1$}} {\hbox{\boldmath$\scriptscriptstyle#1$}} }
+\def\fm#1_#2{\phi_{#1}^{#2}}
+
+\def\lcswidth{0.8\textwidth}
+\def\lcsflapwidth{0.35\textwidth}
+
+\renewcommand{\u}{\bbf{u}}
+\renewcommand{\v}{\bbf{v}}
+\newcommand{\uh}{\hat{u}}
+\newcommand{\vh}{\hat{v}}
+\newcommand{\ct}{\cos\theta}
+\newcommand{\st}{\sin\theta}
+\newcommand{\w}{\bbf{\omega}}
+\newcommand{\x}{\bbf{x}}
+\newcommand{\X}{\bbf{X}}
+\newcommand{\fig}{Figure}
+\renewcommand{\sec}{Section}
+\newcommand{\tle}{T_{\mathrm{LE}}}
+\newcommand{\Vk}{{V}^{(k)}}
+\newcommand{\Vko}{{V}^{(k+1)}}
+\newcommand{\vk}{{v}^{(k)}}
+\newcommand{\vkp}{{v}^{(k+)}}
+\newcommand{\vones}{{v}_{1}^{*}}
+\newcommand{\vtwos}{{v}_{2}^{*}}
+\newcommand{\vthrees}{{v}_{3}^{*}}
+\newcommand{\vks}{{v}_{k}^{*}}
+
+\newcommand{\ak}{{a}^{(k)}}
+\newcommand{\akex}{{a}_{ex}^{(k)}}
+\newcommand{\Xk}{X^{(k)}}
+\newcommand{\xk}{x^{(k)}}
+\newcommand{\Xko}{X^{(k+1)}}
+
+\newcommand{\vins}{v_{i}^{n*} }
+\newcommand{\vink}{v_{i}^{n,k} }
+\newcommand{\vjnone}{v_{j}^{n,1} }
+\newcommand{\vinone}{v_{i}^{n,1} }
+\newcommand{\vintwo}{v_{i}^{n,2} }
+\newcommand{\vinthree}{v_{i}^{n,3} }
+\newcommand{\vin}{v_{i}^{n} }
+\newcommand{\vjn}{v_{j}^{n} }
+\renewcommand{\mp}{m_{p}}
+\renewcommand{\min}{m_{i}^{n}}
+\newcommand{\wipn}{w_{ip}^{n} }
+\newcommand{\wjpn}{w_{jp}^{n} }
+\newcommand{\vpn}{v_{p}^{n} }
+\newcommand{\vpno}{v_{p}^{n+1} }
+\newcommand{\vitno}{{\tilde v}_{i}^{n+1} }
+\newcommand{\xpno}{x_{p}^{n+1} }
+\newcommand{\xitno}{{\tilde x}_{i}^{n+1} }
+
+\newcommand{\pcp}{\phi_{cp}^3}
+\newcommand{\pip}{\phi_{ip}^2}
+\newcommand{\pipi}{\phi_{ip,i}}
+\newcommand{\pipj}{\phi_{ip,j}}
+\newcommand{\pcpo}{\phi_{cp,1}}
+\newcommand{\pipo}{\phi_{ip,1}}
+\newcommand{\pcpt}{\phi_{cp,2}}
+\newcommand{\pipt}{\phi_{ip,2}}
+\newcommand{\pcpth}{\phi_{cp,3}}
+\newcommand{\pipth}{\phi_{ip,3}}
+
+\newcommand{\ui}{\bbf{u}_i}
+\newcommand{\uiz}{\bbf{u}_i^{0}}
+\newcommand{\uio}{\bbf{u}_i^{1}}
+\newcommand{\uit}{\bbf{u}_i^{\theta}}
+\newcommand{\uis}{\bbf{u}_i^*}
+\newcommand{\uisr}{\bbf{u}_i^{*,r}}
+
+\newcommand{\up}{\bbf{u}_p}
+\newcommand{\upo}{\bbf{u}_p^1}
+\newcommand{\upz}{\bbf{u}_p^0}
+\newcommand{\xp}{\bbf{x}_p}
+\newcommand{\xpo}{\bbf{x}_p^1}
+\newcommand{\xpz}{\bbf{x}_p^0}
+\newcommand{\ep}{e_p}
+\newcommand{\epo}{e_p^1}
+\newcommand{\epz}{e_p^0}
+
+\newcommand{\mi}{m_i}
+\renewcommand{\mp}{m_p}
+
+\newcommand{\rhoc}{\rho_c}
+\newcommand{\rhoco}{\rho_c^1}
+\newcommand{\rhocz}{\rho_c^0}
+\newcommand{\Vc}{V_c}
+\newcommand{\ic}{I_c}
+\newcommand{\ico}{I_c^1}
+\newcommand{\icz}{I_c^0}
+\newcommand{\pc}{P_c}
+\newcommand{\qc}{Q_c}
+\newcommand{\psic}{\bbf{\Psi}_c}
+\newcommand{\dic}{\bbf{d}_{ic}}
+
+\newcommand{\n}{\bbf{n}}
+\renewcommand{\t}{\bbf{t}}
+
+\newcommand{\xxi}{\frac{\partial x}{\partial \xi}}
+\newcommand{\yxi}{\frac{\partial y}{\partial \xi}}
+\newcommand{\zxi}{\frac{\partial z}{\partial \xi}}
+\newcommand{\xeta}{\frac{\partial x}{\partial \eta}}
+\newcommand{\yeta}{\frac{\partial y}{\partial \eta}}
+\newcommand{\zeeta}{\frac{\partial z}{\partial \eta}}
+\newcommand{\xzeta}{\frac{\partial x}{\partial \zeta}}
+\newcommand{\yzeta}{\frac{\partial y}{\partial \zeta}}
+\newcommand{\zzeta}{\frac{\partial z}{\partial \zeta}}
+
+\newcommand{\xix}{\frac{\partial \xi}{\partial x}}
+\newcommand{\xiy}{\frac{\partial \xi}{\partial y}}
+\newcommand{\xiz}{\frac{\partial \xi}{\partial z}}
+\newcommand{\etax}{\frac{\partial \eta}{\partial x}}
+\newcommand{\etay}{\frac{\partial \eta}{\partial y}}
+\newcommand{\etaz}{\frac{\partial \eta}{\partial z}}
+\newcommand{\zetax}{\frac{\partial \zeta}{\partial x}}
+\newcommand{\zetay}{\frac{\partial \zeta}{\partial y}}
+\newcommand{\zetaz}{\frac{\partial \zeta}{\partial z}}
+
+\newcommand{\nx}{\frac{\partial N}{\partial x}}
+\newcommand{\ny}{\frac{\partial N}{\partial y}}
+\newcommand{\nz}{\frac{\partial N}{\partial z}}
+\newcommand{\nix}{\frac{\partial N_i}{\partial x}}
+\newcommand{\niy}{\frac{\partial N_i}{\partial y}}
+\newcommand{\niz}{\frac{\partial N_i}{\partial z}}
+\newcommand{\nxi}{\frac{\partial N}{\partial \xi}}
+\newcommand{\neta}{\frac{\partial N}{\partial \eta}}
+\newcommand{\nzeta}{\frac{\partial N}{\partial \zeta}}
+\newcommand{\nixi}{\frac{\partial N_i}{\partial \xi}}
+\newcommand{\nieta}{\frac{\partial N_i}{\partial \eta}}
+\newcommand{\nizeta}{\frac{\partial N_i}{\partial \zeta}}
+
+\newcommand{\md}{\mbox{d}}
+\newcommand{\Int}{\int\limits}
+
+
+\newcommand\num{\addtocounter{equation}{1}\tag{\theequation}}
+
+
+\begin{document}
+%\maketitle
+%\section{}
+%\subsection{}
+
+\begin{center}
+{\bf\Large FLIP 3D Compressible flow solver}
+\end{center}
+
+\noindent{\large \bf Particle variable}
+\begin{itemize}
+	\item $\mp$ mass
+	\item $\up$ velocity vector
+	\item $\xp$ position vector
+	\item $\ep$ mass-weighted internal energy
+	\item $\pcp$ 3rd order shapefunction to cell
+	\item $\pip$ 2nd order shapefunction to vertex
+\end{itemize}
+{\large \bf Cell variable} %defined at the center of cell
+\begin{itemize}
+	\item $\rhoc$ denstity
+	\item $\ic$ specific internal energy
+	\item $\Vc$ volume
+	%\item $h_x,\;h_y,\;h_z$ cell size of x, y, z direction
+	\item $\pc$ pressure
+	\item $\qc$ viscous pressure
+	\item $\dic$ averaged gradient of shapefunction over cell
+	\item $\psic$ viscous shearing stress
+\end{itemize}
+{\large \bf Grid variable} %defined at the center of cell
+\begin{itemize}
+	\item $\mi$ mass
+	\item $\ui$,$\uio$,$\uiz$ velocity, updated velocity, previous velocity
+	\item $\uit$ $\theta$-weighted velocity
+\end{itemize}
+{\large \bf Auxillary variable} %defined at the center of cell
+\begin{itemize}
+	\item $\Delta t$ time step
+	\item $\theta$ coefficient of time integration scheme, $\frac{1}{2} \le \theta \le 1$
+	\item $\n$ normal vector
+	\item $\t$ tangent vector
+\end{itemize}
+{\large \bf Material property} %defined at the center of cell
+\begin{itemize}
+\item $\mu$ dynamic viscosity
+\item $\lambda$ bulk viscosity
+\end{itemize}
+
+
+%\clearpage
+%\noindent{\large \bf Algorithm}
+%\begin{enumerate}
+%\item compute mapping, jacobian of mapping, volume and geometric coefficient of cell. Note that this is only first order independent of particle shapefunction since it relates only transformation betweeen physical and reference frame, which is linear function
+%    \noindent
+%    \begin{align*}
+%	N &=
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	(1-\xi)(1-\eta)(1-\zeta) \\
+%	\xi(1-\eta)(1-\zeta) \\
+%	\xi \eta(1-\zeta) \\
+%	(1-\xi) \eta(1-\zeta) \\
+%	(1-\xi)(1-\eta)\zeta \\
+%	\xi(1-\eta) \zeta \\
+%	\xi \eta \zeta \\
+%	(1-\xi) \eta \zeta
+%	\end{array} 
+%	\right] \\
+%	\nxi &=
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	-(1-\eta)(1-\zeta) \\
+%	(1-\eta)(1-\zeta) \\
+%	\eta(1-\zeta) \\
+%	-\eta(1-\zeta) \\
+%	-(1-\eta)\zeta \\
+%	(1-\eta) \zeta \\
+%	\eta \zeta \\
+%	-\eta \zeta
+%	\end{array} 
+%	\right]\: 
+%	\neta =
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	-(1-\xi)(1-\zeta) \\
+%	-\xi(1-\zeta) \\
+%	\xi(1-\zeta) \\
+%	(1-\xi)(1-\zeta) \\
+%	-(1-\xi)\zeta \\
+%	-\xi\zeta \\
+%	\xi \zeta \\
+%	(1-\xi)\zeta
+%	\end{array} 
+%	\right]\: 
+%	\nzeta =
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	-(1-\xi)(1-\eta) \\
+%	-\xi(1-\eta) \\
+%	-\xi \eta\\
+%	-(1-\xi) \eta \\
+%	(1-\xi)(1-\eta) \\
+%	\xi(1-\eta)  \\
+%	\xi \eta \\
+%	(1-\xi) \eta
+%	\end{array} 
+%	\right] 
+%	\end{align*}
+%	
+%	\begin{itemize}
+%		\item Non-uniform grid
+%	\end{itemize}
+%
+%	\begin{align*}
+%	&x = \sum_i N_i x_i \quad  y= \sum_i N_i y_i \quad z = \sum_i N_i z_i,\\
+%	&\xxi = \sum_i \nixi x_i \quad \yxi= \sum_i \nixi y_i \quad \zxi = \sum_i \nixi z_i \\
+%	&\xeta = \sum_i \nieta x_i \quad \yeta= \sum_i \nieta y_i \quad \zeeta = \sum_i \nieta z_i \\
+%	&\xzeta = \sum_i \nizeta x_i \quad \yzeta= \sum_i \nizeta y_i \quad \zzeta = \sum_i \nizeta z_i
+%	\end{align*}
+%
+%
+%	\begin{equation*}
+%	\tilde{\nabla} N = 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	\nxi\\
+%	\neta\\
+%	\nzeta
+%	\end{array} 
+%	\right] = 
+%	\begin{pmatrix}
+%	\xxi & \yxi  & \zxi   \\
+%	\xeta & \yeta & \zeeta   \\
+%	\xzeta & \yzeta & \zzeta  
+%	\end{pmatrix} 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	\nx\\
+%	\ny\\
+%	\nz
+%	\end{array} 
+%	\right] = 
+%	J \left[
+%	\begin{array}{@{}c@{}}
+%	\nx\\
+%	\ny\\
+%	\nz
+%	\end{array} 
+%	\right] = J \nabla N
+%	\end{equation*} 
+%	\begin{equation*}
+%	\nabla N = 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	\nx\\
+%	\ny\\
+%	\nz
+%	\end{array} 
+%	\right] = 
+%	\begin{pmatrix}
+%	\xix & \etax  & \zetax   \\
+%	\xiy & \etay & \zetay   \\
+%	\xiz & \etaz & \zetaz  
+%	\end{pmatrix} 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	\nxi\\
+%	\neta\\
+%	\nzeta
+%	\end{array} 
+%	\right] = 
+%	J^{-1} 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	\nxi\\
+%	\neta\\
+%	\nzeta
+%	\end{array} 
+%	\right] = J^{-1} \tilde{\nabla}N
+%	\end{equation*}
+%
+%\begin{itemize}
+%	\item \begin{equation*}
+%	J =
+%	\begin{pmatrix}
+%	\xxi & \yxi  & \zxi   \\
+%	\xeta & \yeta & \zeeta   \\
+%	\xzeta & \yzeta & \zzeta  
+%	\end{pmatrix},\:
+%	J^{-1} =
+%	\begin{pmatrix}
+%	J_{11}^{-1} & J_{12}^{-1}  &  J_{13}^{-1}  \\
+%	J_{21}^{-1} & J_{22}^{-1} & J_{23}^{-1}   \\
+%	J_{31}^{-1} & J_{32}^{-1} & J_{33}^{-1}  
+%	\end{pmatrix} =\:
+%	\begin{pmatrix}
+%	\xix & \etax  & \zetax   \\
+%	\xiy & \etay & \zetay   \\
+%	\xiz & \etaz & \zetaz  
+%	\end{pmatrix}
+%	\end{equation*} 
+%\end{itemize}
+%\begin{align*}
+%\Vc &= \iiint_V \md x \md y \md z = \Int_0^{1}  \Int_0^{1} \Int_0^{1} |J| \md \xi \md \eta \md \zeta \\
+%&= \sum_l \sum_m \sum_n w_l w_m w_k \left( \xxi \yeta \zzeta + \zxi \xeta \yzeta + \yxi \zeeta \xzeta - \xzeta \yeta \zxi - \xeta \yxi \zzeta - \xxi \zeeta \yzeta \right)_{\xi_l, \eta_m, \zeta_k}\\
+%&= \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{11} J_{22} J_{33} + J_{13} J_{21} J_{32} + J_{31} J_{12} J_{23} - J_{31} J_{22} J_{13} - J_{33} J_{21} J_{12} -J_{11} J_{23} J_{32}\right)_{\xi_l, \eta_m, \zeta_k} \\
+%&= \sum_l \sum_m \sum_n w_l w_m w_k |J|_{\xi_l, \eta_m, \zeta_k}
+%\end{align*}
+%
+%\begin{align*}
+%\dic &= \frac{1}{\Vc}\int_V \nabla N \md V 
+%   = \frac{1}{\Vc} \Int_0^{1}\Int_0^{1}\Int_0^{1} J^{-1} \tilde{\nabla} N\;  |J|\md \xi \md \eta \md \zeta \\
+%   &= \frac{\vec i}{\Vc} \Int_0^{1}\Int_0^{1}\Int_0^{1} J_{11}^{-1}\nxi  + J_{12}^{-1}\neta + J_{13}^{-1}\nzeta\; |J| \md \xi \md \eta \md \zeta \\
+%   &+ \frac{\vec j}{\Vc} \Int_0^{1}\Int_0^{1}\Int_0^{1} J_{21}^{-1}\nxi  + J_{22}^{-1}\neta + J_{23}^{-1}\nzeta\; |J| \md \xi \md \eta \md \zeta \\
+%   &+ \frac{\vec k}{\Vc} \Int_0^{1}\Int_0^{1}\Int_0^{1} J_{31}^{-1}\nxi  + J_{32}^{-1}\neta + J_{33}^{-1}\nzeta\; |J| \md \xi \md \eta \md \zeta \\
+%   &= \frac{\vec i}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{11}^{-1}\nxi  + J_{12}^{-1}\neta + J_{13}^{-1}\nzeta \right)_{\xi_l, \eta_m, \zeta_k} |J|_{\xi_l, \eta_m, \zeta_k} \\
+%   &+ \frac{\vec j}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{21}^{-1}\nxi  + J_{22}^{-1}\neta + J_{23}^{-1}\nzeta \right)_{\xi_l, \eta_m, \zeta_k} |J|_{\xi_l, \eta_m, \zeta_k} \\
+%   &+ \frac{\vec k}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{31}^{-1}\nxi  + J_{32}^{-1}\neta + J_{33}^{-1}\nzeta \right)_{\xi_l, \eta_m, \zeta_k} |J|_{\xi_l, \eta_m, \zeta_k} \\
+%\end{align*}
+% 
+%\clearpage
+%\begin{itemize}
+%	\item Uniform grid
+%\end{itemize}
+%
+%\begin{align*}
+%&x = \sum_i N_i x_i=\xi h + x_0, \quad  y= \sum_i N_i y_i = \eta h + y_0, \quad z = \sum_i N_i z_i = \zeta h + z_0,\\
+%&\xxi = \sum_i \nixi x_i = h, \quad \yxi= \sum_i \nixi y_i = 0, \quad \zxi = \sum_i \nixi z_i = 0\\
+%&\xeta = \sum_i \nieta x_i = 0, \quad \yeta= \sum_i \nieta y_i = h, \quad \zeeta = \sum_i \nieta z_i = 0 \\
+%&\xzeta = \sum_i \nizeta x_i = 0, \quad \yzeta= \sum_i \nizeta y_i = 0, \quad \zzeta = \sum_i \nizeta z_i = h
+%\end{align*}
+%
+%
+%\begin{equation*}
+%\tilde{\nabla} N = 
+%\left[
+%\begin{array}{@{}c@{}}
+%\nxi\\
+%\neta\\
+%\nzeta
+%\end{array} 
+%\right] = 
+%\begin{pmatrix}
+%h & 0  & 0   \\
+%0 & h & 0   \\
+%0 & 0 & h  
+%\end{pmatrix} 
+%\left[
+%\begin{array}{@{}c@{}}
+%\nx\\
+%\ny\\
+%\nz
+%\end{array} 
+%\right] = 
+%J \left[
+%\begin{array}{@{}c@{}}
+%\nx\\
+%\ny\\
+%\nz
+%\end{array} 
+%\right] = J \nabla N
+%\end{equation*} 
+%\begin{equation*}
+%\nabla N = 
+%\left[
+%\begin{array}{@{}c@{}}
+%\nx\\
+%\ny\\
+%\nz
+%\end{array} 
+%\right] = 
+%\begin{pmatrix}
+%\frac{1}{h} & 0  & 0   \\
+%0 & \frac{1}{h} & 0   \\
+%0 & 0 & \frac{1}{h}  
+%\end{pmatrix} 
+%\left[
+%\begin{array}{@{}c@{}}
+%\nxi\\
+%\neta\\
+%\nzeta
+%\end{array} 
+%\right] = 
+%J^{-1} 
+%\left[
+%\begin{array}{@{}c@{}}
+%\nxi\\
+%\neta\\
+%\nzeta
+%\end{array} 
+%\right] = J^{-1} \tilde{\nabla}N
+%\end{equation*}
+%
+%\begin{itemize}
+%	\item \begin{equation*}
+%	J =
+%	\begin{pmatrix}
+%	\xxi & \yxi  & \zxi   \\
+%	\xeta & \yeta & \zeeta   \\
+%	\xzeta & \yzeta & \zzeta  
+%	\end{pmatrix},\:
+%	J^{-1} =
+%	\begin{pmatrix}
+%	J_{11}^{-1} & J_{12}^{-1}  &  J_{13}^{-1}  \\
+%	J_{21}^{-1} & J_{22}^{-1} & J_{23}^{-1}   \\
+%	J_{31}^{-1} & J_{32}^{-1} & J_{33}^{-1}  
+%	\end{pmatrix} =\:
+%	\begin{pmatrix}
+%	\xix & \etax  & \zetax   \\
+%	\xiy & \etay & \zetay   \\
+%	\xiz & \etaz & \zetaz  
+%	\end{pmatrix}
+%	\end{equation*} 
+%\end{itemize}
+%\begin{align*}
+%\Vc = \iiint_V \md x \md y \md z = \Int_0^{1}  \Int_0^{1} \Int_0^{1} |J| \md \xi \md \eta \md \zeta = h^3
+%\end{align*}
+%
+%\begin{align*}
+%\dic = \frac{1}{\Vc}\int_V \nabla N \md V 
+%&= \frac{1}{\Vc} \Int_0^{1}\Int_0^{1}\Int_0^{1} J^{-1} \tilde{\nabla} N\;  |J|\md \xi \md \eta \md \zeta \\
+%&= \left[
+%\begin{array}{@{}c@{}}
+%-0.25 \\
+%0.25 \\
+%0.25 \\
+%-0.25 \\
+%-0.25 \\
+%0.25 \\
+%0.25 \\
+%-0.25 
+%\end{array} 
+%\right] \frac{\vec i}{h}
+%+\left[
+%\begin{array}{@{}c@{}}
+%-0.25 \\
+%-0.25 \\
+%0.25 \\
+%0.25 \\
+%-0.25 \\
+%-0.25 \\
+%0.25 \\
+%0.25 
+%\end{array} 
+%\right] \frac{\vec j}{h}
+%+\left[
+%\begin{array}{@{}c@{}}
+%-0.25 \\
+%-0.25 \\
+%-0.25 \\
+%-0.25 \\
+%0.25 \\
+%0.25 \\
+%0.25 \\
+%0.25 
+%\end{array} 
+%\right] \frac{\vec k}{h}
+%\end{align*}
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\noindent{\large \bf Algorithm}
+\begin{enumerate}
+	\item compute mapping, jacobian of mapping, volume and geometric coefficient of cell. Note that this is only first order independent of particle shapefunction since it relates only transformation betweeen physical and reference frame, which is linear function
+	\noindent
+	\begin{align*}
+	N &=
+	\left[
+	\begin{array}{@{}c@{}}
+	\frac{1}{8}(1-\xi)(1-\eta)(1-\zeta) \\
+	\frac{1}{8}(1+\xi)(1-\eta)(1-\zeta) \\
+	\frac{1}{8}(1+\xi)(1+\eta)(1-\zeta) \\
+	\frac{1}{8}(1-\xi)(1+\eta)(1-\zeta) \\
+	\frac{1}{8}(1-\xi)(1-\eta)(1+\zeta) \\
+	\frac{1}{8}(1+\xi)(1-\eta)(1+\zeta) \\
+	\frac{1}{8}(1+\xi)(1+\eta)(1+\zeta) \\
+	\frac{1}{8}(1-\xi)(1+\eta)(1+\zeta)
+	\end{array} 
+	\right] \\
+	\nxi &=
+	\left[
+	\begin{array}{@{}c@{}}
+	-\frac{1}{8}(1-\eta)(1-\zeta) \\
+	\frac{1}{8}(1-\eta)(1-\zeta) \\
+	\frac{1}{8}(1+\eta)(1-\zeta) \\
+	-\frac{1}{8}(1+\eta)(1-\zeta) \\
+	-\frac{1}{8}(1-\eta)(1+\zeta) \\
+	\frac{1}{8}(1-\eta)(1+\zeta) \\
+	\frac{1}{8}(1+\eta)(1+\zeta) \\
+	\frac{1}{8}(1+\eta)(1+\zeta)
+	\end{array}
+	\right]\: 
+	\neta =
+	\left[
+	\begin{array}{@{}c@{}}
+	-\frac{1}{8}(1-\xi)(1-\zeta) \\
+	-\frac{1}{8}(1+\xi)(1-\zeta) \\
+	\frac{1}{8}(1+\xi)(1-\zeta) \\
+	\frac{1}{8}(1-\xi)(1-\zeta) \\
+	-\frac{1}{8}(1-\xi)(1+\zeta) \\
+	-\frac{1}{8}(1+\xi)(1+\zeta) \\
+	\frac{1}{8}(1+\xi)(1+\zeta) \\
+	\frac{1}{8}(1-\xi)(1+\zeta)
+	\end{array}
+	\right]\: 
+	\nzeta =
+	\left[
+	\begin{array}{@{}c@{}}
+	-\frac{1}{8}(1-\xi)(1-\eta) \\
+	-\frac{1}{8}(1+\xi)(1-\eta) \\
+	-\frac{1}{8}(1+\xi)(1+\eta) \\
+	-\frac{1}{8}(1-\xi)(1+\eta) \\
+	\frac{1}{8}(1-\xi)(1-\eta) \\
+	\frac{1}{8}(1+\xi)(1-\eta) \\
+	\frac{1}{8}(1+\xi)(1+\eta) \\
+	\frac{1}{8}(1-\xi)(1+\eta)
+	\end{array} 
+	\right] 
+	\end{align*}
+	
+	\begin{itemize}
+		\item Non-uniform grid
+	\end{itemize}
+	
+	\begin{align*}
+	&x = \sum_i N_i x_i \quad  y= \sum_i N_i y_i \quad z = \sum_i N_i z_i,\\
+	&\xxi = \sum_i \nixi x_i \quad \yxi= \sum_i \nixi y_i \quad \zxi = \sum_i \nixi z_i \\
+	&\xeta = \sum_i \nieta x_i \quad \yeta= \sum_i \nieta y_i \quad \zeeta = \sum_i \nieta z_i \\
+	&\xzeta = \sum_i \nizeta x_i \quad \yzeta= \sum_i \nizeta y_i \quad \zzeta = \sum_i \nizeta z_i
+	\end{align*}
+	
+	
+	\begin{equation*}
+	\tilde{\nabla} N = 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = 
+	\begin{pmatrix}
+	\xxi & \yxi  & \zxi   \\
+	\xeta & \yeta & \zeeta   \\
+	\xzeta & \yzeta & \zzeta  
+	\end{pmatrix} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = 
+	J \left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = J \nabla N
+	\end{equation*} 
+	\begin{equation*}
+	\nabla N = 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = 
+	\begin{pmatrix}
+	\xix & \etax  & \zetax   \\
+	\xiy & \etay & \zetay   \\
+	\xiz & \etaz & \zetaz  
+	\end{pmatrix} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = 
+	J^{-1} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = J^{-1} \tilde{\nabla}N
+	\end{equation*}
+	
+ \begin{equation*}
+	J =
+	\begin{pmatrix}
+	\xxi & \yxi  & \zxi   \\
+	\xeta & \yeta & \zeeta   \\
+	\xzeta & \yzeta & \zzeta  
+	\end{pmatrix},\:
+	J^{-1} =
+	\begin{pmatrix}
+	J_{11}^{-1} & J_{12}^{-1}  &  J_{13}^{-1}  \\
+	J_{21}^{-1} & J_{22}^{-1} & J_{23}^{-1}   \\
+	J_{31}^{-1} & J_{32}^{-1} & J_{33}^{-1}  
+	\end{pmatrix} =\:
+	\begin{pmatrix}
+	\xix & \etax  & \zetax   \\
+	\xiy & \etay & \zetay   \\
+	\xiz & \etaz & \zetaz  
+	\end{pmatrix}
+\end{equation*} 
+
+	\begin{align*}
+	\Vc &= \iiint_V \md x \md y \md z = \Int_{-1}^{1}  \Int_{-1}^{1} \Int_{-1}^{1} |J| \md \xi \md \eta \md \zeta \\
+	&= \sum_l \sum_m \sum_n w_l w_m w_k \left( \xxi \yeta \zzeta + \zxi \xeta \yzeta + \yxi \zeeta \xzeta - \xzeta \yeta \zxi - \xeta \yxi \zzeta - \xxi \zeeta \yzeta \right)_{\xi_l, \eta_m, \zeta_n}\\
+	&= \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{11} J_{22} J_{33} + J_{13} J_{21} J_{32} + J_{31} J_{12} J_{23} - J_{31} J_{22} J_{13} - J_{33} J_{21} J_{12} -J_{11} J_{23} J_{32}\right)_{\xi_l, \eta_m, \zeta_n} \\
+	&= \sum_l \sum_m \sum_n w_l w_m w_k |J|_{\xi_l, \eta_m, \zeta_n}
+	\end{align*}
+	
+	\begin{align*}
+	\dic &= \frac{1}{\Vc}\int_V \nabla N \md V 
+	= \frac{1}{\Vc} \Int_{-1}^{1}\Int_{-1}^{1}\Int_{-1}^{1} J^{-1} \tilde{\nabla} N\;  |J|\md \xi \md \eta \md \zeta \\
+	&= \frac{\vec i}{\Vc} \Int_{-1}^{1}\Int_{-1}^{1}\Int_{-1}^{1} J_{11}^{-1}\nixi  + J_{12}^{-1}\nieta + J_{13}^{-1}\nizeta\; |J| \md \xi \md \eta \md \zeta \\
+	&+ \frac{\vec j}{\Vc} \Int_{-1}^{1}\Int_{-1}^{1}\Int_{-1}^{1} J_{21}^{-1}\nixi  + J_{22}^{-1}\nieta + J_{23}^{-1}\nizeta\; |J| \md \xi \md \eta \md \zeta \\
+	&+ \frac{\vec k}{\Vc} \Int_{-1}^{1}\Int_{-1}^{1}\Int_{-1}^{1} J_{31}^{-1}\nixi  + J_{32}^{-1}\nieta + J_{33}^{-1}\nizeta\; |J| \md \xi \md \eta \md \zeta \\
+	&= \frac{\vec i}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{11}^{-1}\nixi  + J_{12}^{-1}\nieta + J_{13}^{-1}\nizeta \right)_{\xi_l, \eta_m, \zeta_n} |J|_{\xi_l, \eta_m, \zeta_n} \\
+	&+ \frac{\vec j}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{21}^{-1}\nixi  + J_{22}^{-1}\nieta + J_{23}^{-1}\nizeta \right)_{\xi_l, \eta_m, \zeta_n} |J|_{\xi_l, \eta_m, \zeta_n} \\
+	&+ \frac{\vec k}{\Vc} \sum_l \sum_m \sum_n w_l w_m w_k \left( J_{31}^{-1}\nixi  + J_{32}^{-1}\nieta + J_{33}^{-1}\nizeta \right)_{\xi_l, \eta_m, \zeta_n} |J|_{\xi_l, \eta_m, \zeta_n} \\
+	\end{align*}
+	
+	\clearpage
+	\begin{itemize}
+		\item Uniform grid
+	\end{itemize}
+	
+	\begin{align*}
+	&x = \sum_i N_i x_i= \frac{h}{2}(1+\xi) + x_0, \quad  y= \sum_i N_i y_i = \frac{h}{2}(1+\eta) + y_0, \quad z = \sum_i N_i z_i = \frac{h}{2}(1+\zeta) + z_0,\\
+	&\xxi = \sum_i \nixi x_i = \frac{h}{2}, \quad \yxi= \sum_i \nixi y_i = 0, \quad \zxi = \sum_i \nixi z_i = 0\\
+	&\xeta = \sum_i \nieta x_i = 0, \quad \yeta= \sum_i \nieta y_i = \frac{h}{2}, \quad \zeeta = \sum_i \nieta z_i = 0 \\
+	&\xzeta = \sum_i \nizeta x_i = 0, \quad \yzeta= \sum_i \nizeta y_i = 0, \quad \zzeta = \sum_i \nizeta z_i = \frac{h}{2}
+	\end{align*}
+	
+	
+	\begin{equation*}
+	\tilde{\nabla} N = 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = 
+	\begin{pmatrix}
+	\frac{h}{2} & 0  & 0   \\
+	0 & \frac{h}{2} & 0   \\
+	0 & 0 & \frac{h}{2}  
+	\end{pmatrix} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = 
+	J \left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = J \nabla N
+	\end{equation*} 
+	\begin{equation*}
+	\nabla N = 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nx\\
+	\ny\\
+	\nz
+	\end{array} 
+	\right] = 
+	\begin{pmatrix}
+	\frac{2}{h} & 0  & 0   \\
+	0 & \frac{2}{h} & 0   \\
+	0 & 0 & \frac{2}{h}  
+	\end{pmatrix} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = 
+	J^{-1} 
+	\left[
+	\begin{array}{@{}c@{}}
+	\nxi\\
+	\neta\\
+	\nzeta
+	\end{array} 
+	\right] = J^{-1} \tilde{\nabla}N
+	\end{equation*}
+	
+\begin{equation*}
+	J =
+	\begin{pmatrix}
+	\xxi & \yxi  & \zxi   \\
+	\xeta & \yeta & \zeeta   \\
+	\xzeta & \yzeta & \zzeta  
+	\end{pmatrix},\:
+	J^{-1} =
+	\begin{pmatrix}
+	J_{11}^{-1} & J_{12}^{-1}  &  J_{13}^{-1}  \\
+	J_{21}^{-1} & J_{22}^{-1} & J_{23}^{-1}   \\
+	J_{31}^{-1} & J_{32}^{-1} & J_{33}^{-1}  
+	\end{pmatrix} =\:
+	\begin{pmatrix}
+	\xix & \etax  & \zetax   \\
+	\xiy & \etay & \zetay   \\
+	\xiz & \etaz & \zetaz  
+	\end{pmatrix}
+\end{equation*} 
+
+	\begin{align*}
+	\Vc = \iiint_V \md x \md y \md z = \Int_{-1}^{1}  \Int_{-1}^{1} \Int_{-1}^{1} |J| \md \xi \md \eta \md \zeta = h^3
+	\end{align*}
+	
+	\begin{align*}
+	\dic = \frac{1}{\Vc}\int_V \nabla N \md V 
+	&= \frac{1}{\Vc} \Int_{-1}^{1}\Int_{-1}^{1}\Int_{-1}^{1} J^{-1} \tilde{\nabla} N\;  |J|\md \xi \md \eta \md \zeta \\
+	&= \left[
+	\begin{array}{@{}c@{}}
+	-0.25 \\
+	0.25 \\
+	0.25 \\
+	-0.25 \\
+	-0.25 \\
+	0.25 \\
+	0.25 \\
+	-0.25 
+	\end{array} 
+	\right] \frac{\vec e_i}{h}
+	+\left[
+	\begin{array}{@{}c@{}}
+	-0.25 \\
+	-0.25 \\
+	0.25 \\
+	0.25 \\
+	-0.25 \\
+	-0.25 \\
+	0.25 \\
+	0.25 
+	\end{array} 
+	\right] \frac{\vec e_j}{h}
+	+\left[
+	\begin{array}{@{}c@{}}
+	-0.25 \\
+	-0.25 \\
+	-0.25 \\
+	-0.25 \\
+	0.25 \\
+	0.25 \\
+	0.25 \\
+	0.25 
+	\end{array} 
+	\right] \frac{\vec e_k}{h}
+	\end{align*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+	
+\item {\bf p2g :} transfer particle mass, momentum and energy to grid($\pip$) and cell($\pcp$). Interpolation function N could be either quadratic($\pip$)/cubic($\pcp$) or linear($N_{ip}^1$)/quadratic($N_{cp}^2$) B-spline function to grid/cell. 
+\begin{itemize}
+	\item $\rhoc = \sum_p \mp \pcp / \Vc$
+	\item $\mi = \sum_p \mp \pip$
+	\item $\ui = \sum_p \mp \up \pip / \mi$ 
+	\item $\ic = \sum_p \ep \pcp / \rhoc \Vc$
+%	\item $\pip = N\left( \frac{1}{h_x}(x_p - x_v)  \right)N\left( \frac{1}{h_y}(y_p - y_v)  \right)N\left( \frac{1}{h_z}(z_p - z_v)\right)$
+%	\item $\pcp = N\left( \frac{1}{h_x}(x_p - x_v)  \right)N\left( \frac{1}{h_y}(y_p - y_v)  \right)N\left( \frac{1}{h_z}(z_p - z_v)\right)$
+\end{itemize}
+
+%\item compute geometric coefficient, so that momentum is presserved between phsycal and reference frame. Note that this is only first order independent of particle shapefunction since it relates only transformation betweeen physical and reference frame, which is linear function
+%\begin{itemize}
+%	\item \begin{equation}
+%	\dic = \int \nabla s_v dV / \Vc = 
+%	\left[
+%	\begin{array}{@{}c@{}}
+%	-0.25 \\
+%	0.25 \\
+%	0.25 \\
+%	-0.25 \\
+%	-0.25 \\
+%	0.25 \\
+%	0.25 \\
+%	-0.25 
+%	\end{array} 
+%	\right] \frac{\vec i}{h_x}
+%	+\left[
+%	\begin{array}{@{}c@{}}
+%	-0.25 \\
+%	-0.25 \\
+%	0.25 \\
+%	0.25 \\
+%	-0.25 \\
+%	-0.25 \\
+%	0.25 \\
+%	0.25 
+%	\end{array} 
+%	\right] \frac{\vec j}{h_y}
+%	+\left[
+%	\begin{array}{@{}c@{}}
+%	-0.25 \\
+%	-0.25 \\
+%	-0.25 \\
+%	-0.25 \\
+%	0.25 \\
+%	0.25 \\
+%	0.25 \\
+%	0.25 
+%	\end{array} 
+%	\right] \frac{\vec k}{h_z}
+%	\end{equation}
+%\end{itemize}
+
+\item compure pressure, viscous pressure and viscous shearing stress at the cell
+\begin{itemize}
+	\item $\pc = P_c^0$(explicit) or $\pc = P_c^{\theta}$ (implicit)
+	\item $\qc = (\lambda + 2\mu)\sum_i \dic \cdot \ui$
+	\item $\psic = \mu \sum_i \dic \times \ui $
+\end{itemize}
+
+\item {\bf solve on grid: } equation of motion is solved on grid.
+\begin{itemize}
+	\item $0 = \mi\left( \uit - \uiz \right) - \sum_c \left\{ \dic(\pc + \qc) + \dic \times \Psi_c \right\} V_c \theta \Delta t$
+\end{itemize}
+
+\item boudary condition is applied to $\uit$
+\begin{itemize}
+	\item no-slip $\uit \cdot \t = 0$ 
+	\item no-flow $\uit \cdot \n = 0$
+\end{itemize}
+
+\item update grid velocity on grid and density on cell
+\begin{itemize}
+	\item $0 = \rhoco\left\{1+\sum_i \dic \cdot \uit \Delta t\right\}  - \rhocz $
+	\item $ \uio = \left( \uit - (1-\theta)\uio \right)/\theta $
+\end{itemize}
+
+\item {\bf g2p :}update particle velocity, position and internal energy
+\begin{itemize}
+	\item $\epo = \epz \left\{ 1 - \sum_c \pc( \nabla \cdot \uit )_c \: \pcp \Delta t / \rhoc \icz \right\} \\
+	- \mp \left\{ \sum_c \left(\qc (\nabla \cdot \uit ) - \Psi_c^0 \cdot ( \nabla \times \uit ) \right) \pcp \Delta t / \rhoc \right\} \\
+	+ \mp \sum_i (\uio -\uiz)^2 \pip(\theta - 0.5) \\
+	+ \mp \left\{ \sum_i \left( (\uio)^2 - (\uiz)^2 \right) \pip - \left( (\upo)^2  - (\upz)^2 \right)  \right\}/2$\\
+\end{itemize}
+
+\begin{enumerate}[label*=\arabic*.]
+	\item FLIP
+	\begin{itemize}
+		\item $\upo = \upz + \sum_i \left( \uio - \uiz \right) \pip$ \\ 
+		\item $\xpo = \xpz + \uit(\xp) \Delta t$
+	\end{itemize}
+\end{enumerate}
+
+%\begin{enumerate}[label*=\arabic*.]
+%	\item XPIC(m) with order m
+%	\begin{itemize}
+%		\item $\uis = \sum_{r=2} (-1)^r \uisr,$ \quad $\uisr =  \frac{m-r+1}{r}\sum_{p}\sum_{j} \frac{\mp ({\pip})_i ({\pip})_j }{(\mi)_{i}} ({\ui})_j $\\
+%		\item $\upo = \pip\left( \uio - \uiz + m(\uiz - \uis) \right)$ \\ 
+%		\item $\xpo = \pip\left[ \xpz + \left(\uio + \uiz +m(\uiz-\uis) - \upz \right) \frac{\Delta t}{2}  \right] $
+%	\end{itemize}
+%\end{enumerate}
+
+\item adaptive mesh refinement or mesh move
+\begin{itemize}
+	\item update mesh $(x_i, y_i, z_i)$
+\end{itemize}
+
+\item compute new reference coordinate by solving system of nonlinear equation with resepct to $(\xi, \eta, \zeta)$ with updated particle position $(x_p, y_p, z_p)$ and updated mesh $(x_i, y_i, z_i)$ using newton's method. Initial guess is previous value at step 1
+
+\begin{align*}
+f_1(\xi, \eta, \zeta) &= \sum_i N_i x_i - x_p \\
+f_2(\xi, \eta, \zeta) &= \sum_i N_i y_i - y_p \\
+f_3(\xi, \eta, \zeta) &= \sum_i N_i z_i - z_p 
+\end{align*}
+\begin{align*}
+F(\xi^n,\eta^n, \zeta^n) = 
+\begin{pmatrix}
+\ddp{f_1}_{\xi} & \ddp{f_1}_{\eta}  &  \ddp{f_1}_{\zeta}\\
+\ddp{f_2}_{\xi} & \ddp{f_2}_{\eta}  &  \ddp{f_2}_{\zeta}\\
+\ddp{f_3}_{\xi} & \ddp{f_3}_{\eta}  &  \ddp{f_3}_{\zeta}
+\end{pmatrix}\\
+\end{align*}
+\begin{align*}
+\left[
+\begin{array}{@{}c@{}}
+\xi^{n+1} \\
+\eta^{n+1} \\
+\zeta^{n+1} \\
+\end{array} 
+\right] = 
+\left[
+\begin{array}{@{}c@{}}
+\xi^{n} \\
+\eta^{n} \\
+\zeta^{n} \\
+\end{array} 
+\right] - F^{-1}(\xi^n,\eta^n, \zeta^n)
+\left[
+\begin{array}{@{}c@{}}
+f_1(\xi^n,\eta^n, \zeta^n )\\
+f_2(\xi^n,\eta^n, \zeta^n ) \\
+f_3(\xi^n,\eta^n, \zeta^n ) \\
+\end{array} 
+\right]
+\end{align*}
+
+\end{enumerate}
+
+\clearpage
+\noindent{\large \bf Test case : 1D Sod shock Tube}
+\begin{figure}[ht!]
+	\begin{center}
+		\includegraphics[width=0.35\textwidth]{flip_rho.eps}\includegraphics[width=0.35\textwidth]{xpic2_rho.eps}\includegraphics[width=0.4\textwidth]{xpic50_rho.eps}
+		\includegraphics[width=0.35\textwidth]{flip_p.eps}\includegraphics[width=0.35\textwidth]{xpic2_p.eps}\includegraphics[width=0.4\textwidth]{xpic50_p.eps}
+		\includegraphics[width=0.35\textwidth]{flip_e.eps}\includegraphics[width=0.35\textwidth]{xpic2_e.eps}\includegraphics[width=0.4\textwidth]{xpic50_e.eps}
+		\includegraphics[width=0.35\textwidth]{flip_u.eps}\includegraphics[width=0.35\textwidth]{xpic2_u.eps}\includegraphics[width=0.4\textwidth]{xpic50_u.eps}
+		\caption{1d sod shock tube problem with flip(left), XPIC(2)(middle) and XPIC(15)(right). 1st and 2nd order shapefunction for grid and cell}\label{fig:geo}
+	\end{center}
+\end{figure}
+
+\begin{figure}
+	\begin{center}
+		\includegraphics[width=0.35\textwidth]{flip_rho_23.eps}\includegraphics[width=0.35\textwidth]{xpic2_rho_23.eps}\includegraphics[width=0.35\textwidth]{xpic15_rho_23.eps}
+		\includegraphics[width=0.35\textwidth]{flip_p_23.eps}\includegraphics[width=0.35\textwidth]{xpic2_p_23.eps}\includegraphics[width=0.35\textwidth]{xpic15_p_23.eps}
+		\includegraphics[width=0.35\textwidth]{flip_e_23.eps}\includegraphics[width=0.35\textwidth]{xpic2_e_23.eps}\includegraphics[width=0.35\textwidth]{xpic15_e_23.eps}
+		\includegraphics[width=0.35\textwidth]{flip_u_23.eps}\includegraphics[width=0.35\textwidth]{xpic2_u_23.eps}\includegraphics[width=0.35\textwidth]{xpic15_u_23.eps}
+		\caption{1d sod shock tube problem with flip(left), XPIC(2)(middle) and XPIC(15)(right). 2nd and 3rd order shapfunction for grid and cell}\label{fig:geo}
+	\end{center}
+\end{figure}
+
+\clearpage
+\bibliographystyle{unsrt}  %for ascending order of references
+\bibliography{flip}
+                                          
+\end{document}
