@@ -1,8 +1,8 @@
-#include <Harlow_ParticleInit.hpp>
-#include <Harlow_ParticleList.hpp>
-#include <Harlow_Types.hpp>
-#include <Harlow_FieldTypes.hpp>
-#include <Harlow_InputParser.hpp>
+#include <Picasso_ParticleInit.hpp>
+#include <Picasso_ParticleList.hpp>
+#include <Picasso_Types.hpp>
+#include <Picasso_FieldTypes.hpp>
+#include <Picasso_InputParser.hpp>
 
 #include <Cajita.hpp>
 
@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

@@ -1,7 +1,7 @@
-#include <Harlow_FieldManager.hpp>
-#include <Harlow_FieldTypes.hpp>
-#include <Harlow_InputParser.hpp>
-#include <Harlow_Types.hpp>
+#include <Picasso_FieldManager.hpp>
+#include <Picasso_FieldTypes.hpp>
+#include <Picasso_InputParser.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
 
@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

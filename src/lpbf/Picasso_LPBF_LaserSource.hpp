@@ -1,5 +1,5 @@
-#ifndef HARLOW_LPBF_LASERSOURCE_HPP
-#define HARLOW_LPBF_LASERSOURCE_HPP
+#ifndef PICASSO_LPBF_LASERSOURCE_HPP
+#define PICASSO_LPBF_LASERSOURCE_HPP
 
 #include <Kokkos_Core.hpp>
 
@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LPBF
 {
@@ -42,6 +42,6 @@ struct LaserSource
 //---------------------------------------------------------------------------//
 
 } // end namespace LPBF
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LPBF_LASERSOURCE_HPP
+#endif // end PICASSO_LPBF_LASERSOURCE_HPP

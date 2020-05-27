@@ -1,14 +1,14 @@
-#ifndef HARLOW_LPBFSOLVER_HPP
-#define HARLOW_LPBFSOLVER_HPP
+#ifndef PICASSO_LPBFSOLVER_HPP
+#define PICASSO_LPBFSOLVER_HPP
 
-#include <Harlow_LPBF_ProblemManager.hpp>
-#include <Harlow_LPBF_TimeIntegrator.hpp>
+#include <Picasso_LPBF_ProblemManager.hpp>
+#include <Picasso_LPBF_TimeIntegrator.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
 #include <memory>
 
-namespace Harlow
+namespace Picasso
 {
 namespace LPBF
 {
@@ -148,6 +148,6 @@ createSolver( const std::string& device,
 //---------------------------------------------------------------------------//
 
 } // end namespace LPBF
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_LPBFSOLVER_HPP
+#endif // end PICASSO_LPBFSOLVER_HPP

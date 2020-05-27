@@ -1,7 +1,7 @@
-#ifndef HARLOW_FACETGEOMETRY_HPP
-#define HARLOW_FACETGEOMETRY_HPP
+#ifndef PICASSO_FACETGEOMETRY_HPP
+#define PICASSO_FACETGEOMETRY_HPP
 
-#include <Harlow_DenseLinearAlgebra.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -14,7 +14,7 @@
 #include <cfloat>
 #include <unordered_map>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 template<class MemorySpace>
@@ -652,6 +652,6 @@ int locatePoint( const float x[3],
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_FACETGEOMETRY_HPP
+#endif // end PICASSO_FACETGEOMETRY_HPP

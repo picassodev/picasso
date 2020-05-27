@@ -1,5 +1,5 @@
-#ifndef HARLOW_ADAPTIVEMESH_HPP
-#define HARLOW_ADAPTIVEMESH_HPP
+#ifndef PICASSO_UNIFORMMESH_HPP
+#define PICASSO_UNIFORMMESH_HPP
 
 #include <Cajita.hpp>
 
@@ -8,18 +8,19 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <memory>
+#include <cmath>
 
 #include <mpi.h>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 /*!
-  \class AdaptiveMesh
-  \brief Logically uniform Cartesian mesh with adaptive node locations.
+  \class UniformMesh
+  \brief Logically and spatially uniform Cartesian mesh.
  */
 template<class MemorySpace>
-class AdaptiveMesh
+class UniformMesh
 {
   public:
 
@@ -27,40 +28,30 @@ class AdaptiveMesh
 
     using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
 
-    using node_array = Cajita::Array<double,Cajita::Node,
-                                     Cajita::UniformMesh<double>,MemorySpace>;
-
-    // Construct an adaptive mesh from the problem bounding box and a property
+    // Construct a mesh manager from the problem bounding box and a property
     // tree.
-    template<class ExecutionSpace>
-    AdaptiveMesh( const boost::property_tree::ptree& ptree,
-                  const Kokkos::Array<double,6>& global_bounding_box,
-                  const int minimum_halo_cell_width,
-                  MPI_Comm comm,
-                  const ExecutionSpace& exec_space )
+    UniformMesh( const boost::property_tree::ptree& ptree,
+                 const Kokkos::Array<double,6>& global_bounding_box,
+                 const int minimum_halo_cell_width,
+                 MPI_Comm comm )
         : _minimum_halo_width( minimum_halo_cell_width )
     {
         // Get the mesh parameters.
         const auto& mesh_params = ptree.get_child("mesh");
 
-        // Get the global number of cells and cell sizes in each direction.
+        // Get the global number of cells in each direction and the cell
+        // size.
         std::array<int,3> global_num_cell;
-        Kokkos::Array<double,3> cell_size;
+        double cell_size = 0.0;
         if ( mesh_params.count("cell_size") )
         {
-            if ( mesh_params.get_child("cell_size").size() != 3 )
-                throw std::runtime_error(
-                    "3 entries required for mesh.cell_size" );
-
-            int d = 0;
-            for ( auto& element : mesh_params.get_child("cell_size") )
+            cell_size = mesh_params.get<double>("cell_size");
+            for ( int d = 0 ; d < 3; ++d )
             {
-                cell_size[d] = element.second.get_value<double>();
                 global_num_cell[d] =
                     std::rint(
                         (global_bounding_box[d+3] - global_bounding_box[d]) /
-                        cell_size[d] );
-                ++d;
+                        cell_size );
             }
         }
         else if ( mesh_params.count("global_num_cell") )
@@ -73,22 +64,38 @@ class AdaptiveMesh
             for ( auto& element : mesh_params.get_child("global_num_cell") )
             {
                 global_num_cell[d] = element.second.get_value<int>();
-                cell_size[d] =
-                    (global_bounding_box[d+3] - global_bounding_box[d]) /
-                    global_num_cell[d];
                 ++d;
             }
+            cell_size =
+                (global_bounding_box[3] - global_bounding_box[0]) /
+                global_num_cell[0];
+        }
+        else
+        {
+            throw std::runtime_error("Invalid uniform mesh size parameters");
         }
 
-        // Create global mesh.
-        std::array<double,3> global_low_corner = { 0.0, 0.0, 0.0 };
-        std::array<double,3> global_high_corner =
-            { static_cast<double>(global_num_cell[0]),
-              static_cast<double>(global_num_cell[1]),
-              static_cast<double>(global_num_cell[2]) };
-        Kokkos::Array<double,3> physical_low_corner = { global_bounding_box[0],
-                                                        global_bounding_box[1],
-                                                        global_bounding_box[2] };
+        // Because the mesh is uniform check that the domain is evenly
+        // divisible by the cell size in each dimension within round-off
+        // error. This will let us do cheaper math for particle location.
+        for ( int d = 0; d < 3; ++d )
+        {
+            double extent = global_num_cell[d] * cell_size;
+            if ( std::abs(
+                     extent - (global_bounding_box[d+3]-
+                               global_bounding_box[d]) ) >
+                 double( 100.0 ) * std::numeric_limits<double>::epsilon() )
+                throw std::logic_error(
+                    "Extent not evenly divisible by uniform cell size" );
+        }
+
+        // Create global mesh bounds.
+        std::array<double,3> global_low_corner = { global_bounding_box[0],
+                                                   global_bounding_box[1],
+                                                   global_bounding_box[2] };
+        std::array<double,3> global_high_corner = { global_bounding_box[3],
+                                                    global_bounding_box[4],
+                                                    global_bounding_box[5] };
 
         // Get the periodicity.
         std::array<bool,3> periodic;
@@ -112,9 +119,8 @@ class AdaptiveMesh
             if ( !periodic[d] )
             {
                 global_num_cell[d] += 2*_minimum_halo_width;
-                global_low_corner[d] -= _minimum_halo_width;
-                global_high_corner[d] += _minimum_halo_width;
-                physical_low_corner[d] -= cell_size[d]*_minimum_halo_width;
+                global_low_corner[d] -= cell_size*_minimum_halo_width;
+                global_high_corner[d] += cell_size*_minimum_halo_width;
             }
         }
 
@@ -160,11 +166,7 @@ class AdaptiveMesh
             mesh_params.get<int>("halo_cell_width",0) );
 
         // Build the local grid.
-        _local_grid =
-            Cajita::createLocalGrid( global_grid, halo_cell_width );
-
-        // Create the nodes.
-        buildNodes( physical_low_corner, cell_size, exec_space );
+        _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
     }
 
     // Get the minimum required numober of cells in the halo.
@@ -179,72 +181,39 @@ class AdaptiveMesh
         return _local_grid;
     }
 
-    // Get the mesh node coordinates.
-    std::shared_ptr<node_array> nodes() const
+    // Get the cell size.
+    double cellSize() const
     {
-        return _nodes;
-    }
-
-  public:
-
-    // Build the mesh nodes.
-    template<class ExecutionSpace>
-    void buildNodes( const Kokkos::Array<double,3>& physical_low_corner,
-                     const Kokkos::Array<double,3>& cell_size,
-                     const ExecutionSpace& exec_space )
-    {
-        // Create both owned and ghosted nodes so we don't have to gather
-        // initially.
-        auto node_layout =
-            Cajita::createArrayLayout( _local_grid, 3, Cajita::Node() );
-        _nodes = Cajita::createArray<double,MemorySpace>(
-            "mesh_nodes", node_layout );
-        auto node_view = _nodes->view();
-        auto global_space = _local_grid->indexSpace(
-            Cajita::Ghost(),Cajita::Node(),Cajita::Global());
-        auto local_space = _local_grid->indexSpace(
-            Cajita::Ghost(),Cajita::Node(),Cajita::Local());
-        Kokkos::parallel_for(
-            "create_nodes",
-            Cajita::createExecutionPolicy(local_space,exec_space),
-            KOKKOS_LAMBDA( const int i, const int j, const int k ){
-                int ig = global_space.min(0) + i;
-                int jg = global_space.min(1) + j;
-                int kg = global_space.min(2) + k;
-                node_view(i,j,k,0) = physical_low_corner[0] + cell_size[0] * ig;
-                node_view(i,j,k,1) = physical_low_corner[1] + cell_size[1] * jg;
-                node_view(i,j,k,2) = physical_low_corner[2] + cell_size[2] * kg;
-            });
+        return _local_grid->globalGrid().globalMesh().cellSize(0);
     }
 
   public:
 
     int _minimum_halo_width;
     std::shared_ptr<local_grid> _local_grid;
-    std::shared_ptr<node_array> _nodes;
 };
 
 //---------------------------------------------------------------------------//
 // Static type checker.
 template <class>
-struct is_adaptive_mesh_impl : public std::false_type
+struct is_uniform_mesh_impl : public std::false_type
 {
 };
 
 template <class MemorySpace>
-struct is_adaptive_mesh_impl<AdaptiveMesh<MemorySpace>>
+struct is_uniform_mesh_impl<UniformMesh<MemorySpace>>
     : public std::true_type
 {
 };
 
 template <class T>
-struct is_adaptive_mesh
-    : public is_adaptive_mesh_impl<typename std::remove_cv<T>::type>::type
+struct is_uniform_mesh
+    : public is_uniform_mesh_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_ADAPTIVEMESH_HPP
+#endif // end PICASSO_UNIFORMMESH_HPP

@@ -1,8 +1,8 @@
-#include <Harlow_DenseLinearAlgebra.hpp>
-#include <Harlow_ParticleCommunication.hpp>
-#include <Harlow_ParticleInit.hpp>
-#include <Harlow_SiloParticleWriter.hpp>
-#include <Harlow_VelocityInterpolation.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
+#include <Picasso_ParticleCommunication.hpp>
+#include <Picasso_ParticleInit.hpp>
+#include <Picasso_SiloParticleWriter.hpp>
+#include <Picasso_VelocityInterpolation.hpp>
 
 #include <Cajita.hpp>
 
@@ -368,8 +368,8 @@ void solve( const int num_cell,
         Cabana::get<SolidParticleField::t>(p) = init_temp;
         return true;
     };
-    Harlow::initializeParticles(
-        Harlow::InitUniform(), execution_space(), *local_grid, ppc, create_func_s, particles_s );
+    Picasso::initializeParticles(
+        Picasso::InitUniform(), execution_space(), *local_grid, ppc, create_func_s, particles_s );
 
     // Get slices for each solid particle field.
     auto x_p_s = Cabana::slice<SolidParticleField::x>( particles_s, "position" );
@@ -424,8 +424,8 @@ void solve( const int num_cell,
         Cabana::get<LiquidParticleField::t>(p) = 0.0;
         return true;
     };
-    Harlow::initializeParticles(
-        Harlow::InitUniform(), execution_space(), *local_grid, ppc, create_func_l, particles_l );
+    Picasso::initializeParticles(
+        Picasso::InitUniform(), execution_space(), *local_grid, ppc, create_func_l, particles_l );
 
     // Get slices for each liquid particle field.
     auto x_p_l = Cabana::slice<LiquidParticleField::x>( particles_l, "position" );
@@ -469,9 +469,9 @@ void solve( const int num_cell,
             Cajita::BovWriter::writeTimeStep( t, time, *mass_new_s );
             Cajita::BovWriter::writeTimeStep( t, time, *energy_new_s );
             Cajita::BovWriter::writeTimeStep( t, time, *temperature_s );
-            // Harlow::SiloParticleWriter::writeTimeStep(
+            // Picasso::SiloParticleWriter::writeTimeStep(
             //     *global_grid, t, time, x_p_s, m_p_s, e_p_s, t_p_s );
-            // Harlow::SiloParticleWriter::writeTimeStep(
+            // Picasso::SiloParticleWriter::writeTimeStep(
             //     "liquid", *global_grid, t, time, x_p_l, m_p_l, e_p_l, t_p_l );
         }
 
@@ -676,10 +676,10 @@ void solve( const int num_cell,
             });
 
         // Redistribute particles.
-        Harlow::ParticleCommunication::redistribute(
+        Picasso::ParticleCommunication::redistribute(
             *local_grid, particles_s,
             std::integral_constant<std::size_t,SolidParticleField::x>() );
-        Harlow::ParticleCommunication::redistribute(
+        Picasso::ParticleCommunication::redistribute(
             *local_grid, particles_l,
             std::integral_constant<std::size_t,LiquidParticleField::x>() );
 

@@ -1,7 +1,7 @@
 #include <Cajita.hpp>
 
-#include <Harlow_ParticleCommunication.hpp>
-#include <Harlow_Types.hpp>
+#include <Picasso_ParticleCommunication.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -13,7 +13,7 @@
 
 #include <memory>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

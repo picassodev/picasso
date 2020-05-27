@@ -1,9 +1,9 @@
-#ifndef HARLOW_PARTICLELEVELSET_HPP
-#define HARLOW_PARTICLELEVELSET_HPP
+#ifndef PICASSO_PARTICLELEVELSET_HPP
+#define PICASSO_PARTICLELEVELSET_HPP
 
-#include <Harlow_LevelSetRedistance.hpp>
-#include <Harlow_FieldManager.hpp>
-#include <Harlow_Types.hpp>
+#include <Picasso_LevelSetRedistance.hpp>
+#include <Picasso_FieldManager.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Cajita.hpp>
 
@@ -19,7 +19,7 @@
 //---------------------------------------------------------------------------//
 // Search primitives. We build the tree from particles of the color we want
 // the level set for.
-namespace Harlow
+namespace Picasso
 {
 template<class CoordinateSlice>
 struct ParticleLevelSetPrimitiveData
@@ -111,7 +111,7 @@ struct ParticleLevelSetCallback
     }
 };
 
-} // end namespace Harlow
+} // end namespace Picasso
 
 //---------------------------------------------------------------------------//
 // ArborX traits.
@@ -158,7 +158,7 @@ struct Access<PredicateData,PredicatesTag>
     static KOKKOS_FUNCTION auto get( const PredicateData& data, size_type i )
     {
         // Get the entity index.
-        Harlow::ParticleLevelSetPredicateIndex<size_type> ijk;
+        Picasso::ParticleLevelSetPredicateIndex<size_type> ijk;
         data.convertIndexTo3d( i, ijk );
         int index[3] = { ijk.i, ijk.j, ijk.k };
 
@@ -180,7 +180,7 @@ struct Access<PredicateData,PredicatesTag>
 } // end namespace ArborX
 
 //---------------------------------------------------------------------------//
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Particle level set. Composes a signed distance function for particles of a
@@ -427,6 +427,6 @@ class ParticleLevelSet
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // end HARLOW_PARTICLELEVELSET_HPP
+#endif // end PICASSO_PARTICLELEVELSET_HPP

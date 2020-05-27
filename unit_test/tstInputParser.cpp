@@ -1,4 +1,4 @@
-#include <Harlow_InputParser.hpp>
+#include <Picasso_InputParser.hpp>
 
 #include <gtest/gtest.h>
 
@@ -7,7 +7,7 @@ namespace Test
 //---------------------------------------------------------------------------//
 // TESTS
 //---------------------------------------------------------------------------//
-void testParser( const Harlow::InputParser& parser )
+void testParser( const Picasso::InputParser& parser )
 {
     const auto& pt = parser.propertyTree();
 
@@ -31,7 +31,7 @@ void testParser( const Harlow::InputParser& parser )
 TEST( input_parser, json_cl_test )
 {
     std::vector<std::string> args =
-        { "other_thing", "--harlow-input-json",
+        { "other_thing", "--picasso-input-json",
           "input_parser_test.json", "something_else" };
 
     const int argc = 4;
@@ -39,7 +39,7 @@ TEST( input_parser, json_cl_test )
     for ( int n = 0; n < argc; ++n )
         argv[n] = const_cast<char*>(args[n].data());
 
-    Harlow::InputParser parser( argc, argv );
+    Picasso::InputParser parser( argc, argv );
 
     testParser( parser );
 }
@@ -48,7 +48,7 @@ TEST( input_parser, json_cl_test )
 TEST( input_parser, xml_cl_test )
 {
     std::vector<std::string> args =
-        { "other_thing", "--harlow-input-xml",
+        { "other_thing", "--picasso-input-xml",
           "input_parser_test.xml", "something_else" };
 
     const int argc = 4;
@@ -56,7 +56,7 @@ TEST( input_parser, xml_cl_test )
     for ( int n = 0; n < argc; ++n )
         argv[n] = const_cast<char*>(args[n].data());
 
-    Harlow::InputParser parser( argc, argv );
+    Picasso::InputParser parser( argc, argv );
 
     testParser( parser );
 }
@@ -64,14 +64,14 @@ TEST( input_parser, xml_cl_test )
 //---------------------------------------------------------------------------//
 TEST( input_parser, json_file_test )
 {
-    Harlow::InputParser parser( "input_parser_test.json", "json" );
+    Picasso::InputParser parser( "input_parser_test.json", "json" );
     testParser( parser );
 }
 
 //---------------------------------------------------------------------------//
 TEST( input_parser, xml_file_test )
 {
-    Harlow::InputParser parser( "input_parser_test.xml", "xml" );
+    Picasso::InputParser parser( "input_parser_test.xml", "xml" );
     testParser( parser );
 }
 

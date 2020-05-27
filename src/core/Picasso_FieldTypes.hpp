@@ -1,10 +1,10 @@
-#ifndef HARLOW_FIELDTYPES_HPP
-#define HARLOW_FIELDTYPES_HPP
+#ifndef PICASSO_FIELDTYPES_HPP
+#define PICASSO_FIELDTYPES_HPP
 
 #include <string>
 #include <type_traits>
 
-namespace Harlow
+namespace Picasso
 {
 namespace Field
 {
@@ -257,6 +257,6 @@ struct MultiPhase<FieldTag,NumPhase,
 //---------------------------------------------------------------------------//
 
 } // end namespace Field
-} // end namespace Harlow
+} // end namespace Picasso
 
-#endif // HARLOW_FIELDTYPES_HPP
+#endif // PICASSO_FIELDTYPES_HPP

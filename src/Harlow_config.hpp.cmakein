@@ -1,8 +1,0 @@
-#ifndef HARLOW_CONFIG_HPP
-#define HARLOW_CONFIG_HPP
-
-#define Harlow_VERSION_STRING "@PROJECT_VERSION@"
-
-#define Harlow_GIT_COMMIT_HASH "@Harlow_GIT_COMMIT_HASH@"
-
-#endif // HARLOW_CONFIG_HPP

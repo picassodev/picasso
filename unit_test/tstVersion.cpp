@@ -1,4 +1,4 @@
-#include <Harlow_Version.hpp>
+#include <Picasso_Version.hpp>
 
 #include <iostream>
 
@@ -9,13 +9,13 @@ namespace Test
 //---------------------------------------------------------------------------//
 // TESTS
 //---------------------------------------------------------------------------//
-TEST( harlow_version, version_test )
+TEST( picasso_version, version_test )
 {
-    auto const version_id = Harlow::version();
-    std::cout << "Harlow version " << version_id << std::endl;
+    auto const version_id = Picasso::version();
+    std::cout << "Picasso version " << version_id << std::endl;
 
-    auto const commit_hash = Harlow::git_commit_hash();
-    std::cout << "Harlow commit hash " << commit_hash << std::endl;
+    auto const commit_hash = Picasso::git_commit_hash();
+    std::cout << "Picasso commit hash " << commit_hash << std::endl;
 }
 
 } // end namespace Test

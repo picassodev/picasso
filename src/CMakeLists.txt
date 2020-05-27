@@ -1,42 +1,42 @@
-configure_file(Harlow_config.hpp.cmakein Harlow_config.hpp)
+configure_file(Picasso_config.hpp.cmakein Picasso_config.hpp)
 
 set(CORE_HEADERS
-  core/Harlow_AdaptiveMesh.hpp
-  core/Harlow_APIC.hpp
-  core/Harlow_DenseLinearAlgebra.hpp
-  core/Harlow_FacetGeometry.hpp
-  core/Harlow_FieldManager.hpp
-  core/Harlow_FieldTypes.hpp
-  core/Harlow_InputParser.hpp
-  core/Harlow_LevelSetRedistance.hpp
-  core/Harlow_ParticleCommunication.hpp
-  core/Harlow_ParticleInit.hpp
-  core/Harlow_ParticleLevelSet.hpp
-  core/Harlow_ParticleList.hpp
-  core/Harlow_PolyPIC.hpp
-  core/Harlow_SiloParticleWriter.hpp
-  core/Harlow_Types.hpp
-  core/Harlow_UniformMesh.hpp
-  core/Harlow_Version.hpp
+  core/Picasso_AdaptiveMesh.hpp
+  core/Picasso_APIC.hpp
+  core/Picasso_DenseLinearAlgebra.hpp
+  core/Picasso_FacetGeometry.hpp
+  core/Picasso_FieldManager.hpp
+  core/Picasso_FieldTypes.hpp
+  core/Picasso_InputParser.hpp
+  core/Picasso_LevelSetRedistance.hpp
+  core/Picasso_ParticleCommunication.hpp
+  core/Picasso_ParticleInit.hpp
+  core/Picasso_ParticleLevelSet.hpp
+  core/Picasso_ParticleList.hpp
+  core/Picasso_PolyPIC.hpp
+  core/Picasso_SiloParticleWriter.hpp
+  core/Picasso_Types.hpp
+  core/Picasso_UniformMesh.hpp
+  core/Picasso_Version.hpp
   )
 
 set(CORE_SOURCES
-  core/Harlow_InputParser.cpp
-  core/Harlow_UniformMesh.cpp
-  core/Harlow_Version.cpp
+  core/Picasso_InputParser.cpp
+  core/Picasso_UniformMesh.cpp
+  core/Picasso_Version.cpp
   )
 
 set(LPBF_HEADERS
-  lpbf/Harlow_LPBF_AuxiliaryFieldTypes.hpp
-  lpbf/Harlow_LPBF_LaserSource.hpp
-  lpbf/Harlow_LPBF_ProblemManager.hpp
-  lpbf/Harlow_LPBF_Solver.hpp
-  lpbf/Harlow_LPBF_TimeIntegrator.hpp
+  lpbf/Picasso_LPBF_AuxiliaryFieldTypes.hpp
+  lpbf/Picasso_LPBF_LaserSource.hpp
+  lpbf/Picasso_LPBF_ProblemManager.hpp
+  lpbf/Picasso_LPBF_Solver.hpp
+  lpbf/Picasso_LPBF_TimeIntegrator.hpp
   )
 
-add_library(harlow ${CORE_SOURCES})
+add_library(picasso ${CORE_SOURCES})
 
-target_link_libraries(harlow
+target_link_libraries(picasso
   Kokkos::kokkos
   MPI::MPI_CXX
   Cabana::cabanacore
@@ -45,16 +45,16 @@ target_link_libraries(harlow
   ArborX::ArborX
   Boost::boost )
 
-target_include_directories(harlow
+target_include_directories(picasso
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/core
   ${CMAKE_CURRENT_SOURCE_DIR}/lpbf
   ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_executable( HarlowLPBF lpbf/harlow_lpbf.cpp )
-target_link_libraries( HarlowLPBF PRIVATE harlow )
-target_include_directories( HarlowLPBF
+add_executable( PicassoLPBF lpbf/picasso_lpbf.cpp )
+target_link_libraries( PicassoLPBF PRIVATE picasso )
+target_include_directories( PicassoLPBF
   PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/core
   ${CMAKE_CURRENT_SOURCE_DIR}/lpbf

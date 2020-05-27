@@ -1,6 +1,6 @@
-#include <Harlow_DenseLinearAlgebra.hpp>
-#include <Harlow_ParticleCommunication.hpp>
-#include <Harlow_SiloParticleWriter.hpp>
+#include <Picasso_DenseLinearAlgebra.hpp>
+#include <Picasso_ParticleCommunication.hpp>
+#include <Picasso_SiloParticleWriter.hpp>
 
 #include <Cajita.hpp>
 
@@ -357,7 +357,7 @@ void nohProblem( const double cell_size,
     }
 
     // Initial output.
-    Harlow::SiloParticleWriter::writeTimeStep(
+    Picasso::SiloParticleWriter::writeTimeStep(
         *global_grid, 0, time, x_p,
         u_p, e_p, J_p, p_p, d_p, v_p );
     Cajita::BovWriter::writeTimeStep( 0, time, *u_v_new );
@@ -502,7 +502,7 @@ void nohProblem( const double cell_size,
                         }
 
                 // Update particle deformation gradient determinant.
-                J_p(p) *= exp( delta_t * Harlow::DenseLinearAlgebra::determinant(grad_u) );
+                J_p(p) *= exp( delta_t * Picasso::DenseLinearAlgebra::determinant(grad_u) );
 
                 // Store the current particle density.
                 d_p(p) = m_p(p) / ( v_p(p) * J_p(p) );
@@ -656,7 +656,7 @@ void nohProblem( const double cell_size,
         std::cout << "Internal Energy: " << total_ie << std::endl;
 
         // Communicate particles.
-        Harlow::ParticleCommunication::redistribute(
+        Picasso::ParticleCommunication::redistribute(
             *local_grid, particles,
             std::integral_constant<std::size_t,Field::x>() );
 
@@ -664,7 +664,7 @@ void nohProblem( const double cell_size,
         time += delta_t;
 
         // Write results.
-        Harlow::SiloParticleWriter::writeTimeStep(
+        Picasso::SiloParticleWriter::writeTimeStep(
             *global_grid, t+1, time, x_p,
             u_p, e_p, J_p, p_p, d_p, v_p );
         Cajita::BovWriter::writeTimeStep( t+1, time, *u_v_new );

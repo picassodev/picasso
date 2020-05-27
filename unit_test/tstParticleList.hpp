@@ -1,6 +1,6 @@
-#include <Harlow_ParticleList.hpp>
-#include <Harlow_FieldTypes.hpp>
-#include <Harlow_InputParser.hpp>
+#include <Picasso_ParticleList.hpp>
+#include <Picasso_FieldTypes.hpp>
+#include <Picasso_InputParser.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace Harlow;
+using namespace Picasso;
 
 namespace Test
 {

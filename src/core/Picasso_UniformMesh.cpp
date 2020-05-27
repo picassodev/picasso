@@ -1,6 +1,6 @@
-#include <Harlow_UniformMesh.hpp>
+#include <Picasso_UniformMesh.hpp>
 
-namespace Harlow
+namespace Picasso
 {
 //---------------------------------------------------------------------------//
 template class UniformMesh<Kokkos::HostSpace>;
@@ -11,4 +11,4 @@ template class UniformMesh<Kokkos::CudaSpace>;
 
 //---------------------------------------------------------------------------//
 
-} // end namespace Harlow
+} // end namespace Picasso
