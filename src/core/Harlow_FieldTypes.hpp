@@ -2,35 +2,91 @@
 #define HARLOW_FIELDTYPES_HPP
 
 #include <string>
+#include <type_traits>
 
 namespace Harlow
 {
 namespace Field
 {
 //---------------------------------------------------------------------------//
-// Fundamental field types.
+// Scalar field.
 template<class T>
 struct Scalar
 {
     using value_type = T;
-    static constexpr int dim = 1;
+    static constexpr int size = 1;
     using data_type = value_type;
 };
 
+template <class>
+struct is_scalar_impl : public std::false_type
+{
+};
+
+template <class T>
+struct is_scalar_impl<Scalar<T>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_scalar : public is_scalar_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+//---------------------------------------------------------------------------//
+// Vector field.
 template<class T, int D>
 struct Vector
 {
     using value_type = T;
-    static constexpr int dim = D;
+    static constexpr int size = D;
+    static constexpr int dim0 = D;
     using data_type = value_type[D];
 };
 
+template <class>
+struct is_vector_impl : public std::false_type
+{
+};
+
+template <class T, int D>
+struct is_vector_impl<Vector<T,D>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+//---------------------------------------------------------------------------//
+// Tensor Field.
 template<class T, int D0, int D1>
 struct Tensor
 {
     using value_type = T;
-    static constexpr int dim = D0 * D1;
+    static constexpr int size = D0 * D1;
+    static constexpr int dim0 = D0;
+    static constexpr int dim1 = D1;
     using data_type = value_type[D0][D1];
+};
+
+template <class>
+struct is_tensor_impl : public std::false_type
+{
+};
+
+template <class T, int D0, int D1>
+struct is_tensor_impl<Tensor<T,D0,D1>>
+    : public std::true_type
+{
+};
+
+template <class T>
+struct is_tensor : public is_tensor_impl<typename std::remove_cv<T>::type>::type
+{
 };
 
 //---------------------------------------------------------------------------//
@@ -65,6 +121,11 @@ struct Velocity : public Vector<double,3>
     static std::string label() { return "velocity"; };
 };
 
+struct Acceleration : public Vector<double,3>
+{
+    static std::string label() { return "acceleration"; };
+};
+
 struct AffineVelocity : public Tensor<double,3,3>
 {
     static std::string label() { return "affine_velocity"; };
@@ -73,6 +134,7 @@ struct AffineVelocity : public Tensor<double,3,3>
 template<int N>
 struct PolynomialVelocity : public Tensor<double,N,3>
 {
+    static constexpr int num_mode = N;
     static std::string label() { return "polynomial_velocity"; };
 };
 
@@ -84,6 +146,11 @@ struct Normal : public Vector<double,3>
 struct Temperature : public Scalar<double>
 {
     static std::string label() { return "temperature"; };
+};
+
+struct HeatFlux : public Vector<double,3>
+{
+    static std::string label() { return "heat_flux"; };
 };
 
 struct Pressure : public Scalar<double>
@@ -144,6 +211,47 @@ struct VolumeId : public Scalar<int>
 struct BoundaryId : public Scalar<int>
 {
     static std::string label() { return "boundary_id"; };
+};
+
+//---------------------------------------------------------------------------//
+// Multiphase decorator.
+template<class FieldTag, int NumPhase, typename Enable>
+struct MultiPhase;
+
+template<class FieldTag, int NumPhase>
+struct MultiPhase<FieldTag,NumPhase,
+                  typename std::enable_if<is_scalar<FieldTag>::value>::type>
+{
+    using value_type = typename FieldTag::value_type;
+    static constexpr int num_phase = NumPhase;
+    static constexpr int size = num_phase;
+    using data_type = value_type[num_phase];
+    static std::string label() { return "multiphase_" + FieldTag::label(); }
+};
+
+template<class FieldTag, int NumPhase>
+struct MultiPhase<FieldTag,NumPhase,
+                  typename std::enable_if<is_vector<FieldTag>::value>::type>
+{
+    using value_type = typename FieldTag::value_type;
+    static constexpr int num_phase = NumPhase;
+    static constexpr int size = FieldTag::size * num_phase;
+    static constexpr int dim0 = FieldTag::dim0;
+    using data_type = value_type[num_phase][dim0];
+    static std::string label() { return "multiphase_" + FieldTag::label(); }
+};
+
+template<class FieldTag, int NumPhase>
+struct MultiPhase<FieldTag,NumPhase,
+                  typename std::enable_if<is_tensor<FieldTag>::value>::type>
+{
+    using value_type = typename FieldTag::value_type;
+    static constexpr int num_phase = NumPhase;
+    static constexpr int size = FieldTag::size * num_phase;
+    static constexpr int dim0 = FieldTag::D0;
+    static constexpr int dim1 = FieldTag::D1;
+    using data_type = value_type[num_phase][dim0][dim1];
+    static std::string label() { return "multiphase_" + FieldTag::label(); }
 };
 
 //---------------------------------------------------------------------------//

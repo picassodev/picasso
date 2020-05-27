@@ -34,7 +34,7 @@ struct Foo : public Field::Vector<double,3>
     static std::string label() { return "foo"; }
 };
 
-struct Bar : public Field::Vector<int,3>
+struct Bar : public Field::Scalar<double>
 {
     static std::string label() { return "bar"; }
 };
@@ -55,11 +55,11 @@ void InitTest( InitType init_type, int ppc )
     // Get inputs for mesh.
     InputParser parser( "particle_init_test.json", "json" );
     Kokkos::Array<double,6> global_box = { global_low_corner[0],
-                                          global_low_corner[1],
-                                          global_low_corner[2],
-                                          global_high_corner[0],
-                                          global_high_corner[1],
-                                          global_high_corner[2] };
+                                           global_low_corner[1],
+                                           global_low_corner[2],
+                                           global_high_corner[0],
+                                           global_high_corner[1],
+                                           global_high_corner[2] };
     int minimum_halo_size = 0;
 
     // Make mesh.
@@ -82,7 +82,7 @@ void InitTest( InitType init_type, int ppc )
                                           global_low_corner[Dim::K] + cell_size,
                                           global_high_corner[Dim::K] - cell_size };
     auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], particle_type& p ){
+        KOKKOS_LAMBDA( const double x[3], const double v, particle_type& p ){
         // Put particles in a box that is one cell smaller than the global
         // mesh. This will give us a layer of empty cells.
         if ( x[Dim::I] > box[0] &&
@@ -93,10 +93,10 @@ void InitTest( InitType init_type, int ppc )
              x[Dim::K] < box[5] )
         {
             for ( int d = 0; d < 3; ++d )
-            {
                 ParticleAccess::get( p, Foo(), d ) = x[d];
-                ParticleAccess::get( p, Bar(), d ) = int(x[d]);
-            }
+
+            ParticleAccess::get( p, Bar() ) = v;
+
             return true;
         }
         else
@@ -125,11 +125,15 @@ void InitTest( InitType init_type, int ppc )
         (global_grid.globalNumEntity(Cajita::Cell(),Dim::K)-2);
     EXPECT_EQ( global_num_particle, expect_num_particle );
 
+    // Particle volume.
+    double volume = mesh->cellSize() * mesh->cellSize() * mesh->cellSize() /
+                    totalParticlesPerCell( init_type, ppc );
+
     // Check that all particles are in the box and got initialized correctly.
     auto host_particles = Cabana::create_mirror_view_and_copy(
         Kokkos::HostSpace(), particles.aosoa() );
     auto px = Cabana::slice<0>(host_particles);
-    auto pi = Cabana::slice<1>(host_particles);
+    auto pv = Cabana::slice<1>(host_particles);
     for ( int p = 0; p < num_p; ++p )
     {
         EXPECT_TRUE( px(p,Dim::I) > box[0] );
@@ -139,9 +143,7 @@ void InitTest( InitType init_type, int ppc )
         EXPECT_TRUE( px(p,Dim::K) > box[4] );
         EXPECT_TRUE( px(p,Dim::K) < box[5] );
 
-        EXPECT_EQ( int(px(p,Dim::I)), pi(p,Dim::I) );
-        EXPECT_EQ( int(px(p,Dim::J)), pi(p,Dim::J) );
-        EXPECT_EQ( int(px(p,Dim::K)), pi(p,Dim::K) );
+        EXPECT_EQ( pv(p), volume );
     }
 }
 
