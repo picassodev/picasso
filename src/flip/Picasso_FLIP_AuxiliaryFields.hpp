@@ -18,6 +18,32 @@ class VelocityTheta : public Vector<double,3>
     static std::string label() { return "velocity_theta"; }
 };
 
+class VelocityThetaDivergence : public Scalar<double>
+{
+    static std::string label() { return "velocity_theta_divergence"; }
+};
+
+// FIXME: Cajita should allow for assembly of more complex G2P terms from a
+// functor instead of a view.
+class CompressionTerm : public Scalar<double>
+{
+    static std::string label() { return "compression_term"; }
+};
+
+// FIXME: Cajita should allow for assembly of more complex G2P terms from a
+// functor instead of a view.
+class AccelerationTheta : public Scalar<double>
+{
+    static std::string label() { return "AccelerationTheta"; }
+};
+
+// FIXME: Cajita should allow for assembly of more complex G2P terms from a
+// functor instead of a view.
+class AccelerationSquared : public Scalar<double>
+{
+    static std::string label() { return "AccelerationSquared"; }
+};
+
 //---------------------------------------------------------------------------//
 
 } // end namespace FLIP

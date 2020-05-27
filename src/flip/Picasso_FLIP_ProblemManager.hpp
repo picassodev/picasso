@@ -60,6 +60,7 @@ class ProblemManager
             std::max(flip_params.get<int>("minimum_halo_cell_width"),3);
         auto ppc = flip_params.get<int>("particle_per_cell_dim");
         _delta_t = flip_params.get<double>("time_step_size");
+        _theta = flip_params.get<double>("time_integration_theta");
 
         // Create material model.
         double gamma = flip_params.get<double>("gamma");
@@ -85,12 +86,17 @@ class ProblemManager
         // Cell fields.
         _fields->add( FieldLocation::Cell(), Field::Density() );
         _fields->add( FieldLocation::Cell(), Field::Pressure() );
+        _fields->add( FieldLocation::Cell(), Field::InternalEnergy() );
+        _fields->add( FieldLocation::Cell(), VelocityThetaDivergence() );
+        _fields->add( FieldLocation::Cell(), CompressionTerm() );
 
         // Node fields.
         _fields->add( FieldLocation::Node(), Field::Mass() );
         _fields->add( FieldLocation::Node(), Field::Velocity() );
         _fields->add( FieldLocation::Node(), VelocityOld() );
         _fields->add( FieldLocation::Node(), VelocityTheta() );
+        _fields->add( FieldLocation::Node(), AccelerationTheta() );
+        _fields->add( FieldLocation::Node(), AccelerationSquared() );
 
         // Particle initialization function.
         auto init_func =
@@ -211,6 +217,9 @@ class ProblemManager
     // Time step size.
     double timeStepSize() const { return _delta_t; }
 
+    // Time integration parameter.
+    double theta() const { return _theta; }
+
     // Equation of state.
     IdealGas eos() const
     { return _eos; }
@@ -231,6 +240,9 @@ class ProblemManager
 
     // Time step size.
     double _delta_t;
+
+    // Time integration theta.
+    double _theta;
 
     // Equation of state.
     IdealGas _eos;

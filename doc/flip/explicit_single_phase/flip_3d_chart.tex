@@ -929,13 +929,13 @@
 \item update grid velocity on grid and density on cell
 \begin{itemize}
     \item $0 = \rhoco\left\{1+\sum_i \dic \cdot \uit \Delta t\right\}  - \rhocz $
-    \item $ \uio = \left( \uit - (1-\theta)\uio \right)/\theta $
+    \item $ \uio = \left( \uit - (1-\theta)\uiz \right)/\theta $
 \end{itemize}
 
 \item {\bf g2p :}update particle velocity, position and internal energy
 \begin{itemize}
-    \item $\epo = \epz \left\{ 1 - \sum_c \pc( \nabla \cdot \uit )_c \: \pcp \Delta t / \rhoc \icz \right\} \\
-    - \mp \left\{ \sum_c \left(\qc (\nabla \cdot \uit ) - \Psi_c^0 \cdot ( \nabla \times \uit ) \right) \pcp \Delta t / \rhoc \right\} \\
+    \item $\epo = \epz \left\{ 1 - \sum_c \pc( \dic \cdot \uit ) \: \pcp \Delta t / \rhoc \icz \right\} \\
+    - \mp \left\{ \sum_c \left(\qc (\dic \cdot \uit ) - \Psi_c^0 \cdot ( \dic \times \uit ) \right) \pcp \Delta t / \rhoc^0 \right\} \\
     + \mp \sum_i (\uio -\uiz)^2 \pip(\theta - 0.5) \\
     + \mp \left\{ \sum_i \left( (\uio)^2 - (\uiz)^2 \right) \pip - \left( (\upo)^2  - (\upz)^2 \right)  \right\}/2$\\
 \end{itemize}
@@ -944,7 +944,7 @@
     \item FLIP
     \begin{itemize}
         \item $\upo = \upz + \sum_i \left( \uio - \uiz \right) \pip$ \\
-        \item $\xpo = \xpz + \uit(\xp) \Delta t$
+        \item $\xpo = \xpz + \sum_i \uit \pip \Delta t$
     \end{itemize}
 \end{enumerate}
 
