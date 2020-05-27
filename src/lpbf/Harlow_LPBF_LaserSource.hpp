@@ -28,7 +28,7 @@ struct LaserSource
     // time ) const
     double operator()( const double[3], const double phi, const double ) const
     {
-        if ( fabs(phi) < _phi_threshold )
+        if ( phi > -_phi_threshold )
         {
             return _power;
         }
