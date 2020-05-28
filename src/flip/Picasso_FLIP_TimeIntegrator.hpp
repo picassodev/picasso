@@ -28,6 +28,9 @@ void step( const ExecutionSpace& exec_space,
     // Equation of state.
     auto eos = pm.eos();
 
+    // Boundary condition.
+    auto bc = pm.boundaryCondition();
+
     // Time step size.
     auto dt = pm.timeStepSize();
 
@@ -181,7 +184,7 @@ void step( const ExecutionSpace& exec_space,
             // Only update this node if there is mass.
             if ( m_i(i,j,k,0) > 0.0 )
             {
-                // Geometric coefficient.
+                // Geometric coefficient. Cell-centered ordering.
                 double dic[2][2][2][3];
 
                 dic[0][0][0][0] = -0.25 * rdx;
@@ -218,9 +221,12 @@ void step( const ExecutionSpace& exec_space,
                         for ( int kc = 0; kc < 2; ++kc )
                             for ( int d = 0; d < 3; ++d )
                             {
+                                // Note here we convert the cell-centered
+                                // ordering of the geometric coefficient to
+                                // node-centered.
                                 grad_p[d] +=
                                     dic[ic][jc][kc][d] *
-                                    p_c(i+ic-1,j+jc-1,k+kc-1,0);
+                                    p_c(i-ic,j-jc,k-kc,0);
                             }
 
                 // Compute coefficient.
@@ -232,8 +238,7 @@ void step( const ExecutionSpace& exec_space,
                         u_old_i(i,j,k,d) + grad_p[d] * coeff;
 
                 // Apply boundary conditions to theta velocity.
-                // FIXME: make sure this happens before the updated velocity
-                // is computed.
+                bc( u_theta_i, i, j, k );
 
                 // Project divergence of theta velocity to to cell centers.
                 auto u_theta_div_c_sv_a = u_theta_div_c_sv.access();
@@ -248,7 +253,10 @@ void step( const ExecutionSpace& exec_space,
                                 u_div_c += dic[ic][jc][kc][d] *
                                            u_theta_i(i,j,k,d);
                             }
-                            u_theta_div_c_sv_a(i+ic-1,j+jc-1,k+kc-1,0) += u_div_c;
+
+                            // Note here we convert the cell-centered ordering
+                            // of the geometric coefficient to node-centered.
+                            u_theta_div_c_sv_a(i-ic,j-jc,k-kc,0) += u_div_c;
                         }
 
                 // Compute updated velocity.

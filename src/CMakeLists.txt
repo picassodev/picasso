@@ -63,6 +63,7 @@ target_include_directories( PicassoLPBF
 # flip solver
 set(FLIP_HEADERS
   flip/Picasso_FLIP_AuxiliaryFieldTypes.hpp
+  flip/Picasso_FLIP_BoundaryCondition.hpp
   flip/Picasso_FLIP_EquationOfState.hpp
   flip/Picasso_FLIP_ProblemManager.hpp
   flip/Picasso_FLIP_Solver.hpp

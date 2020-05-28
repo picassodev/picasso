@@ -3,6 +3,7 @@
 
 #include <Picasso_FLIP_AuxiliaryFields.hpp>
 #include <Picasso_FLIP_EquationOfState.hpp>
+#include <Picasso_FLIP_BoundaryCondition.hpp>
 
 #include <Picasso_UniformMesh.hpp>
 #include <Picasso_ParticleList.hpp>
@@ -75,6 +76,9 @@ class ProblemManager
                                              geom.globalBoundingBox(),
                                              _halo_min,
                                              comm );
+
+        // Create boundary condition.
+        _bc = DomainNoSlipBoundary( *_mesh );
 
         // Create particles.
         _particles = std::make_shared<particle_list>( "flip_particles", _mesh );
@@ -224,6 +228,10 @@ class ProblemManager
     IdealGas eos() const
     { return _eos; }
 
+    // Boundary condition.
+    DomainNoSlipBoundary boundaryCondition() const
+    { return _bc; }
+
   private:
 
     // Mesh.
@@ -246,6 +254,9 @@ class ProblemManager
 
     // Equation of state.
     IdealGas _eos;
+
+    // Boundary condition.
+    DomainNoSlipBoundary _bc;
 };
 
 //---------------------------------------------------------------------------//
