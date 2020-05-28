@@ -4,6 +4,8 @@
 #include <string>
 #include <type_traits>
 
+#include <Cajita.hpp>
+
 namespace Picasso
 {
 //---------------------------------------------------------------------------//

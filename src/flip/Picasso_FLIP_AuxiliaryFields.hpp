@@ -8,38 +8,38 @@ namespace Picasso
 namespace FLIP
 {
 //---------------------------------------------------------------------------//
-class VelocityOld : public Vector<double,3>
+struct VelocityOld : public Field::Vector<double,3>
 {
     static std::string label() { return "velocity_old"; }
 };
 
-class VelocityTheta : public Vector<double,3>
+struct VelocityTheta : public Field::Vector<double,3>
 {
     static std::string label() { return "velocity_theta"; }
 };
 
-class VelocityThetaDivergence : public Scalar<double>
+struct VelocityThetaDivergence : public Field::Scalar<double>
 {
     static std::string label() { return "velocity_theta_divergence"; }
 };
 
 // FIXME: Cajita should allow for assembly of more complex G2P terms from a
 // functor instead of a view.
-class CompressionTerm : public Scalar<double>
+struct CompressionTerm : public Field::Scalar<double>
 {
     static std::string label() { return "compression_term"; }
 };
 
 // FIXME: Cajita should allow for assembly of more complex G2P terms from a
 // functor instead of a view.
-class AccelerationTheta : public Scalar<double>
+struct AccelerationTheta : public Field::Scalar<double>
 {
     static std::string label() { return "AccelerationTheta"; }
 };
 
 // FIXME: Cajita should allow for assembly of more complex G2P terms from a
 // functor instead of a view.
-class AccelerationSquared : public Scalar<double>
+struct AccelerationSquared : public Field::Scalar<double>
 {
     static std::string label() { return "AccelerationSquared"; }
 };

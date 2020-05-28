@@ -21,27 +21,27 @@ struct IdealGas
     {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()( Field::InternalEnergy,
-                     const double pressure,
-                     const double density ) const
+    double operator()( Field::InternalEnergy,
+                       const double pressure,
+                       const double density ) const
     {
-        return pressure / ( (gamma_m_1) * density );
+        return pressure / ( (_gamma_m_1) * density );
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()( Field::Pressure,
-                     const double internal_energy,
-                     const double density ) const
+    double operator()( Field::Pressure,
+                       const double internal_energy,
+                       const double density ) const
     {
-        return (gamma_m_1) * density * internal_energy;
+        return (_gamma_m_1) * density * internal_energy;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()( Field::Density,
-                     const double pressure,
-                     const double internal_energy ) const
+    double operator()( Field::Density,
+                       const double pressure,
+                       const double internal_energy ) const
     {
-        return pressure / ( (gamma_m_1) * internal_energy );
+        return pressure / ( (_gamma_m_1) * internal_energy );
     }
 };
 

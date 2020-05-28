@@ -915,12 +915,28 @@
     \item $\psic = \mu \sum_i \dic \times \ui $
 \end{itemize}
 
+\item If inviscid, compute artificial viscosity and add to pressure
+  \begin{itemize}
+  \item
+    \[
+    \begin{aligned}
+    A_c &=
+    \begin{cases}
+      C^2 dx^2 \rho_c \sum_i (\dic \cdot \ui)^2, & \text{if } \sum_i
+      \dic \cdot \ui < 0 \\
+      0, & \text{otherwise}
+    \end{cases}
+    \end{aligned}
+    \]
+  \item $\pc \leftarrow \pc + A_c$
+\end{itemize}
+
 \item {\bf solve on grid: } equation of motion is solved on grid.
 \begin{itemize}
     \item $0 = \mi\left( \uit - \uiz \right) - \sum_c \left\{ \dic(\pc + \qc) + \dic \times \Psi_c \right\} V_c \theta \Delta t$
 \end{itemize}
 
-\item boudary condition is applied to $\uit$
+\item boundary condition is applied to $\uit$
 \begin{itemize}
     \item no-slip $\uit \cdot \t = 0$
     \item no-flow $\uit \cdot \n = 0$

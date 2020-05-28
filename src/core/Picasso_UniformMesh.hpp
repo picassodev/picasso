@@ -84,7 +84,7 @@ class UniformMesh
             if ( std::abs(
                      extent - (global_bounding_box[d+3]-
                                global_bounding_box[d]) ) >
-                 double( 100.0 ) * std::numeric_limits<double>::epsilon() )
+                 std::numeric_limits<float>::epsilon() )
                 throw std::logic_error(
                     "Extent not evenly divisible by uniform cell size" );
         }

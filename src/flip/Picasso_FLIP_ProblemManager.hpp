@@ -50,9 +50,9 @@ class ProblemManager
 
     // Constructor.
     template<class ExecutionSpace>
-    ProblemSpace( const ExecutionSpace& exec_space,
-                  const boost::property_tree::ptree& ptree,
-                  MPI_Comm comm )
+    ProblemManager( const ExecutionSpace& exec_space,
+                    const boost::property_tree::ptree& ptree,
+                    MPI_Comm comm )
     {
         // Get problem parameters.
         const auto& flip_params = ptree.get_child("flip");
@@ -105,7 +105,7 @@ class ProblemManager
                            particle_type& p )
             {
                 // Put points in single precision.
-                float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
+                float xf[3] = {float(x_ref[0]),float(x_ref[1]),float(x_ref[2])};
 
                 // Locate the point in the geometry.
                 // FIXME: This only works for uniform grids. We get logical
@@ -117,17 +117,17 @@ class ProblemManager
                 // probably the best idea) or do something like generate the
                 // geometry as a level set although we would need a level set
                 // then for each geometric object to do the setup right.
-                auto volume_id = FacetGeometryOps::locatePoint(x_ref,geom_data);
+                auto volume_id = FacetGeometryOps::locatePoint(xf,geom_data);
 
                 // Hard code for shock-tube for now.
 
                 // Left and right.
-                if ( 2 == volume_id || 3 == volume_id )
+                if ( 1 == volume_id || 2 == volume_id )
                 {
                     // Assign position.
                     for ( int d = 0; d < 3; ++d )
                         ParticleAccess::get( p, Field::LogicalPosition(), d ) =
-                            x[d];
+                            x_ref[d];
 
                     // Assign velocity.
                     for ( int d = 0; d < 3; ++d )
@@ -135,7 +135,7 @@ class ProblemManager
                             0.0;
 
                     // Left side.
-                    if ( 2 == volume_id )
+                    if ( 1 == volume_id )
                     {
                         // Initial conditions.
                         double pressure_left = 1.0;
@@ -152,7 +152,7 @@ class ProblemManager
                     }
 
                     // Right side.
-                    if ( 3 == volume_id )
+                    else if ( 2 == volume_id )
                     {
                         // Initial conditions.
                         double pressure_right = 0.1;
@@ -190,13 +190,13 @@ class ProblemManager
     // Get the particles.
     std::shared_ptr<particle_list> particleList() const { return _particles; }
 
-    // Get the primary state manager.
+    // Get the grid field manager.
     std::shared_ptr<field_manager> fields() const
-    { return _state_manager; }
+    { return _fields; }
 
     // Communicate particles.
     template<class ExecutionSpace>
-    void communicateParticles( const ExecutionSpace& exec_space )
+    void communicateParticles( const ExecutionSpace& )
     {
         _particles->redistribute();
     }

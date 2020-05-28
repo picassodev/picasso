@@ -1,7 +1,7 @@
 #ifndef PICASSO_FLIP_TIMEINTEGRATOR_HPP
 #define PICASSO_FLIP_TIMEINTEGRATOR_HPP
 
-#include <Picasso_FLIP_AuxiliaryFieldTypes.hpp>
+#include <Picasso_FLIP_AuxiliaryFields.hpp>
 
 #include <Cajita.hpp>
 
@@ -40,7 +40,7 @@ void step( const ExecutionSpace& exec_space,
     double cell_volume = dx * dx * dx;
 
     // Time integration coefficient.
-    double volume_theta_dt = cell_volume * theta * delta_t;
+    double volume_theta_dt = cell_volume * theta * dt;
 
     // Local grid.
     const auto& local_grid = *(pm.mesh()->localGrid());
@@ -49,10 +49,10 @@ void step( const ExecutionSpace& exec_space,
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
 
     // Get slices of particle data.
-    auto x_p = particles.slice( Field::LogicalPosition() );
-    auto u_p = particles.slice( Field::Velocity() );
-    auto m_p = particles.slice( Field::Mass() );
-    auto e_p = particles.slice( Field::InternalEnergy() );
+    auto x_p = particles->slice( Field::LogicalPosition() );
+    auto u_p = particles->slice( Field::Velocity() );
+    auto m_p = particles->slice( Field::Mass() );
+    auto e_p = particles->slice( Field::InternalEnergy() );
 
     // Get views of cell data.
     auto rho_c = fields->view( FieldLocation::Cell(), Field::Density() );
@@ -67,8 +67,10 @@ void step( const ExecutionSpace& exec_space,
     auto u_i = fields->view( FieldLocation::Node(), Field::Velocity() );
     auto u_old_i = fields->view( FieldLocation::Node(), VelocityOld() );
     auto u_theta_i = fields->view( FieldLocation::Node(), VelocityTheta() );
-    auto acc_theta_i = fields->view( FieldLocation::Node(), AcclerationTheta() );
-    auto acc_squared_i = fields->view( FieldLocation::Node(), AcclerationSquared() );
+    auto acc_theta_i =
+        fields->view( FieldLocation::Node(), AccelerationTheta() );
+    auto acc_squared_i =
+        fields->view( FieldLocation::Node(), AccelerationSquared() );
 
     // Reset write views.
     Kokkos::deep_copy( rho_c, 0.0 );
@@ -80,14 +82,15 @@ void step( const ExecutionSpace& exec_space,
     // Create scatter views.
     auto rho_c_sv = Kokkos::Experimental::create_scatter_view( rho_c );
     auto e_c_sv = Kokkos::Experimental::create_scatter_view( e_c );
-    auto u_theta_div_c_sv = Kokkos::Experiuental::create_scatter_view( u_theta_div_c );
+    auto u_theta_div_c_sv =
+        Kokkos::Experimental::create_scatter_view( u_theta_div_c );
     auto m_i_sv = Kokkos::Experimental::create_scatter_view( m_i );
-    auto u_old_i_sv = Kokkos::Experiuental::create_scatter_view( u_old_i );
+    auto u_old_i_sv = Kokkos::Experimental::create_scatter_view( u_old_i );
 
     // P2G - Compute initial grid state.
     Kokkos::parallel_for(
         "flip_p2g",
-        Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, particles.size() ),
+        Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, particles->size() ),
         KOKKOS_LAMBDA( const int p ){
 
             // Get the particle position.
@@ -109,7 +112,7 @@ void step( const ExecutionSpace& exec_space,
 
             // Project momentum to nodes.
             double momentum[3] = { m_p(p)*u_p(p,0),
-                                   m_p(p)*u_p(p,1)
+                                   m_p(p)*u_p(p,1),
                                    m_p(p)*u_p(p,2) };
             Cajita::P2G::value( momentum, sd_i, u_old_i_sv );
 
@@ -132,10 +135,10 @@ void step( const ExecutionSpace& exec_space,
     // Finish cell density and specific internal energy computation and
     // compute the pressure.
     auto owned_cells =
-        local_grid.index( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
+        local_grid.indexSpace( Cajita::Own(), Cajita::Cell(), Cajita::Local() );
     Kokkos::parallel_for(
         "update_cell_density_and_energy",
-        Cajita::createExecution(owned_cells,exec_space),
+        Cajita::createExecutionPolicy(owned_cells,exec_space),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
             // Only update if there is non-zero mass.
@@ -169,9 +172,10 @@ void step( const ExecutionSpace& exec_space,
 
     // Compute node velocities and apply boundary conditions.
     auto owned_nodes =
-        local_grid.index( Cajita::Own(), Cajita::Node(), Cajita::Local() );
+        local_grid.indexSpace( Cajita::Own(), Cajita::Node(), Cajita::Local() );
     Kokkos::parallel_for(
         "compute_node_velocity",
+        Cajita::createExecutionPolicy(owned_nodes,exec_space),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
             // Only update this node if there is mass.
@@ -209,9 +213,9 @@ void step( const ExecutionSpace& exec_space,
 
                 // Compute pressure gradient.
                 double grad_p[3] = {0.0,0.0,0.0};
-                for ( ic = 0; ic < 2; ++ic )
-                    for ( jc = 0; jc < 2; ++jc )
-                        for ( kc = 0; kc < 2; ++kc )
+                for ( int ic = 0; ic < 2; ++ic )
+                    for ( int jc = 0; jc < 2; ++jc )
+                        for ( int kc = 0; kc < 2; ++kc )
                             for ( int d = 0; d < 3; ++d )
                             {
                                 grad_p[d] +=
@@ -234,9 +238,9 @@ void step( const ExecutionSpace& exec_space,
                 // Project divergence of theta velocity to to cell centers.
                 auto u_theta_div_c_sv_a = u_theta_div_c_sv.access();
                 double u_div_c;
-                for ( ic = 0; ic < 2; ++ic )
-                    for ( jc = 0; jc < 2; ++jc )
-                        for ( kc = 0; kc < 2; ++kc )
+                for ( int ic = 0; ic < 2; ++ic )
+                    for ( int jc = 0; jc < 2; ++jc )
+                        for ( int kc = 0; kc < 2; ++kc )
                         {
                             u_div_c = 0.0;
                             for ( int d = 0; d < 3; ++d )
@@ -244,7 +248,7 @@ void step( const ExecutionSpace& exec_space,
                                 u_div_c += dic[ic][jc][kc][d] *
                                            u_theta_i(i,j,k,d);
                             }
-                            u_theta_div_c_sv_a(i+ic-1,j+jc-1,k_kc-1) += u_div_c;
+                            u_theta_div_c_sv_a(i+ic-1,j+jc-1,k+kc-1,0) += u_div_c;
                         }
 
                 // Compute updated velocity.
@@ -281,19 +285,19 @@ void step( const ExecutionSpace& exec_space,
     // FIXME: this shouldn't be needed when cajita can do G2P with a general
     // grid access functor.
     auto ghosted_cells =
-        local_grid.index( Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
+        local_grid.indexSpace( Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
     Kokkos::parallel_for(
         "stuff_we_will_fix_cells",
-        Cajita::createExecution(ghosted_cells,exec_space),
+        Cajita::createExecutionPolicy(ghosted_cells,exec_space),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             comp_c(i,j,k,0) = p_c(i,j,k,0) * u_theta_div_c(i,j,k,0) /
                               ( rho_c(i,j,k,0) * e_c(i,j,k,0) );
         });
     auto ghosted_nodes =
-        local_grid.index( Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+        local_grid.indexSpace( Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
     Kokkos::parallel_for(
         "stuff_we_will_fix_nodes",
-        Cajita::createExecution(ghosted_nodes,exec_space),
+        Cajita::createExecutionPolicy(ghosted_nodes,exec_space),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             double value = 0.0;
             for ( int d = 0; d < 3; ++d )
@@ -314,8 +318,11 @@ void step( const ExecutionSpace& exec_space,
     // G2P - update particles
     Kokkos::parallel_for(
         "flip_g2p",
-        Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, particles.size() ),
+        Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, particles->size() ),
         KOKKOS_LAMBDA( const int p ){
+
+            // Get the particle position.
+            double x[3] = { x_p(p,0), x_p(p,1), x_p(p,2) };
 
             // Second order interpolation to nodes.
             Cajita::SplineData<double,2,Cajita::Node> sd_i;
@@ -330,11 +337,11 @@ void step( const ExecutionSpace& exec_space,
 
             // Project velocities to particle
             double u_p_old[3];
-            Cajita::G2P( u_old_i, sd_i, u_p_old );
+            Cajita::G2P::value( u_old_i, sd_i, u_p_old );
             double u_p_theta[3];
-            Cajita::G2P( u_theta_i, sd_i, u_p_theta );
+            Cajita::G2P::value( u_theta_i, sd_i, u_p_theta );
             double u_p_new[3];
-            Cajita::G2P( u_i, sd_i, u_p_new );
+            Cajita::G2P::value( u_i, sd_i, u_p_new );
 
             // Compute new particle velocity and position.
             // FIXME: decide how this position update changes if the grid is
@@ -344,7 +351,7 @@ void step( const ExecutionSpace& exec_space,
             {
                 u_p_1[d] = u_p_new[d] - u_p_old[d];
                 u_p(p,d) = u_p_1[d];
-                x_p(p,d) += u_p_theta[d] * delta_t;
+                x_p(p,d) += u_p_theta[d] * dt;
             }
 
             // Update particle internal energy.
@@ -354,6 +361,9 @@ void step( const ExecutionSpace& exec_space,
             double acc_theta_p;
             Cajita::G2P::value( acc_theta_i, sd_i, acc_theta_p );
 
+            double acc_squared_p;
+            Cajita::G2P::value( acc_squared_i, sd_i, acc_squared_p );
+
             double u_p_0_sqr = 0.0;
             double u_p_1_sqr = 0.0;
             for ( int d = 0; d < 3; ++d )
@@ -362,7 +372,7 @@ void step( const ExecutionSpace& exec_space,
                 u_p_1_sqr += u_p_1[d] * u_p_1[d];
             }
 
-            e_p(p) = e_p(p) * ( 1.0 - comp_p * delta_t ) +
+            e_p(p) = e_p(p) * ( 1.0 - comp_p * dt ) +
                      m_p(p) * acc_theta_p * ( theta - 0.5 ) +
                      m_p(p) * ( acc_squared_p - (u_p_1_sqr - u_p_0_sqr) ) * 0.5;
         });
