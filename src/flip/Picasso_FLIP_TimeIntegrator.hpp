@@ -119,7 +119,7 @@ void step( const ExecutionSpace& exec_space,
                                    m_p(p)*u_p(p,2) };
             Cajita::P2G::value( momentum, sd_i, u_old_i_sv );
 
-            // Project internal energy to nodes.
+            // Project internal energy to cells.
             Cajita::P2G::value( e_p(p), sd_c, e_c_sv );
         } );
 
@@ -184,6 +184,10 @@ void step( const ExecutionSpace& exec_space,
             // Only update this node if there is mass.
             if ( m_i(i,j,k,0) > 0.0 )
             {
+                // Compute old velocity.
+                for ( int d = 0; d < 3; ++d )
+                    u_old_i(i,j,k,d) /= m_i(i,j,k,0);
+
                 // Geometric coefficient. Cell-centered ordering.
                 double dic[2][2][2][3];
 
@@ -229,13 +233,11 @@ void step( const ExecutionSpace& exec_space,
                                     p_c(i-ic,j-jc,k-kc,0);
                             }
 
-                // Compute coefficient.
-                double coeff = volume_theta_dt / m_i(i,j,k,0);
-
                 // Compute theta velocity.
                 for ( int d = 0; d < 3; ++d )
                     u_theta_i(i,j,k,d) =
-                        u_old_i(i,j,k,d) + grad_p[d] * coeff;
+                        u_old_i(i,j,k,d) +
+                        grad_p[d] * volume_theta_dt / m_i(i,j,k,0);
 
                 // Apply boundary conditions to theta velocity.
                 bc( u_theta_i, i, j, k );
@@ -357,7 +359,7 @@ void step( const ExecutionSpace& exec_space,
             double u_p_1[3];
             for ( int d = 0; d < 3; ++d )
             {
-                u_p_1[d] = u_p_new[d] - u_p_old[d];
+                u_p_1[d] = u_p_0[d] + u_p_new[d] - u_p_old[d];
                 u_p(p,d) = u_p_1[d];
                 x_p(p,d) += u_p_theta[d] * dt;
             }

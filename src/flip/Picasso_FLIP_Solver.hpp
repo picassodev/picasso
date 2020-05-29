@@ -59,15 +59,19 @@ class Solver : public SolverBase
         double time = 0.0;
 
         // Write initial particle data to file.
-        _problem_manager->writeParticleFields( 0, time );
+        _problem_manager->writeGridFields( 0, time );
 
         // Time step
         int num_step = _t_final / _problem_manager->timeStepSize();
         double delta_t = _t_final / num_step;
+        bool do_write;
         for ( int t = 0; t < num_step; ++t )
         {
+            // Write frequency.
+            do_write = 0 == ((t+1) % _write_freq);
+
             // Print if at the write frequency.
-            if ( 0 == _rank && 0 == t % _write_freq )
+            if ( 0 == _rank && do_write )
                 printf( "Step %d / %d\n", t+1, num_step );
 
             // Step forward one time step.
@@ -77,8 +81,8 @@ class Solver : public SolverBase
             _problem_manager->communicateParticles( execution_space() );
 
             // Write particle data to file if at the write frequency.
-            if ( 0 == t % _write_freq )
-                _problem_manager->writeParticleFields( t+1, time );
+            if ( do_write )
+                _problem_manager->writeGridFields( t+1, time );
 
             // Update time.
             time += delta_t;

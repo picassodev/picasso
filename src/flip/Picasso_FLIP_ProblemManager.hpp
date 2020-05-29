@@ -218,6 +218,27 @@ class ProblemManager
             _particles->slice(Field::Velocity()) );
     }
 
+    // Write grid fields.
+    void writeGridFields( const int step, const double time ) const
+    {
+        Cajita::BovWriter::writeTimeStep(
+            step, time,
+            *(_fields->array(FieldLocation::Node(),Field::Velocity())) );
+        Cajita::BovWriter::writeTimeStep(
+            step, time,
+            *(_fields->array(FieldLocation::Cell(),Field::Pressure())) );
+        Cajita::BovWriter::writeTimeStep(
+            step, time,
+            *(_fields->array(FieldLocation::Cell(),Field::InternalEnergy())) );
+        Cajita::BovWriter::writeTimeStep(
+            step, time,
+            *(_fields->array(FieldLocation::Cell(),Field::Density())) );
+
+        Cajita::BovWriter::writeTimeStep(
+            step, time,
+            *(_fields->array(FieldLocation::Cell(),VelocityThetaDivergence())) );
+    }
+
     // Time step size.
     double timeStepSize() const { return _delta_t; }
 

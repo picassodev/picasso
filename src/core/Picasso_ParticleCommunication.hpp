@@ -1,9 +1,9 @@
 #ifndef PICASSO_PARTICLECOMMUNICATION_HPP
 #define PICASSO_PARTICLECOMMUNICATION_HPP
 
-#include <Cajita.hpp>
-
 #include <Picasso_Types.hpp>
+
+#include <Cajita.hpp>
 
 #include <Cabana_Core.hpp>
 
