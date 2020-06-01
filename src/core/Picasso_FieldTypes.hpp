@@ -4,8 +4,49 @@
 #include <string>
 #include <type_traits>
 
+#include <Cajita.hpp>
+
 namespace Picasso
 {
+//---------------------------------------------------------------------------//
+// Field locations.
+namespace FieldLocation
+{
+struct Cell
+{
+    using entity_type = Cajita::Cell;
+    static std::string label() { return "Cell"; }
+};
+
+template<int D>
+struct Face
+{
+    using entity_type = Cajita::Face<D>;
+    static std::string label() { return std::string("Face_" + D); }
+};
+
+template<int D>
+struct Edge
+{
+    using entity_type = Cajita::Edge<D>;
+    static std::string label() { return std::string("Edge_" + D); }
+};
+
+struct Node
+{
+    using entity_type = Cajita::Node;
+    static std::string label() { return "Node"; }
+};
+
+struct Particle
+{
+    static std::string label() { return "Particle"; }
+};
+
+} // end namespace FieldLocation
+
+//---------------------------------------------------------------------------//
+// Field type tags
 namespace Field
 {
 //---------------------------------------------------------------------------//
@@ -93,124 +134,124 @@ struct is_tensor : public is_tensor_impl<typename std::remove_cv<T>::type>::type
 // Fields.
 struct PhysicalPosition : public Vector<double,3>
 {
-    static std::string label() { return "physical_position"; };
+    static std::string label() { return "physical_position"; }
 };
 
 struct LogicalPosition : public Vector<double,3>
 {
-    static std::string label() { return "logical_position"; };
+    static std::string label() { return "logical_position"; }
 };
 
 struct Mass : public Scalar<double>
 {
-    static std::string label() { return "mass"; };
+    static std::string label() { return "mass"; }
 };
 
 struct Volume : public Scalar<double>
 {
-    static std::string label() { return "volume"; };
+    static std::string label() { return "volume"; }
 };
 
 struct Momentum : public Vector<double,3>
 {
-    static std::string label() { return "momentum"; };
+    static std::string label() { return "momentum"; }
 };
 
 struct Velocity : public Vector<double,3>
 {
-    static std::string label() { return "velocity"; };
+    static std::string label() { return "velocity"; }
 };
 
 struct Acceleration : public Vector<double,3>
 {
-    static std::string label() { return "acceleration"; };
+    static std::string label() { return "acceleration"; }
 };
 
 struct AffineVelocity : public Tensor<double,3,3>
 {
-    static std::string label() { return "affine_velocity"; };
+    static std::string label() { return "affine_velocity"; }
 };
 
 template<int N>
 struct PolynomialVelocity : public Tensor<double,N,3>
 {
     static constexpr int num_mode = N;
-    static std::string label() { return "polynomial_velocity"; };
+    static std::string label() { return "polynomial_velocity"; }
 };
 
 struct Normal : public Vector<double,3>
 {
-    static std::string label() { return "normal"; };
+    static std::string label() { return "normal"; }
 };
 
 struct Temperature : public Scalar<double>
 {
-    static std::string label() { return "temperature"; };
+    static std::string label() { return "temperature"; }
 };
 
 struct HeatFlux : public Vector<double,3>
 {
-    static std::string label() { return "heat_flux"; };
+    static std::string label() { return "heat_flux"; }
 };
 
 struct Pressure : public Scalar<double>
 {
-    static std::string label() { return "pressure"; };
+    static std::string label() { return "pressure"; }
 };
 
 struct InternalEnergy : public Scalar<double>
 {
-    static std::string label() { return "internal_energy"; };
+    static std::string label() { return "internal_energy"; }
 };
 
 struct Density : public Scalar<double>
 {
-    static std::string label() { return "density"; };
+    static std::string label() { return "density"; }
 };
 
 struct Stress : public Tensor<double,3,3>
 {
-    static std::string label() { return "stress"; };
+    static std::string label() { return "stress"; }
 };
 
 struct DeformationGradient : public Tensor<double,3,3>
 {
-    static std::string label() { return "deformation_gradient"; };
+    static std::string label() { return "deformation_gradient"; }
 };
 
 struct DeformationGradientDeterminant : public Scalar<double>
 {
-    static std::string label() { return "deformation_gradient_det"; };
+    static std::string label() { return "deformation_gradient_det"; }
 };
 
 struct SignedDistance : public Scalar<double>
 {
-    static std::string label() { return "signed_distance"; };
+    static std::string label() { return "signed_distance"; }
 };
 
 struct Color : public Scalar<double>
 {
-    static std::string label() { return "color"; };
+    static std::string label() { return "color"; }
 };
 
 struct MaterialId : public Scalar<int>
 {
-    static std::string label() { return "material_id"; };
+    static std::string label() { return "material_id"; }
 };
 
 struct PartId : public Scalar<int>
 {
-    static std::string label() { return "part_id"; };
+    static std::string label() { return "part_id"; }
 };
 
 struct VolumeId : public Scalar<int>
 {
-    static std::string label() { return "volume_id"; };
+    static std::string label() { return "volume_id"; }
 };
 
 struct BoundaryId : public Scalar<int>
 {
-    static std::string label() { return "boundary_id"; };
+    static std::string label() { return "boundary_id"; }
 };
 
 //---------------------------------------------------------------------------//

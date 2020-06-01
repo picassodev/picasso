@@ -84,7 +84,7 @@ class UniformMesh
             if ( std::abs(
                      extent - (global_bounding_box[d+3]-
                                global_bounding_box[d]) ) >
-                 double( 100.0 ) * std::numeric_limits<double>::epsilon() )
+                 std::numeric_limits<float>::epsilon() )
                 throw std::logic_error(
                     "Extent not evenly divisible by uniform cell size" );
         }
@@ -169,7 +169,7 @@ class UniformMesh
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
     }
 
-    // Get the minimum required numober of cells in the halo.
+    // Get the minimum required number of cells in the halo.
     int minimumHaloWidth() const
     {
         return _minimum_halo_width;

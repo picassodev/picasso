@@ -1,3 +1,4 @@
+# core library
 configure_file(Picasso_config.hpp.cmakein Picasso_config.hpp)
 
 set(CORE_HEADERS
@@ -26,14 +27,6 @@ set(CORE_SOURCES
   core/Picasso_Version.cpp
   )
 
-set(LPBF_HEADERS
-  lpbf/Picasso_LPBF_AuxiliaryFieldTypes.hpp
-  lpbf/Picasso_LPBF_LaserSource.hpp
-  lpbf/Picasso_LPBF_ProblemManager.hpp
-  lpbf/Picasso_LPBF_Solver.hpp
-  lpbf/Picasso_LPBF_TimeIntegrator.hpp
-  )
-
 add_library(picasso ${CORE_SOURCES})
 
 target_link_libraries(picasso
@@ -48,14 +41,38 @@ target_link_libraries(picasso
 target_include_directories(picasso
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/core
-  ${CMAKE_CURRENT_SOURCE_DIR}/lpbf
   ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+# lpbf solver
+set(LPBF_HEADERS
+  lpbf/Picasso_LPBF_AuxiliaryFieldTypes.hpp
+  lpbf/Picasso_LPBF_LaserSource.hpp
+  lpbf/Picasso_LPBF_ProblemManager.hpp
+  lpbf/Picasso_LPBF_Solver.hpp
+  lpbf/Picasso_LPBF_TimeIntegrator.hpp
   )
 
 add_executable( PicassoLPBF lpbf/picasso_lpbf.cpp )
 target_link_libraries( PicassoLPBF PRIVATE picasso )
 target_include_directories( PicassoLPBF
   PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/core
   ${CMAKE_CURRENT_SOURCE_DIR}/lpbf
+  ${CMAKE_CURRENT_BINARY_DIR} )
+
+# flip solver
+set(FLIP_HEADERS
+  flip/Picasso_FLIP_AuxiliaryFieldTypes.hpp
+  flip/Picasso_FLIP_BoundaryCondition.hpp
+  flip/Picasso_FLIP_EquationOfState.hpp
+  flip/Picasso_FLIP_ProblemManager.hpp
+  flip/Picasso_FLIP_Solver.hpp
+  flip/Picasso_FLIP_TimeIntegrator.hpp
+  )
+
+add_executable( PicassoFLIP flip/picasso_flip.cpp )
+target_link_libraries( PicassoFLIP PRIVATE picasso )
+target_include_directories( PicassoFLIP
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/flip
   ${CMAKE_CURRENT_BINARY_DIR} )

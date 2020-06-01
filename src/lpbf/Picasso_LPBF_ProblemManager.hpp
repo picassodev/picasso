@@ -62,7 +62,7 @@ class ProblemManager
     {
         // Get the problem parameters.
         const auto& lpbf_params = ptree.get_child("lpbf");
-        auto _halo_min =
+        _halo_min =
             std::max(lpbf_params.get<int>("minimum_halo_cell_width"),3);
         auto ppc = lpbf_params.get<int>("particle_per_cell_dim");
         _delta_t = lpbf_params.get<double>("time_step_size");
