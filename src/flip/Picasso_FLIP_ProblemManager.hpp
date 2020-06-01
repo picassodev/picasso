@@ -62,6 +62,7 @@ class ProblemManager
         auto ppc = flip_params.get<int>("particle_per_cell_dim");
         _delta_t = flip_params.get<double>("time_step_size");
         _theta = flip_params.get<double>("time_integration_theta");
+        _artificial_viscosity = flip_params.get<double>("artificial_viscosity");
 
         // Create material model.
         double gamma = flip_params.get<double>("gamma");
@@ -245,6 +246,9 @@ class ProblemManager
     // Time integration parameter.
     double theta() const { return _theta; }
 
+    // Artificial Viscosity
+    double artificialViscosity() const { return _artificial_viscosity; }
+
     // Equation of state.
     IdealGas eos() const
     { return _eos; }
@@ -272,6 +276,9 @@ class ProblemManager
 
     // Time integration theta.
     double _theta;
+   
+    // Artificial Viscosity
+    double _artificial_viscosity;
 
     // Equation of state.
     IdealGas _eos;
