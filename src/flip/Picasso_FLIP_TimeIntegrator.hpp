@@ -37,6 +37,9 @@ void step( const ExecutionSpace& exec_space,
     // Time integration coeffcieint.
     auto theta = pm.theta();
 
+    // Artificial viscosity
+    auto artificial_viscosity = pm.artificialViscosity();
+
     // Uniform cell size and volume.
     auto dx = pm.mesh()->cellSize();
     double rdx = 1.0 / dx;
@@ -135,6 +138,10 @@ void step( const ExecutionSpace& exec_space,
     fields->scatter( FieldLocation::Cell(), Field::Density() );
     fields->scatter( FieldLocation::Cell(), Field::InternalEnergy() );
 
+    // Complete the global gather
+    fields->gather( FieldLocation::Node(), Field::Mass() );
+    fields->gather( FieldLocation::Node(), VelocityOld() );
+
     // Finish cell density and specific internal energy computation and
     // compute the pressure.
     auto owned_cells =
@@ -147,6 +154,50 @@ void step( const ExecutionSpace& exec_space,
             // Only update if there is non-zero mass.
             if ( rho_c(i,j,k,0) > 0.0 )
             {
+                // Geometric coefficient. Cell-centered ordering.
+                double dic[2][2][2][3];
+
+                dic[0][0][0][0] = -0.25 * rdx;
+                dic[1][0][0][0] =  0.25 * rdx;
+                dic[1][1][0][0] =  0.25 * rdx;
+                dic[0][1][0][0] = -0.25 * rdx;
+                dic[0][0][1][0] = -0.25 * rdx;
+                dic[1][0][1][0] =  0.25 * rdx;
+                dic[1][1][1][0] =  0.25 * rdx;
+                dic[0][1][1][0] = -0.25 * rdx;
+
+                dic[0][0][0][1] = -0.25 * rdx;
+                dic[1][0][0][1] = -0.25 * rdx;
+                dic[1][1][0][1] =  0.25 * rdx;
+                dic[0][1][0][1] =  0.25 * rdx;
+                dic[0][0][1][1] = -0.25 * rdx;
+                dic[1][0][1][1] = -0.25 * rdx;
+                dic[1][1][1][1] =  0.25 * rdx;
+                dic[0][1][1][1] =  0.25 * rdx;
+
+                dic[0][0][0][2] = -0.25 * rdx;
+                dic[1][0][0][2] = -0.25 * rdx;
+                dic[1][1][0][2] = -0.25 * rdx;
+                dic[0][1][0][2] = -0.25 * rdx;
+                dic[0][0][1][2] =  0.25 * rdx;
+                dic[1][0][1][2] =  0.25 * rdx;
+                dic[1][1][1][2] =  0.25 * rdx;
+                dic[0][1][1][2] =  0.25 * rdx;
+          
+                // Calculate velocity divergence at the cell
+                double u_div_c = 0.0;
+                for ( int ic = 0; ic < 2; ++ic )
+                    for ( int jc = 0; jc < 2; ++jc )
+                        for ( int kc = 0; kc < 2; ++kc )
+                        {
+                            for ( int d = 0; d < 3; ++d )
+                            {
+                                if( m_i(i+ic, j+jc, k+kc, 0) > 0.0)
+                                  u_div_c += dic[ic][jc][kc][d] *
+                                             u_old_i(i+ic, j+jc, k+kc, d) / m_i(i+ic, j+jc, k+kc, 0);
+                            }
+                        }
+
                 // Update specific internal energy. Note that the density hasn't
                 // been modified yet to avoid an extra multiplication by volume.
                 e_c(i,j,k,0) /= rho_c(i,j,k,0);
@@ -157,6 +208,10 @@ void step( const ExecutionSpace& exec_space,
                 // Compute pressure.
                 p_c(i,j,k,0) =
                     eos( Field::Pressure(), e_c(i,j,k,0), rho_c(i,j,k,0) );
+
+                // Adding artificial viscosity when compression
+                if ( u_div_c < 0.0 )
+                  p_c(i,j,k,0) += artificial_viscosity * dx * dx * rho_c(i,j,k,0) * u_div_c * u_div_c; 
             }
 
             // Otherwise everything is zero.
