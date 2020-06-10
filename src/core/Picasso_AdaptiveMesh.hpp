@@ -23,9 +23,11 @@ class AdaptiveMesh
 {
   public:
 
+    using cajita_mesh = Cajita::UniformMesh<double>;
+
     using memory_space = MemorySpace;
 
-    using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
+    using local_grid = Cajita::LocalGrid<cajita_mesh>;
 
     using node_array = Cajita::Array<double,Cajita::Node,
                                      Cajita::UniformMesh<double>,MemorySpace>;
@@ -86,9 +88,6 @@ class AdaptiveMesh
             { static_cast<double>(global_num_cell[0]),
               static_cast<double>(global_num_cell[1]),
               static_cast<double>(global_num_cell[2]) };
-        Kokkos::Array<double,3> physical_low_corner = { global_bounding_box[0],
-                                                        global_bounding_box[1],
-                                                        global_bounding_box[2] };
 
         // Get the periodicity.
         std::array<bool,3> periodic;
@@ -114,7 +113,6 @@ class AdaptiveMesh
                 global_num_cell[d] += 2*_minimum_halo_width;
                 global_low_corner[d] -= _minimum_halo_width;
                 global_high_corner[d] += _minimum_halo_width;
-                physical_low_corner[d] -= cell_size[d]*_minimum_halo_width;
             }
         }
 
@@ -164,7 +162,7 @@ class AdaptiveMesh
             Cajita::createLocalGrid( global_grid, halo_cell_width );
 
         // Create the nodes.
-        buildNodes( physical_low_corner, cell_size, exec_space );
+        buildNodes( cell_size, exec_space );
     }
 
     // Get the minimum required numober of cells in the halo.
@@ -189,8 +187,7 @@ class AdaptiveMesh
 
     // Build the mesh nodes.
     template<class ExecutionSpace>
-    void buildNodes( const Kokkos::Array<double,3>& physical_low_corner,
-                     const Kokkos::Array<double,3>& cell_size,
+    void buildNodes( const Kokkos::Array<double,3>& cell_size,
                      const ExecutionSpace& exec_space )
     {
         // Create both owned and ghosted nodes so we don't have to gather
@@ -200,20 +197,23 @@ class AdaptiveMesh
         _nodes = Cajita::createArray<double,MemorySpace>(
             "mesh_nodes", node_layout );
         auto node_view = _nodes->view();
-        auto global_space = _local_grid->indexSpace(
-            Cajita::Ghost(),Cajita::Node(),Cajita::Global());
+        auto local_mesh =
+            Cajita::createLocalMesh<ExecutionSpace>( *_local_grid );
         auto local_space = _local_grid->indexSpace(
-            Cajita::Ghost(),Cajita::Node(),Cajita::Local());
+            Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
         Kokkos::parallel_for(
             "create_nodes",
             Cajita::createExecutionPolicy(local_space,exec_space),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
-                int ig = global_space.min(0) + i;
-                int jg = global_space.min(1) + j;
-                int kg = global_space.min(2) + k;
-                node_view(i,j,k,0) = physical_low_corner[0] + cell_size[0] * ig;
-                node_view(i,j,k,1) = physical_low_corner[1] + cell_size[1] * jg;
-                node_view(i,j,k,2) = physical_low_corner[2] + cell_size[2] * kg;
+                node_view(i,j,k,0) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 0 ) +
+                    i * cell_size[0];
+                node_view(i,j,k,1) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 1 ) +
+                    j * cell_size[1];
+                node_view(i,j,k,2) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 2 ) +
+                    k * cell_size[2];
             });
     }
 

@@ -122,16 +122,19 @@ namespace Traits
 
 // Create the primitives we build the tree from. These are the particle
 // coordinates of the color we build the level set for.
-template<class PrimitiveData>
-struct Access<PrimitiveData,PrimitivesTag>
+template<class CoordinateSlice>
+struct Access<Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>,
+              PrimitivesTag>
 {
-    using memory_space = typename PrimitiveData::memory_space;
-    using size_type = typename PrimitiveData::size_type;
-    static size_type size( const PrimitiveData& data )
+    using primitive_data =
+        Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>;
+    using memory_space = typename primitive_data::memory_space;
+    using size_type = typename primitive_data::size_type;
+    static size_type size( const primitive_data& data )
     {
         return data.num_color;
     }
-    static KOKKOS_FUNCTION Point get( const PrimitiveData& data, size_type i )
+    static KOKKOS_FUNCTION Point get( const primitive_data& data, size_type i )
     {
         // Get the actual index of the particle.
         auto p = data.c(i);
@@ -145,17 +148,20 @@ struct Access<PrimitiveData,PrimitivesTag>
 
 // Create the predicates we search the tree with. These are the mesh entities
 // on which we build the level set.
-template<class PredicateData>
-struct Access<PredicateData,PredicatesTag>
+template<class LocalMesh, class EntityType>
+struct Access<Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>,
+              PredicatesTag>
 {
-    using entity_type = typename PredicateData::entity_type;
-    using memory_space = typename PredicateData::memory_space;
-    using size_type = typename PredicateData::size_type;
-    static size_type size( const PredicateData& data )
+    using predicate_data =
+        Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>;
+    using entity_type = typename predicate_data::entity_type;
+    using memory_space = typename predicate_data::memory_space;
+    using size_type = typename predicate_data::size_type;
+    static size_type size( const predicate_data& data )
     {
         return data.size;
     }
-    static KOKKOS_FUNCTION auto get( const PredicateData& data, size_type i )
+    static KOKKOS_FUNCTION auto get( const predicate_data& data, size_type i )
     {
         // Get the entity index.
         Picasso::ParticleLevelSetPredicateIndex<size_type> ijk;

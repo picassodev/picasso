@@ -60,23 +60,23 @@ void constructionTest()
     const auto& nodes_1 = mesh_1.nodes();
     auto host_coords_1 = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), nodes_1->view() );
-    auto global_space_1 = nodes_1->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Global() );
     auto local_space_1 = nodes_1->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+    auto local_mesh_1 = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        *(nodes_1->layout()->localGrid()) );
     for ( int i = local_space_1.min(0); i < local_space_1.max(0); ++i )
         for ( int j = local_space_1.min(1); j < local_space_1.max(1); ++j )
             for ( int k = local_space_1.min(2); k < local_space_1.max(2); ++k )
             {
-                auto ig = global_space_1.min(0) + i;
-                auto jg = global_space_1.min(1) + j;
-                auto kg = global_space_1.min(2) + k;
                 EXPECT_EQ( host_coords_1(i,j,k,0),
-                           global_box[0] + ig*cell_size );
+                           local_mesh_1.lowCorner(Cajita::Ghost(),0) +
+                           i*cell_size );
                 EXPECT_EQ( host_coords_1(i,j,k,1),
-                           global_box[1] + (jg-1)*cell_size );
+                           local_mesh_1.lowCorner(Cajita::Ghost(),1) +
+                           j*cell_size );
                 EXPECT_EQ( host_coords_1(i,j,k,2),
-                           global_box[2] + kg*cell_size );
+                           local_mesh_1.lowCorner(Cajita::Ghost(),2) +
+                           k*cell_size );
             }
 
     // Get inputs for mesh 2.
@@ -113,24 +113,25 @@ void constructionTest()
     const auto& nodes_2 = mesh_2.nodes();
     auto host_coords_2 = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), nodes_2->view() );
-    auto global_space_2 = nodes_2->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Global() );
     auto local_space_2 = nodes_2->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+    auto local_mesh_2 = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        *(nodes_2->layout()->localGrid()) );
     for ( int i = local_space_2.min(0); i < local_space_2.max(0); ++i )
         for ( int j = local_space_2.min(1); j < local_space_2.max(1); ++j )
             for ( int k = local_space_2.min(2); k < local_space_2.max(2); ++k )
             {
-                auto ig = global_space_2.min(0) + i;
-                auto jg = global_space_2.min(1) + j;
-                auto kg = global_space_2.min(2) + k;
                 EXPECT_EQ( host_coords_2(i,j,k,0),
-                           global_box[0] + (ig-1)*cell_size );
+                           local_mesh_2.lowCorner(Cajita::Ghost(),0) +
+                           i*cell_size );
                 EXPECT_EQ( host_coords_2(i,j,k,1),
-                           global_box[1] + jg*cell_size );
+                           local_mesh_2.lowCorner(Cajita::Ghost(),1) +
+                           j*cell_size );
                 EXPECT_EQ( host_coords_2(i,j,k,2),
-                           global_box[2] + (kg-1)*cell_size );
-            }}
+                           local_mesh_2.lowCorner(Cajita::Ghost(),2) +
+                           k*cell_size );
+            }
+}
 
 //---------------------------------------------------------------------------//
 // RUN TESTS

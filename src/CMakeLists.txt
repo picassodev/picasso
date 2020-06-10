@@ -33,7 +33,7 @@ target_link_libraries(picasso
   Kokkos::kokkos
   MPI::MPI_CXX
   Cabana::cabanacore
-  Cajita::Cajita
+  Cabana::Cajita
   Silo::silo
   ArborX::ArborX
   Boost::boost )

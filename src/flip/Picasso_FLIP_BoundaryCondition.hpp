@@ -11,22 +11,16 @@ namespace FLIP
 {
 //---------------------------------------------------------------------------//
 // No-slip on domain box boundaries.
+template<class Mesh>
 struct DomainNoSlipBoundary
 {
-    Kokkos::Array<long,3> _global_offset;
     Kokkos::Array<long,3> _global_min;
     Kokkos::Array<long,3> _global_max;
+    Cajita::IndexConversion::L2G<typename Mesh::cajita_mesh,Cajita::Node> _l2g;
 
-    DomainNoSlipBoundary() {};
-
-    template<class Mesh>
     DomainNoSlipBoundary( const Mesh& mesh )
+        : _l2g( *(mesh.localGrid()) )
     {
-        auto ghost_space = mesh.localGrid()->indexSpace(
-            Cajita::Ghost(),Cajita::Node(),Cajita::Global());
-        for ( int d = 0; d < 3; ++d )
-            _global_offset[d] = ghost_space.min(d);
-
         const auto& global_grid = mesh.localGrid()->globalGrid();
         auto halo_min = mesh.minimumHaloWidth();
         for ( int d = 0; d < 3; ++d )
@@ -49,16 +43,17 @@ struct DomainNoSlipBoundary
     KOKKOS_INLINE_FUNCTION
     void operator()( const View& v, const int i, const int j, const int k ) const
     {
-        long i_global = _global_offset[0] + i;
-        long j_global = _global_offset[1] + j;
-        long k_global = _global_offset[2] + k;
+        // Compute global index.
+        int gi, gj, gk;
+        _l2g( i, j, k, gi, gj, gk );
 
-        if ( _global_min[0] > i_global ||
-             _global_max[0] <= i_global ||
-             _global_min[1] > j_global ||
-             _global_max[1] <= j_global ||
-             _global_min[2] > k_global ||
-             _global_max[2] <= k_global )
+        // If outside the domain and not periodic apply no-slip.
+        if ( _global_min[0] > gi ||
+             _global_max[0] <= gi ||
+             _global_min[1] > gj ||
+             _global_max[1] <= gj ||
+             _global_min[2] > gk ||
+             _global_max[2] <= gk )
         {
             for ( int d = 0; d < 3; ++d )
                 v(i,j,k,d) = 0.0;
