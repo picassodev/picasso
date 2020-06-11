@@ -39,7 +39,9 @@ class ProblemManager
                                        Field::LogicalPosition,
                                        Field::Velocity,
                                        Field::Mass,
-                                       Field::InternalEnergy>;
+                                       Field::InternalEnergy,
+                                       Field::Volume,
+                                       Field::DeformationGradientDeterminant>;
 
     // Particle type.
     using particle_type = typename particle_list::particle_type;
@@ -89,6 +91,7 @@ class ProblemManager
         _fields = std::make_shared<field_manager>( _mesh );
 
         // Cell fields.
+        _fields->add( FieldLocation::Cell(), Field::Mass() );
         _fields->add( FieldLocation::Cell(), Field::Density() );
         _fields->add( FieldLocation::Cell(), Field::Pressure() );
         _fields->add( FieldLocation::Cell(), Field::InternalEnergy() );
@@ -135,6 +138,13 @@ class ProblemManager
                     for ( int d = 0; d < 3; ++d )
                         ParticleAccess::get( p, Field::Velocity(), d ) =
                             0.0;
+
+                    // Assign volume
+                    ParticleAccess::get( p, Field::Volume() ) = volume;
+
+                    // Deformation gradient determinant.
+                    ParticleAccess::get(
+                        p, Field::DeformationGradientDeterminant() ) = 1.0;
 
                     // Left side.
                     if ( 1 == volume_id )

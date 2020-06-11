@@ -7,6 +7,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <cmath>
+
 namespace Picasso
 {
 namespace FLIP
@@ -59,8 +61,11 @@ void step( const ExecutionSpace& exec_space,
     auto u_p = particles->slice( Field::Velocity() );
     auto m_p = particles->slice( Field::Mass() );
     auto e_p = particles->slice( Field::InternalEnergy() );
+    auto v_p = particles->slice( Field::Volume() );
+    auto j_p = particles->slice( Field::DeformationGradientDeterminant() );
 
     // Get views of cell data.
+    auto m_c = fields->view( FieldLocation::Cell(), Field::Mass() );
     auto rho_c = fields->view( FieldLocation::Cell(), Field::Density() );
     auto p_c = fields->view( FieldLocation::Cell(), Field::Pressure() );
     auto e_c = fields->view( FieldLocation::Cell(), Field::InternalEnergy() );
@@ -74,6 +79,7 @@ void step( const ExecutionSpace& exec_space,
     auto u_theta_i = fields->view( FieldLocation::Node(), VelocityTheta() );
 
     // Reset write views.
+    Kokkos::deep_copy( m_c, 0.0 );
     Kokkos::deep_copy( rho_c, 0.0 );
     Kokkos::deep_copy( e_c, 0.0 );
     Kokkos::deep_copy( u_theta_div_c, 0.0 );
@@ -81,6 +87,7 @@ void step( const ExecutionSpace& exec_space,
     Kokkos::deep_copy( u_old_i, 0.0 );
 
     // Create scatter views.
+    auto m_c_sv = Kokkos::Experimental::create_scatter_view( m_c );
     auto rho_c_sv = Kokkos::Experimental::create_scatter_view( rho_c );
     auto e_c_sv = Kokkos::Experimental::create_scatter_view( e_c );
     auto u_theta_div_c_sv =
@@ -112,8 +119,11 @@ void step( const ExecutionSpace& exec_space,
             // Project mass to nodes.
             Cajita::P2G::value( m_p(p), sd_i, m_i_sv );
 
-            // Project density to cells.
-            Cajita::P2G::value( m_p(p), sd_c, rho_c_sv );
+            // Project mass to cells.
+            Cajita::P2G::value( m_p(p), sd_c, m_c_sv );
+
+            // Project volume to cells.
+            Cajita::P2G::value( v_p(p)*j_p(p), sd_c, rho_c_sv );
 
             // Project momentum to nodes.
             double momentum[3] = { m_p(p)*u_p(p,0),
@@ -128,12 +138,14 @@ void step( const ExecutionSpace& exec_space,
     // Complete local scatter.
     Kokkos::Experimental::contribute( m_i, m_i_sv );
     Kokkos::Experimental::contribute( u_old_i, u_old_i_sv );
+    Kokkos::Experimental::contribute( m_c, m_c_sv );
     Kokkos::Experimental::contribute( rho_c, rho_c_sv );
     Kokkos::Experimental::contribute( e_c, e_c_sv );
 
     // Complete the global scatter.
     fields->scatter( FieldLocation::Node(), Field::Mass() );
     fields->scatter( FieldLocation::Node(), VelocityOld() );
+    fields->scatter( FieldLocation::Cell(), Field::Mass() );
     fields->scatter( FieldLocation::Cell(), Field::Density() );
     fields->scatter( FieldLocation::Cell(), Field::InternalEnergy() );
 
@@ -151,7 +163,7 @@ void step( const ExecutionSpace& exec_space,
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
             // Only update if there is non-zero mass.
-            if ( rho_c(i,j,k,0) > 0.0 )
+            if ( m_c(i,j,k,0) > 0.0 )
             {
                 // Geometric coefficient. Cell-centered ordering.
                 double dic[2][2][2][3];
@@ -193,16 +205,16 @@ void step( const ExecutionSpace& exec_space,
                             {
                                 if( m_i(i+ic, j+jc, k+kc, 0) > 0.0)
                                   u_div_c += dic[ic][jc][kc][d] *
-                                             u_old_i(i+ic, j+jc, k+kc, d) / m_i(i+ic, j+jc, k+kc, 0);
+                                             u_old_i(i+ic, j+jc, k+kc, d) /
+                                             m_i(i+ic, j+jc, k+kc, 0);
                             }
                         }
 
-                // Update specific internal energy. Note that the density hasn't
-                // been modified yet to avoid an extra multiplication by volume.
-                e_c(i,j,k,0) /= rho_c(i,j,k,0);
+                // Update density.
+                rho_c(i,j,k,0) = m_c(i,j,k,0) / rho_c(i,j,k,0);
 
-                // Update density
-                rho_c(i,j,k,0) /= cell_volume;
+                // Update specific internal energy.
+                e_c(i,j,k,0) /= m_c(i,j,k,0);
 
                 // Compute pressure.
                 p_c(i,j,k,0) =
@@ -210,7 +222,8 @@ void step( const ExecutionSpace& exec_space,
 
                 // Adding artificial viscosity when compression
                 if ( u_div_c < 0.0 )
-                  p_c(i,j,k,0) += artificial_viscosity * dx * dx * rho_c(i,j,k,0) * u_div_c * u_div_c;
+                  p_c(i,j,k,0) += artificial_viscosity * dx * dx *
+                                  rho_c(i,j,k,0) * u_div_c * u_div_c;
             }
 
             // Otherwise everything is zero.
@@ -390,7 +403,8 @@ void step( const ExecutionSpace& exec_space,
             // Second order interpolation to nodes.
             Cajita::SplineData<
                 double,2,Cajita::Node,
-                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd_i;
+                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues,
+                                              Cajita::SplineWeightPhysicalGradients>> sd_i;
             Cajita::evaluateSpline( local_mesh, x, sd_i );
 
             // Third order interpolation to cells.
@@ -411,8 +425,6 @@ void step( const ExecutionSpace& exec_space,
             Cajita::G2P::value( u_i, sd_i, u_p_new );
 
             // Compute new particle velocity and position.
-            // FIXME: decide how this position update changes if the grid is
-            // adaptive.
             double u_p_1[3];
             for ( int d = 0; d < 3; ++d )
             {
@@ -442,6 +454,13 @@ void step( const ExecutionSpace& exec_space,
             e_p(p) = e_p(p) * ( 1.0 - comp_p * dt ) +
                      m_p(p) * acc_theta_p * ( theta - 0.5 ) +
                      m_p(p) * ( acc_squared_p - (u_p_1_sqr - u_p_0_sqr) ) * 0.5;
+
+            // Update particle deformation gradient.
+            // FIXME: decide which velocity to use when time integration theta
+            // is not 1
+            double div_u;
+            Cajita::G2P::divergence( u_i, sd_i, div_u );
+            j_p(p) *= exp( dt * div_u );
         });
 }
 

@@ -198,12 +198,15 @@
     \item $\up$ velocity vector
     \item $\xp$ position vector
     \item $\ep$ mass-weighted internal energy
+    \item $v_p^0$ initial volume
+    \item $j_p$ deformation gradient determinant
     \item $\pcp$ 3rd order shapefunction to cell
     \item $\pip$ 2nd order shapefunction to vertex
 \end{itemize}
 {\large \bf Cell variable} %defined at the center of cell
 \begin{itemize}
-    \item $\rhoc$ denstity
+    \item $m_c$ mass
+    \item $\rhoc$ density
     \item $\ic$ specific internal energy
     \item $\Vc$ volume
     %\item $h_x,\;h_y,\;h_z$ cell size of x, y, z direction
@@ -856,11 +859,12 @@
 
 
 \item {\bf p2g :} transfer particle mass, momentum and energy to grid($\pip$) and cell($\pcp$). Interpolation function N could be either quadratic($\pip$)/cubic($\pcp$) or linear($N_{ip}^1$)/quadratic($N_{cp}^2$) B-spline function to grid/cell.
-\begin{itemize}
-    \item $\rhoc = \sum_p \mp \pcp / \Vc$
+  \begin{itemize}
+    \item $m_c = \sum_p \mp \pcp$
+    \item $\rhoc = m_c / \sum_p v_p^0 j_p \pcp$
+    \item $\ic = \sum_p \ep \pcp / m_c$
     \item $\mi = \sum_p \mp \pip$
     \item $\ui = \sum_p \mp \up \pip / \mi$
-    \item $\ic = \sum_p \ep \pcp / \rhoc \Vc$
 %	\item $\pip = N\left( \frac{1}{h_x}(x_p - x_v)  \right)N\left( \frac{1}{h_y}(y_p - y_v)  \right)N\left( \frac{1}{h_z}(z_p - z_v)\right)$
 %	\item $\pcp = N\left( \frac{1}{h_x}(x_p - x_v)  \right)N\left( \frac{1}{h_y}(y_p - y_v)  \right)N\left( \frac{1}{h_z}(z_p - z_v)\right)$
 \end{itemize}
@@ -948,7 +952,7 @@
     \item $ \uio = \left( \uit - (1-\theta)\uiz \right)/\theta $
 \end{itemize}
 
-\item {\bf g2p :}update particle velocity, position and internal energy
+\item {\bf g2p :}update particle velocity, position, deformation, and internal energy
 \begin{itemize}
     \item $\epo = \epz \left\{ 1 - \sum_c \pc( \dic \cdot \uit ) \: \pcp \Delta t / \rhoc \icz \right\} \\
     - \mp \left\{ \sum_c \left(\qc (\dic \cdot \uit ) - \Psi_c^0 \cdot ( \dic \times \uit ) \right) \pcp \Delta t / \rhoc^0 \right\} \\
@@ -961,6 +965,7 @@
     \begin{itemize}
         \item $\upo = \upz + \sum_i \left( \uio - \uiz \right) \pip$ \\
         \item $\xpo = \xpz + \sum_i \uit \pip \Delta t$
+        \item $j_p = j_p\ exp( \Delta t \sum_i \nabla \cdot \pip \uio )$
     \end{itemize}
 \end{enumerate}
 
