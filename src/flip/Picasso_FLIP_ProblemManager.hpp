@@ -93,15 +93,12 @@ class ProblemManager
         _fields->add( FieldLocation::Cell(), Field::Pressure() );
         _fields->add( FieldLocation::Cell(), Field::InternalEnergy() );
         _fields->add( FieldLocation::Cell(), VelocityThetaDivergence() );
-        _fields->add( FieldLocation::Cell(), CompressionTerm() );
 
         // Node fields.
         _fields->add( FieldLocation::Node(), Field::Mass() );
         _fields->add( FieldLocation::Node(), Field::Velocity() );
         _fields->add( FieldLocation::Node(), VelocityOld() );
         _fields->add( FieldLocation::Node(), VelocityTheta() );
-        _fields->add( FieldLocation::Node(), AccelerationTheta() );
-        _fields->add( FieldLocation::Node(), AccelerationSquared() );
 
         // Particle initialization function.
         auto init_func =

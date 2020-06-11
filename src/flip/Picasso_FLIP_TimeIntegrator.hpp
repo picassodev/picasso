@@ -66,17 +66,12 @@ void step( const ExecutionSpace& exec_space,
     auto e_c = fields->view( FieldLocation::Cell(), Field::InternalEnergy() );
     auto u_theta_div_c =
         fields->view( FieldLocation::Cell(), VelocityThetaDivergence() );
-    auto comp_c = fields->view( FieldLocation::Cell(), CompressionTerm() );
 
     // Get views of node data.
     auto m_i = fields->view( FieldLocation::Node(), Field::Mass() );
     auto u_i = fields->view( FieldLocation::Node(), Field::Velocity() );
     auto u_old_i = fields->view( FieldLocation::Node(), VelocityOld() );
     auto u_theta_i = fields->view( FieldLocation::Node(), VelocityTheta() );
-    auto acc_theta_i =
-        fields->view( FieldLocation::Node(), AccelerationTheta() );
-    auto acc_squared_i =
-        fields->view( FieldLocation::Node(), AccelerationSquared() );
 
     // Reset write views.
     Kokkos::deep_copy( rho_c, 0.0 );
@@ -103,11 +98,15 @@ void step( const ExecutionSpace& exec_space,
             double x[3] = { x_p(p,0), x_p(p,1), x_p(p,2) };
 
             // Second order interpolation to nodes.
-            Cajita::SplineData<double,2,Cajita::Node> sd_i;
+            Cajita::SplineData<
+                double,2,Cajita::Node,
+                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd_i;
             Cajita::evaluateSpline( local_mesh, x, sd_i );
 
             // Third order interpolation to cells.
-            Cajita::SplineData<double,3,Cajita::Cell> sd_c;
+            Cajita::SplineData<
+                double,3,Cajita::Cell,
+                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd_c;
             Cajita::evaluateSpline( local_mesh, x, sd_c );
 
             // Project mass to nodes.
@@ -183,7 +182,7 @@ void step( const ExecutionSpace& exec_space,
                 dic[1][0][1][2] =  0.25 * rdx;
                 dic[1][1][1][2] =  0.25 * rdx;
                 dic[0][1][1][2] =  0.25 * rdx;
-          
+
                 // Calculate velocity divergence at the cell
                 double u_div_c = 0.0;
                 for ( int ic = 0; ic < 2; ++ic )
@@ -211,7 +210,7 @@ void step( const ExecutionSpace& exec_space,
 
                 // Adding artificial viscosity when compression
                 if ( u_div_c < 0.0 )
-                  p_c(i,j,k,0) += artificial_viscosity * dx * dx * rho_c(i,j,k,0) * u_div_c * u_div_c; 
+                  p_c(i,j,k,0) += artificial_viscosity * dx * dx * rho_c(i,j,k,0) * u_div_c * u_div_c;
             }
 
             // Otherwise everything is zero.
@@ -346,30 +345,29 @@ void step( const ExecutionSpace& exec_space,
     fields->gather( FieldLocation::Node(), VelocityTheta() );
     fields->gather( FieldLocation::Cell(), VelocityThetaDivergence() );
 
-    // Evaluate the compression term and theta acceleration term.
-    // FIXME: this shouldn't be needed when cajita can do G2P with a general
-    // grid access functor.
-    auto ghosted_cells =
-        local_grid.indexSpace( Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
-    Kokkos::parallel_for(
-        "stuff_we_will_fix_cells",
-        Cajita::createExecutionPolicy(ghosted_cells,exec_space),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ){
-            comp_c(i,j,k,0) = p_c(i,j,k,0) * u_theta_div_c(i,j,k,0) /
-                              ( rho_c(i,j,k,0) * e_c(i,j,k,0) );
-        });
-    auto ghosted_nodes =
-        local_grid.indexSpace( Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
-    Kokkos::parallel_for(
-        "stuff_we_will_fix_nodes",
-        Cajita::createExecutionPolicy(ghosted_nodes,exec_space),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ){
+    // Compression term for particle energy update.
+    auto comp_c =
+        KOKKOS_LAMBDA( const int i, const int j, const int k, const int )
+        {
+            return p_c(i,j,k,0) * u_theta_div_c(i,j,k,0) /
+            ( rho_c(i,j,k,0) * e_c(i,j,k,0) );
+        };
+
+    // Delta velocity squared term for particle energy update.
+    auto acc_theta_i =
+        KOKKOS_LAMBDA( const int i, const int j, const int k, const int )
+        {
             double value = 0.0;
             for ( int d = 0; d < 3; ++d )
                 value += (u_i(i,j,k,d) - u_old_i(i,j,k,d)) *
                          (u_i(i,j,k,d) - u_old_i(i,j,k,d));
-            acc_theta_i(i,j,k,0) = value;
+            return value;
+        };
 
+    // Difference of velocities squared term for particle energy update.
+    auto acc_squared_i =
+        KOKKOS_LAMBDA( const int i, const int j, const int k, const int )
+        {
             double u_0_sqr = 0.0;
             double u_1_sqr = 0.0;
             for ( int d = 0; d < 3; ++d )
@@ -377,8 +375,8 @@ void step( const ExecutionSpace& exec_space,
                 u_0_sqr += u_old_i(i,j,k,d) * u_old_i(i,j,k,d);
                 u_1_sqr += u_i(i,j,k,d) * u_i(i,j,k,d);
             }
-            acc_squared_i(i,j,k,0) = u_1_sqr - u_0_sqr;
-        });
+            return u_1_sqr - u_0_sqr;
+        };
 
     // G2P - update particles
     Kokkos::parallel_for(
@@ -390,11 +388,15 @@ void step( const ExecutionSpace& exec_space,
             double x[3] = { x_p(p,0), x_p(p,1), x_p(p,2) };
 
             // Second order interpolation to nodes.
-            Cajita::SplineData<double,2,Cajita::Node> sd_i;
+            Cajita::SplineData<
+                double,2,Cajita::Node,
+                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd_i;
             Cajita::evaluateSpline( local_mesh, x, sd_i );
 
             // Third order interpolation to cells.
-            Cajita::SplineData<double,3,Cajita::Cell> sd_c;
+            Cajita::SplineData<
+                double,3,Cajita::Cell,
+                Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd_c;
             Cajita::evaluateSpline( local_mesh, x, sd_c );
 
             // Store old particle velocity.
