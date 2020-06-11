@@ -24,9 +24,11 @@ class UniformMesh
 {
   public:
 
+    using cajita_mesh = Cajita::UniformMesh<double>;
+
     using memory_space = MemorySpace;
 
-    using local_grid = Cajita::LocalGrid<Cajita::UniformMesh<double>>;
+    using local_grid = Cajita::LocalGrid<cajita_mesh>;
 
     // Construct a mesh manager from the problem bounding box and a property
     // tree.

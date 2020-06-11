@@ -87,7 +87,7 @@ class Solver : public SolverBase
             // Update time.
             time += delta_t;
 
-            Cajita::BovWriter::writeTimeStep(
+            Cajita::BovWriter::Experimental::writeTimeStep(
                 t, time,
                 *(_problem_manager->auxiliaryFields()->array(
                       FieldLocation::Node(), Field::SignedDistance())) );

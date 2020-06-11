@@ -79,7 +79,7 @@ class ProblemManager
                                              comm );
 
         // Create boundary condition.
-        _bc = DomainNoSlipBoundary( *_mesh );
+        _bc = std::make_shared<DomainNoSlipBoundary<mesh_type>>( *_mesh );
 
         // Create particles.
         _particles = std::make_shared<particle_list>( "flip_particles", _mesh );
@@ -222,20 +222,20 @@ class ProblemManager
     // Write grid fields.
     void writeGridFields( const int step, const double time ) const
     {
-        Cajita::BovWriter::writeTimeStep(
+        Cajita::BovWriter::Experimental::writeTimeStep(
             step, time,
             *(_fields->array(FieldLocation::Node(),Field::Velocity())) );
-        Cajita::BovWriter::writeTimeStep(
+        Cajita::BovWriter::Experimental::writeTimeStep(
             step, time,
             *(_fields->array(FieldLocation::Cell(),Field::Pressure())) );
-        Cajita::BovWriter::writeTimeStep(
+        Cajita::BovWriter::Experimental::writeTimeStep(
             step, time,
             *(_fields->array(FieldLocation::Cell(),Field::InternalEnergy())) );
-        Cajita::BovWriter::writeTimeStep(
+        Cajita::BovWriter::Experimental::writeTimeStep(
             step, time,
             *(_fields->array(FieldLocation::Cell(),Field::Density())) );
 
-        Cajita::BovWriter::writeTimeStep(
+        Cajita::BovWriter::Experimental::writeTimeStep(
             step, time,
             *(_fields->array(FieldLocation::Cell(),VelocityThetaDivergence())) );
     }
@@ -254,8 +254,8 @@ class ProblemManager
     { return _eos; }
 
     // Boundary condition.
-    DomainNoSlipBoundary boundaryCondition() const
-    { return _bc; }
+    DomainNoSlipBoundary<mesh_type> boundaryCondition() const
+    { return *_bc; }
 
   private:
 
@@ -276,7 +276,7 @@ class ProblemManager
 
     // Time integration theta.
     double _theta;
-   
+
     // Artificial Viscosity
     double _artificial_viscosity;
 
@@ -284,7 +284,7 @@ class ProblemManager
     IdealGas _eos;
 
     // Boundary condition.
-    DomainNoSlipBoundary _bc;
+    std::shared_ptr<DomainNoSlipBoundary<mesh_type>> _bc;
 };
 
 //---------------------------------------------------------------------------//

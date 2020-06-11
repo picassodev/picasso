@@ -156,23 +156,23 @@ void adaptiveTest()
     auto nodes = fm.array( FieldLocation::Node(), Field::PhysicalPosition() );
     auto host_coords = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), nodes->view() );
-    auto global_space = nodes->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Global() );
+    auto local_mesh = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        *(nodes->layout()->localGrid()) );
     auto local_space = nodes->layout()->localGrid()->indexSpace(
         Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
     for ( int i = local_space.min(0); i < local_space.max(0); ++i )
         for ( int j = local_space.min(1); j < local_space.max(1); ++j )
             for ( int k = local_space.min(2); k < local_space.max(2); ++k )
             {
-                auto ig = global_space.min(0) + i;
-                auto jg = global_space.min(1) + j;
-                auto kg = global_space.min(2) + k;
                 EXPECT_EQ( host_coords(i,j,k,0),
-                           global_box[0] + ig*cell_size );
+                           local_mesh.lowCorner(Cajita::Ghost(),0) +
+                           i*cell_size );
                 EXPECT_EQ( host_coords(i,j,k,1),
-                           global_box[1] + (jg-1)*cell_size );
+                           local_mesh.lowCorner(Cajita::Ghost(),1) +
+                           j*cell_size );
                 EXPECT_EQ( host_coords(i,j,k,2),
-                           global_box[2] + kg*cell_size );
+                           local_mesh.lowCorner(Cajita::Ghost(),2) +
+                           k*cell_size );
             }
 }
 
