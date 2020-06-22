@@ -218,7 +218,7 @@ class ParticleLevelSet
         // Create array data.
         const auto& mesh = _particles->mesh();
         _distance_estimate = createArray(
-            mesh, location_type(), Field::Color() );
+            mesh, location_type(), Field::SignedDistance() );
         _signed_distance = createArray(
             mesh, location_type(), Field::SignedDistance() );
         _halo = Cajita::createHalo<double,memory_space>(

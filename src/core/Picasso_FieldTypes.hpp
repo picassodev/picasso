@@ -229,7 +229,7 @@ struct SignedDistance : public Scalar<double>
     static std::string label() { return "signed_distance"; }
 };
 
-struct Color : public Scalar<double>
+struct Color : public Scalar<int>
 {
     static std::string label() { return "color"; }
 };
