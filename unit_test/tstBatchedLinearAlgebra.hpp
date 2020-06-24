@@ -108,12 +108,82 @@ void dataTest()
 }
 
 //---------------------------------------------------------------------------//
+void matMatTest()
+{
+    // Square test.
+    LinearAlgebra::Matrix<double,2,2> a = { {2.0, 1.0}, {2.0, 1.0} };
+    LinearAlgebra::Matrix<double,2,2> b = { {2.0, 3.0}, {2.0, -1.0} };
+
+    auto c = a * b;
+    EXPECT_EQ( c.extent(0), 2 );
+    EXPECT_EQ( c.extent(1), 2 );
+    EXPECT_EQ( c(0,0), 6.0 );
+    EXPECT_EQ( c(0,1), 5.0 );
+    EXPECT_EQ( c(1,0), 6.0 );
+    EXPECT_EQ( c(1,1), 5.0 );
+
+    c = ~a * b;
+    EXPECT_EQ( c(0,0), 8.0 );
+    EXPECT_EQ( c(0,1), 4.0 );
+    EXPECT_EQ( c(1,0), 4.0 );
+    EXPECT_EQ( c(1,1), 2.0 );
+
+    c = a * ~b;
+    EXPECT_EQ( c(0,0), 7.0 );
+    EXPECT_EQ( c(0,1), 3.0 );
+    EXPECT_EQ( c(1,0), 7.0 );
+    EXPECT_EQ( c(1,1), 3.0 );
+
+    c = ~a * ~b;
+    EXPECT_EQ( c(0,0), 10.0 );
+    EXPECT_EQ( c(0,1), 2.0 );
+    EXPECT_EQ( c(1,0), 5.0 );
+    EXPECT_EQ( c(1,1), 1.0 );
+
+    // Non square test.
+    LinearAlgebra::Matrix<double,2,1> f = { {3.0}, {1.0} };
+    LinearAlgebra::Matrix<double,1,2> g = { {2.0, 1.0} };
+
+    auto h = f * g;
+    EXPECT_EQ( h.extent(0), 2 );
+    EXPECT_EQ( h.extent(1), 2 );
+    EXPECT_EQ( h(0,0), 6.0 );
+    EXPECT_EQ( h(0,1), 3.0 );
+    EXPECT_EQ( h(1,0), 2.0 );
+    EXPECT_EQ( h(1,1), 1.0 );
+
+    auto j = f * ~f;
+    EXPECT_EQ( j.extent(0), 2 );
+    EXPECT_EQ( j.extent(1), 2 );
+    EXPECT_EQ( j(0,0), 9.0 );
+    EXPECT_EQ( j(0,1), 3.0 );
+    EXPECT_EQ( j(1,0), 3.0 );
+    EXPECT_EQ( j(1,1), 1.0 );
+
+    auto k = ~f * f;
+    EXPECT_EQ( k.extent(0), 1 );
+    EXPECT_EQ( k.extent(1), 1 );
+    EXPECT_EQ( k(0,0), 10.0 );
+
+    auto m = ~f * ~g;
+    EXPECT_EQ( m.extent(0), 1 );
+    EXPECT_EQ( m.extent(1), 1 );
+    EXPECT_EQ( m(0,0), 7.0 );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, data_test )
 {
     dataTest();
 }
+
+TEST( TEST_CATEGORY, matmat_test )
+{
+    matMatTest();
+}
+
 //---------------------------------------------------------------------------//
 
 } // end namespace Test

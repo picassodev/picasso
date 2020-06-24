@@ -9,6 +9,9 @@
 #include <KokkosBatched_Set_Decl.hpp>
 #include <KokkosBatched_Set_Impl.hpp>
 
+#include <KokkosBatched_Gemm_Decl.hpp>
+#include <KokkosBatched_Gemm_Serial_Impl.hpp>
+
 #include <type_traits>
 
 namespace Picasso
@@ -272,6 +275,65 @@ class Vector
     pointer data() const
     { return const_cast<pointer>(&_d[0]); }
 };
+
+//---------------------------------------------------------------------------//
+// Matrix-matrix multiplication
+//---------------------------------------------------------------------------//
+// NoTranspose case.
+template<class T, int M, int N, int K>
+Matrix<T,M,N,NoTranspose>
+operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,K,N,NoTranspose>& b )
+{
+    Matrix<T,M,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<NoTranspose::type,
+                              NoTranspose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, a, b, 1.0, c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// Transpose case.
+template<class T, int M, int N, int K>
+Matrix<T,M,N,NoTranspose>
+operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,N,K,Transpose>& b )
+{
+    Matrix<T,M,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<Transpose::type,
+                              Transpose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, a, b, 1.0, c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// NoTranspose-Transpose case.
+template<class T, int M, int N, int K>
+Matrix<T,M,N,NoTranspose>
+operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,N,K,Transpose>& b )
+{
+    Matrix<T,M,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<NoTranspose::type,
+                              Transpose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, a, b, 1.0, c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// Transpose-NoTranspose case.
+template<class T, int M, int N, int K>
+Matrix<T,M,N,NoTranspose>
+operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b )
+{
+    Matrix<T,M,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<Transpose::type,
+                              NoTranspose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, a, b, 1.0, c );
+    return c;
+}
+
 //---------------------------------------------------------------------------//
 
 } // end namespace LinearAlgebra
