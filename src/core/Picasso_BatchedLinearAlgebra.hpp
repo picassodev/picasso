@@ -16,10 +16,26 @@ namespace Picasso
 namespace LinearAlgebra
 {
 //---------------------------------------------------------------------------//
+// Transpose tags.
+struct NoTranspose
+{
+    using type = KokkosBatched::Trans::NoTranspose;
+};
+
+struct Transpose
+{
+    using type = KokkosBatched::Trans::Transpose;
+};
+
+//---------------------------------------------------------------------------//
 // Dense matrix in row-major order with a KokkosKernels compatible data
 // interface.
+template<class T, int M, int N, class TransposeType = NoTranspose>
+struct Matrix;
+
+// No transpose
 template<class T, int M, int N>
-struct Matrix
+struct Matrix<T,M,N,NoTranspose>
 {
     T _d[M][N];
     int _extent[2] = {M,N};
@@ -52,16 +68,31 @@ struct Matrix
     }
 
     // Deep copy constructor.
-    Matrix( const Matrix& rhs ) = delete;
+    Matrix( const Matrix<T,M,N,NoTranspose>& rhs )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+    }
+
+    // Deep copy transpose constructor.
+    Matrix( const Matrix<T,N,M,Transpose>& rhs )
+    {
+        KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
     }
 
     // Deep copy assignment operator.
-    Matrix& operator=( const Matrix& rhs )
+    Matrix& operator=( const Matrix<T,M,N,NoTranspose>& rhs )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        return *this;
+    }
+
+    // Deep copy transpose assignment operator.
+    Matrix& operator=( const Matrix<T,M,N,Transpose>& rhs )
+    {
+        KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
         return *this;
     }
@@ -72,6 +103,12 @@ struct Matrix
     {
         KokkosBatched::SerialSet::invoke( value, *this );
         return *this;
+    }
+
+    // Transpose operator.
+    Matrix<T,M,N,Transpose> operator~()
+    {
+        return Matrix<T,M,N,Transpose>( this->data() );
     }
 
     // Strides.
@@ -101,6 +138,52 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0][0]); }
+};
+
+// Transpose. This class is essentially a shallow-copy placeholder to enable
+// tranpose matrix operations without copies.
+template<class T, int M, int N>
+struct Matrix<T,M,N,Transpose>
+{
+    T* _d;
+    int _extent[2] = {M,N};
+
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = typename std::add_const<T>::type&;
+
+    // Pointer constructor.
+    KOKKOS_INLINE_FUNCTION
+    Matrix( T* data )
+        : _d( data )
+    {}
+
+    // Deep copy constructor.
+    Matrix( const Matrix& rhs )
+    {
+        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
+            rhs, *this );
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const
+    { return N; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const
+    { return 1; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    int extent( const int d ) const
+    { return _extent[d]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const
+    { return const_cast<pointer>(_d); }
 };
 
 //---------------------------------------------------------------------------//
