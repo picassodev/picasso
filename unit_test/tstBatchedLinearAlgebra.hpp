@@ -8,7 +8,7 @@ using namespace Picasso;
 namespace Test
 {
 //---------------------------------------------------------------------------//
-void dataTest()
+void matrixTest()
 {
     // Check a basic matrix.
     LinearAlgebra::Matrix<double,2,3> a = { {1.2, -3.5, 5.4},
@@ -71,7 +71,11 @@ void dataTest()
     EXPECT_EQ( b.stride_1(), 1 );
     EXPECT_EQ( b.extent(0), 1 );
     EXPECT_EQ( b.extent(1), 2 );
+}
 
+//---------------------------------------------------------------------------//
+void vectorTest()
+{
     // Make a basic vector.
     LinearAlgebra::Vector<double,3> x = { 1.2, -3.5, 5.4};
     EXPECT_EQ( x.stride_0(), 1 );
@@ -172,16 +176,53 @@ void matMatTest()
 }
 
 //---------------------------------------------------------------------------//
+void matVecTest()
+{
+    // Square test.
+    LinearAlgebra::Matrix<double,2,2> a = { {3.0, 2.0}, {1.0, 2.0} };
+    LinearAlgebra::Vector<double,2> x = { 3.0, 1.0 };
+
+    auto y = a * x;
+    EXPECT_EQ( y.extent(0), 2 );
+    EXPECT_EQ( y(0), 11.0 );
+    EXPECT_EQ( y(1), 5.0 );
+
+    y = ~a * x;
+    EXPECT_EQ( y(0), 10.0 );
+    EXPECT_EQ( y(1), 8.0 );
+
+    auto b = ~x * a;
+    EXPECT_EQ( b.extent(0), 1 );
+    EXPECT_EQ( b.extent(1), 2 );
+    EXPECT_EQ( b(0,0), 10.0 );
+    EXPECT_EQ( b(0,1), 8.0 );
+
+    b = ~x * ~a;
+    EXPECT_EQ( b(0,0), 11.0 );
+    EXPECT_EQ( b(0,1), 5.0 );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, data_test )
+TEST( TEST_CATEGORY, matrix_test )
 {
-    dataTest();
+    matrixTest();
+}
+
+TEST( TEST_CATEGORY, vector_test )
+{
+    vectorTest();
 }
 
 TEST( TEST_CATEGORY, matmat_test )
 {
     matMatTest();
+}
+
+TEST( TEST_CATEGORY, matVec_test )
+{
+    matVecTest();
 }
 
 //---------------------------------------------------------------------------//

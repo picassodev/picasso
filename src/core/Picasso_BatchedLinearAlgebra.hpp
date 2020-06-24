@@ -12,6 +12,9 @@
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 
+#include <KokkosBatched_Gemv_Decl.hpp>
+#include <KokkosBatched_Gemv_Serial_Impl.hpp>
+
 #include <type_traits>
 
 namespace Picasso
@@ -30,6 +33,8 @@ struct Transpose
     using type = KokkosBatched::Trans::Transpose;
 };
 
+//---------------------------------------------------------------------------//
+// Matrix
 //---------------------------------------------------------------------------//
 // Dense matrix in row-major order with a KokkosKernels compatible data
 // interface.
@@ -190,16 +195,18 @@ struct Matrix<T,M,N,Transpose>
 };
 
 //---------------------------------------------------------------------------//
+// Vector
+//---------------------------------------------------------------------------//
 // Dense vector with a KokkosKernels compatible data interface.
-template<class T, int N>
-class Vector
-{
-  private:
+template<class T, int N, class TransposeType = NoTranspose>
+struct Vector;
 
+// No tranpose
+template<class T, int N>
+struct Vector<T,N,NoTranspose>
+{
     T _d[N];
     int _extent[2] = {N,1};
-
-  public:
 
     using value_type = T;
     using pointer = T*;
@@ -237,13 +244,18 @@ class Vector
         return *this;
     }
 
-
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Vector& operator=( const T value )
     {
         KokkosBatched::SerialSet::invoke( value, *this );
         return *this;
+    }
+
+    // Transpose operator.
+    Vector<T,N,Transpose> operator~()
+    {
+        return Vector<T,N,Transpose>( this->data() );
     }
 
     // Strides.
@@ -269,6 +281,46 @@ class Vector
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i )
     { return _d[i]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const
+    { return const_cast<pointer>(&_d[0]); }
+};
+
+// Transpose. This class is essentially a shallow-copy placeholder to enable
+// tranpose vector operations without copies.
+template<class T, int N>
+struct Vector<T,N,Transpose>
+{
+    T* _d;
+    int _extent[2] = {N,1};
+
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = typename std::add_const<T>::type&;
+
+    // Pointer constructor.
+    KOKKOS_INLINE_FUNCTION
+    Vector( T* data )
+        : _d(data)
+    {}
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const
+    { return 1; }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const
+    { return 0; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    int extent( const int d ) const
+    { return _extent[d]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -331,6 +383,64 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b 
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
                                   1.0, a, b, 1.0, c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// Matrix-vector multiplication
+//---------------------------------------------------------------------------//
+// NoTranspose case.
+template<class T, int M, int N>
+Vector<T,M,NoTranspose>
+operator*( const Matrix<T,M,N,NoTranspose>& a, const Vector<T,N,NoTranspose>& x )
+{
+    Vector<T,N,NoTranspose> y;
+    KokkosBatched::SerialGemv<NoTranspose::type,
+                              KokkosBatched::Algo::Gemv::Unblocked>::invoke(
+                                  1.0, a, x, 1.0, y );
+    return y;
+}
+
+//---------------------------------------------------------------------------//
+// Transpose case.
+template<class T, int M, int N>
+Vector<T,N,NoTranspose>
+operator*( const Matrix<T,N,M,Transpose>& a, const Vector<T,N,NoTranspose>& x )
+{
+    Vector<T,N,NoTranspose> y;
+    KokkosBatched::SerialGemv<Transpose::type,
+                              KokkosBatched::Algo::Gemv::Unblocked>::invoke(
+                                  1.0, a, x, 1.0, y );
+    return y;
+}
+
+//---------------------------------------------------------------------------//
+// Vector-matrix multiplication
+//---------------------------------------------------------------------------//
+// NoTranspose case.
+template<class T, int M, int N>
+Matrix<T,1,N,NoTranspose>
+operator*( const Vector<T,M,Transpose>& x, const Matrix<T,M,N,NoTranspose>& a )
+{
+    Matrix<T,1,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<Transpose::type,
+                              NoTranspose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, x, a, 1.0, c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// Transpose case.
+template<class T, int M, int N>
+Matrix<T,1,N,NoTranspose>
+operator*( const Vector<T,N,Transpose>& x, const Matrix<T,N,M,Transpose>& a )
+{
+    Matrix<T,1,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<Transpose::type,
+                              Transpose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  1.0, x, a, 1.0, c );
     return c;
 }
 
