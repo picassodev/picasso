@@ -25,6 +25,7 @@ void dataTest()
     EXPECT_EQ( a(1,2), -0.1 );
 
     auto a_c = a;
+    EXPECT_NE( a.data(), a_c.data() );
     EXPECT_EQ( a_c.stride_0(), 3 );
     EXPECT_EQ( a_c.stride_1(), 1 );
     EXPECT_EQ( a_c.extent(0), 2 );
@@ -62,6 +63,7 @@ void dataTest()
     EXPECT_EQ( x(2), 5.4 );
 
     auto x_c = x;
+    EXPECT_NE( x.data(), x_c.data() );
     EXPECT_EQ( x_c.stride_0(), 1 );
     EXPECT_EQ( x_c.extent(0), 3 );
 

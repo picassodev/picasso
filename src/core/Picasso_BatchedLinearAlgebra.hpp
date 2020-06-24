@@ -6,6 +6,9 @@
 #include <KokkosBatched_Copy_Decl.hpp>
 #include <KokkosBatched_Copy_Impl.hpp>
 
+#include <KokkosBatched_Set_Decl.hpp>
+#include <KokkosBatched_Set_Impl.hpp>
+
 #include <type_traits>
 
 namespace Picasso
@@ -23,7 +26,6 @@ struct Matrix
 
     using value_type = T;
     using pointer = T*;
-    using const_pointer = typename std::add_const<T>::type*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
 
@@ -50,7 +52,7 @@ struct Matrix
     }
 
     // Deep copy constructor.
-    Matrix( const Matrix& rhs )
+    Matrix( const Matrix& rhs ) = delete;
     {
         KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
             rhs, *this );
@@ -68,9 +70,7 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
     {
-        for ( int i = 0; i < M; ++i )
-            for ( int j = 0; j < N; ++j )
-                _d[i][j] = value;
+        KokkosBatched::SerialSet::invoke( value, *this );
         return *this;
     }
 
@@ -99,12 +99,8 @@ struct Matrix
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    const_pointer data() const
-    { return &_d[0][0]; }
-
-    KOKKOS_INLINE_FUNCTION
-    pointer data()
-    { return &_d[0][0]; }
+    pointer data() const
+    { return const_cast<pointer>(&_d[0][0]); }
 };
 
 //---------------------------------------------------------------------------//
@@ -121,7 +117,6 @@ class Vector
 
     using value_type = T;
     using pointer = T*;
-    using const_pointer = typename std::add_const<T>::type*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
 
@@ -161,8 +156,7 @@ class Vector
     KOKKOS_INLINE_FUNCTION
     Vector& operator=( const T value )
     {
-        for ( int i = 0; i < N; ++i )
-            _d[i] = value;
+        KokkosBatched::SerialSet::invoke( value, *this );
         return *this;
     }
 
@@ -192,12 +186,8 @@ class Vector
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    const_pointer data() const
-    { return &_d[0]; }
-
-    KOKKOS_INLINE_FUNCTION
-    pointer data()
-    { return &_d[0]; }
+    pointer data() const
+    { return const_cast<pointer>(&_d[0]); }
 };
 //---------------------------------------------------------------------------//
 
