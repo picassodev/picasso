@@ -17,6 +17,8 @@
 #include <KokkosBatched_Gemv_Decl.hpp>
 #include <KokkosBatched_Gemv_Serial_Impl.hpp>
 
+#include <KokkosBatched_SolveLU_Decl.hpp>
+
 #include <type_traits>
 
 namespace Picasso
@@ -91,6 +93,13 @@ struct Matrix<T,M,N,NoTranspose>
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
+    }
+
+    // Scalar constructor.
+    KOKKOS_INLINE_FUNCTION
+    Matrix( const T value )
+    {
+        KokkosBatched::SerialSet::invoke( value, *this );
     }
 
     // Deep copy assignment operator.
@@ -243,6 +252,13 @@ struct Vector<T,N,NoTranspose>
     {
         KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
             rhs, *this );
+    }
+
+    // Scalar constructor.
+    KOKKOS_INLINE_FUNCTION
+    Vector( const T value )
+    {
+        KokkosBatched::SerialSet::invoke( value, *this );
     }
 
     // Deep copy assignment operator.

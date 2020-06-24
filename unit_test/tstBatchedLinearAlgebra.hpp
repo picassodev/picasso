@@ -71,6 +71,12 @@ void matrixTest()
     EXPECT_EQ( b.stride_1(), 1 );
     EXPECT_EQ( b.extent(0), 1 );
     EXPECT_EQ( b.extent(1), 2 );
+
+    // Check scalar constructor.
+    LinearAlgebra::Matrix<double,2,3> c = 32.3;
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_EQ( c(i,j), 32.3 );
 }
 
 //---------------------------------------------------------------------------//
@@ -97,7 +103,7 @@ void vectorTest()
 
     // Check scalar assignment and operator()
     x = 43.3;
-    for ( int i = 0; i < 2; ++i )
+    for ( int i = 0; i < 3; ++i )
     {
         EXPECT_EQ( x(i), 43.3 );
 
@@ -109,6 +115,11 @@ void vectorTest()
     LinearAlgebra::Vector<double,2> y;
     EXPECT_EQ( y.stride_0(), 1 );
     EXPECT_EQ( y.extent(0), 2 );
+
+    // Check scalar constructor.
+    LinearAlgebra::Vector<double,3> c = 32.3;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_EQ( c(i), 32.3 );
 }
 
 //---------------------------------------------------------------------------//
