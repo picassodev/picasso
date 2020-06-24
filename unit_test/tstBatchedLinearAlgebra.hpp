@@ -200,6 +200,47 @@ void matVecTest()
     b = ~x * ~a;
     EXPECT_EQ( b(0,0), 11.0 );
     EXPECT_EQ( b(0,1), 5.0 );
+
+    // Non square test.
+    LinearAlgebra::Matrix<double,1,2> c = { {1.0, 2.0} };
+    LinearAlgebra::Vector<double,2> f = { 3.0, 2.0 };
+
+    auto g = c * f;
+    EXPECT_EQ( g.extent(0), 1 );
+    EXPECT_EQ( g(0), 7.0 );
+
+    auto h = ~f * ~c;
+    EXPECT_EQ( h.extent(0), 1 );
+    EXPECT_EQ( h.extent(1), 1 );
+    EXPECT_EQ( h(0,0), 7.0 );
+
+    LinearAlgebra::Matrix<double,2,1> j = { {1.0}, {2.0} };
+
+    auto k = ~j * f;
+    EXPECT_EQ( k.extent(0), 1 );
+    EXPECT_EQ( k(0), 7.0 );
+
+    auto l = ~f * j;
+    EXPECT_EQ( l.extent(0), 1 );
+    EXPECT_EQ( k(0), 7.0 );
+}
+
+//---------------------------------------------------------------------------//
+void vecVecTest()
+{
+    LinearAlgebra::Vector<double,2> x = { 1.0, 2.0 };
+    LinearAlgebra::Vector<double,2> y = { 2.0, 3.0 };
+
+    auto dot = ~x * y;
+    EXPECT_EQ( dot, 8.0 );
+
+    auto inner = x * ~y;
+    EXPECT_EQ( inner.extent(0), 2 );
+    EXPECT_EQ( inner.extent(1), 2 );
+    EXPECT_EQ( inner(0,0), 2.0 );
+    EXPECT_EQ( inner(0,1), 3.0 );
+    EXPECT_EQ( inner(1,0), 4.0 );
+    EXPECT_EQ( inner(1,1), 6.0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -223,6 +264,11 @@ TEST( TEST_CATEGORY, matmat_test )
 TEST( TEST_CATEGORY, matVec_test )
 {
     matVecTest();
+}
+
+TEST( TEST_CATEGORY, vecVec_test )
+{
+    vecVecTest();
 }
 
 //---------------------------------------------------------------------------//

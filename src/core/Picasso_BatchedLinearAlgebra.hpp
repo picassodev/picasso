@@ -3,6 +3,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <Kokkos_ArithTraits.hpp>
+
 #include <KokkosBatched_Copy_Decl.hpp>
 #include <KokkosBatched_Copy_Impl.hpp>
 
@@ -76,6 +78,7 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy constructor.
+    KOKKOS_INLINE_FUNCTION
     Matrix( const Matrix<T,M,N,NoTranspose>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
@@ -83,6 +86,7 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy transpose constructor.
+    KOKKOS_INLINE_FUNCTION
     Matrix( const Matrix<T,N,M,Transpose>& rhs )
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
@@ -90,6 +94,7 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy assignment operator.
+    KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const Matrix<T,M,N,NoTranspose>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
@@ -98,6 +103,7 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy transpose assignment operator.
+    KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const Matrix<T,M,N,Transpose>& rhs )
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
@@ -114,6 +120,7 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
     Matrix<T,M,N,Transpose> operator~()
     {
         return Matrix<T,M,N,Transpose>( this->data() );
@@ -168,6 +175,7 @@ struct Matrix<T,M,N,Transpose>
     {}
 
     // Deep copy constructor.
+    KOKKOS_INLINE_FUNCTION
     Matrix( const Matrix& rhs )
     {
         KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
@@ -230,6 +238,7 @@ struct Vector<T,N,NoTranspose>
     }
 
     // Deep copy constructor.
+    KOKKOS_INLINE_FUNCTION
     Vector( const Vector& rhs )
     {
         KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
@@ -237,6 +246,7 @@ struct Vector<T,N,NoTranspose>
     }
 
     // Deep copy assignment operator.
+    KOKKOS_INLINE_FUNCTION
     Vector& operator=( const Vector& rhs )
     {
         KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
@@ -253,6 +263,7 @@ struct Vector<T,N,NoTranspose>
     }
 
     // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
     Vector<T,N,Transpose> operator~()
     {
         return Vector<T,N,Transpose>( this->data() );
@@ -333,6 +344,7 @@ struct Vector<T,N,Transpose>
 //---------------------------------------------------------------------------//
 // NoTranspose case.
 template<class T, int M, int N, int K>
+KOKKOS_INLINE_FUNCTION
 Matrix<T,M,N,NoTranspose>
 operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,K,N,NoTranspose>& b )
 {
@@ -340,13 +352,15 @@ operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,K,N,NoTranspose>& 
     KokkosBatched::SerialGemm<NoTranspose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, a, b, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, b, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
 //---------------------------------------------------------------------------//
 // Transpose case.
 template<class T, int M, int N, int K>
+KOKKOS_INLINE_FUNCTION
 Matrix<T,M,N,NoTranspose>
 operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,N,K,Transpose>& b )
 {
@@ -354,13 +368,15 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,N,K,Transpose>& b )
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, a, b, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, b, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
 //---------------------------------------------------------------------------//
 // NoTranspose-Transpose case.
 template<class T, int M, int N, int K>
+KOKKOS_INLINE_FUNCTION
 Matrix<T,M,N,NoTranspose>
 operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,N,K,Transpose>& b )
 {
@@ -368,13 +384,15 @@ operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,N,K,Transpose>& b 
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, a, b, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, b, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
 //---------------------------------------------------------------------------//
 // Transpose-NoTranspose case.
 template<class T, int M, int N, int K>
+KOKKOS_INLINE_FUNCTION
 Matrix<T,M,N,NoTranspose>
 operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b )
 {
@@ -382,7 +400,8 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b 
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, a, b, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, b, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
@@ -391,26 +410,30 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b 
 //---------------------------------------------------------------------------//
 // NoTranspose case.
 template<class T, int M, int N>
+KOKKOS_INLINE_FUNCTION
 Vector<T,M,NoTranspose>
 operator*( const Matrix<T,M,N,NoTranspose>& a, const Vector<T,N,NoTranspose>& x )
 {
-    Vector<T,N,NoTranspose> y;
+    Vector<T,M,NoTranspose> y;
     KokkosBatched::SerialGemv<NoTranspose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
-                                  1.0, a, x, 1.0, y );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, x, Kokkos::ArithTraits<T>::one(), y );
     return y;
 }
 
 //---------------------------------------------------------------------------//
 // Transpose case.
 template<class T, int M, int N>
-Vector<T,N,NoTranspose>
+KOKKOS_INLINE_FUNCTION
+Vector<T,M,NoTranspose>
 operator*( const Matrix<T,N,M,Transpose>& a, const Vector<T,N,NoTranspose>& x )
 {
-    Vector<T,N,NoTranspose> y;
+    Vector<T,M,NoTranspose> y;
     KokkosBatched::SerialGemv<Transpose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
-                                  1.0, a, x, 1.0, y );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  a, x, Kokkos::ArithTraits<T>::one(), y );
     return y;
 }
 
@@ -419,6 +442,7 @@ operator*( const Matrix<T,N,M,Transpose>& a, const Vector<T,N,NoTranspose>& x )
 //---------------------------------------------------------------------------//
 // NoTranspose case.
 template<class T, int M, int N>
+KOKKOS_INLINE_FUNCTION
 Matrix<T,1,N,NoTranspose>
 operator*( const Vector<T,M,Transpose>& x, const Matrix<T,M,N,NoTranspose>& a )
 {
@@ -426,21 +450,55 @@ operator*( const Vector<T,M,Transpose>& x, const Matrix<T,M,N,NoTranspose>& a )
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, x, a, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  x, a, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
 //---------------------------------------------------------------------------//
 // Transpose case.
 template<class T, int M, int N>
-Matrix<T,1,N,NoTranspose>
-operator*( const Vector<T,N,Transpose>& x, const Matrix<T,N,M,Transpose>& a )
+KOKKOS_INLINE_FUNCTION
+Matrix<T,1,M,NoTranspose>
+operator*( const Vector<T,N,Transpose>& x, const Matrix<T,M,N,Transpose>& a )
 {
-    Matrix<T,1,N,NoTranspose> c;
+    Matrix<T,1,M,NoTranspose> c;
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  1.0, x, a, 1.0, c );
+                                  Kokkos::ArithTraits<T>::one(),
+                                  x, a, Kokkos::ArithTraits<T>::one(), c );
+    return c;
+}
+
+//---------------------------------------------------------------------------//
+// Vector-vector multiplication.
+//---------------------------------------------------------------------------//
+// Dot product.
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+T operator*( const Vector<T,N,Transpose>& x, const Vector<T,N,NoTranspose>& y )
+{
+    auto v = Kokkos::ArithTraits<T>::zero();
+    KokkosBatched::InnerMultipleDotProduct<1> dp( 0, 1, 1, 1 );
+    dp.serial_invoke(  Kokkos::ArithTraits<T>::one(),
+                       x.data(), y.data(), N, &v );
+    return v;
+}
+
+//---------------------------------------------------------------------------//
+// Inner product.
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+Matrix<T,N,N,NoTranspose>
+operator*( const Vector<T,N,NoTranspose>& x, const Vector<T,N,Transpose>& y )
+{
+    Matrix<T,N,N,NoTranspose> c;
+    KokkosBatched::SerialGemm<NoTranspose::type,
+                              Transpose::type,
+                              KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+                                  Kokkos::ArithTraits<T>::one(),
+                                  x, y, Kokkos::ArithTraits<T>::one(), c );
     return c;
 }
 
