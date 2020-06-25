@@ -45,16 +45,29 @@ struct Transpose
 };
 
 //---------------------------------------------------------------------------//
+// Tags for Copy vs. View semantics.
+struct Copy
+{};
+
+struct View
+{};
+
+//---------------------------------------------------------------------------//
 // Matrix
 //---------------------------------------------------------------------------//
 // Dense matrix in row-major order with a KokkosKernels compatible data
 // interface.
-template<class T, int M, int N, class TransposeType = NoTranspose>
+template<class T,
+         int M,
+         int N,
+         class TransposeType = NoTranspose,
+         class Memory = Copy>
 struct Matrix;
 
-// No transpose
+//---------------------------------------------------------------------------//
+// No transpose. Copy semantics.
 template<class T, int M, int N>
-struct Matrix<T,M,N,NoTranspose>
+struct Matrix<T,M,N,NoTranspose,Copy>
 {
     T _d[M][N];
     int _extent[2] = {M,N};
@@ -88,8 +101,9 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy constructor.
+    template<class Memory>
     KOKKOS_INLINE_FUNCTION
-    Matrix( const Matrix<T,M,N,NoTranspose>& rhs )
+    Matrix( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
             rhs, *this );
@@ -97,7 +111,7 @@ struct Matrix<T,M,N,NoTranspose>
 
     // Deep copy transpose constructor.
     KOKKOS_INLINE_FUNCTION
-    Matrix( const Matrix<T,N,M,Transpose>& rhs )
+    Matrix( const Matrix<T,N,M,Transpose,View>& rhs )
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
@@ -111,8 +125,9 @@ struct Matrix<T,M,N,NoTranspose>
     }
 
     // Deep copy assignment operator.
+    template<class Memory>
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,M,N,NoTranspose>& rhs )
+    Matrix& operator=( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
             rhs, *this );
@@ -121,7 +136,7 @@ struct Matrix<T,M,N,NoTranspose>
 
     // Deep copy transpose assignment operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,M,N,Transpose>& rhs )
+    Matrix& operator=( const Matrix<T,M,N,Transpose,View>& rhs )
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
@@ -138,9 +153,9 @@ struct Matrix<T,M,N,NoTranspose>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N,Transpose> operator~()
+    Matrix<T,M,N,Transpose,View> operator~()
     {
-        return Matrix<T,M,N,Transpose>( this->data() );
+        return Matrix<T,M,N,Transpose,View>( this->data(), N, 1 );
     }
 
     // Strides.
@@ -173,22 +188,22 @@ struct Matrix<T,M,N,NoTranspose>
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
-    Matrix LU() const
+    Matrix<T,N,M,NoTranspose,Copy> LU() const
     {
-        Matrix lu = *this;
+        Matrix<T,N,M,NoTranspose,Copy> lu = *this;
         KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
         return lu;
     }
 };
 
-// Transpose. This class is essentially a shallow-copy placeholder to enable
-// transpose matrix operations without copies in Kokkos-kernels operations as
-// well as other implementation details.
+//---------------------------------------------------------------------------//
+// No transpose. View semantics.
 template<class T, int M, int N>
-struct Matrix<T,M,N,Transpose>
+struct Matrix<T,M,N,NoTranspose,View>
 {
-    T* _d;
+    T *_d;
     int _extent[2] = {M,N};
+    int _stride[2];
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
@@ -196,21 +211,106 @@ struct Matrix<T,M,N,Transpose>
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
 
-    // Pointer constructor.
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Matrix() = default;
+
+    // View constructor.
     KOKKOS_INLINE_FUNCTION
-    Matrix( T* data )
-        : _d( data )
-    {}
+    Matrix( T* data, const int stride_0, const int stride_1 )
+        : _d ( data )
+    {
+        _stride[0] = stride_0;
+        _stride[1] = stride_1;
+    }
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const T value )
+    {
+        KokkosBatched::SerialSet::invoke( value, *this );
+        return *this;
+    }
+
+    // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix<T,M,N,Transpose,View> operator~()
+    {
+        return Matrix<T,M,N,Transpose,View>( this->data(), _stride[0], _stride[1] );
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const
+    { return _stride[0]; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const
+    { return _stride[1]; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    int extent( const int d ) const
+    { return _extent[d]; }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int j ) const
+    { return _d[i*_stride[0] + j*_stride[1]]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int j )
+    { return _d[i*_stride[0] + j*_stride[1]]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const
+    { return const_cast<pointer>(_d); }
+
+    // LU decomposition.
+    KOKKOS_INLINE_FUNCTION
+    Matrix<T,N,M,NoTranspose,Copy> LU() const
+    {
+        Matrix<T,N,M,NoTranspose,Copy> lu = *this;
+        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+        return lu;
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Transpose. This class is essentially a shallow-copy placeholder to enable
+// transpose matrix operations without copies in Kokkos-kernels operations as
+// well as other implementation details. Tranpose always has view semantics.
+template<class T, int M, int N>
+struct Matrix<T,M,N,Transpose,View>
+{
+    T* _d;
+    int _extent[2] = {M,N};
+    int stride[2];
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = typename std::add_const<T>::type&;
+
+    // View constructor.
+    Matrix( T* data, const int stride_0, const int stride_1 )
+        : _d ( data )
+    {
+        _stride[0] = stride_0;
+        _stride[1] = stride_1;
+    }
 
     // Strides. Written in terms of the original non-transpose matrix for
     // compatibility with Kokkos-kernels operations.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const
-    { return N; }
+    { return _stride[0]; }
 
     KOKKOS_INLINE_FUNCTION
     int stride_1() const
-    { return 1; }
+    { return _stride[1]; }
 
     // Extent. Written in terms of the original non-transpose matrix for
     // compatibility with Kokkos-kernels operations.
@@ -223,11 +323,11 @@ struct Matrix<T,M,N,Transpose>
     // details.
     KOKKOS_INLINE_FUNCTION
     const_reference operator()( const int i, const int j ) const
-    { return _d[j*N + i]; }
+    { return _d[i*_stride[1] + j*_stride[0]]; }
 
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i, const int j )
-    { return _d[j*N + i]; }
+    { return _d[i*_stride[1] + j*_stride[0]]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -237,9 +337,9 @@ struct Matrix<T,M,N,Transpose>
     // LU decomposition. This is the decomposition of the transposed
     // operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,N,M,NoTranspose> LU() const
+    Matrix<T,N,M,NoTranspose,Copy> LU() const
     {
-        Matrix<T,N,M,NoTranspose> lu = *this;
+        Matrix<T,N,M,NoTranspose,Copy> lu = *this;
         KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
         return lu;
     }
@@ -249,12 +349,16 @@ struct Matrix<T,M,N,Transpose>
 // Vector
 //---------------------------------------------------------------------------//
 // Dense vector with a KokkosKernels compatible data interface.
-template<class T, int N, class TransposeType = NoTranspose>
+template<class T,
+         int N,
+         class TransposeType = NoTranspose,
+         class Memory = Copy>
 struct Vector;
 
-// No transpose
+//---------------------------------------------------------------------------//
+// No transpose. Copy semantics.
 template<class T, int N>
-struct Vector<T,N,NoTranspose>
+struct Vector<T,N,NoTranspose,Copy>
 {
     T _d[N];
     int _extent[2] = {N,1};
@@ -315,7 +419,7 @@ struct Vector<T,N,NoTranspose>
     KOKKOS_INLINE_FUNCTION
     Vector<T,N,Transpose> operator~()
     {
-        return Vector<T,N,Transpose>( this->data() );
+        return Vector<T,N,Transpose>( this->data(), 1 );
     }
 
     // Strides.
@@ -356,14 +460,88 @@ struct Vector<T,N,NoTranspose>
         return sqrt(n2);
     }
 };
-
-// Transpose. This class is essentially a shallow-copy placeholder to enable
-// transpose vector operations without copies.
+//---------------------------------------------------------------------------//
+// No transpose. View semantics.
 template<class T, int N>
-struct Vector<T,N,Transpose>
+struct Vector<T,N,NoTranspose,View>
+{
+    T _d[N];
+    int _extent[2] = {N,1};
+    int _stride;
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = typename std::add_const<T>::type&;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Vector() = default;
+
+    // View constructor.
+    KOKKOS_INLINE_FUNCTION
+    Vector( T* data, const int stride )
+        : _d( data )
+        , _stride( stride )
+    {}
+
+    // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
+    Vector<T,N,Transpose,View> operator~()
+    {
+        return Vector<T,N,Transpose,View>( this->data() );
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const
+    { return _stride; }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const
+    { return 0; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    int extent( const int d ) const
+    { return _extent[d]; }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i ) const
+    { return _d[i*_stride]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i )
+    { return _d[i*_stride]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const
+    { return const_cast<pointer>(_d); }
+
+    // Euclidean norm.
+    T norm2() const
+    {
+        T n2 = Kokkos::ArithTraits<T>::zero();
+        for ( int i = 0; i < N; ++i )
+            n2 += _d[i*_stride]*_d[i*_stride];
+        return sqrt(n2);
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Transpose. This class is essentially a shallow-copy placeholder to enable
+// transpose vector operations without copies. Transpose always has view
+// semantics.
+template<class T, int N>
+struct Vector<T,N,Transpose,View>
 {
     T* _d;
     int _extent[2] = {N,1};
+    int _stride;
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
@@ -373,14 +551,15 @@ struct Vector<T,N,Transpose>
 
     // Pointer constructor.
     KOKKOS_INLINE_FUNCTION
-    Vector( T* data )
+    Vector( T* data, const int stride )
         : _d(data)
+        , _stride( stride )
     {}
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const
-    { return 1; }
+    { return _stride; }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
@@ -402,10 +581,11 @@ struct Vector<T,N,Transpose>
 // Matrix-matrix addition.
 //---------------------------------------------------------------------------//
 // No transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator+( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,M,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator+( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
+           const Matrix<T,M,N,NoTranspose,MemoryB>& b )
 {
     Matrix<T,M,N,NoTranspose> c;
     for ( int i = 0; i < M; ++i )
@@ -416,10 +596,11 @@ operator+( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,M,N,NoTranspose>& 
 
 //---------------------------------------------------------------------------//
 // No transpose - transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator+( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,N,M,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator+( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
+           const Matrix<T,N,M,Transpose,View>& b )
 {
     Matrix<T,M,N,NoTranspose> c;
     for ( int i = 0; i < M; ++i )
@@ -430,10 +611,11 @@ operator+( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,N,M,Transpose>& b 
 
 //---------------------------------------------------------------------------//
 // Transpose - no transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator+( const Matrix<T,N,M,Transpose>& a, const Matrix<T,M,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator+( const Matrix<T,N,M,Transpose,View>& a,
+           const Matrix<T,M,N,NoTranspose,MemoryA>& b )
 {
     Matrix<T,M,N,NoTranspose> c;
     for ( int i = 0; i < M; ++i )
@@ -446,8 +628,9 @@ operator+( const Matrix<T,N,M,Transpose>& a, const Matrix<T,M,N,NoTranspose>& b 
 // Transpose - transpose case.
 template<class T, int M, int N>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator+( const Matrix<T,N,M,Transpose>& a, const Matrix<T,N,M,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator+( const Matrix<T,N,M,Transpose,View>& a,
+           const Matrix<T,N,M,Transpose,View>& b )
 {
     Matrix<T,M,N,NoTranspose> c;
     for ( int i = 0; i < M; ++i )
