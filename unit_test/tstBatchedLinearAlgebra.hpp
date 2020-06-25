@@ -158,6 +158,18 @@ void vectorTest()
     EXPECT_EQ( e2(0), 0.0 );
     EXPECT_EQ( e2(1), 0.0 );
     EXPECT_EQ( e2(2), 1.0 );
+
+    // Check element product.
+    LinearAlgebra::Vector<double,2> f = { 2.0, 1.0 };
+    LinearAlgebra::Vector<double,2> g = { 4.0, 2.0 };
+    auto h = f & g;
+    EXPECT_EQ( h(0), 8.0 );
+    EXPECT_EQ( h(1), 2.0 );
+
+    // Check element division.
+    h = f | g;
+    EXPECT_EQ( h(0), 0.5 );
+    EXPECT_EQ( h(1), 0.5 );
 }
 
 //---------------------------------------------------------------------------//

@@ -719,6 +719,32 @@ operator%( const Vector<T,3,NoTranspose>& x, const Vector<T,3,NoTranspose>& y )
 }
 
 //---------------------------------------------------------------------------//
+// Element-wise multiplication.
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+Vector<T,N,NoTranspose>
+operator&( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+{
+    Vector<T,N,NoTranspose> z;
+    for ( int i = 0; i < N; ++i )
+        z(i) = x(i) * y(i);
+    return z;
+}
+
+//---------------------------------------------------------------------------//
+// Element-wise division.
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+Vector<T,N,NoTranspose>
+operator|( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+{
+    Vector<T,N,NoTranspose> z;
+    for ( int i = 0; i < N; ++i )
+        z(i) = x(i) / y(i);
+    return z;
+}
+
+//---------------------------------------------------------------------------//
 // Scalar multiplication.
 //---------------------------------------------------------------------------//
 // Matrix. No Transpose.
