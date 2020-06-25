@@ -170,6 +170,15 @@ struct Matrix<T,M,N,NoTranspose>
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0][0]); }
+
+    // LU decomposition.
+    KOKKOS_INLINE_FUNCTION
+    Matrix LU() const
+    {
+        Matrix lu = *this;
+        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+        return lu;
+    }
 };
 
 // Transpose. This class is essentially a shallow-copy placeholder to enable
@@ -224,6 +233,16 @@ struct Matrix<T,M,N,Transpose>
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(_d); }
+
+    // LU decomposition. This is the decomposition of the transposed
+    // operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix<T,N,M,NoTranspose> LU() const
+    {
+        Matrix<T,N,M,NoTranspose> lu = *this;
+        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+        return lu;
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -762,8 +781,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T,N,NoTranspose>
 operator^( const Matrix<T,N,N,Trans>& a, const Vector<T,N,NoTranspose>& b )
 {
-    const Matrix<T,N,N,NoTranspose> a_lu = a;
-    KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( a_lu );
+    auto a_lu = a.LU();
     auto x = b;
     KokkosBatched::SerialSolveLU<
         NoTranspose::type,
@@ -822,6 +840,12 @@ operator^( const Matrix<T,3,3,TransA>& a, const Vector<T,3,NoTranspose>& b )
 //---------------------------------------------------------------------------//
 // Type aliases.
 //---------------------------------------------------------------------------//
+
+template<class T>
+using Vec2 = LinearAlgebra::Vector<T,2>;
+
+template<class T>
+using Mat2 = LinearAlgebra::Matrix<T,2,2>;
 
 template<class T>
 using Vec3 = LinearAlgebra::Vector<T,3>;
