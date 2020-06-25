@@ -114,6 +114,8 @@ void vectorTest()
     EXPECT_EQ( x(1), -3.5 );
     EXPECT_EQ( x(2), 5.4 );
 
+    EXPECT_EQ( x.norm2(), sqrt(1.2*1.2 + 3.5*3.5 + 5.4*5.4) );
+
     // Check a deep copy
     auto x_c = x;
     EXPECT_NE( x.data(), x_c.data() );

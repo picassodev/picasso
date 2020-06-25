@@ -26,6 +26,7 @@
 #include <KokkosBatched_SolveLU_Decl.hpp>
 
 #include <type_traits>
+#include <cmath>
 
 namespace Picasso
 {
@@ -326,6 +327,15 @@ struct Vector<T,N,NoTranspose>
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0]); }
+
+    // Euclidean norm.
+    T norm2() const
+    {
+        T n2 = Kokkos::ArithTraits<T>::zero();
+        for ( int i = 0; i < N; ++i )
+            n2 += _d[i]*_d[i];
+        return sqrt(n2);
+    }
 };
 
 // Transpose. This class is essentially a shallow-copy placeholder to enable
@@ -716,6 +726,34 @@ operator*( const T v, const Vector<T,N,NoTranspose>& x )
 }
 
 //---------------------------------------------------------------------------//
+// Matrix determinants.
+//---------------------------------------------------------------------------//
+// 2x2 specialization
+template<class T, class Trans>
+KOKKOS_INLINE_FUNCTION
+T
+operator!( const Matrix<T,2,2,Trans>& a )
+{
+    return a(0,0) * a(1,1) - a(0,1) * a(1,0);
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization
+template<class T, class Trans>
+KOKKOS_INLINE_FUNCTION
+T
+operator!( const Matrix<T,3,3,Trans>& a )
+{
+    return
+        a(0,0) * a(1,1) * a(2,2) +
+        a(0,1) * a(1,2) * a(2,0) +
+        a(0,2) * a(1,0) * a(2,1) -
+        a(0,2) * a(1,1) * a(2,0) -
+        a(0,1) * a(1,0) * a(2,2) -
+        a(0,0) * a(1,2) * a(2,1);
+}
+
+//---------------------------------------------------------------------------//
 // Linear solve.
 //---------------------------------------------------------------------------//
 // General case.
@@ -740,7 +778,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T,2,NoTranspose>
 operator^( const Matrix<T,2,2,TransA>& a, const Vector<T,2,NoTranspose>& b )
 {
-    auto a_det_inv = 1.0 / ( a(0,0) * a(1,1) - a(0,1) * a(1,0) );
+    auto a_det_inv = 1.0 / !a;
 
     Matrix<T,2,2,NoTranspose> a_inv;
 
@@ -758,12 +796,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T,3,NoTranspose>
 operator^( const Matrix<T,3,3,TransA>& a, const Vector<T,3,NoTranspose>& b )
 {
-    auto a_det_inv = 1.0 / (a(0,0) * a(1,1) * a(2,2) +
-                            a(0,1) * a(1,2) * a(2,0) +
-                            a(0,2) * a(1,0) * a(2,1) -
-                            a(0,2) * a(1,1) * a(2,0) -
-                            a(0,1) * a(1,0) * a(2,2) -
-                            a(0,0) * a(1,2) * a(2,1) );
+    auto a_det_inv = 1.0 / !a;
 
     Matrix<T,3,3,NoTranspose> a_inv;
 
