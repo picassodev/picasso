@@ -286,7 +286,7 @@ struct Matrix<T,M,N,Transpose,View>
 {
     T* _d;
     int _extent[2] = {M,N};
-    int stride[2];
+    int _stride[2];
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
@@ -417,9 +417,9 @@ struct Vector<T,N,NoTranspose,Copy>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Vector<T,N,Transpose> operator~()
+    Vector<T,N,Transpose,View> operator~()
     {
-        return Vector<T,N,Transpose>( this->data(), 1 );
+        return Vector<T,N,Transpose,View>( this->data(), 1 );
     }
 
     // Strides.
@@ -587,7 +587,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator+( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
            const Matrix<T,M,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) + b(i,j);
@@ -602,7 +602,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator+( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
            const Matrix<T,N,M,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) + b(i,j);
@@ -615,9 +615,9 @@ template<class T, int M, int N, class MemoryB>
 KOKKOS_INLINE_FUNCTION
 Matrix<T,M,N,NoTranspose,Copy>
 operator+( const Matrix<T,N,M,Transpose,View>& a,
-           const Matrix<T,M,N,NoTranspose,MemoryA>& b )
+           const Matrix<T,M,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) + b(i,j);
@@ -632,7 +632,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator+( const Matrix<T,N,M,Transpose,View>& a,
            const Matrix<T,N,M,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) + b(i,j);
@@ -643,12 +643,13 @@ operator+( const Matrix<T,N,M,Transpose,View>& a,
 // Matrix-matrix subtraction.
 //---------------------------------------------------------------------------//
 // No transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator-( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,M,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator-( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
+           const Matrix<T,M,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) - b(i,j);
@@ -657,12 +658,13 @@ operator-( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,M,N,NoTranspose>& 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-//
 // No transpose - transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator-( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,N,M,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator-( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
+           const Matrix<T,N,M,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) - b(i,j);
@@ -671,12 +673,13 @@ operator-( const Matrix<T,M,N,NoTranspose>& a, const Matrix<T,N,M,Transpose>& b 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-//
 // Transpose - no transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator-( const Matrix<T,N,M,Transpose>& a, const Matrix<T,M,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator-( const Matrix<T,N,M,Transpose,View>& a,
+           const Matrix<T,M,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) - b(i,j);
@@ -687,10 +690,11 @@ operator-( const Matrix<T,N,M,Transpose>& a, const Matrix<T,M,N,NoTranspose>& b 
 // Transpose - transpose case.
 template<class T, int M, int N>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator-( const Matrix<T,N,M,Transpose>& a, const Matrix<T,N,M,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator-( const Matrix<T,N,M,Transpose,View>& a,
+           const Matrix<T,N,M,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     for ( int i = 0; i < M; ++i )
         for ( int j = 0; j < N; ++j )
             c(i,j) = a(i,j) - b(i,j);
@@ -701,12 +705,13 @@ operator-( const Matrix<T,N,M,Transpose>& a, const Matrix<T,N,M,Transpose>& b )
 // Matrix-matrix multiplication
 //---------------------------------------------------------------------------//
 // No transpose case.
-template<class T, int M, int N, int K>
+template<class T, int M, int N, int K, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,K,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
+           const Matrix<T,K,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<NoTranspose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -719,10 +724,11 @@ operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,K,N,NoTranspose>& 
 // Transpose case.
 template<class T, int M, int N, int K>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,N,K,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator*( const Matrix<T,K,M,Transpose,View>& a,
+           const Matrix<T,N,K,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -733,12 +739,13 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,N,K,Transpose>& b )
 
 //---------------------------------------------------------------------------//
 // NoTranspose-Transpose case.
-template<class T, int M, int N, int K>
+template<class T, int M, int N, int K, class MemoryA>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,N,K,Transpose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
+           const Matrix<T,N,K,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -749,12 +756,13 @@ operator*( const Matrix<T,M,K,NoTranspose>& a, const Matrix<T,N,K,Transpose>& b 
 
 //---------------------------------------------------------------------------//
 // Transpose-NoTranspose case.
-template<class T, int M, int N, int K>
+template<class T, int M, int N, int K, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b )
+Matrix<T,M,N,NoTranspose,Copy>
+operator*( const Matrix<T,K,M,Transpose,View>& a,
+           const Matrix<T,K,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose> c;
+    Matrix<T,M,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -767,12 +775,13 @@ operator*( const Matrix<T,K,M,Transpose>& a, const Matrix<T,K,N,NoTranspose>& b 
 // Matrix-vector multiplication
 //---------------------------------------------------------------------------//
 // NoTranspose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA, class MemoryX>
 KOKKOS_INLINE_FUNCTION
-Vector<T,M,NoTranspose>
-operator*( const Matrix<T,M,N,NoTranspose>& a, const Vector<T,N,NoTranspose>& x )
+Vector<T,M,NoTranspose,Copy>
+operator*( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
+           const Vector<T,N,NoTranspose,MemoryX>& x )
 {
-    Vector<T,M,NoTranspose> y;
+    Vector<T,M,NoTranspose,Copy> y;
     KokkosBatched::SerialGemv<NoTranspose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
                                   Kokkos::ArithTraits<T>::one(),
@@ -782,12 +791,13 @@ operator*( const Matrix<T,M,N,NoTranspose>& a, const Vector<T,N,NoTranspose>& x 
 
 //---------------------------------------------------------------------------//
 // Transpose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryX>
 KOKKOS_INLINE_FUNCTION
-Vector<T,M,NoTranspose>
-operator*( const Matrix<T,N,M,Transpose>& a, const Vector<T,N,NoTranspose>& x )
+Vector<T,M,NoTranspose,Copy>
+operator*( const Matrix<T,N,M,Transpose,View>& a,
+           const Vector<T,N,NoTranspose,MemoryX>& x )
 {
-    Vector<T,M,NoTranspose> y;
+    Vector<T,M,NoTranspose,Copy> y;
     KokkosBatched::SerialGemv<Transpose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
                                   Kokkos::ArithTraits<T>::one(),
@@ -799,12 +809,13 @@ operator*( const Matrix<T,N,M,Transpose>& a, const Vector<T,N,NoTranspose>& x )
 // Vector-matrix multiplication
 //---------------------------------------------------------------------------//
 // NoTranspose case.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,1,N,NoTranspose>
-operator*( const Vector<T,M,Transpose>& x, const Matrix<T,M,N,NoTranspose>& a )
+Matrix<T,1,N,NoTranspose,Copy>
+operator*( const Vector<T,M,Transpose,View>& x,
+           const Matrix<T,M,N,NoTranspose,MemoryA>& a )
 {
-    Matrix<T,1,N,NoTranspose> c;
+    Matrix<T,1,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -817,8 +828,9 @@ operator*( const Vector<T,M,Transpose>& x, const Matrix<T,M,N,NoTranspose>& a )
 // Transpose case.
 template<class T, int M, int N>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,1,M,NoTranspose>
-operator*( const Vector<T,N,Transpose>& x, const Matrix<T,M,N,Transpose>& a )
+Matrix<T,1,M,NoTranspose,Copy>
+operator*( const Vector<T,N,Transpose,View>& x,
+           const Matrix<T,M,N,Transpose,View>& a )
 {
     Matrix<T,1,M,NoTranspose> c;
     KokkosBatched::SerialGemm<Transpose::type,
@@ -832,12 +844,13 @@ operator*( const Vector<T,N,Transpose>& x, const Matrix<T,M,N,Transpose>& a )
 //---------------------------------------------------------------------------//
 // Vector-vector addition.
 //---------------------------------------------------------------------------//
-template<class T, int N>
+template<class T, int N, class MemoryX, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator+( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+Vector<T,N,NoTranspose,Copy>
+operator+( const Vector<T,N,NoTranspose,MemoryX>& x,
+           const Vector<T,N,NoTranspose,MemoryY>& y )
 {
-    Vector<T,N,NoTranspose> z;
+    Vector<T,N,NoTranspose,Copy> z;
     for ( int i = 0; i < N; ++i )
         z(i) = x(i) + y(i);
     return z;
@@ -846,12 +859,13 @@ operator+( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
 //---------------------------------------------------------------------------//
 // Vector-vector subtraction.
 //---------------------------------------------------------------------------//
-template<class T, int N>
+template<class T, int N, class MemoryX, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator-( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+Vector<T,N,NoTranspose,Copy>
+operator-( const Vector<T,N,NoTranspose,MemoryX>& x,
+           const Vector<T,N,NoTranspose,MemoryY>& y )
 {
-    Vector<T,N,NoTranspose> z;
+    Vector<T,N,NoTranspose,Copy> z;
     for ( int i = 0; i < N; ++i )
         z(i) = x(i) - y(i);
     return z;
@@ -861,9 +875,11 @@ operator-( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
 // Vector products.
 //---------------------------------------------------------------------------//
 // Dot product.
-template<class T, int N>
+template<class T, int N, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-T operator*( const Vector<T,N,Transpose>& x, const Vector<T,N,NoTranspose>& y )
+T
+operator*( const Vector<T,N,Transpose,View>& x,
+           const Vector<T,N,NoTranspose,MemoryY>& y )
 {
     auto v = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::InnerMultipleDotProduct<1> dp( 0, 1, 1, 1 );
@@ -874,12 +890,13 @@ T operator*( const Vector<T,N,Transpose>& x, const Vector<T,N,NoTranspose>& y )
 
 //---------------------------------------------------------------------------//
 // Inner product.
-template<class T, int N>
+template<class T, int N, class MemoryX>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,N,N,NoTranspose>
-operator*( const Vector<T,N,NoTranspose>& x, const Vector<T,N,Transpose>& y )
+Matrix<T,N,N,NoTranspose,Copy>
+operator*( const Vector<T,N,NoTranspose,MemoryX>& x,
+           const Vector<T,N,Transpose,View>& y )
 {
-    Matrix<T,N,N,NoTranspose> c;
+    Matrix<T,N,N,NoTranspose,Copy> c;
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -890,25 +907,27 @@ operator*( const Vector<T,N,NoTranspose>& x, const Vector<T,N,Transpose>& y )
 
 //---------------------------------------------------------------------------//
 // Cross product
-template<class T>
+template<class T, class MemoryX, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-Vector<T,3,NoTranspose>
-operator%( const Vector<T,3,NoTranspose>& x, const Vector<T,3,NoTranspose>& y )
+Vector<T,3,NoTranspose,Copy>
+operator%( const Vector<T,3,NoTranspose,MemoryX>& x,
+           const Vector<T,3,NoTranspose,MemoryY>& y )
 {
-    Vector<T,3,NoTranspose> z = { x(1)*y(2) - x(2)*y(1),
-                                  x(2)*y(0) - x(0)*y(2),
-                                  x(0)*y(1) - x(1)*y(0) };
+    Vector<T,3,NoTranspose,Copy> z = { x(1)*y(2) - x(2)*y(1),
+                                       x(2)*y(0) - x(0)*y(2),
+                                       x(0)*y(1) - x(1)*y(0) };
     return z;
 }
 
 //---------------------------------------------------------------------------//
 // Element-wise multiplication.
-template<class T, int N>
+template<class T, int N, class MemoryX, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator&( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+Vector<T,N,NoTranspose,Copy>
+operator&( const Vector<T,N,NoTranspose,MemoryX>& x,
+           const Vector<T,N,NoTranspose,MemoryY>& y )
 {
-    Vector<T,N,NoTranspose> z;
+    Vector<T,N,NoTranspose,Copy> z;
     for ( int i = 0; i < N; ++i )
         z(i) = x(i) * y(i);
     return z;
@@ -916,12 +935,13 @@ operator&( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
 
 //---------------------------------------------------------------------------//
 // Element-wise division.
-template<class T, int N>
+template<class T, int N, class MemoryX, class MemoryY>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator|( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
+Vector<T,N,NoTranspose,Copy>
+operator|( const Vector<T,N,NoTranspose,MemoryX>& x,
+           const Vector<T,N,NoTranspose,MemoryY>& y )
 {
-    Vector<T,N,NoTranspose> z;
+    Vector<T,N,NoTranspose,Copy> z;
     for ( int i = 0; i < N; ++i )
         z(i) = x(i) / y(i);
     return z;
@@ -931,24 +951,24 @@ operator|( const Vector<T,N,NoTranspose>& x, const Vector<T,N,NoTranspose>& y )
 // Scalar multiplication.
 //---------------------------------------------------------------------------//
 // Matrix. No Transpose.
-template<class T, int M, int N>
+template<class T, int M, int N, class MemoryA>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose>
-operator*( const T v, const Matrix<T,M,N,NoTranspose>& a )
+Matrix<T,M,N,NoTranspose,Copy>
+operator*( const T v, const Matrix<T,M,N,NoTranspose,MemoryA>& a )
 {
-    Matrix<T,M,N,NoTranspose> b = a;
+    Matrix<T,M,N,NoTranspose,Copy> b = a;
     KokkosBatched::SerialScale::invoke( v, b );
     return b;
 }
 
 //---------------------------------------------------------------------------//
 // Vector. No transpose.
-template<class T, int N>
+template<class T, int N, class MemoryX>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator*( const T v, const Vector<T,N,NoTranspose>& x )
+Vector<T,N,NoTranspose,Copy>
+operator*( const T v, const Vector<T,N,NoTranspose,MemoryX>& x )
 {
-    Vector<T,N,NoTranspose> y = x;
+    Vector<T,N,NoTranspose,Copy> y = x;
     KokkosBatched::SerialScale::invoke( v, y );
     return y;
 }
@@ -957,20 +977,20 @@ operator*( const T v, const Vector<T,N,NoTranspose>& x )
 // Matrix determinants.
 //---------------------------------------------------------------------------//
 // 2x2 specialization
-template<class T, class Trans>
+template<class T, class Trans, class Memory>
 KOKKOS_INLINE_FUNCTION
 T
-operator!( const Matrix<T,2,2,Trans>& a )
+operator!( const Matrix<T,2,2,Trans,Memory>& a )
 {
     return a(0,0) * a(1,1) - a(0,1) * a(1,0);
 }
 
 //---------------------------------------------------------------------------//
 // 3x3 specialization
-template<class T, class Trans>
+template<class T, class Trans, class Memory>
 KOKKOS_INLINE_FUNCTION
 T
-operator!( const Matrix<T,3,3,Trans>& a )
+operator!( const Matrix<T,3,3,Trans,Memory>& a )
 {
     return
         a(0,0) * a(1,1) * a(2,2) +
@@ -985,10 +1005,11 @@ operator!( const Matrix<T,3,3,Trans>& a )
 // Linear solve.
 //---------------------------------------------------------------------------//
 // General case.
-template<class T, int N, class Trans>
+template<class T, int N, class TransA, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose>
-operator^( const Matrix<T,N,N,Trans>& a, const Vector<T,N,NoTranspose>& b )
+Vector<T,N,NoTranspose,Copy>
+operator^( const Matrix<T,N,N,TransA,MemoryA>& a,
+           const Vector<T,N,NoTranspose,MemoryB>& b )
 {
     auto a_lu = a.LU();
     auto x = b;
@@ -1000,14 +1021,15 @@ operator^( const Matrix<T,N,N,Trans>& a, const Vector<T,N,NoTranspose>& b )
 
 //---------------------------------------------------------------------------//
 // 2x2 specialization.
-template<class T, class TransA>
+template<class T, class TransA, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Vector<T,2,NoTranspose>
-operator^( const Matrix<T,2,2,TransA>& a, const Vector<T,2,NoTranspose>& b )
+Vector<T,2,NoTranspose,Copy>
+operator^( const Matrix<T,2,2,TransA,MemoryA>& a,
+           const Vector<T,2,NoTranspose,MemoryB>& b )
 {
     auto a_det_inv = 1.0 / !a;
 
-    Matrix<T,2,2,NoTranspose> a_inv;
+    Matrix<T,2,2,NoTranspose,Copy> a_inv;
 
     a_inv(0,0) = a(1,1) * a_det_inv;
     a_inv(0,1) = -a(0,1) * a_det_inv;
@@ -1018,10 +1040,11 @@ operator^( const Matrix<T,2,2,TransA>& a, const Vector<T,2,NoTranspose>& b )
 }
 //---------------------------------------------------------------------------//
 // 3x3 specialization.
-template<class T, class TransA>
+template<class T, class TransA, class MemoryA, class MemoryB>
 KOKKOS_INLINE_FUNCTION
-Vector<T,3,NoTranspose>
-operator^( const Matrix<T,3,3,TransA>& a, const Vector<T,3,NoTranspose>& b )
+Vector<T,3,NoTranspose,Copy>
+operator^( const Matrix<T,3,3,TransA,MemoryA>& a,
+           const Vector<T,3,NoTranspose,MemoryB>& b )
 {
     auto a_det_inv = 1.0 / !a;
 
@@ -1051,16 +1074,20 @@ operator^( const Matrix<T,3,3,TransA>& a, const Vector<T,3,NoTranspose>& b )
 //---------------------------------------------------------------------------//
 
 template<class T>
-using Vec2 = LinearAlgebra::Vector<T,2>;
+using Vec2 =
+    LinearAlgebra::Vector<T,2,LinearAlgebra::NoTranspose,LinearAlgebra::Copy>;
 
 template<class T>
-using Mat2 = LinearAlgebra::Matrix<T,2,2>;
+using Mat2 =
+    LinearAlgebra::Matrix<T,2,2,LinearAlgebra::NoTranspose,LinearAlgebra::Copy>;
 
 template<class T>
-using Vec3 = LinearAlgebra::Vector<T,3>;
+using Vec3 =
+    LinearAlgebra::Vector<T,3,LinearAlgebra::NoTranspose,LinearAlgebra::Copy>;
 
 template<class T>
-using Mat3 = LinearAlgebra::Matrix<T,3,3>;
+using Mat3 =
+    LinearAlgebra::Matrix<T,3,3,LinearAlgebra::NoTranspose,LinearAlgebra::Copy>;
 
 //---------------------------------------------------------------------------//
 
