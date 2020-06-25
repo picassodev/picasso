@@ -465,7 +465,7 @@ struct Vector<T,N,NoTranspose,Copy>
 template<class T, int N>
 struct Vector<T,N,NoTranspose,View>
 {
-    T _d[N];
+    T* _d;
     int _extent[2] = {N,1};
     int _stride;
 

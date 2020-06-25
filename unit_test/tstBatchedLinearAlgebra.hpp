@@ -173,6 +173,50 @@ void vectorTest()
 }
 
 //---------------------------------------------------------------------------//
+void viewTest()
+{
+    double m[2][3] = { {1.2, -3.5, 5.4},
+                       {8.6, 2.6, -0.1} };
+    LinearAlgebra::Matrix<
+        double,2,3,LinearAlgebra::NoTranspose,LinearAlgebra::View> a(
+            &m[0][0], 3, 1 );
+    EXPECT_EQ( a.stride_0(), 3 );
+    EXPECT_EQ( a.stride_1(), 1 );
+    EXPECT_EQ( a.extent(0), 2 );
+    EXPECT_EQ( a.extent(1), 3 );
+
+    EXPECT_EQ( a(0,0), 1.2 );
+    EXPECT_EQ( a(0,1), -3.5 );
+    EXPECT_EQ( a(0,2), 5.4 );
+    EXPECT_EQ( a(1,0), 8.6 );
+    EXPECT_EQ( a(1,1), 2.6 );
+    EXPECT_EQ( a(1,2), -0.1 );
+
+    double v[6] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0 };
+
+    LinearAlgebra::Vector<
+        double,6,LinearAlgebra::NoTranspose,LinearAlgebra::View> x1( &v[0], 1 );
+    EXPECT_EQ( x1.stride_0(), 1 );
+    EXPECT_EQ( x1.extent(0), 6 );
+    for ( int i = 0; i < 6; ++i )
+        EXPECT_EQ( x1(i), 1.0 * i );
+
+    LinearAlgebra::Vector<
+        double,3,LinearAlgebra::NoTranspose,LinearAlgebra::View> x2( &v[0], 2 );
+    EXPECT_EQ( x2.stride_0(), 2 );
+    EXPECT_EQ( x2.extent(0), 3 );
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_EQ( x2(i), 2.0 * i );
+
+    LinearAlgebra::Vector<
+        double,2,LinearAlgebra::NoTranspose,LinearAlgebra::View> x3( &v[1], 3 );
+    EXPECT_EQ( x3.stride_0(), 3 );
+    EXPECT_EQ( x3.extent(0), 2 );
+    for ( int i = 0; i < 2; ++i )
+        EXPECT_EQ( x3(i), 1.0 + 3.0 * i );
+}
+
+//---------------------------------------------------------------------------//
 void matAddTest()
 {
     LinearAlgebra::Matrix<double,1,2> a = { {2.0, 1.0} };
@@ -432,6 +476,11 @@ TEST( TEST_CATEGORY, matrix_test )
 TEST( TEST_CATEGORY, vector_test )
 {
     vectorTest();
+}
+
+TEST( TEST_CATEGORY, view_test )
+{
+    viewTest();
 }
 
 TEST( TEST_CATEGORY, matadd_test )
