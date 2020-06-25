@@ -43,12 +43,12 @@ void matrixTest()
     EXPECT_EQ( a_c(1,1), 2.6 );
     EXPECT_EQ( a_c(1,2), -0.1 );
 
-    // Check a transpose deep copy.
-    LinearAlgebra::Matrix<double,3,2> a_t = ~a;
-    EXPECT_EQ( a_t.stride_0(), 2 );
+    // Check a shallow transpose copy.
+    auto a_t = ~a;
+    EXPECT_EQ( a_t.stride_0(), 3 );
     EXPECT_EQ( a_t.stride_1(), 1 );
-    EXPECT_EQ( a_t.extent(0), 3 );
-    EXPECT_EQ( a_t.extent(1), 2 );
+    EXPECT_EQ( a_t.extent(0), 2 );
+    EXPECT_EQ( a_t.extent(1), 3 );
 
     EXPECT_EQ( a_t(0,0), 1.2 );
     EXPECT_EQ( a_t(1,0), -3.5 );
@@ -56,6 +56,20 @@ void matrixTest()
     EXPECT_EQ( a_t(0,1), 8.6 );
     EXPECT_EQ( a_t(1,1), 2.6 );
     EXPECT_EQ( a_t(2,1), -0.1 );
+
+    // Check a transpose deep copy.
+    LinearAlgebra::Matrix<double,3,2> a_t_c = ~a;
+    EXPECT_EQ( a_t_c.stride_0(), 2 );
+    EXPECT_EQ( a_t_c.stride_1(), 1 );
+    EXPECT_EQ( a_t_c.extent(0), 3 );
+    EXPECT_EQ( a_t_c.extent(1), 2 );
+
+    EXPECT_EQ( a_t_c(0,0), 1.2 );
+    EXPECT_EQ( a_t_c(1,0), -3.5 );
+    EXPECT_EQ( a_t_c(2,0), 5.4 );
+    EXPECT_EQ( a_t_c(0,1), 8.6 );
+    EXPECT_EQ( a_t_c(1,1), 2.6 );
+    EXPECT_EQ( a_t_c(2,1), -0.1 );
 
     // Check scalar assignment and operator()
     a = 43.3;
@@ -142,6 +156,72 @@ void vectorTest()
     EXPECT_EQ( e2(0), 0.0 );
     EXPECT_EQ( e2(1), 0.0 );
     EXPECT_EQ( e2(2), 1.0 );
+}
+
+//---------------------------------------------------------------------------//
+void matAddTest()
+{
+    LinearAlgebra::Matrix<double,1,2> a = { {2.0, 1.0} };
+    LinearAlgebra::Matrix<double,1,2> b = { {2.0, 3.0} };
+
+    auto c = a + b;
+    EXPECT_EQ( c.extent(0), 1 );
+    EXPECT_EQ( c.extent(1), 2 );
+    EXPECT_EQ( c(0,0), 4.0 );
+    EXPECT_EQ( c(0,1), 4.0 );
+
+    auto d = ~a + ~b;
+    EXPECT_EQ( d.extent(0), 2 );
+    EXPECT_EQ( d.extent(1), 1 );
+    EXPECT_EQ( d(0,0), 4.0 );
+    EXPECT_EQ( d(1,0), 4.0 );
+
+    LinearAlgebra::Matrix<double,2,1> e = { {2.0}, {3.0} };
+
+    auto f = ~a + e;
+    EXPECT_EQ( f.extent(0), 2 );
+    EXPECT_EQ( f.extent(1), 1 );
+    EXPECT_EQ( f(0,0), 4.0 );
+    EXPECT_EQ( f(1,0), 4.0 );
+
+    auto g = a + ~e;
+    EXPECT_EQ( g.extent(0), 1 );
+    EXPECT_EQ( g.extent(1), 2 );
+    EXPECT_EQ( g(0,0), 4.0 );
+    EXPECT_EQ( g(0,1), 4.0 );
+}
+
+//---------------------------------------------------------------------------//
+void matSubTest()
+{
+    LinearAlgebra::Matrix<double,1,2> a = { {2.0, 1.0} };
+    LinearAlgebra::Matrix<double,1,2> b = { {2.0, 3.0} };
+
+    auto c = a - b;
+    EXPECT_EQ( c.extent(0), 1 );
+    EXPECT_EQ( c.extent(1), 2 );
+    EXPECT_EQ( c(0,0), 0.0 );
+    EXPECT_EQ( c(0,1), -2.0 );
+
+    auto d = ~a - ~b;
+    EXPECT_EQ( d.extent(0), 2 );
+    EXPECT_EQ( d.extent(1), 1 );
+    EXPECT_EQ( d(0,0), 0.0 );
+    EXPECT_EQ( d(1,0), -2.0 );
+
+    LinearAlgebra::Matrix<double,2,1> e = { {2.0}, {3.0} };
+
+    auto f = ~a - e;
+    EXPECT_EQ( f.extent(0), 2 );
+    EXPECT_EQ( f.extent(1), 1 );
+    EXPECT_EQ( f(0,0), 0.0 );
+    EXPECT_EQ( f(1,0), -2.0 );
+
+    auto g = a - ~e;
+    EXPECT_EQ( g.extent(0), 1 );
+    EXPECT_EQ( g.extent(1), 2 );
+    EXPECT_EQ( g(0,0), 0.0 );
+    EXPECT_EQ( g(0,1), -2.0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -259,6 +339,28 @@ void matVecTest()
 }
 
 //---------------------------------------------------------------------------//
+void vecAddTest()
+{
+    LinearAlgebra::Vector<double,2> a = { 2.0, 1.0 };
+    LinearAlgebra::Vector<double,2> b = { 2.0, 3.0 };
+
+    auto c = a + b;
+    EXPECT_EQ( c(0), 4.0 );
+    EXPECT_EQ( c(1), 4.0 );
+}
+
+//---------------------------------------------------------------------------//
+void vecSubTest()
+{
+    LinearAlgebra::Vector<double,2> a = { 2.0, 1.0 };
+    LinearAlgebra::Vector<double,2> b = { 2.0, 3.0 };
+
+    auto c = a - b;
+    EXPECT_EQ( c(0), 0.0 );
+    EXPECT_EQ( c(1), -2.0 );
+}
+
+//---------------------------------------------------------------------------//
 void vecVecTest()
 {
     LinearAlgebra::Vector<double,2> x = { 1.0, 2.0 };
@@ -318,6 +420,16 @@ TEST( TEST_CATEGORY, vector_test )
     vectorTest();
 }
 
+TEST( TEST_CATEGORY, matadd_test )
+{
+    matAddTest();
+}
+
+TEST( TEST_CATEGORY, matsub_test )
+{
+    matSubTest();
+}
+
 TEST( TEST_CATEGORY, matmat_test )
 {
     matMatTest();
@@ -328,17 +440,43 @@ TEST( TEST_CATEGORY, matVec_test )
     matVecTest();
 }
 
+TEST( TEST_CATEGORY, vecsub_test )
+{
+    vecSubTest();
+}
+
+TEST( TEST_CATEGORY, vecvec_test )
+{
+    vecVecTest();
+}
+
 TEST( TEST_CATEGORY, vecVec_test )
 {
     vecVecTest();
 }
 
-TEST( TEST_CATEGORY, linearSolve_test )
+TEST( TEST_CATEGORY, linearSolve_test_2 )
 {
     linearSolveTest<2>();
+}
+
+TEST( TEST_CATEGORY, linearSolve_test_3 )
+{
     linearSolveTest<3>();
+}
+
+TEST( TEST_CATEGORY, linearSolve_test_4 )
+{
     linearSolveTest<4>();
+}
+
+TEST( TEST_CATEGORY, linearSolve_test_10 )
+{
     linearSolveTest<10>();
+}
+
+TEST( TEST_CATEGORY, linearSolve_test_20 )
+{
     linearSolveTest<20>();
 }
 
