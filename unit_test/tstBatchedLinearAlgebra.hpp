@@ -134,6 +134,14 @@ void vectorTest()
     auto d = 2.0 * c;
     for ( int i = 0; i < 3; ++i )
         EXPECT_EQ( d(i), 64.6 );
+
+    // Check cross product.
+    LinearAlgebra::Vector<double,3> e0 = { 1.0, 0.0, 0.0 };
+    LinearAlgebra::Vector<double,3> e1 = { 0.0, 1.0, 0.0 };
+    auto e2 = e0 % e1;
+    EXPECT_EQ( e2(0), 0.0 );
+    EXPECT_EQ( e2(1), 0.0 );
+    EXPECT_EQ( e2(2), 1.0 );
 }
 
 //---------------------------------------------------------------------------//
@@ -331,6 +339,7 @@ TEST( TEST_CATEGORY, linearSolve_test )
     linearSolveTest<3>();
     linearSolveTest<4>();
     linearSolveTest<10>();
+    linearSolveTest<20>();
 }
 
 //---------------------------------------------------------------------------//

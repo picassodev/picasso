@@ -172,7 +172,7 @@ struct Matrix<T,M,N,NoTranspose>
 };
 
 // Transpose. This class is essentially a shallow-copy placeholder to enable
-// tranpose matrix operations without copies.
+// transpose matrix operations without copies.
 template<class T, int M, int N>
 struct Matrix<T,M,N,Transpose>
 {
@@ -226,7 +226,7 @@ struct Matrix<T,M,N,Transpose>
 template<class T, int N, class TransposeType = NoTranspose>
 struct Vector;
 
-// No tranpose
+// No transpose
 template<class T, int N>
 struct Vector<T,N,NoTranspose>
 {
@@ -325,7 +325,7 @@ struct Vector<T,N,NoTranspose>
 };
 
 // Transpose. This class is essentially a shallow-copy placeholder to enable
-// tranpose vector operations without copies.
+// transpose vector operations without copies.
 template<class T, int N>
 struct Vector<T,N,Transpose>
 {
@@ -498,7 +498,7 @@ operator*( const Vector<T,N,Transpose>& x, const Matrix<T,M,N,Transpose>& a )
 }
 
 //---------------------------------------------------------------------------//
-// Vector-vector multiplication.
+// Vector products.
 //---------------------------------------------------------------------------//
 // Dot product.
 template<class T, int N>
@@ -526,6 +526,19 @@ operator*( const Vector<T,N,NoTranspose>& x, const Vector<T,N,Transpose>& y )
                                   Kokkos::ArithTraits<T>::one(),
                                   x, y, Kokkos::ArithTraits<T>::one(), c );
     return c;
+}
+
+//---------------------------------------------------------------------------//
+// Cross product
+template<class T>
+KOKKOS_INLINE_FUNCTION
+Vector<T,3,NoTranspose>
+operator%( const Vector<T,3,NoTranspose>& x, const Vector<T,3,NoTranspose>& y )
+{
+    Vector<T,3,NoTranspose> z = { x(1)*y(2) - x(2)*y(1),
+                                  x(2)*y(0) - x(0)*y(2),
+                                  x(0)*y(1) - x(1)*y(0) };
+    return z;
 }
 
 //---------------------------------------------------------------------------//
@@ -572,49 +585,109 @@ operator^( const Matrix<T,N,N,Trans>& a, const Vector<T,N,NoTranspose>& b )
     return x;
 }
 
-// //---------------------------------------------------------------------------//
-// // 2x2 specialization. No transpose
-// template<class T>
-// KOKKOS_INLINE_FUNCTION
-// Vector<T,2,NoTranspose>
-// operator^( const Matrix<T,2,2,NoTranspose>& a, const Vector<T,2,NoTranspose>& b )
-// {
-//     Vector<T,2,NoTranspose> x;
-//     return x;
-// }
+//---------------------------------------------------------------------------//
+// 2x2 specialization. No transpose
+template<class T>
+KOKKOS_INLINE_FUNCTION
+Vector<T,2,NoTranspose>
+operator^( const Matrix<T,2,2,NoTranspose>& a, const Vector<T,2,NoTranspose>& b )
+{
+    auto a_det_inv = 1.0 / ( a(0,0) * a(1,1) - a(0,1) * a(1,0) );
 
-// //---------------------------------------------------------------------------//
-// // 2x2 specialization. Transpose
-// template<class T>
-// KOKKOS_INLINE_FUNCTION
-// Vector<T,2,NoTranspose>
-// operator^( const Matrix<T,2,2,Transpose>& a, const Vector<T,2,NoTranspose>& b )
-// {
-//     Vector<T,2,NoTranspose> x;
-//     return x;
-// }
+    Matrix<T,2,2,NoTranspose> a_inv;
 
-// //---------------------------------------------------------------------------//
-// // 3x3 specialization. No transpose
-// template<class T>
-// KOKKOS_INLINE_FUNCTION
-// Vector<T,3,NoTranspose>
-// operator^( const Matrix<T,3,3,NoTranspose>& a, const Vector<T,3,NoTranspose>& b )
-// {
-//     Vector<T,3,NoTranspose> x;
-//     return x;
-// }
+    a_inv(0,0) = a(1,1) * a_det_inv;
+    a_inv(0,1) = -a(0,1) * a_det_inv;
+    a_inv(1,0) = -a(1,0) * a_det_inv;
+    a_inv(1,1) = a(0,0) * a_det_inv;
 
-// //---------------------------------------------------------------------------//
-// // 3x3 specialization. Transpose
-// template<class T>
-// KOKKOS_INLINE_FUNCTION
-// Vector<T,3,NoTranspose>
-// operator^( const Matrix<T,3,3,Transpose>& a, const Vector<T,3,NoTranspose>& b )
-// {
-//     Vector<T,3,NoTranspose> x;
-//     return x;
-// }
+    return a_inv * b;
+}
+
+//---------------------------------------------------------------------------//
+// 2x2 specialization. No transpose
+template<class T>
+KOKKOS_INLINE_FUNCTION
+Vector<T,2,NoTranspose>
+operator^( const Matrix<T,2,2,Transpose>& a, const Vector<T,2,NoTranspose>& b )
+{
+    Matrix<T,2,2,NoTranspose> a_cp = a;
+
+    auto a_det_inv = 1.0 / ( a_cp(0,0) * a_cp(1,1) - a_cp(0,1) * a_cp(1,0) );
+
+    Matrix<T,2,2,NoTranspose> a_inv;
+
+    a_inv(0,0) = a_cp(1,1) * a_det_inv;
+    a_inv(0,1) = -a_cp(0,1) * a_det_inv;
+    a_inv(1,0) = -a_cp(1,0) * a_det_inv;
+    a_inv(1,1) = a_cp(0,0) * a_det_inv;
+
+    return a_inv * b;
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization. No transpose
+template<class T>
+KOKKOS_INLINE_FUNCTION
+Vector<T,3,NoTranspose>
+operator^( const Matrix<T,3,3,NoTranspose>& a, const Vector<T,3,NoTranspose>& b )
+{
+    auto a_det_inv = 1.0 / (a(0,0) * a(1,1) * a(2,2) +
+                            a(0,1) * a(1,2) * a(2,0) +
+                            a(0,2) * a(1,0) * a(2,1) -
+                            a(0,2) * a(1,1) * a(2,0) -
+                            a(0,1) * a(1,0) * a(2,2) -
+                            a(0,0) * a(1,2) * a(2,1) );
+
+    Matrix<T,3,3,NoTranspose> a_inv;
+
+    a_inv(0,0) = (a(1,1)*a(2,2) - a(1,2)*a(2,1)) * a_det_inv;
+    a_inv(0,1) = (a(0,2)*a(2,1) - a(0,1)*a(2,2)) * a_det_inv;
+    a_inv(0,2) = (a(0,1)*a(1,2) - a(0,2)*a(1,1)) * a_det_inv;
+
+    a_inv(1,0) = (a(1,2)*a(2,0) - a(1,0)*a(2,2)) * a_det_inv;
+    a_inv(1,1) = (a(0,0)*a(2,2) - a(0,2)*a(2,0)) * a_det_inv;
+    a_inv(1,2) = (a(0,2)*a(1,0) - a(0,0)*a(1,2)) * a_det_inv;
+
+    a_inv(2,0) = (a(1,0)*a(2,1) - a(1,1)*a(2,0)) * a_det_inv;
+    a_inv(2,1) = (a(0,1)*a(2,0) - a(0,0)*a(2,1)) * a_det_inv;
+    a_inv(2,2) = (a(0,0)*a(1,1) - a(0,1)*a(1,0)) * a_det_inv;
+
+    return a_inv * b;
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization. Transpose
+template<class T>
+KOKKOS_INLINE_FUNCTION
+Vector<T,3,NoTranspose>
+operator^( const Matrix<T,3,3,Transpose>& a, const Vector<T,3,NoTranspose>& b )
+{
+    Matrix<T,3,3,NoTranspose> a_cp = a;
+
+    auto a_det_inv = 1.0 / (a_cp(0,0) * a_cp(1,1) * a_cp(2,2) +
+                            a_cp(0,1) * a_cp(1,2) * a_cp(2,0) +
+                            a_cp(0,2) * a_cp(1,0) * a_cp(2,1) -
+                            a_cp(0,2) * a_cp(1,1) * a_cp(2,0) -
+                            a_cp(0,1) * a_cp(1,0) * a_cp(2,2) -
+                            a_cp(0,0) * a_cp(1,2) * a_cp(2,1) );
+
+    Matrix<T,3,3,NoTranspose> a_inv;
+
+    a_inv(0,0) = (a_cp(1,1)*a_cp(2,2) - a_cp(1,2)*a_cp(2,1)) * a_det_inv;
+    a_inv(0,1) = (a_cp(0,2)*a_cp(2,1) - a_cp(0,1)*a_cp(2,2)) * a_det_inv;
+    a_inv(0,2) = (a_cp(0,1)*a_cp(1,2) - a_cp(0,2)*a_cp(1,1)) * a_det_inv;
+
+    a_inv(1,0) = (a_cp(1,2)*a_cp(2,0) - a_cp(1,0)*a_cp(2,2)) * a_det_inv;
+    a_inv(1,1) = (a_cp(0,0)*a_cp(2,2) - a_cp(0,2)*a_cp(2,0)) * a_det_inv;
+    a_inv(1,2) = (a_cp(0,2)*a_cp(1,0) - a_cp(0,0)*a_cp(1,2)) * a_det_inv;
+
+    a_inv(2,0) = (a_cp(1,0)*a_cp(2,1) - a_cp(1,1)*a_cp(2,0)) * a_det_inv;
+    a_inv(2,1) = (a_cp(0,1)*a_cp(2,0) - a_cp(0,0)*a_cp(2,1)) * a_det_inv;
+    a_inv(2,2) = (a_cp(0,0)*a_cp(1,1) - a_cp(0,1)*a_cp(1,0)) * a_det_inv;
+
+    return a_inv * b;
+}
 
 // //---------------------------------------------------------------------------//
 
