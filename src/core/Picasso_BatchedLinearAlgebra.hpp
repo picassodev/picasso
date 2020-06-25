@@ -11,11 +11,17 @@
 #include <KokkosBatched_Set_Decl.hpp>
 #include <KokkosBatched_Set_Impl.hpp>
 
+#include <KokkosBatched_Scale_Decl.hpp>
+#include <KokkosBatched_Scale_Impl.hpp>
+
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 
 #include <KokkosBatched_Gemv_Decl.hpp>
 #include <KokkosBatched_Gemv_Serial_Impl.hpp>
+
+#include <KokkosBatched_LU_Decl.hpp>
+#include <KokkosBatched_LU_Serial_Impl.hpp>
 
 #include <KokkosBatched_SolveLU_Decl.hpp>
 
@@ -53,6 +59,7 @@ struct Matrix<T,M,N,NoTranspose>
     int _extent[2] = {M,N};
 
     using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
@@ -173,6 +180,7 @@ struct Matrix<T,M,N,Transpose>
     int _extent[2] = {M,N};
 
     using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
@@ -226,6 +234,7 @@ struct Vector<T,N,NoTranspose>
     int _extent[2] = {N,1};
 
     using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
@@ -324,6 +333,7 @@ struct Vector<T,N,Transpose>
     int _extent[2] = {N,1};
 
     using value_type = T;
+    using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
     using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
@@ -519,6 +529,94 @@ operator*( const Vector<T,N,NoTranspose>& x, const Vector<T,N,Transpose>& y )
 }
 
 //---------------------------------------------------------------------------//
+// Scalar multiplication.
+//---------------------------------------------------------------------------//
+// Matrix. No Transpose.
+template<class T, int M, int N>
+KOKKOS_INLINE_FUNCTION
+Matrix<T,M,N,NoTranspose>
+operator*( const T v, const Matrix<T,M,N,NoTranspose>& a )
+{
+    Matrix<T,M,N,NoTranspose> b = a;
+    KokkosBatched::SerialScale::invoke( v, b );
+    return b;
+}
+
+//---------------------------------------------------------------------------//
+// Vector. No transpose.
+template<class T, int N>
+KOKKOS_INLINE_FUNCTION
+Vector<T,N,NoTranspose>
+operator*( const T v, const Vector<T,N,NoTranspose>& x )
+{
+    Vector<T,N,NoTranspose> y = x;
+    KokkosBatched::SerialScale::invoke( v, y );
+    return y;
+}
+
+//---------------------------------------------------------------------------//
+// Linear solve.
+//---------------------------------------------------------------------------//
+// General case.
+template<class T, int N, class Trans>
+KOKKOS_INLINE_FUNCTION
+Vector<T,N,NoTranspose>
+operator^( const Matrix<T,N,N,Trans>& a, const Vector<T,N,NoTranspose>& b )
+{
+    const Matrix<T,N,N,NoTranspose> a_lu = a;
+    KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( a_lu );
+    auto x = b;
+    KokkosBatched::SerialSolveLU<
+        NoTranspose::type,
+        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, x );
+    return x;
+}
+
+// //---------------------------------------------------------------------------//
+// // 2x2 specialization. No transpose
+// template<class T>
+// KOKKOS_INLINE_FUNCTION
+// Vector<T,2,NoTranspose>
+// operator^( const Matrix<T,2,2,NoTranspose>& a, const Vector<T,2,NoTranspose>& b )
+// {
+//     Vector<T,2,NoTranspose> x;
+//     return x;
+// }
+
+// //---------------------------------------------------------------------------//
+// // 2x2 specialization. Transpose
+// template<class T>
+// KOKKOS_INLINE_FUNCTION
+// Vector<T,2,NoTranspose>
+// operator^( const Matrix<T,2,2,Transpose>& a, const Vector<T,2,NoTranspose>& b )
+// {
+//     Vector<T,2,NoTranspose> x;
+//     return x;
+// }
+
+// //---------------------------------------------------------------------------//
+// // 3x3 specialization. No transpose
+// template<class T>
+// KOKKOS_INLINE_FUNCTION
+// Vector<T,3,NoTranspose>
+// operator^( const Matrix<T,3,3,NoTranspose>& a, const Vector<T,3,NoTranspose>& b )
+// {
+//     Vector<T,3,NoTranspose> x;
+//     return x;
+// }
+
+// //---------------------------------------------------------------------------//
+// // 3x3 specialization. Transpose
+// template<class T>
+// KOKKOS_INLINE_FUNCTION
+// Vector<T,3,NoTranspose>
+// operator^( const Matrix<T,3,3,Transpose>& a, const Vector<T,3,NoTranspose>& b )
+// {
+//     Vector<T,3,NoTranspose> x;
+//     return x;
+// }
+
+// //---------------------------------------------------------------------------//
 
 } // end namespace LinearAlgebra
 } // end namespace Picasso

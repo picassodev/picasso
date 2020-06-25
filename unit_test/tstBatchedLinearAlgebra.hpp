@@ -1,7 +1,10 @@
 #include <Picasso_BatchedLinearAlgebra.hpp>
+
 #include <Kokkos_Core.hpp>
 
 #include <gtest/gtest.h>
+
+#include <random>
 
 using namespace Picasso;
 
@@ -77,6 +80,12 @@ void matrixTest()
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_EQ( c(i,j), 32.3 );
+
+    // Check scalar multiplication.
+    auto d = 2.0 * c;
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_EQ( d(i,j), 64.6 );
 }
 
 //---------------------------------------------------------------------------//
@@ -120,6 +129,11 @@ void vectorTest()
     LinearAlgebra::Vector<double,3> c = 32.3;
     for ( int i = 0; i < 3; ++i )
         EXPECT_EQ( c(i), 32.3 );
+
+    // Check scalar multiplication.
+    auto d = 2.0 * c;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_EQ( d(i), 64.6 );
 }
 
 //---------------------------------------------------------------------------//
@@ -255,6 +269,35 @@ void vecVecTest()
 }
 
 //---------------------------------------------------------------------------//
+template<int N>
+void linearSolveTest()
+{
+    LinearAlgebra::Matrix<double,N,N> A;
+    LinearAlgebra::Vector<double,N> x0;
+
+    std::default_random_engine engine( 349305 );
+    std::uniform_real_distribution<double> dist( 0.0, 1.0 );
+    for ( int i = 0; i < N; ++i )
+    {
+        x0(i) = dist(engine);
+        for ( int j = 0; j < N; ++j )
+            A(i,j) = dist(engine);
+    }
+
+    double eps = 1.0e-12;
+
+    auto b = A * x0;
+    auto x1 = A ^ b;
+    for ( int i = 0; i < N; ++i )
+        EXPECT_NEAR( x0(i), x1(i), eps );
+
+    auto c = ~A * x0;
+    auto x2 = ~A ^ c;
+    for ( int i = 0; i < N; ++i )
+        EXPECT_NEAR( x0(i), x2(i), eps );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, matrix_test )
@@ -280,6 +323,14 @@ TEST( TEST_CATEGORY, matVec_test )
 TEST( TEST_CATEGORY, vecVec_test )
 {
     vecVecTest();
+}
+
+TEST( TEST_CATEGORY, linearSolve_test )
+{
+    linearSolveTest<2>();
+    linearSolveTest<3>();
+    linearSolveTest<4>();
+    linearSolveTest<10>();
 }
 
 //---------------------------------------------------------------------------//
