@@ -136,7 +136,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
 
     // Deep copy transpose assignment operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,M,N,Transpose,View>& rhs )
+    Matrix& operator=( const Matrix<T,N,M,Transpose,View>& rhs )
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
@@ -224,6 +224,25 @@ struct Matrix<T,M,N,NoTranspose,View>
         _stride[1] = stride_1;
     }
 
+    // Deep copy assignment operator.
+    template<class Memory>
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        return *this;
+    }
+
+    // Deep copy transpose assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const Matrix<T,N,M,Transpose,View>& rhs )
+    {
+        KokkosBatched::SerialCopy<Transpose::type>::invoke(
+            rhs, *this );
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
@@ -300,6 +319,14 @@ struct Matrix<T,M,N,Transpose,View>
     {
         _stride[0] = stride_0;
         _stride[1] = stride_1;
+    }
+
+    // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix<T,M,N,NoTranspose,View> operator~()
+    {
+        return Matrix<T,M,N,NoTranspose,View>(
+            this->data(), _stride[0], _stride[1] );
     }
 
     // Strides. Written in terms of the original non-transpose matrix for
@@ -490,7 +517,24 @@ struct Vector<T,N,NoTranspose,View>
     KOKKOS_INLINE_FUNCTION
     Vector<T,N,Transpose,View> operator~()
     {
-        return Vector<T,N,Transpose,View>( this->data() );
+        return Vector<T,N,Transpose,View>( this->data(), _stride );
+    }
+
+    // Deep copy assignment operator.
+    template<class Memory>
+    KOKKOS_INLINE_FUNCTION
+    Vector& operator=( const Vector<T,N,NoTranspose,Memory>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke( rhs, *this );
+        return *this;
+    }
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Vector& operator=( const T value )
+    {
+        KokkosBatched::SerialSet::invoke( value, *this );
+        return *this;
     }
 
     // Strides.
@@ -555,6 +599,13 @@ struct Vector<T,N,Transpose,View>
         : _d(data)
         , _stride( stride )
     {}
+
+    // Transpose operator.
+    KOKKOS_INLINE_FUNCTION
+    Vector<T,N,NoTranspose,View> operator~()
+    {
+        return Vector<T,N,NoTranspose,View>( this->data(), _stride );
+    }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION

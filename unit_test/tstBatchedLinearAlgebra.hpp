@@ -1,6 +1,7 @@
 #include <Picasso_BatchedLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
 
 #include <gtest/gtest.h>
 
@@ -466,6 +467,67 @@ void linearSolveTest()
 }
 
 //---------------------------------------------------------------------------//
+void kernelTest()
+{
+    int size = 10;
+    Kokkos::View<double*[2][2],Kokkos::LayoutLeft,TEST_MEMSPACE> view_a( "a", size );
+    Kokkos::View<double*[2],Kokkos::LayoutRight,TEST_MEMSPACE> view_x0( "x0", size );
+    Kokkos::View<double*[2],Kokkos::LayoutLeft,TEST_MEMSPACE> view_x1( "x1", size );
+    Kokkos::View<double*[2],Kokkos::LayoutRight,TEST_MEMSPACE> view_x2( "x2", size );
+
+    Kokkos::Random_XorShift64_Pool<TEST_EXECSPACE> pool(3923423);
+    Kokkos::fill_random(view_a, pool, 1.0 );
+    Kokkos::fill_random(view_x0, pool, 1.0 );
+
+    Kokkos::parallel_for(
+        "test_la_kernel",
+        Kokkos::RangePolicy<TEST_EXECSPACE>(0,size),
+        KOKKOS_LAMBDA( const int i ){
+            LinearAlgebra::Matrix<
+                double,2,2,
+                LinearAlgebra::NoTranspose,
+                LinearAlgebra::View> A( &view_a(i,0,0),
+                                        view_a.stride_1(),
+                                        view_a.stride_2() );
+            LinearAlgebra::Vector<double,2,
+                                  LinearAlgebra::NoTranspose,
+                                  LinearAlgebra::View>
+                x0( &view_x0(i,0), view_x0.stride_1() );
+
+            LinearAlgebra::Vector<double,2,
+                                  LinearAlgebra::NoTranspose,
+                                  LinearAlgebra::View>
+                x1( &view_x1(i,0), view_x1.stride_1() );
+
+            LinearAlgebra::Vector<double,2,
+                                  LinearAlgebra::NoTranspose,
+                                  LinearAlgebra::View>
+                x2( &view_x2(i,0), view_x2.stride_1() );
+
+            auto b = A * x0;
+            x1 = A ^ b;
+
+            auto c = ~A * x0;
+            x2 = ~A ^ c;
+        });
+
+    auto x0_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view_x0 );
+    auto x1_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view_x1 );
+    auto x2_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), view_x2 );
+
+    double eps = 1.0e-12;
+    for ( int i = 0; i < size; ++i )
+        for ( int d = 0; d < 2; ++d )
+        {
+            EXPECT_NEAR( x0_host(i,d), x1_host(i,d), eps );
+            EXPECT_NEAR( x0_host(i,d), x2_host(i,d), eps );
+    }
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, matrix_test )
@@ -541,6 +603,11 @@ TEST( TEST_CATEGORY, linearSolve_test_10 )
 TEST( TEST_CATEGORY, linearSolve_test_20 )
 {
     linearSolveTest<20>();
+}
+
+TEST( TEST_CATEGORY, kernelTest )
+{
+    kernelTest();
 }
 
 //---------------------------------------------------------------------------//
