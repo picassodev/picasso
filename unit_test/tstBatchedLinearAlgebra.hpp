@@ -46,6 +46,7 @@ void matrixTest()
 
     // Check a shallow transpose copy.
     auto a_t = ~a;
+    EXPECT_EQ( a.data(), a_t.data() );
     EXPECT_EQ( a_t.stride_0(), 3 );
     EXPECT_EQ( a_t.stride_1(), 1 );
     EXPECT_EQ( a_t.extent(0), 2 );
@@ -58,8 +59,24 @@ void matrixTest()
     EXPECT_EQ( a_t(1,1), 2.6 );
     EXPECT_EQ( a_t(2,1), -0.1 );
 
+    // Check transpose of transpose shallow copy..
+    auto a_t_t = ~a_t;
+    EXPECT_EQ( a.data(), a_t_t.data() );
+    EXPECT_EQ( a_t_t.stride_0(), 3 );
+    EXPECT_EQ( a_t_t.stride_1(), 1 );
+    EXPECT_EQ( a_t_t.extent(0), 2 );
+    EXPECT_EQ( a_t_t.extent(1), 3 );
+
+    EXPECT_EQ( a_t_t(0,0), 1.2 );
+    EXPECT_EQ( a_t_t(0,1), -3.5 );
+    EXPECT_EQ( a_t_t(0,2), 5.4 );
+    EXPECT_EQ( a_t_t(1,0), 8.6 );
+    EXPECT_EQ( a_t_t(1,1), 2.6 );
+    EXPECT_EQ( a_t_t(1,2), -0.1 );
+
     // Check a transpose deep copy.
     LinearAlgebra::Matrix<double,3,2> a_t_c = ~a;
+    EXPECT_NE( a.data(), a_t_c.data() );
     EXPECT_EQ( a_t_c.stride_0(), 2 );
     EXPECT_EQ( a_t_c.stride_1(), 1 );
     EXPECT_EQ( a_t_c.extent(0), 3 );
