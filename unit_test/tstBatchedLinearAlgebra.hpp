@@ -447,11 +447,10 @@ void linearSolveTest()
     std::default_random_engine engine( 349305 );
     std::uniform_real_distribution<double> dist( 0.0, 1.0 );
     for ( int i = 0; i < N; ++i )
-    {
         x0(i) = dist(engine);
+    for ( int i = 0; i < N; ++i )
         for ( int j = 0; j < N; ++j )
             A(i,j) = dist(engine);
-    }
 
     double eps = 1.0e-12;
 
@@ -467,13 +466,14 @@ void linearSolveTest()
 }
 
 //---------------------------------------------------------------------------//
+template<int N>
 void kernelTest()
 {
     int size = 10;
-    Kokkos::View<double*[2][2],Kokkos::LayoutLeft,TEST_MEMSPACE> view_a( "a", size );
-    Kokkos::View<double*[2],Kokkos::LayoutRight,TEST_MEMSPACE> view_x0( "x0", size );
-    Kokkos::View<double*[2],Kokkos::LayoutLeft,TEST_MEMSPACE> view_x1( "x1", size );
-    Kokkos::View<double*[2],Kokkos::LayoutRight,TEST_MEMSPACE> view_x2( "x2", size );
+    Kokkos::View<double*[N][N],Kokkos::LayoutLeft,TEST_MEMSPACE> view_a( "a", size );
+    Kokkos::View<double*[N],Kokkos::LayoutRight,TEST_MEMSPACE> view_x0( "x0", size );
+    Kokkos::View<double*[N],Kokkos::LayoutLeft,TEST_MEMSPACE> view_x1( "x1", size );
+    Kokkos::View<double*[N],Kokkos::LayoutRight,TEST_MEMSPACE> view_x2( "x2", size );
 
     Kokkos::Random_XorShift64_Pool<TEST_EXECSPACE> pool(3923423);
     Kokkos::fill_random(view_a, pool, 1.0 );
@@ -484,22 +484,22 @@ void kernelTest()
         Kokkos::RangePolicy<TEST_EXECSPACE>(0,size),
         KOKKOS_LAMBDA( const int i ){
             LinearAlgebra::Matrix<
-                double,2,2,
+                double,N,N,
                 LinearAlgebra::NoTranspose,
                 LinearAlgebra::View> A( &view_a(i,0,0),
                                         view_a.stride_1(),
                                         view_a.stride_2() );
-            LinearAlgebra::Vector<double,2,
+            LinearAlgebra::Vector<double,N,
                                   LinearAlgebra::NoTranspose,
                                   LinearAlgebra::View>
                 x0( &view_x0(i,0), view_x0.stride_1() );
 
-            LinearAlgebra::Vector<double,2,
+            LinearAlgebra::Vector<double,N,
                                   LinearAlgebra::NoTranspose,
                                   LinearAlgebra::View>
                 x1( &view_x1(i,0), view_x1.stride_1() );
 
-            LinearAlgebra::Vector<double,2,
+            LinearAlgebra::Vector<double,N,
                                   LinearAlgebra::NoTranspose,
                                   LinearAlgebra::View>
                 x2( &view_x2(i,0), view_x2.stride_1() );
@@ -518,9 +518,9 @@ void kernelTest()
     auto x2_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), view_x2 );
 
-    double eps = 1.0e-12;
+    double eps = 1.0e-11;
     for ( int i = 0; i < size; ++i )
-        for ( int d = 0; d < 2; ++d )
+        for ( int d = 0; d < N; ++d )
         {
             EXPECT_NEAR( x0_host(i,d), x1_host(i,d), eps );
             EXPECT_NEAR( x0_host(i,d), x2_host(i,d), eps );
@@ -580,34 +580,22 @@ TEST( TEST_CATEGORY, vecVec_test )
     vecVecTest();
 }
 
-TEST( TEST_CATEGORY, linearSolve_test_2 )
+TEST( TEST_CATEGORY, linearSolve_test )
 {
     linearSolveTest<2>();
-}
-
-TEST( TEST_CATEGORY, linearSolve_test_3 )
-{
-    linearSolveTest<3>();
-}
-
-TEST( TEST_CATEGORY, linearSolve_test_4 )
-{
+    linearSolveTest<2>();
     linearSolveTest<4>();
-}
-
-TEST( TEST_CATEGORY, linearSolve_test_10 )
-{
     linearSolveTest<10>();
-}
-
-TEST( TEST_CATEGORY, linearSolve_test_20 )
-{
     linearSolveTest<20>();
 }
 
 TEST( TEST_CATEGORY, kernelTest )
 {
-    kernelTest();
+    kernelTest<2>();
+    kernelTest<3>();
+    kernelTest<4>();
+    kernelTest<10>();
+    kernelTest<20>();
 }
 
 //---------------------------------------------------------------------------//

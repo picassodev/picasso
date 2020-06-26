@@ -188,9 +188,9 @@ struct Matrix<T,M,N,NoTranspose,Copy>
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,N,M,NoTranspose,Copy> LU() const
+    Matrix<T,M,N,NoTranspose,Copy> LU() const
     {
-        Matrix<T,N,M,NoTranspose,Copy> lu = *this;
+        Matrix<T,M,N,NoTranspose,Copy> lu = *this;
         KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
         return lu;
     }
@@ -288,9 +288,9 @@ struct Matrix<T,M,N,NoTranspose,View>
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,N,M,NoTranspose,Copy> LU() const
+    Matrix<T,M,N,NoTranspose,Copy> LU() const
     {
-        Matrix<T,N,M,NoTranspose,Copy> lu = *this;
+        Matrix<T,M,N,NoTranspose,Copy> lu = *this;
         KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
         return lu;
     }
@@ -762,7 +762,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
            const Matrix<T,K,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose,Copy> c;
+    Matrix<T,M,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<NoTranspose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -779,7 +779,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator*( const Matrix<T,K,M,Transpose,View>& a,
            const Matrix<T,N,K,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose,Copy> c;
+    Matrix<T,M,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -796,7 +796,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
            const Matrix<T,N,K,Transpose,View>& b )
 {
-    Matrix<T,M,N,NoTranspose,Copy> c;
+    Matrix<T,M,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -813,7 +813,7 @@ Matrix<T,M,N,NoTranspose,Copy>
 operator*( const Matrix<T,K,M,Transpose,View>& a,
            const Matrix<T,K,N,NoTranspose,MemoryB>& b )
 {
-    Matrix<T,M,N,NoTranspose,Copy> c;
+    Matrix<T,M,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -832,7 +832,7 @@ Vector<T,M,NoTranspose,Copy>
 operator*( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
            const Vector<T,N,NoTranspose,MemoryX>& x )
 {
-    Vector<T,M,NoTranspose,Copy> y;
+    Vector<T,M,NoTranspose,Copy> y = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemv<NoTranspose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
                                   Kokkos::ArithTraits<T>::one(),
@@ -848,7 +848,7 @@ Vector<T,M,NoTranspose,Copy>
 operator*( const Matrix<T,N,M,Transpose,View>& a,
            const Vector<T,N,NoTranspose,MemoryX>& x )
 {
-    Vector<T,M,NoTranspose,Copy> y;
+    Vector<T,M,NoTranspose,Copy> y = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemv<Transpose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
                                   Kokkos::ArithTraits<T>::one(),
@@ -866,7 +866,7 @@ Matrix<T,1,N,NoTranspose,Copy>
 operator*( const Vector<T,M,Transpose,View>& x,
            const Matrix<T,M,N,NoTranspose,MemoryA>& a )
 {
-    Matrix<T,1,N,NoTranspose,Copy> c;
+    Matrix<T,1,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -883,7 +883,7 @@ Matrix<T,1,M,NoTranspose,Copy>
 operator*( const Vector<T,N,Transpose,View>& x,
            const Matrix<T,M,N,Transpose,View>& a )
 {
-    Matrix<T,1,M,NoTranspose> c;
+    Matrix<T,1,M,NoTranspose> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -947,7 +947,7 @@ Matrix<T,N,N,NoTranspose,Copy>
 operator*( const Vector<T,N,NoTranspose,MemoryX>& x,
            const Vector<T,N,Transpose,View>& y )
 {
-    Matrix<T,N,N,NoTranspose,Copy> c;
+    Matrix<T,N,N,NoTranspose,Copy> c = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
@@ -1063,7 +1063,7 @@ operator^( const Matrix<T,N,N,TransA,MemoryA>& a,
            const Vector<T,N,NoTranspose,MemoryB>& b )
 {
     auto a_lu = a.LU();
-    auto x = b;
+    Vector<T,N,NoTranspose,Copy> x = b;
     KokkosBatched::SerialSolveLU<
         NoTranspose::type,
         KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, x );
@@ -1099,7 +1099,7 @@ operator^( const Matrix<T,3,3,TransA,MemoryA>& a,
 {
     auto a_det_inv = 1.0 / !a;
 
-    Matrix<T,3,3,NoTranspose> a_inv;
+    Matrix<T,3,3,NoTranspose,Copy> a_inv;
 
     a_inv(0,0) = (a(1,1)*a(2,2) - a(1,2)*a(2,1)) * a_det_inv;
     a_inv(0,1) = (a(0,2)*a(2,1) - a(0,1)*a(2,2)) * a_det_inv;
