@@ -172,7 +172,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N,Transpose,View> operator~()
+    Matrix<T,M,N,Transpose,View> operator~() const
     {
         return Matrix<T,M,N,Transpose,View>(
             this->data(), N, 1, Kokkos::ArithTraits<T>::one() );
@@ -207,6 +207,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     { return const_cast<pointer>(&_d[0][0]); }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return Kokkos::ArithTraits<T>::one(); }
 
@@ -253,7 +254,7 @@ struct Matrix<T,M,N,NoTranspose,View>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N,Transpose,View> operator~()
+    Matrix<T,M,N,Transpose,View> operator~() const
     {
         return Matrix<T,M,N,Transpose,View>(
             _d, _stride[0], _stride[1], _mult );
@@ -284,6 +285,7 @@ struct Matrix<T,M,N,NoTranspose,View>
     { return const_cast<pointer>(_d); }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return _mult; }
 
@@ -317,7 +319,12 @@ struct Matrix<T,M,N,Transpose,View>
 
     using copy = Matrix<T,N,M,NoTranspose,Copy>;
 
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Matrix() = default;
+
     // View constructor.
+    KOKKOS_INLINE_FUNCTION
     Matrix( T* data, const int stride_0, const int stride_1, const T mult )
         : _d ( data )
         , _mult( mult )
@@ -328,7 +335,7 @@ struct Matrix<T,M,N,Transpose,View>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N,NoTranspose,View> operator~()
+    Matrix<T,M,N,NoTranspose,View> operator~() const
     {
         return Matrix<T,M,N,NoTranspose,View>(
             _d, _stride[0], _stride[1], _mult );
@@ -363,6 +370,7 @@ struct Matrix<T,M,N,Transpose,View>
     { return const_cast<pointer>(_d); }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return _mult; }
 
@@ -470,7 +478,7 @@ struct Vector<T,N,NoTranspose,Copy>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Vector<T,N,Transpose,View> operator~()
+    Vector<T,N,Transpose,View> operator~() const
     {
         return Vector<T,N,Transpose,View>(
             this->data(), 1, Kokkos::ArithTraits<T>::one() );
@@ -506,10 +514,12 @@ struct Vector<T,N,NoTranspose,Copy>
     { return const_cast<pointer>(&_d[0]); }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return Kokkos::ArithTraits<T>::one(); }
 
     // Euclidean norm.
+    KOKKOS_INLINE_FUNCTION
     T norm2() const
     {
         T n2 = Kokkos::ArithTraits<T>::zero();
@@ -550,7 +560,7 @@ struct Vector<T,N,NoTranspose,View>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Vector<T,N,Transpose,View> operator~()
+    Vector<T,N,Transpose,View> operator~() const
     {
         return Vector<T,N,Transpose,View>( _d, _stride, _mult );
     }
@@ -581,10 +591,12 @@ struct Vector<T,N,NoTranspose,View>
     { return const_cast<pointer>(_d); }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return _mult; }
 
     // Euclidean norm.
+    KOKKOS_INLINE_FUNCTION
     T norm2() const
     {
         T n2 = Kokkos::ArithTraits<T>::zero();
@@ -623,7 +635,7 @@ struct Vector<T,N,Transpose,View>
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
-    Vector<T,N,NoTranspose,View> operator~()
+    Vector<T,N,NoTranspose,View> operator~() const
     {
         return Vector<T,N,NoTranspose,View>( _d, _stride, _mult );
     }
@@ -649,6 +661,7 @@ struct Vector<T,N,Transpose,View>
     { return _mult * _d[i*_stride]; }
 
     // Scalar multiplier.
+    KOKKOS_INLINE_FUNCTION
     value_type mult() const
     { return _mult; }
 
@@ -1035,7 +1048,7 @@ operator*( const T v, const Matrix<T,M,N,Trans,Memory>& a )
 }
 
 //---------------------------------------------------------------------------//
-// Vector. No transpose.
+// Vector.
 template<class T, int N, class Trans, class Memory>
 KOKKOS_INLINE_FUNCTION
 Vector<T,N,Trans,View>
