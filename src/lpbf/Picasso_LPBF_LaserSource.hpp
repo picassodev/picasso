@@ -26,6 +26,7 @@ struct LaserSource
 
     // double operator()( const double x[3], const double phi, const double
     // time ) const
+    KOKKOS_INLINE_FUNCTION
     double operator()( const double[3], const double phi, const double ) const
     {
         if ( phi > -_phi_threshold )
