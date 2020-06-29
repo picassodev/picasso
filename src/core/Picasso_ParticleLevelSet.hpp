@@ -117,14 +117,12 @@ struct ParticleLevelSetCallback
 // ArborX traits.
 namespace ArborX
 {
-namespace Traits
-{
 
 // Create the primitives we build the tree from. These are the particle
 // coordinates of the color we build the level set for.
 template<class CoordinateSlice>
-struct Access<Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>,
-              PrimitivesTag>
+struct AccessTraits<Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>,
+                    PrimitivesTag>
 {
     using primitive_data =
         Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>;
@@ -149,8 +147,8 @@ struct Access<Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>,
 // Create the predicates we search the tree with. These are the mesh entities
 // on which we build the level set.
 template<class LocalMesh, class EntityType>
-struct Access<Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>,
-              PredicatesTag>
+struct AccessTraits<Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>,
+                    PredicatesTag>
 {
     using predicate_data =
         Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>;
@@ -182,7 +180,6 @@ struct Access<Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>,
     }
 };
 
-} // end namespace Traits
 } // end namespace ArborX
 
 //---------------------------------------------------------------------------//

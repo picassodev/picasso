@@ -112,6 +112,17 @@ class ProblemManager
         // Make the laser source term.
         _laser_source.setup( ptree );
 
+        // Initialize particles.
+        createParticles( exec_space, ppc, init_temp, geom_data );
+    }
+
+    // Particle initialization.
+    template<class ExecutionSpace, class GeomData>
+    void createParticles( const ExecutionSpace& exec_space,
+                          const int ppc,
+                          const double init_temp,
+                          const GeomData& geom_data )
+    {
         // Particle initialization function.
         auto init_func =
             KOKKOS_LAMBDA( const double x[3],
