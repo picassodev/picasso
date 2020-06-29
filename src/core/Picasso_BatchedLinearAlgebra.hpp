@@ -45,7 +45,7 @@ struct Transpose
 };
 
 //---------------------------------------------------------------------------//
-// Tags for Copy vs. View semantics.
+// Tags for Copy vs. Read-Only View semantics.
 struct Copy
 {};
 
@@ -100,13 +100,21 @@ struct Matrix<T,M,N,NoTranspose,Copy>
         }
     }
 
-    // Deep copy constructor.
-    template<class Memory>
+    // Deep copy constructor from copy.
     KOKKOS_INLINE_FUNCTION
-    Matrix( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
+    Matrix( const Matrix<T,M,N,NoTranspose,Copy>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
             rhs, *this );
+    }
+
+    // Deep copy constructor from view.
+    KOKKOS_INLINE_FUNCTION
+    Matrix( const Matrix<T,M,N,NoTranspose,View>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
     }
 
     // Deep copy transpose constructor.
@@ -115,6 +123,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
     }
 
     // Scalar constructor.
@@ -124,13 +133,22 @@ struct Matrix<T,M,N,NoTranspose,Copy>
         KokkosBatched::SerialSet::invoke( value, *this );
     }
 
-    // Deep copy assignment operator.
-    template<class Memory>
+    // Deep copy assignment operator from copy.
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
+    Matrix& operator=( const Matrix<T,M,N,NoTranspose,Copy>& rhs )
     {
         KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
             rhs, *this );
+        return *this;
+    }
+
+    // Deep copy assignment operator from view.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const Matrix<T,M,N,NoTranspose,View>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
         return *this;
     }
 
@@ -140,6 +158,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     {
         KokkosBatched::SerialCopy<Transpose::type>::invoke(
             rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
         return *this;
     }
 
@@ -155,7 +174,8 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     KOKKOS_INLINE_FUNCTION
     Matrix<T,M,N,Transpose,View> operator~()
     {
-        return Matrix<T,M,N,Transpose,View>( this->data(), N, 1 );
+        return Matrix<T,M,N,Transpose,View>(
+            this->data(), N, 1, Kokkos::ArithTraits<T>::one() );
     }
 
     // Strides.
@@ -186,6 +206,10 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     pointer data() const
     { return const_cast<pointer>(&_d[0][0]); }
 
+    // Scalar multiplier.
+    value_type mult() const
+    { return Kokkos::ArithTraits<T>::one(); }
+
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
     Matrix<T,M,N,NoTranspose,Copy> LU() const
@@ -197,19 +221,21 @@ struct Matrix<T,M,N,NoTranspose,Copy>
 };
 
 //---------------------------------------------------------------------------//
-// No transpose. View semantics.
+// No transpose. Read-only view semantics.
 template<class T, int M, int N>
 struct Matrix<T,M,N,NoTranspose,View>
 {
     T *_d;
+    T _mult = Kokkos::ArithTraits<T>::one();
     int _extent[2] = {M,N};
     int _stride[2];
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
-    using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
+
+    using copy = Matrix<T,M,N,NoTranspose,Copy>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -217,45 +243,20 @@ struct Matrix<T,M,N,NoTranspose,View>
 
     // View constructor.
     KOKKOS_INLINE_FUNCTION
-    Matrix( T* data, const int stride_0, const int stride_1 )
-        : _d ( data )
+    Matrix( T* data, const int stride_0, const int stride_1, const T mult )
+        : _d( data )
+        , _mult( mult )
     {
         _stride[0] = stride_0;
         _stride[1] = stride_1;
-    }
-
-    // Deep copy assignment operator.
-    template<class Memory>
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,M,N,NoTranspose,Memory>& rhs )
-    {
-        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
-            rhs, *this );
-        return *this;
-    }
-
-    // Deep copy transpose assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix<T,N,M,Transpose,View>& rhs )
-    {
-        KokkosBatched::SerialCopy<Transpose::type>::invoke(
-            rhs, *this );
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const T value )
-    {
-        KokkosBatched::SerialSet::invoke( value, *this );
-        return *this;
     }
 
     // Transpose operator.
     KOKKOS_INLINE_FUNCTION
     Matrix<T,M,N,Transpose,View> operator~()
     {
-        return Matrix<T,M,N,Transpose,View>( this->data(), _stride[0], _stride[1] );
+        return Matrix<T,M,N,Transpose,View>(
+            _d, _stride[0], _stride[1], _mult );
     }
 
     // Strides.
@@ -274,17 +275,17 @@ struct Matrix<T,M,N,NoTranspose,View>
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
-    { return _d[i*_stride[0] + j*_stride[1]]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j )
-    { return _d[i*_stride[0] + j*_stride[1]]; }
+    value_type operator()( const int i, const int j ) const
+    { return _mult * _d[i*_stride[0] + j*_stride[1]]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(_d); }
+
+    // Scalar multiplier.
+    value_type mult() const
+    { return _mult; }
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
@@ -299,23 +300,27 @@ struct Matrix<T,M,N,NoTranspose,View>
 //---------------------------------------------------------------------------//
 // Transpose. This class is essentially a shallow-copy placeholder to enable
 // transpose matrix operations without copies in Kokkos-kernels operations as
-// well as other implementation details. Tranpose always has view semantics.
+// well as other implementation details. Tranpose always has read-only view
+// semantics.
 template<class T, int M, int N>
 struct Matrix<T,M,N,Transpose,View>
 {
     T* _d;
+    T _mult = Kokkos::ArithTraits<T>::one();
     int _extent[2] = {M,N};
     int _stride[2];
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
-    using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
 
+    using copy = Matrix<T,N,M,NoTranspose,Copy>;
+
     // View constructor.
-    Matrix( T* data, const int stride_0, const int stride_1 )
+    Matrix( T* data, const int stride_0, const int stride_1, const T mult )
         : _d ( data )
+        , _mult( mult )
     {
         _stride[0] = stride_0;
         _stride[1] = stride_1;
@@ -326,7 +331,7 @@ struct Matrix<T,M,N,Transpose,View>
     Matrix<T,M,N,NoTranspose,View> operator~()
     {
         return Matrix<T,M,N,NoTranspose,View>(
-            this->data(), _stride[0], _stride[1] );
+            _d, _stride[0], _stride[1], _mult );
     }
 
     // Strides. Written in terms of the original non-transpose matrix for
@@ -349,17 +354,17 @@ struct Matrix<T,M,N,Transpose,View>
     // actually holding the transposed data to facilitate implementation
     // details.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
-    { return _d[i*_stride[1] + j*_stride[0]]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j )
-    { return _d[i*_stride[1] + j*_stride[0]]; }
+    value_type operator()( const int i, const int j ) const
+    { return _mult * _d[i*_stride[1] + j*_stride[0]]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(_d); }
+
+    // Scalar multiplier.
+    value_type mult() const
+    { return _mult; }
 
     // LU decomposition. This is the decomposition of the transposed
     // operator.
@@ -412,11 +417,21 @@ struct Vector<T,N,NoTranspose,Copy>
         }
     }
 
-    // Deep copy constructor.
+    // Deep copy constructor from copy.
     KOKKOS_INLINE_FUNCTION
-    Vector( const Vector& rhs )
+    Vector( const Vector<T,N,NoTranspose,Copy>& rhs )
     {
-        KokkosBatched::SerialCopy<NoTranspose::type>::invoke( rhs, *this );
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+    }
+
+    // Deep copy constructor from view.
+    KOKKOS_INLINE_FUNCTION
+    Vector( const Vector<T,N,NoTranspose,View>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
     }
 
     // Scalar constructor.
@@ -426,11 +441,22 @@ struct Vector<T,N,NoTranspose,Copy>
         KokkosBatched::SerialSet::invoke( value, *this );
     }
 
-    // Deep copy assignment operator.
+    // Deep copy assignment operator from copy.
     KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const Vector& rhs )
+    Vector& operator=( const Vector<T,N,NoTranspose,Copy>& rhs )
     {
-        KokkosBatched::SerialCopy<NoTranspose::type>::invoke( rhs, *this );
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        return *this;
+    }
+
+    // Deep copy assignment operator from view.
+    KOKKOS_INLINE_FUNCTION
+    Vector& operator=( const Vector<T,N,NoTranspose,View>& rhs )
+    {
+        KokkosBatched::SerialCopy<NoTranspose::type>::invoke(
+            rhs, *this );
+        KokkosBatched::SerialScale::invoke( rhs.mult(), *this );
         return *this;
     }
 
@@ -446,7 +472,8 @@ struct Vector<T,N,NoTranspose,Copy>
     KOKKOS_INLINE_FUNCTION
     Vector<T,N,Transpose,View> operator~()
     {
-        return Vector<T,N,Transpose,View>( this->data(), 1 );
+        return Vector<T,N,Transpose,View>(
+            this->data(), 1, Kokkos::ArithTraits<T>::one() );
     }
 
     // Strides.
@@ -478,6 +505,10 @@ struct Vector<T,N,NoTranspose,Copy>
     pointer data() const
     { return const_cast<pointer>(&_d[0]); }
 
+    // Scalar multiplier.
+    value_type mult() const
+    { return Kokkos::ArithTraits<T>::one(); }
+
     // Euclidean norm.
     T norm2() const
     {
@@ -487,20 +518,23 @@ struct Vector<T,N,NoTranspose,Copy>
         return sqrt(n2);
     }
 };
+
 //---------------------------------------------------------------------------//
-// No transpose. View semantics.
+// No transpose. Read-only view semantics.
 template<class T, int N>
 struct Vector<T,N,NoTranspose,View>
 {
     T* _d;
+    T _mult = Kokkos::ArithTraits<T>::one();
     int _extent[2] = {N,1};
     int _stride;
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
-    using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
+
+    using copy = Vector<T,N,NoTranspose,Copy>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -508,8 +542,9 @@ struct Vector<T,N,NoTranspose,View>
 
     // View constructor.
     KOKKOS_INLINE_FUNCTION
-    Vector( T* data, const int stride )
+    Vector( T* data, const int stride, const T mult )
         : _d( data )
+        , _mult( mult )
         , _stride( stride )
     {}
 
@@ -517,24 +552,7 @@ struct Vector<T,N,NoTranspose,View>
     KOKKOS_INLINE_FUNCTION
     Vector<T,N,Transpose,View> operator~()
     {
-        return Vector<T,N,Transpose,View>( this->data(), _stride );
-    }
-
-    // Deep copy assignment operator.
-    template<class Memory>
-    KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const Vector<T,N,NoTranspose,Memory>& rhs )
-    {
-        KokkosBatched::SerialCopy<NoTranspose::type>::invoke( rhs, *this );
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const T value )
-    {
-        KokkosBatched::SerialSet::invoke( value, *this );
-        return *this;
+        return Vector<T,N,Transpose,View>( _d, _stride, _mult );
     }
 
     // Strides.
@@ -554,17 +572,17 @@ struct Vector<T,N,NoTranspose,View>
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i ) const
-    { return _d[i*_stride]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i )
-    { return _d[i*_stride]; }
+    value_type operator()( const int i ) const
+    { return _mult * _d[i*_stride]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(_d); }
+
+    // Scalar multiplier.
+    value_type mult() const
+    { return _mult; }
 
     // Euclidean norm.
     T norm2() const
@@ -572,31 +590,34 @@ struct Vector<T,N,NoTranspose,View>
         T n2 = Kokkos::ArithTraits<T>::zero();
         for ( int i = 0; i < N; ++i )
             n2 += _d[i*_stride]*_d[i*_stride];
-        return sqrt(n2);
+        return sqrt(_mult * _mult * n2);
     }
 };
 
 //---------------------------------------------------------------------------//
 // Transpose. This class is essentially a shallow-copy placeholder to enable
-// transpose vector operations without copies. Transpose always has view
-// semantics.
+// transpose vector operations without copies. Transpose always has read-only
+// view semantics.
 template<class T, int N>
 struct Vector<T,N,Transpose,View>
 {
     T* _d;
+    T _mult;
     int _extent[2] = {N,1};
     int _stride;
 
     using value_type = T;
     using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
-    using reference = T&;
     using const_reference = typename std::add_const<T>::type&;
+
+    using copy = Matrix<T,N,1,NoTranspose,Copy>;
 
     // Pointer constructor.
     KOKKOS_INLINE_FUNCTION
-    Vector( T* data, const int stride )
-        : _d(data)
+    Vector( T* data, const int stride, const T mult )
+        : _d( data )
+        , _mult( mult )
         , _stride( stride )
     {}
 
@@ -604,7 +625,7 @@ struct Vector<T,N,Transpose,View>
     KOKKOS_INLINE_FUNCTION
     Vector<T,N,NoTranspose,View> operator~()
     {
-        return Vector<T,N,NoTranspose,View>( this->data(), _stride );
+        return Vector<T,N,NoTranspose,View>( _d, _stride, _mult );
     }
 
     // Strides.
@@ -621,6 +642,15 @@ struct Vector<T,N,Transpose,View>
     KOKKOS_INLINE_FUNCTION
     int extent( const int d ) const
     { return _extent[d]; }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    value_type operator()( const int i ) const
+    { return _mult * _d[i*_stride]; }
+
+    // Scalar multiplier.
+    value_type mult() const
+    { return _mult; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -766,8 +796,7 @@ operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
     KokkosBatched::SerialGemm<NoTranspose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, b, Kokkos::ArithTraits<T>::one(), c );
+                                  a.mult(), a, b, b.mult(), c );
     return c;
 }
 
@@ -783,8 +812,7 @@ operator*( const Matrix<T,K,M,Transpose,View>& a,
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, b, Kokkos::ArithTraits<T>::one(), c );
+                                  a.mult(), a, b, b.mult(), c );
     return c;
 }
 
@@ -800,8 +828,7 @@ operator*( const Matrix<T,M,K,NoTranspose,MemoryA>& a,
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, b, Kokkos::ArithTraits<T>::one(), c );
+                                  a.mult(), a, b, b.mult(), c );
     return c;
 }
 
@@ -817,8 +844,7 @@ operator*( const Matrix<T,K,M,Transpose,View>& a,
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, b, Kokkos::ArithTraits<T>::one(), c );
+                              a.mult(), a, b, b.mult(), c );
     return c;
 }
 
@@ -835,8 +861,7 @@ operator*( const Matrix<T,M,N,NoTranspose,MemoryA>& a,
     Vector<T,M,NoTranspose,Copy> y = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemv<NoTranspose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, x, Kokkos::ArithTraits<T>::one(), y );
+                                  a.mult(), a, x, x.mult(), y );
     return y;
 }
 
@@ -851,8 +876,7 @@ operator*( const Matrix<T,N,M,Transpose,View>& a,
     Vector<T,M,NoTranspose,Copy> y = Kokkos::ArithTraits<T>::zero();
     KokkosBatched::SerialGemv<Transpose::type,
                               KokkosBatched::Algo::Gemv::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  a, x, Kokkos::ArithTraits<T>::one(), y );
+                                  a.mult(), a, x, x.mult(), y );
     return y;
 }
 
@@ -870,8 +894,7 @@ operator*( const Vector<T,M,Transpose,View>& x,
     KokkosBatched::SerialGemm<Transpose::type,
                               NoTranspose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  x, a, Kokkos::ArithTraits<T>::one(), c );
+                                  x.mult(), x, a, a.mult(), c );
     return c;
 }
 
@@ -887,8 +910,7 @@ operator*( const Vector<T,N,Transpose,View>& x,
     KokkosBatched::SerialGemm<Transpose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  x, a, Kokkos::ArithTraits<T>::one(), c );
+                                  x.mult(), x, a, a.mult(), c );
     return c;
 }
 
@@ -933,9 +955,8 @@ operator*( const Vector<T,N,Transpose,View>& x,
            const Vector<T,N,NoTranspose,MemoryY>& y )
 {
     auto v = Kokkos::ArithTraits<T>::zero();
-    KokkosBatched::InnerMultipleDotProduct<1> dp( 0, 1, 1, 1 );
-    dp.serial_invoke(  Kokkos::ArithTraits<T>::one(),
-                       x.data(), y.data(), N, &v );
+    for ( int i = 0; i < N; ++i )
+        v += x(i) * y(i);
     return v;
 }
 
@@ -951,8 +972,7 @@ operator*( const Vector<T,N,NoTranspose,MemoryX>& x,
     KokkosBatched::SerialGemm<NoTranspose::type,
                               Transpose::type,
                               KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-                                  Kokkos::ArithTraits<T>::one(),
-                                  x, y, Kokkos::ArithTraits<T>::one(), c );
+                                  x.mult(), x, y, y.mult(), c );
     return c;
 }
 
@@ -999,29 +1019,29 @@ operator|( const Vector<T,N,NoTranspose,MemoryX>& x,
 }
 
 //---------------------------------------------------------------------------//
-// Scalar multiplication.
-//---------------------------------------------------------------------------//
-// Matrix. No Transpose.
-template<class T, int M, int N, class MemoryA>
+// Scalar multiplication. Like transpose, multiplication is treated as a
+// view-construction operation. One can force a copy to make a new
+// matrix/vector with raw data containing the result of evaluating the
+// operation.
+// ---------------------------------------------------------------------------//
+// Matrix.
+template<class T, int M, int N, class Trans, class Memory>
 KOKKOS_INLINE_FUNCTION
-Matrix<T,M,N,NoTranspose,Copy>
-operator*( const T v, const Matrix<T,M,N,NoTranspose,MemoryA>& a )
+Matrix<T,M,N,Trans,View>
+operator*( const T v, const Matrix<T,M,N,Trans,Memory>& a )
 {
-    Matrix<T,M,N,NoTranspose,Copy> b = a;
-    KokkosBatched::SerialScale::invoke( v, b );
-    return b;
+    return Matrix<T,M,N,Trans,View>(
+        a.data(), a.stride_0(), a.stride_1(), a.mult() * v );
 }
 
 //---------------------------------------------------------------------------//
 // Vector. No transpose.
-template<class T, int N, class MemoryX>
+template<class T, int N, class Trans, class Memory>
 KOKKOS_INLINE_FUNCTION
-Vector<T,N,NoTranspose,Copy>
-operator*( const T v, const Vector<T,N,NoTranspose,MemoryX>& x )
+Vector<T,N,Trans,View>
+operator*( const T v, const Vector<T,N,Trans,Memory>& x )
 {
-    Vector<T,N,NoTranspose,Copy> y = x;
-    KokkosBatched::SerialScale::invoke( v, y );
-    return y;
+    return Vector<T,N,Trans,View>( x.data(), x.stride_0(), x.mult() * v );
 }
 
 //---------------------------------------------------------------------------//
