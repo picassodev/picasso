@@ -76,7 +76,6 @@ struct Matrix<T,M,N,NoTranspose,Copy>
     using non_const_value_type = typename std::remove_const<T>::type;
     using pointer = T*;
     using reference = T&;
-    using const_reference = typename std::add_const<T>::type&;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -194,7 +193,7 @@ struct Matrix<T,M,N,NoTranspose,Copy>
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
+    value_type operator()( const int i, const int j ) const
     { return _d[i][j]; }
 
     KOKKOS_INLINE_FUNCTION

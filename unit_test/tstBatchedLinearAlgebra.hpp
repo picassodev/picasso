@@ -458,6 +458,44 @@ void vecVecTest()
 }
 
 //---------------------------------------------------------------------------//
+void expressionTest()
+{
+    LinearAlgebra::Matrix<double,2,2> a = { {2.0, 1.0}, {2.0, 1.0} };
+    LinearAlgebra::Matrix<double,2,2> i = { {1.0, 0.0}, {0.0, 1.0} };
+    LinearAlgebra::Vector<double,2> x = { 1.0, 2.0 };
+
+    auto op1 = a + ~a;
+    EXPECT_EQ( op1(0,0), 4.0 );
+    EXPECT_EQ( op1(0,1), 3.0 );
+    EXPECT_EQ( op1(1,0), 3.0 );
+    EXPECT_EQ( op1(1,1), 2.0 );
+
+    auto op2 = 0.5*(a + ~a);
+    EXPECT_EQ( op2(0,0), 2.0 );
+    EXPECT_EQ( op2(0,1), 1.5 );
+    EXPECT_EQ( op2(1,0), 1.5 );
+    EXPECT_EQ( op2(1,1), 1.0 );
+
+    auto op3 = 0.5*(a + ~a) * i;
+    EXPECT_EQ( op3(0,0), 2.0 );
+    EXPECT_EQ( op3(0,1), 1.5 );
+    EXPECT_EQ( op3(1,0), 1.5 );
+    EXPECT_EQ( op3(1,1), 1.0 );
+
+    auto op4 = x * ~x;
+    EXPECT_EQ( op4(0,0), 1.0 );
+    EXPECT_EQ( op4(0,1), 2.0 );
+    EXPECT_EQ( op4(1,0), 2.0 );
+    EXPECT_EQ( op4(1,1), 4.0 );
+
+    auto op5 = 0.5 * (a + ~a) * i + (x * ~x);
+    EXPECT_EQ( op5(0,0), 3.0 );
+    EXPECT_EQ( op5(0,1), 3.5 );
+    EXPECT_EQ( op5(1,0), 3.5 );
+    EXPECT_EQ( op5(1,1), 5.0 );
+}
+
+//---------------------------------------------------------------------------//
 template<int N>
 void linearSolveTest()
 {
@@ -533,12 +571,15 @@ void kernelTest()
             typename decltype(x1_v)::copy x1 = x1_v;
             typename decltype(x2_v)::copy x2 = x2_v;
 
-            // Do work.
-            auto b = A * x0;
-            x1 = A ^ b;
+            // Create a composite operator via an expression.
+            auto op = 0.75 * (A + 0.5 * ~A);
 
-            auto c = ~A * x0;
-            x2 = ~A ^ c;
+            // Do work.
+            auto b = op * x0;
+            x1 = op ^ b;
+
+            auto c = ~op * x0;
+            x2 = ~op ^ c;
 
             // Scatter
             KokkosBatched::SerialCopy<LinearAlgebra::NoTranspose::type>::invoke(
@@ -570,7 +611,6 @@ TEST( TEST_CATEGORY, matrix_test )
 {
     matrixTest();
 }
-
 TEST( TEST_CATEGORY, vector_test )
 {
     vectorTest();
@@ -614,6 +654,11 @@ TEST( TEST_CATEGORY, vecvec_test )
 TEST( TEST_CATEGORY, vecVec_test )
 {
     vecVecTest();
+}
+
+TEST( TEST_CATEGORY, expression_test )
+{
+    expressionTest();
 }
 
 TEST( TEST_CATEGORY, linearSolve_test )
