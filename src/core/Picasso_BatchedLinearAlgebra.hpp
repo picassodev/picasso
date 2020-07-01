@@ -63,7 +63,7 @@ namespace LinearAlgebra
 
   Data access: A(i,j) = s; x(i) = s;
 
-  LU decomposition: A_lu = A.LU();
+  LU decomposition: A_lu = A.LU(); (returns a copy of the matrix decomposed)
 
   Matrix transpose: ~A (if A is MxN, ~A is NxM)
 
@@ -1294,14 +1294,16 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     static_assert( ExpressionB::extent_0 == 2,
                    "extent_0 must be 2" );
 
-    auto a_det_inv = 1.0 / !a;
+    typename ExpressionA::eval_type a_eval = a;
+
+    auto a_det_inv = 1.0 / !a_eval;
 
     Matrix<typename ExpressionA::value_type,2,2> a_inv;
 
-    a_inv(0,0) = a(1,1) * a_det_inv;
-    a_inv(0,1) = -a(0,1) * a_det_inv;
-    a_inv(1,0) = -a(1,0) * a_det_inv;
-    a_inv(1,1) = a(0,0) * a_det_inv;
+    a_inv(0,0) = a_eval(1,1) * a_det_inv;
+    a_inv(0,1) = -a_eval(0,1) * a_det_inv;
+    a_inv(1,0) = -a_eval(1,0) * a_det_inv;
+    a_inv(1,1) = a_eval(0,0) * a_det_inv;
 
     return a_inv * b;
 }
@@ -1323,21 +1325,23 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     static_assert( ExpressionB::extent_0 == 3,
                    "extent_0 must be 3" );
 
-    auto a_det_inv = 1.0 / !a;
+    typename ExpressionA::eval_type a_eval = a;
+
+    auto a_det_inv = 1.0 / !a_eval;
 
     Matrix<typename ExpressionA::value_type,3,3> a_inv;
 
-    a_inv(0,0) = (a(1,1)*a(2,2) - a(1,2)*a(2,1)) * a_det_inv;
-    a_inv(0,1) = (a(0,2)*a(2,1) - a(0,1)*a(2,2)) * a_det_inv;
-    a_inv(0,2) = (a(0,1)*a(1,2) - a(0,2)*a(1,1)) * a_det_inv;
+    a_inv(0,0) = (a_eval(1,1)*a_eval(2,2) - a_eval(1,2)*a_eval(2,1)) * a_det_inv;
+    a_inv(0,1) = (a_eval(0,2)*a_eval(2,1) - a_eval(0,1)*a_eval(2,2)) * a_det_inv;
+    a_inv(0,2) = (a_eval(0,1)*a_eval(1,2) - a_eval(0,2)*a_eval(1,1)) * a_det_inv;
 
-    a_inv(1,0) = (a(1,2)*a(2,0) - a(1,0)*a(2,2)) * a_det_inv;
-    a_inv(1,1) = (a(0,0)*a(2,2) - a(0,2)*a(2,0)) * a_det_inv;
-    a_inv(1,2) = (a(0,2)*a(1,0) - a(0,0)*a(1,2)) * a_det_inv;
+    a_inv(1,0) = (a_eval(1,2)*a_eval(2,0) - a_eval(1,0)*a_eval(2,2)) * a_det_inv;
+    a_inv(1,1) = (a_eval(0,0)*a_eval(2,2) - a_eval(0,2)*a_eval(2,0)) * a_det_inv;
+    a_inv(1,2) = (a_eval(0,2)*a_eval(1,0) - a_eval(0,0)*a_eval(1,2)) * a_det_inv;
 
-    a_inv(2,0) = (a(1,0)*a(2,1) - a(1,1)*a(2,0)) * a_det_inv;
-    a_inv(2,1) = (a(0,1)*a(2,0) - a(0,0)*a(2,1)) * a_det_inv;
-    a_inv(2,2) = (a(0,0)*a(1,1) - a(0,1)*a(1,0)) * a_det_inv;
+    a_inv(2,0) = (a_eval(1,0)*a_eval(2,1) - a_eval(1,1)*a_eval(2,0)) * a_det_inv;
+    a_inv(2,1) = (a_eval(0,1)*a_eval(2,0) - a_eval(0,0)*a_eval(2,1)) * a_det_inv;
+    a_inv(2,2) = (a_eval(0,0)*a_eval(1,1) - a_eval(0,1)*a_eval(1,0)) * a_det_inv;
 
     return a_inv * b;
 }
