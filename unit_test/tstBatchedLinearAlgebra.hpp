@@ -185,9 +185,9 @@ void vectorTest()
     EXPECT_EQ( h(1), 2.0 );
 
     // Check element division.
-    h = f | g;
-    EXPECT_EQ( h(0), 0.5 );
-    EXPECT_EQ( h(1), 0.5 );
+    auto j = f | g;
+    EXPECT_EQ( j(0), 0.5 );
+    EXPECT_EQ( j(1), 0.5 );
 }
 
 //---------------------------------------------------------------------------//
