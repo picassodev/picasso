@@ -31,7 +31,6 @@ void matrixTest()
 
     // Check a deep copy.
     auto a_c = a;
-    EXPECT_NE( a.data(), a_c.data() );
     EXPECT_EQ( a_c.stride_0(), 3 );
     EXPECT_EQ( a_c.stride_1(), 1 );
     EXPECT_EQ( a_c.extent(0), 2 );
@@ -46,7 +45,6 @@ void matrixTest()
 
     // Check a shallow transpose copy.
     auto a_t = ~a;
-    EXPECT_EQ( a.data(), a_t.data() );
     EXPECT_EQ( a_t.stride_0(), 3 );
     EXPECT_EQ( a_t.stride_1(), 1 );
     EXPECT_EQ( a_t.extent(0), 2 );
@@ -61,7 +59,6 @@ void matrixTest()
 
     // Check transpose of transpose shallow copy.
     auto a_t_t = ~a_t;
-    EXPECT_EQ( a.data(), a_t_t.data() );
     EXPECT_EQ( a_t_t.stride_0(), 3 );
     EXPECT_EQ( a_t_t.stride_1(), 1 );
     EXPECT_EQ( a_t_t.extent(0), 2 );
@@ -76,7 +73,6 @@ void matrixTest()
 
     // Check a transpose deep copy.
     LinearAlgebra::Matrix<double,3,2> a_t_c = ~a;
-    EXPECT_NE( a.data(), a_t_c.data() );
     EXPECT_EQ( a_t_c.stride_0(), 2 );
     EXPECT_EQ( a_t_c.stride_1(), 1 );
     EXPECT_EQ( a_t_c.extent(0), 3 );
@@ -132,11 +128,10 @@ void vectorTest()
     EXPECT_EQ( x(1), -3.5 );
     EXPECT_EQ( x(2), 5.4 );
 
-    EXPECT_EQ( x.norm2(), sqrt(1.2*1.2 + 3.5*3.5 + 5.4*5.4) );
+    EXPECT_EQ( LinearAlgebra::norm2(x), sqrt(1.2*1.2 + 3.5*3.5 + 5.4*5.4) );
 
     // Check a deep copy
     auto x_c = x;
-    EXPECT_NE( x.data(), x_c.data() );
     EXPECT_EQ( x_c.stride_0(), 1 );
     EXPECT_EQ( x_c.extent(0), 3 );
 
@@ -195,9 +190,7 @@ void viewTest()
 {
     double m[2][3] = { {1.2, -3.5, 5.4},
                        {8.6, 2.6, -0.1} };
-    LinearAlgebra::Matrix<
-        double,2,3,LinearAlgebra::NoTranspose,LinearAlgebra::View> a(
-            &m[0][0], 3, 1, 1.0 );
+    LinearAlgebra::MatrixView<double,2,3> a( &m[0][0], 3, 1 );
     EXPECT_EQ( a.stride_0(), 3 );
     EXPECT_EQ( a.stride_1(), 1 );
     EXPECT_EQ( a.extent(0), 2 );
@@ -212,25 +205,19 @@ void viewTest()
 
     double v[6] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0 };
 
-    LinearAlgebra::Vector<
-        double,6,LinearAlgebra::NoTranspose,LinearAlgebra::View> x1(
-            &v[0], 1, 1.0 );
+    LinearAlgebra::VectorView<double,6> x1( &v[0], 1 );
     EXPECT_EQ( x1.stride_0(), 1 );
     EXPECT_EQ( x1.extent(0), 6 );
     for ( int i = 0; i < 6; ++i )
         EXPECT_EQ( x1(i), 1.0 * i );
 
-    LinearAlgebra::Vector<
-        double,3,LinearAlgebra::NoTranspose,LinearAlgebra::View> x2(
-            &v[0], 2, 1.0 );
+    LinearAlgebra::VectorView<double,3> x2( &v[0], 2 );
     EXPECT_EQ( x2.stride_0(), 2 );
     EXPECT_EQ( x2.extent(0), 3 );
     for ( int i = 0; i < 3; ++i )
         EXPECT_EQ( x2(i), 2.0 * i );
 
-    LinearAlgebra::Vector<
-        double,2,LinearAlgebra::NoTranspose,LinearAlgebra::View> x3(
-            &v[1], 3, 1.0 );
+    LinearAlgebra::VectorView<double,2> x3( &v[1], 3 );
     EXPECT_EQ( x3.stride_0(), 3 );
     EXPECT_EQ( x3.extent(0), 2 );
     for ( int i = 0; i < 2; ++i )
@@ -543,33 +530,21 @@ void kernelTest()
         KOKKOS_LAMBDA( const int i ){
 
             // Get views.
-            LinearAlgebra::Matrix<
-                double,N,N,
-                LinearAlgebra::NoTranspose,
-                LinearAlgebra::View> A_v( &view_a(i,0,0),
-                                          view_a.stride_1(),
-                                          view_a.stride_2(),
-                                          1.0 );
-            LinearAlgebra::Vector<double,N,
-                                  LinearAlgebra::NoTranspose,
-                                  LinearAlgebra::View>
-                x0_v( &view_x0(i,0), view_x0.stride_1(), 1.0 );
+            LinearAlgebra::MatrixView<double,N,N> A_v(
+                &view_a(i,0,0), view_a.stride_1(), view_a.stride_2() );
+            LinearAlgebra::VectorView<double,N> x0_v(
+                &view_x0(i,0), view_x0.stride_1() );
+            LinearAlgebra::VectorView<double,N> x1_v(
+                &view_x1(i,0), view_x1.stride_1() );
 
-            LinearAlgebra::Vector<double,N,
-                                  LinearAlgebra::NoTranspose,
-                                  LinearAlgebra::View>
-                x1_v( &view_x1(i,0), view_x1.stride_1(), 1.0 );
-
-            LinearAlgebra::Vector<double,N,
-                                  LinearAlgebra::NoTranspose,
-                                  LinearAlgebra::View>
-                x2_v( &view_x2(i,0), view_x2.stride_1(), 1.0 );
+            LinearAlgebra::VectorView<double,N> x2_v(
+                &view_x2(i,0), view_x2.stride_1() );
 
             // Gather.
-            typename decltype(A_v)::copy A = A_v;
-            typename decltype(x0_v)::copy x0 = x0_v;
-            typename decltype(x1_v)::copy x1 = x1_v;
-            typename decltype(x2_v)::copy x2 = x2_v;
+            typename decltype(A_v)::copy_type A = A_v;
+            typename decltype(x0_v)::copy_type x0 = x0_v;
+            typename decltype(x1_v)::copy_type x1 = x1_v;
+            typename decltype(x2_v)::copy_type x2 = x2_v;
 
             // Create a composite operator via an expression.
             auto op = 0.75 * (A + 0.5 * ~A);
@@ -582,10 +557,8 @@ void kernelTest()
             x2 = ~op ^ c;
 
             // Scatter
-            KokkosBatched::SerialCopy<LinearAlgebra::NoTranspose::type>::invoke(
-                x1, x1_v );
-            KokkosBatched::SerialCopy<LinearAlgebra::NoTranspose::type>::invoke(
-                x2, x2_v );
+            x1_v = x1;
+            x2_v = x2;
         });
 
     auto x0_host = Kokkos::create_mirror_view_and_copy(
