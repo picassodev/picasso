@@ -34,6 +34,69 @@ namespace Picasso
 namespace LinearAlgebra
 {
 //---------------------------------------------------------------------------//
+// Overview
+//---------------------------------------------------------------------------//
+/*
+  This file implements kernel-level dense linear algebra operations using a
+  combination of expression templates for lazy evaluation and KokkosKernels
+  for eager evaluations when necessary.
+
+  The general philosphy in the implementation for lazy vs. eager evalations is
+  this: if an operation will evaluation the same expression multiple times
+  (e.g. evaluating the element of a matrix in matrix-matrix multiplication)
+  then the expressions are evaluated prior to performing the operation and the
+  result of the operation is a copy rather than an expression. Other
+  operations which do not incur multiple evaluations (e.g. matrix-matrix
+  addition) are evaluated lazily and return an expression.
+
+  The syntax covers all of the basic operations on vectors and matrices one
+  would want to perform. In what follows, consider A, B, and C to be matrices,
+  x, y, and z to be vectors, and s to be a scalar. Note that all product
+  operations require the range and domain sizes of the vectors/matrices to be
+  compatible.
+
+  Scalar assignment: A = s; x = x;
+
+  Copy assignement: A = B; x = y;
+
+  Data access: A(i,j) = s; x(i) = s;
+
+  LU decomposition: A_lu = A.LU();
+
+  Matrix transpose: ~A (if A is MxN, ~A is NxM)
+
+  Vector transpose: ~x (if x is size N, ~x is a matrix 1xN)
+
+  Matrix-matrix addition/subtraction: C = A + B; C = A - B;
+
+  Vector-vector addition/subtraction: z = x + y; z = x - y;
+
+  Matrix-matrix multiplication: C = A * B;
+
+  Matrix-vector multiplication: y = A * x;
+
+  Vector-matrix multiplication: B = x * A;
+
+  Scalar multiplication: B = s * A; B = A * s; y = s * x; y = x * s;
+
+  Scalar division: B = A / s; y = x / s;
+
+  Dot product: s = ~x * y;
+
+  Inner product: A = x * y~;
+
+  Cross product: z = x % y; (3-vectors only)
+
+  Element-wise vector multiplication: z = x & y;
+
+  Element-wise vector division: z = x | y;
+
+  Matrix determinants: s = A!;
+
+  NxN linear solve (A*x=b): x = A ^ b;
+ */
+
+//---------------------------------------------------------------------------//
 // Forward declarations.
 //---------------------------------------------------------------------------//
 template<class T, int M, int N> struct MatrixExpression;
