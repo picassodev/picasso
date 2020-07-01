@@ -45,15 +45,17 @@ namespace LinearAlgebra
   this: if an operation will evaluation the same expression multiple times
   (e.g. evaluating the element of a matrix in matrix-matrix multiplication)
   then the expressions are evaluated prior to performing the operation and the
-  result of the operation is a copy rather than an expression. Other
-  operations which do not incur multiple evaluations (e.g. matrix-matrix
-  addition) are evaluated lazily and return an expression.
+  result of the operation is a copy rather than an expression as a means of
+  reducing operations counts. Other operations which do not incur multiple
+  evaluations (e.g. matrix-matrix addition) are evaluated lazily and return an
+  expression as eager expressions in this cause would cause excessive copy
+  operations.
 
   The syntax covers all of the basic operations on vectors and matrices one
-  would want to perform. In what follows, consider A, B, and C to be matrices,
-  x, y, and z to be vectors, and s to be a scalar. Note that all product
-  operations require the range and domain sizes of the vectors/matrices to be
-  compatible.
+  would want to perform. Note that all product operations require the range
+  and domain sizes of the vectors/matrices to be compatible. In what follows,
+  consider A, B, and C to be matrices, x, y, and z to be vectors, and s to be
+  a scalar:
 
   Scalar assignment: A = s; x = x;
 
@@ -91,9 +93,26 @@ namespace LinearAlgebra
 
   Element-wise vector division: z = x | y;
 
-  Matrix determinants: s = A!;
+  Matrix determinants: s = !A;
 
   NxN linear solve (A*x=b): x = A ^ b;
+
+
+  We can string together multiple expressions to create a more complex
+  expression which could have a mixture of eager and lazy evaluation depending
+  on the operation type. For example, if A and B are NxN and x is of length N:
+
+  C = 0.5 * (a + ~a) * B + (x * ~x);
+
+  would return a matrix C that is NxN and:
+
+  z = (0.5 * (a + ~a) * B + (x * ~x)) * y;
+
+  would return a vector z of length N and:
+
+  s = !C * ~y  * ((0.5 * (a + ~a) * B + (x * ~x)) * y);
+
+  would return a scalar.
  */
 
 //---------------------------------------------------------------------------//
