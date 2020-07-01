@@ -45,10 +45,8 @@ void matrixTest()
 
     // Check a shallow transpose copy.
     auto a_t = ~a;
-    EXPECT_EQ( a_t.stride_0(), 3 );
-    EXPECT_EQ( a_t.stride_1(), 1 );
-    EXPECT_EQ( a_t.extent(0), 2 );
-    EXPECT_EQ( a_t.extent(1), 3 );
+    EXPECT_EQ( a_t.extent(0), 3 );
+    EXPECT_EQ( a_t.extent(1), 2 );
 
     EXPECT_EQ( a_t(0,0), 1.2 );
     EXPECT_EQ( a_t(1,0), -3.5 );
@@ -59,8 +57,6 @@ void matrixTest()
 
     // Check transpose of transpose shallow copy.
     auto a_t_t = ~a_t;
-    EXPECT_EQ( a_t_t.stride_0(), 3 );
-    EXPECT_EQ( a_t_t.stride_1(), 1 );
     EXPECT_EQ( a_t_t.extent(0), 2 );
     EXPECT_EQ( a_t_t.extent(1), 3 );
 
@@ -114,6 +110,12 @@ void matrixTest()
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_EQ( d(i,j), 64.6 );
+
+    // Check scalr division.
+    auto e = d / 2.0;
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_EQ( e(i,j), 32.3 );
 }
 
 //---------------------------------------------------------------------------//
@@ -127,8 +129,6 @@ void vectorTest()
     EXPECT_EQ( x(0), 1.2 );
     EXPECT_EQ( x(1), -3.5 );
     EXPECT_EQ( x(2), 5.4 );
-
-    EXPECT_EQ( LinearAlgebra::norm2(x), sqrt(1.2*1.2 + 3.5*3.5 + 5.4*5.4) );
 
     // Check a deep copy
     auto x_c = x;
@@ -163,6 +163,11 @@ void vectorTest()
     auto d = 2.0 * c;
     for ( int i = 0; i < 3; ++i )
         EXPECT_EQ( d(i), 64.6 );
+
+    // Check scalar division.
+    auto z = d / 2.0;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_EQ( z(i), 32.3 );
 
     // Check cross product.
     LinearAlgebra::Vector<double,3> e0 = { 1.0, 0.0, 0.0 };
@@ -433,6 +438,8 @@ void vecVecTest()
     LinearAlgebra::Vector<double,2> y = { 2.0, 3.0 };
 
     auto dot = ~x * y;
+    EXPECT_EQ( dot.extent(0), 1 );
+    EXPECT_EQ( dot.extent(1), 1 );
     EXPECT_EQ( dot, 8.0 );
 
     auto inner = x * ~y;
@@ -536,7 +543,6 @@ void kernelTest()
                 &view_x0(i,0), view_x0.stride_1() );
             LinearAlgebra::VectorView<double,N> x1_v(
                 &view_x1(i,0), view_x1.stride_1() );
-
             LinearAlgebra::VectorView<double,N> x2_v(
                 &view_x2(i,0), view_x2.stride_1() );
 
@@ -584,6 +590,7 @@ TEST( TEST_CATEGORY, matrix_test )
 {
     matrixTest();
 }
+
 TEST( TEST_CATEGORY, vector_test )
 {
     vectorTest();

@@ -38,11 +38,9 @@ namespace LinearAlgebra
 //---------------------------------------------------------------------------//
 template<class T, int M, int N> struct MatrixExpression;
 template<class T, int M, int N> struct Matrix;
-template<class T, int M, int N> struct MatrixHandle;
 template<class T, int M, int N> struct MatrixView;
 template<class T, int N> struct VectorExpression;
 template<class T, int N> struct Vector;
-template<class T, int N> struct VectorHandle;
 template<class T, int N> struct VectorView;
 
 //---------------------------------------------------------------------------//
@@ -54,11 +52,11 @@ struct is_matrix_impl : public std::false_type
 {};
 
 template<class T, int M, int N>
-struct is_matrix_impl<Matrix<T,M,N>> : public std::true_type
+struct is_matrix_impl<MatrixExpression<T,M,N>> : public std::true_type
 {};
 
 template<class T, int M, int N>
-struct is_matrix_impl<MatrixExpression<T,M,N>> : public std::true_type
+struct is_matrix_impl<Matrix<T,M,N>> : public std::true_type
 {};
 
 template<class T, int M, int N>
@@ -75,11 +73,11 @@ struct is_vector_impl : public std::false_type
 {};
 
 template<class T, int N>
-struct is_vector_impl<Vector<T,N>> : public std::true_type
+struct is_vector_impl<VectorExpression<T,N>> : public std::true_type
 {};
 
 template<class T, int N>
-struct is_vector_impl<VectorExpression<T,N>> : public std::true_type
+struct is_vector_impl<Vector<T,N>> : public std::true_type
 {};
 
 template<class T, int N>
@@ -112,23 +110,14 @@ struct MatrixExpression
     // Create an expression from a callable object.
     template<class Func>
     KOKKOS_INLINE_FUNCTION
-    MatrixExpression( Func&& f )
-        : _f( std::forward<Func>(f) )
+    MatrixExpression( const Func& f )
+        : _f( f )
     {}
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     int extent( const int d ) const
     { return _extent[d]; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return N; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 1; }
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
@@ -154,7 +143,8 @@ struct MatrixExpression
     Matrix<T,M,N> LU() const
     {
         Matrix<T,M,N> lu = *this;
-        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke(
+            lu );
         return lu;
     }
 };
@@ -178,24 +168,14 @@ struct VectorExpression
      // Create an expression from a callable object.
     template<class Func>
     KOKKOS_INLINE_FUNCTION
-    VectorExpression( Func&& f )
-        : _f( std::forward<Func>(f) )
+    VectorExpression( const Func& f )
+        : _f( f )
     {}
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     int extent( const int ) const
     { return N; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return 1; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 0; }
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
@@ -234,7 +214,7 @@ struct Matrix
     using pointer = T*;
     using reference = T&;
 
-    using eval_type = MatrixHandle<T,M,N>;
+    using eval_type = MatrixView<T,M,N>;
     using copy_type = Matrix<T,M,N>;
 
     // Default constructor.
@@ -322,7 +302,7 @@ struct Matrix
     // Conversion operator. Evaluation is a shallow copy.
     KOKKOS_INLINE_FUNCTION
     operator eval_type() const
-    { return eval_type( this->data() ); }
+    { return eval_type( this->data(), N, 1 ); }
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
@@ -335,36 +315,45 @@ struct Matrix
 };
 
 //---------------------------------------------------------------------------//
-// Dense matrix temporary evaluation handle with a KokkosKernels compatible
-// data interface. Implementation detail.
-template<class T, int M, int N>
-struct MatrixHandle
+// Scalar overload.
+template<class T>
+struct Matrix<T,1,1>
 {
-    T* _d;
-    int _extent[2] = {M,N};
+    T _d;
 
-    static constexpr int extent_0 = M;
-    static constexpr int extent_1 = N;
+    static constexpr int extent_0 = 1;
+    static constexpr int extent_1 = 1;
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
 
+    using eval_type = MatrixView<T,1,1>;
+    using copy_type = Matrix<T,1,1>;
+
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
-    MatrixHandle() = default;
+    Matrix() = default;
 
-    // Pointer constructor.
+    // Scalar constructor.
     KOKKOS_INLINE_FUNCTION
-    MatrixHandle( T* data )
-        : _d( data )
+    Matrix( const T value )
+        : _d( value )
     {}
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const T value )
+    {
+        _d = value;
+        return *this;
+    }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const
-    { return N; }
+    { return 1; }
 
     KOKKOS_INLINE_FUNCTION
     int stride_1() const
@@ -372,27 +361,37 @@ struct MatrixHandle
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    int extent( const int ) const
+    { return 1; }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i, const int j ) const
-    { return _d[N*i+j]; }
+    value_type operator()( const int, const int ) const
+    { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j )
-    { return _d[N*i+j]; }
+    reference operator()( const int, const int )
+    { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
-    { return const_cast<pointer>(_d); }
+    { return const_cast<pointer>(&_d); }
+
+    // Conversion operator. Evaluation is a shallow copy.
+    KOKKOS_INLINE_FUNCTION
+    operator eval_type() const
+    { return eval_type( this->data(), 1, 1 ); }
+
+    // Scalar conversion operator.
+    KOKKOS_INLINE_FUNCTION
+    operator value_type() const
+    { return _d; }
 };
 
 //---------------------------------------------------------------------------//
-// View for wrapping user matrix data for gather-scatter operations with
-// matrix/vector objects. Kokkos-kernels compatible data interface.
+// View for wrapping matrix data with a Kokkos-kernels compatible data
+// interface.
 //
 // NOTE: Data in this view may be non-contiguous.
 template<class T, int M, int N>
@@ -511,7 +510,7 @@ struct Vector
     using pointer = T*;
     using reference = T&;
 
-    using eval_type = VectorHandle<T,N>;
+    using eval_type = VectorView<T,N>;
     using copy_type = Vector<T,N>;
 
     // Default constructor.
@@ -594,19 +593,17 @@ struct Vector
     // Conversion operator. Evaluation is a shallow copy.
     KOKKOS_INLINE_FUNCTION
     operator eval_type() const
-    { return eval_type( this->data() ); }
+    { return eval_type( this->data(), 1 ); }
 };
 
 //---------------------------------------------------------------------------//
-// Dense matrix temporary evaluation handle with a KokkosKernels compatible
-// data interface. Implementation detail.
-template<class T, int N>
-struct VectorHandle
+// Scalar overload.
+template<class T>
+struct Vector<T,1>
 {
-    T* _d;
-    int _extent[2] = {N,1};
+    T _d;
 
-    static constexpr int extent_0 = N;
+    static constexpr int extent_0 = 1;
     static constexpr int extent_1 = 1;
 
     using value_type = T;
@@ -614,49 +611,69 @@ struct VectorHandle
     using pointer = T*;
     using reference = T&;
 
+    using eval_type = VectorView<T,1>;
+    using copy_type = Vector<T,1>;
+
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
-    VectorHandle() = default;
+    Vector() = default;
 
-    // Pointer constructor.
+    // Scalar constructor.
     KOKKOS_INLINE_FUNCTION
-    VectorHandle( T* data )
-        : _d( data )
+    Vector( const T value )
+        : _d( value )
     {}
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Vector& operator=( const T value )
+    {
+        _d = value;
+        return *this;
+    }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const
     { return 1; }
 
-    // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_1() const
-    { return 0; }
+    { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    int extent( const int ) const
+    { return 1; }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i ) const
-    { return _d[i]; }
+    value_type operator()( const int ) const
+    { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i )
-    { return _d[i]; }
+    reference operator()( const int )
+    { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
-    { return const_cast<pointer>(_d); }
+    { return const_cast<pointer>(&_d); }
+
+    // Conversion operator. Evaluation is a shallow copy.
+    KOKKOS_INLINE_FUNCTION
+    operator eval_type() const
+    { return eval_type( this->data(), 1 ); }
+
+    // Scalar conversion operator.
+    KOKKOS_INLINE_FUNCTION
+    operator value_type() const
+    { return _d; }
 };
 
 //---------------------------------------------------------------------------//
-// View for wrapping user vector data for gather-scatter operations with
-// matrix/vector objects. Kokkos-kernels compatible data interface.
+// View for wrapping vector data with matrix/vector objects. Kokkos-kernels
+// compatible data interface.
 //
 // NOTE: Data in this view may be non-contiguous.
 template<class T, int N>
@@ -880,7 +897,7 @@ operator*( const ExpressionA& a, const ExpressionB& b )
 template<class ExpressionA, class ExpressionX>
 typename std::enable_if<
     is_matrix<ExpressionA>::value && is_vector<ExpressionX>::value,
-    Vector<typename ExpressionA::value_type,ExpressionX::extent_0>>::type
+    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>>::type
 operator*( const ExpressionA& a, const ExpressionX& x )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
@@ -891,11 +908,11 @@ operator*( const ExpressionA& a, const ExpressionX& x )
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
-    Vector<typename ExpressionA::value_type,ExpressionX::extent_0> y =
+    Vector<typename ExpressionA::value_type,ExpressionA::extent_0> y =
         Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
     KokkosBatched::SerialGemv<
         KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Algo::Gemm::Unblocked>::invoke(
+        KokkosBatched::Algo::Gemv::Unblocked>::invoke(
             Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
             a_eval,
             x_eval,
@@ -927,7 +944,8 @@ operator*( const ExpressionX& x, const ExpressionA& a )
            ExpressionX::extent_0,
            ExpressionA::extent_1> y =
         Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemv<
+    KokkosBatched::SerialGemm<
+        KokkosBatched::Trans::NoTranspose,
         KokkosBatched::Trans::NoTranspose,
         KokkosBatched::Algo::Gemm::Unblocked>::invoke(
             Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
@@ -980,6 +998,8 @@ operator-( const ExpressionX& x, const ExpressionY& y )
             [=]( const int i ){ return x(i) - y(i); } );
 }
 
+//---------------------------------------------------------------------------//
+// Vector products.
 //---------------------------------------------------------------------------//
 // Cross product
 template<class ExpressionX, class ExpressionY>
@@ -1046,28 +1066,6 @@ operator|( const ExpressionX& x, const ExpressionY& y )
 }
 
 //---------------------------------------------------------------------------//
-// Euclidean norm.
-template<class Expression>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if<
-    is_vector<Expression>::value,typename Expression::value_type>::type
-norm2( const Expression& x )
-{
-    typename Expression::value_type n2 =
-        Kokkos::ArithTraits<typename Expression::value_type>::zero();
-    typename Expression::value_type eval;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-    for ( int i = 0; i < Expression::extent_0; ++i )
-    {
-        eval = x(i);
-        n2 += eval * eval;
-    }
-    return sqrt(n2);
-}
-
-//---------------------------------------------------------------------------//
 // Scalar multiplication.
 //---------------------------------------------------------------------------//
 // Matrix.
@@ -1089,6 +1087,18 @@ operator*( const typename ExpressionA::value_type s, const ExpressionA& a )
             } );
 }
 
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<
+    is_matrix<ExpressionA>::value,
+    MatrixExpression<typename ExpressionA::value_type,
+                     ExpressionA::extent_0,
+                     ExpressionA::extent_1>>::type
+operator*( const ExpressionA& a, const typename ExpressionA::value_type s )
+{
+    return s * a;
+}
+
 //---------------------------------------------------------------------------//
 // Vector.
 template<class ExpressionX>
@@ -1105,6 +1115,50 @@ operator*( const typename ExpressionX::value_type s, const ExpressionX& x )
             [=]( const int i ){
                 return s * x(i);
             } );
+}
+
+template<class ExpressionX>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<
+    is_vector<ExpressionX>::value,
+    VectorExpression<typename ExpressionX::value_type,
+                     ExpressionX::extent_0>>::type
+operator*( const ExpressionX& x, const typename ExpressionX::value_type s )
+{
+    return s * x;
+}
+
+//---------------------------------------------------------------------------//
+// Scalar division.
+//---------------------------------------------------------------------------//
+// Matrix.
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<
+    is_matrix<ExpressionA>::value,
+    MatrixExpression<typename ExpressionA::value_type,
+                     ExpressionA::extent_0,
+                     ExpressionA::extent_1>>::type
+operator/( const ExpressionA& a, const typename ExpressionA::value_type s )
+{
+    auto s_inv =
+        Kokkos::ArithTraits<typename ExpressionA::value_type>::one() / s;
+    return s_inv * a;
+}
+
+//---------------------------------------------------------------------------//
+// Vector.
+template<class ExpressionX>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if<
+    is_vector<ExpressionX>::value,
+    VectorExpression<typename ExpressionX::value_type,
+                     ExpressionX::extent_0>>::type
+operator/( const ExpressionX& x, const typename ExpressionX::value_type s )
+{
+    auto s_inv =
+        Kokkos::ArithTraits<typename ExpressionX::value_type>::one() / s;
+    return s_inv * x;
 }
 
 //---------------------------------------------------------------------------//
