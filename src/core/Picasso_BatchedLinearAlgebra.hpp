@@ -59,7 +59,7 @@ namespace LinearAlgebra
 
   Scalar assignment: A = s; x = x;
 
-  Copy assignement: A = B; x = y;
+  Copy assignment: A = B; x = y;
 
   Data access: A(i,j) = s; x(i) = s;
 
