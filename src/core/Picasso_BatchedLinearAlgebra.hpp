@@ -48,7 +48,7 @@ namespace LinearAlgebra
   result of the operation is a copy rather than an expression as a means of
   reducing operations counts. Other operations which do not incur multiple
   evaluations (e.g. matrix-matrix addition) are evaluated lazily and return an
-  expression as eager expressions in this cause would cause excessive copy
+  expression as eager expressions in this case would cause excessive copy
   operations.
 
   The syntax covers all of the basic operations on vectors and matrices one
