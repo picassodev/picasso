@@ -57,6 +57,7 @@ template<class T>
 struct Scalar
 {
     using value_type = T;
+    static constexpr int rank = 0;
     static constexpr int size = 1;
     using data_type = value_type;
     using linear_algebra_type = value_type;
@@ -84,6 +85,7 @@ template<class T, int D>
 struct Vector
 {
     using value_type = T;
+    static constexpr int rank = 1;
     static constexpr int size = D;
     static constexpr int dim0 = D;
     using data_type = value_type[D];
@@ -112,6 +114,7 @@ template<class T, int D0, int D1>
 struct Tensor
 {
     using value_type = T;
+    static constexpr int rank = 2;
     static constexpr int size = D0 * D1;
     static constexpr int dim0 = D0;
     static constexpr int dim1 = D1;

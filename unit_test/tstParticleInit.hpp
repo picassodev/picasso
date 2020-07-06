@@ -93,9 +93,9 @@ void InitTest( InitType init_type, int ppc )
              x[Dim::K] < box[5] )
         {
             for ( int d = 0; d < 3; ++d )
-                ParticleAccess::get( p, Foo(), d ) = x[d];
+                Access::get( p, Foo(), d ) = x[d];
 
-            ParticleAccess::get( p, Bar() ) = v;
+            Access::get( p, Bar() ) = v;
 
             return true;
         }

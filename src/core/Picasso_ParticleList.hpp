@@ -336,6 +336,8 @@ struct Particle
     using traits = ParticleTraits<FieldTags...>;
     using tuple_type = Cabana::Tuple<typename traits::member_types>;
 
+    static constexpr int vector_length = 1;
+
     // Default constructor.
     Particle() = default;
 
@@ -398,15 +400,17 @@ struct ParticleView
 //---------------------------------------------------------------------------//
 // Particle accessor.
 //---------------------------------------------------------------------------//
-namespace ParticleAccess
+namespace Access
 {
 
 //---------------------------------------------------------------------------//
 // Particle accessor
 template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
-typename Particle<FieldTags...>::tuple_type::template member_value_type<
-    FieldTagIndexer<FieldTag,FieldTags...>::index>
+typename std::enable_if<
+    sizeof...(IndexTypes) == FieldTag::rank,
+    typename Particle<FieldTags...>::tuple_type::template member_value_type<
+        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
 get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
     return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
@@ -415,8 +419,10 @@ get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 
 template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
-typename Particle<FieldTags...>::tuple_type::template member_reference_type<
-    FieldTagIndexer<FieldTag,FieldTags...>::index>
+typename std::enable_if<
+    sizeof...(IndexTypes) == FieldTag::rank,
+    typename Particle<FieldTags...>::tuple_type::template member_reference_type<
+        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
 get( Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
     return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
@@ -430,9 +436,11 @@ template<class FieldTag,
          class ... IndexTypes,
          int VectorLength>
 KOKKOS_FORCEINLINE_FUNCTION
-typename ParticleView<
-    VectorLength,FieldTags...>::soa_type::template member_value_type<
-    FieldTagIndexer<FieldTag,FieldTags...>::index>
+typename std::enable_if<
+    sizeof...(IndexTypes) == FieldTag::rank,
+    typename ParticleView<
+        VectorLength,FieldTags...>::soa_type::template member_value_type<
+        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
 get( const ParticleView<VectorLength,FieldTags...>& particle,
      FieldTag,
      IndexTypes... indices )
@@ -446,9 +454,11 @@ template<class FieldTag,
          class ... IndexTypes,
          int VectorLength>
 KOKKOS_FORCEINLINE_FUNCTION
-typename ParticleView<
-    VectorLength,FieldTags...>::soa_type::template member_reference_type<
-    FieldTagIndexer<FieldTag,FieldTags...>::index>
+typename std::enable_if<
+    sizeof...(IndexTypes) == FieldTag::rank,
+    typename ParticleView<
+        VectorLength,FieldTags...>::soa_type::template member_reference_type<
+        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
 get( ParticleView<VectorLength,FieldTags...>& particle,
      FieldTag,
      IndexTypes... indices )
@@ -468,9 +478,10 @@ typename std::enable_if<
 get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &(Cabana::get(particle,tag,0)), 1 );
+        &(get(particle,tag,0)), ParticleType::vector_length );
 }
 
+//---------------------------------------------------------------------------//
 // Get a view of a particle member as a matrix. (Works for both Particle and
 // ParticleView)
 template<class ParticleType, class FieldTag>
@@ -481,10 +492,14 @@ typename std::enable_if<
 get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &(Cabana::get(particle,tag,0,0)), 1 );
+        &(get(particle,tag,0,0)),
+        ParticleType::vector_length * FieldTag::dim1,
+        ParticleType::vector_length );
 }
 
-} // end namespace ParticleAccessor
+//---------------------------------------------------------------------------//
+
+} // end namespace Access
 
 //---------------------------------------------------------------------------//
 // Particle List
