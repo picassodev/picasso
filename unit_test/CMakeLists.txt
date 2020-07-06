@@ -138,6 +138,7 @@ macro(Picasso_add_tests)
 endmacro()
 
 Picasso_add_tests(MPI NAMES
+  BatchedLinearAlgebra
   FacetGeometry
   ParticleList
   ParticleInit

@@ -4,6 +4,7 @@ configure_file(Picasso_config.hpp.cmakein Picasso_config.hpp)
 set(CORE_HEADERS
   core/Picasso_AdaptiveMesh.hpp
   core/Picasso_APIC.hpp
+  core/Picasso_BatchedLinearAlgebra.hpp
   core/Picasso_DenseLinearAlgebra.hpp
   core/Picasso_FacetGeometry.hpp
   core/Picasso_FieldManager.hpp
@@ -31,6 +32,7 @@ add_library(picasso ${CORE_SOURCES})
 
 target_link_libraries(picasso
   Kokkos::kokkos
+  Kokkos::kokkoskernels
   MPI::MPI_CXX
   Cabana::cabanacore
   Cabana::Cajita

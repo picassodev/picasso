@@ -362,6 +362,7 @@ struct Particle
 namespace ParticleAccess
 {
 
+// Access an individual element
 template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
 typename Particle<FieldTags...>::tuple_type::template member_value_type<
