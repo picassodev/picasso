@@ -471,18 +471,6 @@ get( ParticleType& particle, FieldTag tag )
         &(Cabana::get(particle,tag,0)), 1 );
 }
 
-template<class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<
-    LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
-get( const ParticleType& particle, FieldTag tag )
-{
-    return typename FieldTag::linear_algebra_type(
-        const_cast<typename FieldTag::value_type*>(
-            &(Cabana::get(particle,tag,0))), 1 );
-}
-
 // Get a view of a particle member as a matrix. (Works for both Particle and
 // ParticleView)
 template<class ParticleType, class FieldTag>
@@ -494,18 +482,6 @@ get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         &(Cabana::get(particle,tag,0,0)), 1 );
-}
-
-template<class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION
-typename std::enable_if<
-    LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
-get( const ParticleType& particle, FieldTag tag )
-{
-    return typename FieldTag::linear_algebra_type(
-        const_cast<typename FieldTag::value_type*>(
-            &(Cabana::get(particle,tag,0,0))), 1 );
 }
 
 } // end namespace ParticleAccessor
