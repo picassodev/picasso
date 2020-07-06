@@ -5,9 +5,6 @@
 
 #include <Kokkos_ArithTraits.hpp>
 
-#include <KokkosBatched_Copy_Decl.hpp>
-#include <KokkosBatched_Copy_Impl.hpp>
-
 #include <KokkosBatched_Set_Decl.hpp>
 #include <KokkosBatched_Set_Impl.hpp>
 
@@ -171,7 +168,7 @@ struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
 {};
 
 //---------------------------------------------------------------------------//
-// Expressions containers.
+// Expression containers.
 //---------------------------------------------------------------------------//
 // Matrix expression container.
 template<class T, int M, int N, class Func>
@@ -199,7 +196,7 @@ struct MatrixExpression
         : _f( f )
     {}
 
-    // Extent
+    // Extent.
     KOKKOS_INLINE_FUNCTION
     int extent( const int d ) const
     { return _extent[d]; }
@@ -208,20 +205,6 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     value_type operator()( const int i, const int j ) const
     { return _f(i,j); }
-
-    // Copy/eval conversion operator. Triggers an expression evaluation.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    {
-        eval_type eval;
-        for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                eval(i,j) = _f(i,j);
-        return eval;
-    }
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
@@ -277,19 +260,6 @@ struct VectorExpression
     KOKKOS_INLINE_FUNCTION
     value_type operator()( const int i ) const
     { return _f(i); }
-
-    // Copy/eval conversion operator. Triggers an expression evaluation.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    {
-        eval_type eval;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-            for ( int i = 0; i < N; ++i )
-                eval(i) = _f(i);
-        return eval;
-    }
 };
 
 // Creation function.
@@ -343,12 +313,18 @@ struct Matrix
         }
     }
 
-    // Deep copy constructor.
+    // Deep copy constructor. Triggers expression evaluation.
+    template<class Expression,
+             typename std::enable_if<is_matrix<Expression>::value,int>::type = 0>
     KOKKOS_INLINE_FUNCTION
-    Matrix( const Matrix& rhs )
+    Matrix( const Expression& e )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
-            rhs, *this );
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) = e(i,j);
     }
 
     // Scalar constructor.
@@ -358,12 +334,18 @@ struct Matrix
         KokkosBatched::SerialSet::invoke( value, *this );
     }
 
-    // Deep copy assignment operator.
+    // Assignment operator. Triggers expression evaluation.
+    template<class Expression>
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const Matrix& rhs )
+    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
+    operator=( const Expression& e )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
-            rhs, *this );
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) = e(i,j);
         return *this;
     }
 
@@ -402,11 +384,6 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0][0]); }
-
-    // Conversion operator. Evaluation is a shallow copy.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    { return eval_type( this->data(), N, 1 ); }
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
@@ -482,11 +459,6 @@ struct Matrix<T,1,1>
     pointer data() const
     { return const_cast<pointer>(&_d); }
 
-    // Conversion operator. Evaluation is a shallow copy.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    { return eval_type( this->data(), 1, 1 ); }
-
     // Scalar conversion operator.
     KOKKOS_INLINE_FUNCTION
     operator value_type() const
@@ -519,6 +491,15 @@ struct MatrixView
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
     MatrixView() = default;
+
+    // Matrix constructor.
+    KOKKOS_INLINE_FUNCTION
+    MatrixView( const Matrix<T,M,N>& m )
+        : _d( m.data() )
+    {
+        _stride[0] = m.stride_0();
+        _stride[1] = m.stride_1();
+    }
 
     // Pointer constructor.
     KOKKOS_INLINE_FUNCTION
@@ -576,20 +557,6 @@ struct MatrixView
     reference operator()( const int i, const int j )
     { return _d[_stride[0]*i + _stride[1]*j]; }
 
-    // Deep copy conversion operator.
-    KOKKOS_INLINE_FUNCTION
-    operator copy_type() const
-    {
-        copy_type copy;
-        for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                copy(i,j) = (*this)(i,j);
-        return copy;
-    }
-
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const
@@ -633,12 +600,17 @@ struct Vector
         }
     }
 
-    // Deep copy constructor.
+    // Deep copy constructor. Triggers expression evaluation.
+    template<class Expression,
+             typename std::enable_if<is_vector<Expression>::value,int>::type = 0>
     KOKKOS_INLINE_FUNCTION
-    Vector( const Vector& rhs )
+    Vector( const Expression& e )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
-            rhs, *this );
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) = e(i);
     }
 
     // Scalar constructor.
@@ -648,12 +620,17 @@ struct Vector
         KokkosBatched::SerialSet::invoke( value, *this );
     }
 
-    // Deep copy assignment operator.
+    // Deep copy assignment operator. Triggers expression evaluation.
+    template<class Expression>
     KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const Vector& rhs )
+    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
+    operator=( const Expression& e )
     {
-        KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(
-            rhs, *this );
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) = e(i);
         return *this;
     }
 
@@ -693,11 +670,6 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0]); }
-
-    // Conversion operator. Evaluation is a shallow copy.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    { return eval_type( this->data(), 1 ); }
 };
 
 //---------------------------------------------------------------------------//
@@ -764,11 +736,6 @@ struct Vector<T,1>
     pointer data() const
     { return const_cast<pointer>(&_d); }
 
-    // Conversion operator. Evaluation is a shallow copy.
-    KOKKOS_INLINE_FUNCTION
-    operator eval_type() const
-    { return eval_type( this->data(), 1 ); }
-
     // Scalar conversion operator.
     KOKKOS_INLINE_FUNCTION
     operator value_type() const
@@ -801,6 +768,13 @@ struct VectorView
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
     VectorView() = default;
+
+    // Vector construtor.
+    KOKKOS_INLINE_FUNCTION
+    VectorView( const Vector<T,N>& v )
+        : _d( v.data() )
+        , _stride( v.stride_0() )
+    {}
 
     // Pointer constructor.
     KOKKOS_INLINE_FUNCTION
@@ -854,19 +828,6 @@ struct VectorView
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i )
     { return _d[_stride*i]; }
-
-    // Deep copy conversion operator.
-    KOKKOS_INLINE_FUNCTION
-    operator copy_type() const
-    {
-        copy_type copy;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            copy(i) = (*this)(i);
-        return copy;
-    }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
