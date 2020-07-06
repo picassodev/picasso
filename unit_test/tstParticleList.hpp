@@ -89,7 +89,7 @@ void particleTest()
             typename list_type::particle_type particle( aosoa.getTuple(p) );
 
             for ( int d = 0; d < 3; ++d )
-                Access::get(particle,Field::LogicalPosition(),d) += p;
+                Access::get(particle,Field::LogicalPosition(),d) += p + d;
 
             Access::get(particle,Field::Mass()) += p;
 
@@ -98,7 +98,7 @@ void particleTest()
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
                     Access::get(particle,Field::DeformationGradient(),i,j)
-                        += p;
+                        += p + i + j;
 
             aosoa.setTuple( p, particle.tuple() );
         });
@@ -108,7 +108,7 @@ void particleTest()
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
-            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p );
+            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p + d);
 
         EXPECT_DOUBLE_EQ( pm_h(p), 3.3 + p );
 
@@ -116,7 +116,7 @@ void particleTest()
 
         for ( int i = 0; i < 3; ++i )
             for ( int j = 0; j < 3; ++j )
-                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p );
+                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p + i + j);
     }
 }
 
@@ -200,7 +200,7 @@ void particleViewTest()
             typename list_type::particle_view_type particle( aosoa.access(s), a );
 
             for ( int d = 0; d < 3; ++d )
-                Access::get(particle,Field::LogicalPosition(),d) += p;
+                Access::get(particle,Field::LogicalPosition(),d) += p + d;
 
             Access::get(particle,Field::Mass()) += p;
 
@@ -209,7 +209,7 @@ void particleViewTest()
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
                     Access::get(particle,Field::DeformationGradient(),i,j)
-                        += p;
+                        += p + i + j;
         });
 
     // Check the modification.
@@ -217,7 +217,7 @@ void particleViewTest()
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
-            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p );
+            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p + d);
 
         EXPECT_DOUBLE_EQ( pm_h(p), 3.3 + p );
 
@@ -225,7 +225,7 @@ void particleViewTest()
 
         for ( int i = 0; i < 3; ++i )
             for ( int j = 0; j < 3; ++j )
-                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p );
+                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p + i + j);
     }
 }
 
@@ -310,7 +310,7 @@ void linearAlgebraTest()
 
             auto px_v = Access::get(particle,Field::LogicalPosition());
             for ( int d = 0; d < 3; ++d )
-                px_v(d) += p;
+                px_v(d) += p + d;
 
             Access::get(particle,Field::Mass()) += p;
 
@@ -319,7 +319,7 @@ void linearAlgebraTest()
             auto pf_m = Access::get(particle,Field::DeformationGradient());
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    pf_m(i,j) += p;
+                    pf_m(i,j) += p + i + j;
         });
 
     // Check the modification.
@@ -327,7 +327,7 @@ void linearAlgebraTest()
     for ( std::size_t p = 0; p < num_p; ++p )
     {
         for ( int d = 0; d < 3; ++d )
-            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p );
+            EXPECT_DOUBLE_EQ( px_h(p,d), 1.23 + p + d );
 
         EXPECT_DOUBLE_EQ( pm_h(p), 3.3 + p );
 
@@ -335,7 +335,7 @@ void linearAlgebraTest()
 
         for ( int i = 0; i < 3; ++i )
             for ( int j = 0; j < 3; ++j )
-                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p );
+                EXPECT_DOUBLE_EQ( pf_h(p,i,j), -1.2 + p + i + j);
     }
 }
 
