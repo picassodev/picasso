@@ -328,7 +328,7 @@ struct ParticleTraits<Tag0,
 };
 
 //---------------------------------------------------------------------------//
-// Particle
+// Particle. Wraps a tuple copy of a particle.
 //---------------------------------------------------------------------------//
 template<class ... FieldTags>
 struct Particle
@@ -357,12 +357,52 @@ struct Particle
 };
 
 //---------------------------------------------------------------------------//
+// Particle view. Wraps a view of the SoA the particle resides in.
+//---------------------------------------------------------------------------//
+template<int VectorLength, class ... FieldTags>
+struct ParticleView
+{
+    using traits = ParticleTraits<FieldTags...>;
+    using soa_type = Cabana::SoA<typename traits::member_types,VectorLength>;
+
+    static constexpr int vector_length = VectorLength;
+
+    // Default constructor.
+    ParticleView() = default;
+
+    // Tuple wrapper constructor.
+    KOKKOS_FORCEINLINE_FUNCTION
+    ParticleView( soa_type& soa, const int vector_index )
+        : _soa( soa )
+        , _vector_index( vector_index )
+    {}
+
+    // Get the underlying SoA.
+    KOKKOS_FORCEINLINE_FUNCTION
+    soa_type& soa() { return _soa; }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    const soa_type& soa() const { return _soa; }
+
+    // Get the vector index of the particle in the SoA.
+    KOKKOS_FORCEINLINE_FUNCTION
+    int vectorIndex() const { return _vector_index; }
+
+    // The soa the particle is in.
+    soa_type& _soa;
+
+    // The local vector index of the particle.
+    int _vector_index;
+};
+
+//---------------------------------------------------------------------------//
 // Particle accessor.
 //---------------------------------------------------------------------------//
 namespace ParticleAccess
 {
 
-// Access an individual element
+//---------------------------------------------------------------------------//
+// Particle accessor
 template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
 typename Particle<FieldTags...>::tuple_type::template member_value_type<
@@ -382,6 +422,42 @@ get( Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
     return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
         particle.tuple(), indices...);
 }
+
+//---------------------------------------------------------------------------//
+// ParticleView accessor
+template<class FieldTag,
+         class ... FieldTags,
+         class ... IndexTypes,
+         int VectorLength>
+KOKKOS_FORCEINLINE_FUNCTION
+typename ParticleView<
+    VectorLength,FieldTags...>::soa_type::template member_value_type<
+    FieldTagIndexer<FieldTag,FieldTags...>::index>
+get( const ParticleView<VectorLength,FieldTags...>& particle,
+     FieldTag,
+     IndexTypes... indices )
+{
+    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+        particle.soa(), particle.vectorIndex(), indices...);
+}
+
+template<class FieldTag,
+         class ... FieldTags,
+         class ... IndexTypes,
+         int VectorLength>
+KOKKOS_FORCEINLINE_FUNCTION
+typename ParticleView<
+    VectorLength,FieldTags...>::soa_type::template member_reference_type<
+    FieldTagIndexer<FieldTag,FieldTags...>::index>
+get( ParticleView<VectorLength,FieldTags...>& particle,
+     FieldTag,
+     IndexTypes... indices )
+{
+    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+        particle.soa(), particle.vectorIndex(), indices...);
+}
+
+//---------------------------------------------------------------------------//
 
 } // end namespace ParticleAccessor
 
@@ -407,6 +483,9 @@ class ParticleList
     using slice_type = typename aosoa_type::template member_slice_type<M>;
 
     using particle_type = Particle<FieldTags...>;
+
+    using particle_view_type =
+        ParticleView<aosoa_type::vector_length,FieldTags...>;
 
     // Default constructor.
     ParticleList( const std::string& label,
