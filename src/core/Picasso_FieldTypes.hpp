@@ -1,10 +1,12 @@
 #ifndef PICASSO_FIELDTYPES_HPP
 #define PICASSO_FIELDTYPES_HPP
 
-#include <string>
-#include <type_traits>
+#include <Picasso_BatchedLinearAlgebra.hpp>
 
 #include <Cajita.hpp>
+
+#include <string>
+#include <type_traits>
 
 namespace Picasso
 {
@@ -55,8 +57,10 @@ template<class T>
 struct Scalar
 {
     using value_type = T;
+    static constexpr int rank = 0;
     static constexpr int size = 1;
     using data_type = value_type;
+    using linear_algebra_type = value_type;
 };
 
 template <class>
@@ -81,9 +85,11 @@ template<class T, int D>
 struct Vector
 {
     using value_type = T;
+    static constexpr int rank = 1;
     static constexpr int size = D;
     static constexpr int dim0 = D;
     using data_type = value_type[D];
+    using linear_algebra_type = LinearAlgebra::VectorView<T,D>;
 };
 
 template <class>
@@ -108,10 +114,12 @@ template<class T, int D0, int D1>
 struct Tensor
 {
     using value_type = T;
+    static constexpr int rank = 2;
     static constexpr int size = D0 * D1;
     static constexpr int dim0 = D0;
     static constexpr int dim1 = D1;
     using data_type = value_type[D0][D1];
+    using linear_algebra_type = LinearAlgebra::MatrixView<T,D0,D1>;
 };
 
 template <class>
@@ -252,47 +260,6 @@ struct VolumeId : public Scalar<int>
 struct BoundaryId : public Scalar<int>
 {
     static std::string label() { return "boundary_id"; }
-};
-
-//---------------------------------------------------------------------------//
-// Multiphase decorator.
-template<class FieldTag, int NumPhase, typename Enable>
-struct MultiPhase;
-
-template<class FieldTag, int NumPhase>
-struct MultiPhase<FieldTag,NumPhase,
-                  typename std::enable_if<is_scalar<FieldTag>::value>::type>
-{
-    using value_type = typename FieldTag::value_type;
-    static constexpr int num_phase = NumPhase;
-    static constexpr int size = num_phase;
-    using data_type = value_type[num_phase];
-    static std::string label() { return "multiphase_" + FieldTag::label(); }
-};
-
-template<class FieldTag, int NumPhase>
-struct MultiPhase<FieldTag,NumPhase,
-                  typename std::enable_if<is_vector<FieldTag>::value>::type>
-{
-    using value_type = typename FieldTag::value_type;
-    static constexpr int num_phase = NumPhase;
-    static constexpr int size = FieldTag::size * num_phase;
-    static constexpr int dim0 = FieldTag::dim0;
-    using data_type = value_type[num_phase][dim0];
-    static std::string label() { return "multiphase_" + FieldTag::label(); }
-};
-
-template<class FieldTag, int NumPhase>
-struct MultiPhase<FieldTag,NumPhase,
-                  typename std::enable_if<is_tensor<FieldTag>::value>::type>
-{
-    using value_type = typename FieldTag::value_type;
-    static constexpr int num_phase = NumPhase;
-    static constexpr int size = FieldTag::size * num_phase;
-    static constexpr int dim0 = FieldTag::D0;
-    static constexpr int dim1 = FieldTag::D1;
-    using data_type = value_type[num_phase][dim0][dim1];
-    static std::string label() { return "multiphase_" + FieldTag::label(); }
 };
 
 //---------------------------------------------------------------------------//

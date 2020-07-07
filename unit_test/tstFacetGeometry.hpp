@@ -506,10 +506,10 @@ struct LocateFunctor
         float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
         for ( int d = 0; d < 3; ++d )
         {
-            ParticleAccess::get( p, Field::PhysicalPosition(), d ) = x[d];
+            Access::get( p, Field::PhysicalPosition(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint(xf,geom);
-        ParticleAccess::get( p, Field::VolumeId() ) = volume_id;
+        Access::get( p, Field::VolumeId() ) = volume_id;
         return (volume_id > -2);
     }
 };
