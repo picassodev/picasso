@@ -17,318 +17,42 @@ namespace Picasso
 //---------------------------------------------------------------------------//
 // Field tag indexer.
 //---------------------------------------------------------------------------//
+template<class Tag, int Size, int N, class FieldTag, class ... FieldTags>
+struct FieldTagIndexerImpl
+{
+    static constexpr std::size_t value =
+        FieldTagIndexerImpl<Tag,Size,N-1,FieldTags...>::value *
+        (std::is_same<Tag,FieldTag>::value ? Size - 1 - N : 1);
+};
+
+template<class Tag, int Size, class FieldTag, class ... FieldTags>
+struct FieldTagIndexerImpl<Tag,Size,0,FieldTag,FieldTags...>
+{
+    static constexpr std::size_t value =
+        std::is_same<Tag,FieldTag>::value ? Size - 1 : 1;
+};
+
 template<class Tag, class ... FieldTags>
-struct FieldTagIndexer;
-
-//---------------------------------------------------------------------------//
-// 1-field particle
-template<class Tag0>
-struct FieldTagIndexer<Tag0,Tag0>
+struct FieldTagIndexer
 {
-    static constexpr std::size_t index = 0;
-};
-
-//---------------------------------------------------------------------------//
-// 2-field particle
-template<class Tag0,
-         class Tag1>
-struct FieldTagIndexer<Tag0,Tag0,Tag1>
-{
-    static constexpr std::size_t index = 0;
-};
-
-template<class Tag0,
-         class Tag1>
-struct FieldTagIndexer<Tag1,Tag0,Tag1>
-{
-    static constexpr std::size_t index = 1;
-};
-
-//---------------------------------------------------------------------------//
-// 3-field particle
-template<class Tag0,
-         class Tag1,
-         class Tag2>
-struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2>
-{
-    static constexpr std::size_t index = 0;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2>
-struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2>
-{
-    static constexpr std::size_t index = 1;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2>
-struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2>
-{
-    static constexpr std::size_t index = 2;
-};
-
-//---------------------------------------------------------------------------//
-// 4-field particle
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3>
-struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3>
-{
-    static constexpr std::size_t index = 0;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3>
-struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3>
-{
-    static constexpr std::size_t index = 1;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3>
-struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3>
-{
-    static constexpr std::size_t index = 2;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3>
-struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3>
-{
-    static constexpr std::size_t index = 3;
-};
-
-//---------------------------------------------------------------------------//
-// 5-field particle
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3,Tag4>
-{
-    static constexpr std::size_t index = 0;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3,Tag4>
-{
-    static constexpr std::size_t index = 1;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3,Tag4>
-{
-    static constexpr std::size_t index = 2;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3,Tag4>
-{
-    static constexpr std::size_t index = 3;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct FieldTagIndexer<Tag4,Tag0,Tag1,Tag2,Tag3,Tag4>
-{
-    static constexpr std::size_t index = 4;
-};
-
-//---------------------------------------------------------------------------//
-// 6-field particle
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag0,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 0;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag1,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 1;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag2,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 2;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag3,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 3;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag4,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 4;
-};
-
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct FieldTagIndexer<Tag5,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5>
-{
-    static constexpr std::size_t index = 5;
+    static constexpr std::size_t index =
+        FieldTagIndexerImpl<Tag,
+                            sizeof...(FieldTags),
+                            sizeof...(FieldTags)-1,
+                            FieldTags...>::value;
 };
 
 //---------------------------------------------------------------------------//
 // Particle Traits
 //---------------------------------------------------------------------------//
 template<class ... FieldTags>
-struct ParticleTraits;
-
-//---------------------------------------------------------------------------//
-// 1-Field particle
-template<class Tag0>
-struct ParticleTraits<Tag0>
+struct ParticleTraits
 {
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type>;
+    using member_types = Cabana::MemberTypes<typename FieldTags::data_type...>;
 };
 
 //---------------------------------------------------------------------------//
-// 2-field particle.
-template<class Tag0,
-         class Tag1>
-struct ParticleTraits<Tag0,
-                      Tag1>
-{
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type>;
-};
-
-//---------------------------------------------------------------------------//
-// 3-field particle.
-template<class Tag0,
-         class Tag1,
-         class Tag2>
-struct ParticleTraits<Tag0,
-                      Tag1,
-                      Tag2>
-{
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type>;
-};
-
-//---------------------------------------------------------------------------//
-// 4-field particle.
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3>
-struct ParticleTraits<Tag0,
-                      Tag1,
-                      Tag2,
-                      Tag3>
-{
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type,
-                                             typename Tag3::data_type>;
-};
-
-//---------------------------------------------------------------------------//
-// 5-field particle.
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4>
-struct ParticleTraits<Tag0,
-                      Tag1,
-                      Tag2,
-                      Tag3,
-                      Tag4>
-{
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type,
-                                             typename Tag3::data_type,
-                                             typename Tag4::data_type>;
-};
-
-//---------------------------------------------------------------------------//
-// 6-field particle.
-template<class Tag0,
-         class Tag1,
-         class Tag2,
-         class Tag3,
-         class Tag4,
-         class Tag5>
-struct ParticleTraits<Tag0,
-                      Tag1,
-                      Tag2,
-                      Tag3,
-                      Tag4,
-                      Tag5>
-{
-    using member_types = Cabana::MemberTypes<typename Tag0::data_type,
-                                             typename Tag1::data_type,
-                                             typename Tag2::data_type,
-                                             typename Tag3::data_type,
-                                             typename Tag4::data_type,
-                                             typename Tag5::data_type>;
-};
-
-//---------------------------------------------------------------------------//
-// Particle. Wraps a tuple copy of a particle.
+// Particle copy. Wraps a tuple copy of a particle.
 //---------------------------------------------------------------------------//
 template<class ... FieldTags>
 struct Particle
@@ -468,8 +192,8 @@ get( ParticleView<VectorLength,FieldTags...>& particle,
 }
 
 //---------------------------------------------------------------------------//
-// Get a view of a particle member as a vector. (Works for both Particle and
-// ParticleView)
+// Get a view of a particle member as a vector. (Works for both Particle
+// and ParticleView)
 template<class ParticleType, class FieldTag>
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
@@ -482,8 +206,8 @@ get( ParticleType& particle, FieldTag tag )
 }
 
 //---------------------------------------------------------------------------//
-// Get a view of a particle member as a matrix. (Works for both Particle and
-// ParticleView)
+// Get a view of a particle member as a matrix. (Works for both Particle
+// and ParticleView)
 template<class ParticleType, class FieldTag>
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
