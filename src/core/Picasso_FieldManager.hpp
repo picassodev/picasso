@@ -20,20 +20,36 @@ namespace Picasso
 //---------------------------------------------------------------------------//
 // Create an array from a mesh and a field layout.
 template<class Location, class FieldTag, class Mesh>
-auto createArray( const Mesh& mesh, Location, FieldTag ) ->
-    std::shared_ptr<Cajita::Array<typename FieldTag::value_type,
-                                  typename Location::entity_type,
-                                  Cajita::UniformMesh<double>,
-                                  typename Mesh::memory_space>>
-
+auto createArray( const Mesh& mesh, Location, FieldTag )
 {
     auto array_layout = Cajita::createArrayLayout(
         mesh.localGrid(), FieldTag::size,
         typename Location::entity_type() );
     return Cajita::createArray<typename FieldTag::value_type,
                                typename Mesh::memory_space>(
-        FieldTag::label(), array_layout );
+                                   FieldTag::label(), array_layout );
 }
+
+//---------------------------------------------------------------------------//
+// Base field handle.
+struct FieldHandleBase
+{
+    virtual ~FieldHandleBase() = default;
+};
+
+//---------------------------------------------------------------------------//
+// Field handle.
+template<class Location, class FieldTag, class Mesh>
+struct FieldHandle : public FieldHandleBase
+{
+    std::shared_ptr<Cajita::Array<typename FieldTag::value_type,
+                                  typename Location::entity_type,
+                                  typename Mesh::cajita_mesh,
+                                  typename Mesh::memory_space>> array;
+
+    std::shared_ptr<Cajita::Halo<typename FieldTag::value_type,
+                                 typename Mesh::memory_space>> halo;
+};
 
 //---------------------------------------------------------------------------//
 // Field manager.
@@ -43,52 +59,6 @@ class FieldManager
   public:
 
     using mesh_type = Mesh;
-
-    using memory_space = typename Mesh::memory_space;
-
-    using node_array = Cajita::Array<double,
-                                     Cajita::Node,
-                                     Cajita::UniformMesh<double>,
-                                     memory_space>;
-
-    using cell_array = Cajita::Array<double,
-                                     Cajita::Cell,
-                                     Cajita::UniformMesh<double>,
-                                     memory_space>;
-
-    using face_i_array = Cajita::Array<double,
-                                       Cajita::Face<Dim::I>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using face_j_array = Cajita::Array<double,
-                                       Cajita::Face<Dim::J>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using face_k_array = Cajita::Array<double,
-                                       Cajita::Face<Dim::K>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using edge_i_array = Cajita::Array<double,
-                                       Cajita::Edge<Dim::I>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using edge_j_array = Cajita::Array<double,
-                                       Cajita::Edge<Dim::J>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using edge_k_array = Cajita::Array<double,
-                                       Cajita::Edge<Dim::K>,
-                                       Cajita::UniformMesh<double>,
-                                       memory_space>;
-
-    using view_type = Kokkos::View<double****,memory_space>;
-
-    using halo_type = Cajita::Halo<double,memory_space>;
 
   public:
 
@@ -107,12 +77,19 @@ class FieldManager
         typename std::enable_if<is_adaptive_mesh<M>::value>::type* = 0 )
         : _mesh( mesh )
     {
-        // If the mesh is adaptive add the physical position of its nodes as a
+        // The mesh is adaptive so add the physical position of its nodes as a
         // field.
-        _node_fields.emplace( Field::PhysicalPosition::label(),
-                              _mesh->nodes() );
-        _node_halo = Cajita::createHalo<double,memory_space>(
-            *(_mesh->nodes()->layout()), Cajita::FullHaloPattern() );
+        auto key =
+            createKey( FieldLocation::Node(), Field::PhysicalPosition() );
+        auto handle =
+            std::make_shared<
+                FieldHandle<FieldLocation::Node,Field::PhysicalPosition,Mesh>>();
+        handle->array = _mesh->nodes();
+        handle->halo = Cajita::createHalo<
+            typename Field::PhysicalPosition::value_type,
+            typename Mesh::memory_space>(
+                *(handle->array->layout()), Cajita::FullHaloPattern() );
+        _fields.emplace( key, handle );
     }
 
     // Get the mesh.
@@ -121,388 +98,85 @@ class FieldManager
         return _mesh;
     }
 
-    // Add a node field.
-    template<class FieldTag>
-    void add( FieldLocation::Node, FieldTag )
-    {
-        if ( !_node_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Node(), FieldTag() );
-            _node_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _node_halo )
-            {
-                _node_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a cell field.
-    template<class FieldTag>
-    void add( FieldLocation::Cell, FieldTag )
-    {
-        if ( !_cell_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Cell(), FieldTag() );
-            _cell_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _cell_halo )
-            {
-                _cell_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a I-face field.
-    template<class FieldTag>
-    void add( FieldLocation::Face<Dim::I>, FieldTag )
-    {
-        if ( !_face_i_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Face<Dim::I>(), FieldTag() );
-            _face_i_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _face_i_halo )
-            {
-                _face_i_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a J-face field.
-    template<class FieldTag>
-    void add( FieldLocation::Face<Dim::J>, FieldTag )
-    {
-        if ( !_face_j_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Face<Dim::J>(), FieldTag() );
-            _face_j_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _face_j_halo )
-            {
-                _face_j_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a K-face field.
-    template<class FieldTag>
-    void add( FieldLocation::Face<Dim::K>, FieldTag )
-    {
-        if ( !_face_k_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Face<Dim::K>(), FieldTag() );
-            _face_k_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _face_k_halo )
-            {
-                _face_k_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a I-edge field.
-    template<class FieldTag>
-    void add( FieldLocation::Edge<Dim::I>, FieldTag )
-    {
-        if ( !_edge_i_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Edge<Dim::I>(), FieldTag() );
-            _edge_i_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _edge_i_halo )
-            {
-                _edge_i_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a J-edge field.
-    template<class FieldTag>
-    void add( FieldLocation::Edge<Dim::J>, FieldTag )
-    {
-        if ( !_edge_j_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Edge<Dim::J>(), FieldTag() );
-            _edge_j_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _edge_j_halo )
-            {
-                _edge_j_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Add a K-edge field.
-    template<class FieldTag>
-    void add( FieldLocation::Edge<Dim::K>, FieldTag )
-    {
-        if ( !_edge_k_fields.count(FieldTag::label()) )
-        {
-            auto array = createArray(
-                *_mesh, FieldLocation::Edge<Dim::K>(), FieldTag() );
-            _edge_k_fields.emplace( FieldTag::label(), array );
-            if ( nullptr == _edge_k_halo )
-            {
-                _edge_k_halo = Cajita::createHalo<double,memory_space>(
-                    *(array->layout()), Cajita::FullHaloPattern() );
-            }
-        }
-    }
-
-    // Get a node field.
-    template<class FieldTag>
-    std::shared_ptr<node_array>
-    array( FieldLocation::Node, FieldTag ) const
-    {
-        if ( !_node_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " node field doesn't exist" );
-        return _node_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a cell field.
-    template<class FieldTag>
-    std::shared_ptr<cell_array>
-    array( FieldLocation::Cell, FieldTag ) const
-    {
-        if ( !_cell_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " cell field doesn't exist" );
-        return _cell_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a I-face field.
-    template<class FieldTag>
-    std::shared_ptr<face_i_array>
-    array( FieldLocation::Face<Dim::I>, FieldTag ) const
-    {
-        if ( !_face_i_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " I-face field doesn't exist" );
-        return _face_i_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a J-face field.
-    template<class FieldTag>
-    std::shared_ptr<face_j_array>
-    array( FieldLocation::Face<Dim::J>, FieldTag ) const
-    {
-        if ( !_face_j_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " J-face field doesn't exist" );
-        return _face_j_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a K-face field.
-    template<class FieldTag>
-    std::shared_ptr<face_k_array>
-    array( FieldLocation::Face<Dim::K>, FieldTag ) const
-    {
-        if ( !_face_k_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " K-face field doesn't exist" );
-        return _face_k_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a I-edge field.
-    template<class FieldTag>
-    std::shared_ptr<edge_i_array>
-    array( FieldLocation::Edge<Dim::I>, FieldTag ) const
-    {
-        if ( !_edge_i_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " I-edge field doesn't exist" );
-        return _edge_i_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a J-edge field.
-    template<class FieldTag>
-    std::shared_ptr<edge_j_array>
-    array( FieldLocation::Edge<Dim::J>, FieldTag ) const
-    {
-        if ( !_edge_j_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " J-edge field doesn't exist" );
-        return _edge_j_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a K-edge field.
-    template<class FieldTag>
-    std::shared_ptr<edge_k_array>
-    array( FieldLocation::Edge<Dim::K>, FieldTag ) const
-    {
-        if ( !_edge_k_fields.count(FieldTag::label()) )
-            throw std::runtime_error(
-                FieldTag::label() + " K-edge field doesn't exist" );
-        return _edge_k_fields.find( FieldTag::label() )->second;
-    }
-
-    // Get a view of a field with the given layout.
+    // Add a field.
     template<class Location, class FieldTag>
-    view_type view( Location, FieldTag ) const
+    void add( const Location& location, const FieldTag& tag )
     {
-        return array( Location(), FieldTag() )->view();
+        auto key = createKey( location, tag );
+        if ( !_fields.count(key) )
+        {
+            _fields.emplace( key, createFieldHandle(location,tag) );
+        }
     }
 
-    // Scatter a node field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Node, FieldTag ) const
+    // Get a shared pointer to a field array.
+    template<class Location, class FieldTag>
+    auto array( const Location& location, const FieldTag& tag ) const
     {
-        _node_halo->scatter( *array(FieldLocation::Node(),FieldTag()) );
+        return getFieldHandle(location,tag)->array;
     }
 
-    // Scatter a cell field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Cell, FieldTag ) const
+    // Get a view of a field.
+    template<class Location, class FieldTag>
+    auto view( const Location& location, const FieldTag& tag ) const
     {
-        _cell_halo->scatter( *array(FieldLocation::Cell(),FieldTag()) );
+        return array(location,tag)->view();
     }
 
-    // Scatter a I-face field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Face<Dim::I>, FieldTag ) const
+    // Scatter a field.
+    template<class Location, class FieldTag>
+    void scatter( const Location& location, const FieldTag& tag ) const
     {
-        _face_i_halo->scatter(
-            *array(FieldLocation::Face<Dim::I>(),FieldTag()) );
+        auto handle = getFieldHandle(location,tag);
+        handle->halo->scatter( *(handle->array) );
     }
 
-    // Scatter a J-face field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Face<Dim::J>, FieldTag ) const
+    // Gather a field.
+    template<class Location, class FieldTag>
+    void gather( const Location& location, const FieldTag& tag ) const
     {
-        _face_j_halo->scatter(
-            *array(FieldLocation::Face<Dim::J>(),FieldTag()) );
+        auto handle = getFieldHandle(location,tag);
+        handle->halo->gather( *(handle->array) );
     }
 
-    // Scatter a K-face field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Face<Dim::K>, FieldTag ) const
+  private:
+
+    // Create a key from a location and tag.
+    template<class Location, class FieldTag>
+    std::string createKey( Location, FieldTag ) const
     {
-        _face_k_halo->scatter(
-            *array(FieldLocation::Face<Dim::K>(),FieldTag()) );
+        return std::string(Location::label() + "_" + FieldTag::label());
     }
 
-    // Scatter a I-edge field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Edge<Dim::I>, FieldTag ) const
+    // Create a field handle from a location and tag.
+    template<class Location, class FieldTag>
+    std::shared_ptr<FieldHandle<Location,FieldTag,Mesh>>
+    createFieldHandle( const Location& location, const FieldTag& tag ) const
     {
-        _edge_i_halo->scatter(
-            *array(FieldLocation::Edge<Dim::I>(),FieldTag()) );
+        auto handle = std::make_shared<FieldHandle<Location,FieldTag,Mesh>>();
+        handle->array = createArray( *_mesh, location, tag );
+        handle->halo = Cajita::createHalo<
+            typename FieldTag::value_type,typename Mesh::memory_space>(
+                *(handle->array->layout()), Cajita::FullHaloPattern() );
+        return handle;
     }
 
-    // Scatter a J-edge field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Edge<Dim::J>, FieldTag ) const
+    // Get a field handle.
+    template<class Location, class FieldTag>
+    std::shared_ptr<FieldHandle<Location,FieldTag,Mesh>>
+    getFieldHandle( const Location& location, const FieldTag& tag ) const
     {
-        _edge_j_halo->scatter(
-            *array(FieldLocation::Edge<Dim::J>(),FieldTag()) );
-    }
-
-    // Scatter a K-edge field.
-    template<class FieldTag>
-    void scatter( FieldLocation::Edge<Dim::K>, FieldTag ) const
-    {
-        _edge_k_halo->scatter(
-            *array(FieldLocation::Edge<Dim::K>(),FieldTag()) );
-    }
-
-    // Gather a node field.
-    template<class FieldTag>
-    void gather( FieldLocation::Node, FieldTag ) const
-    {
-        _node_halo->gather( *array(FieldLocation::Node(),FieldTag()) );
-    }
-
-    // Gather a cell field.
-    template<class FieldTag>
-    void gather( FieldLocation::Cell, FieldTag ) const
-    {
-        _cell_halo->gather( *array(FieldLocation::Cell(),FieldTag()) );
-    }
-
-    // Gather a I-face field.
-    template<class FieldTag>
-    void gather( FieldLocation::Face<Dim::I>, FieldTag ) const
-    {
-        _face_i_halo->gather(
-            *array(FieldLocation::Face<Dim::I>(),FieldTag()) );
-    }
-
-    // Gather a J-face field.
-    template<class FieldTag>
-    void gather( FieldLocation::Face<Dim::J>, FieldTag ) const
-    {
-        _face_j_halo->gather(
-            *array(FieldLocation::Face<Dim::J>(),FieldTag()) );
-    }
-
-    // Gather a K-face field.
-    template<class FieldTag>
-    void gather( FieldLocation::Face<Dim::K>, FieldTag ) const
-    {
-        _face_k_halo->gather(
-            *array(FieldLocation::Face<Dim::K>(),FieldTag()) );
-    }
-
-    // Gather a I-edge field.
-    template<class FieldTag>
-    void gather( FieldLocation::Edge<Dim::I>, FieldTag ) const
-    {
-        _edge_i_halo->gather(
-            *array(FieldLocation::Edge<Dim::I>(),FieldTag()) );
-    }
-
-    // Gather a J-edge field.
-    template<class FieldTag>
-    void gather( FieldLocation::Edge<Dim::J>, FieldTag ) const
-    {
-        _edge_j_halo->gather(
-            *array(FieldLocation::Edge<Dim::J>(),FieldTag()) );
-    }
-
-    // Gather a K-edge field.
-    template<class FieldTag>
-    void gather( FieldLocation::Edge<Dim::K>, FieldTag ) const
-    {
-        _edge_k_halo->gather(
-            *array(FieldLocation::Edge<Dim::K>(),FieldTag()) );
+        auto key = createKey( location, tag );
+        if ( !_fields.count(key) )
+            throw std::runtime_error( key + " field doesn't exist" );
+        return std::dynamic_pointer_cast<FieldHandle<Location,FieldTag,Mesh>>(
+            _fields.find(key)->second );
     }
 
   private:
 
     std::shared_ptr<Mesh> _mesh;
-    std::unordered_map<
-        std::string,std::shared_ptr<node_array>> _node_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<cell_array>> _cell_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<face_i_array>> _face_i_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<face_j_array>> _face_j_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<face_k_array>> _face_k_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<edge_i_array>> _edge_i_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<edge_j_array>> _edge_j_fields;
-    std::unordered_map<
-        std::string,std::shared_ptr<edge_k_array>> _edge_k_fields;
-    std::shared_ptr<halo_type> _node_halo;
-    std::shared_ptr<halo_type> _cell_halo;
-    std::shared_ptr<halo_type> _face_i_halo;
-    std::shared_ptr<halo_type> _face_j_halo;
-    std::shared_ptr<halo_type> _face_k_halo;
-    std::shared_ptr<halo_type> _edge_i_halo;
-    std::shared_ptr<halo_type> _edge_j_halo;
-    std::shared_ptr<halo_type> _edge_k_halo;
+    std::unordered_map<std::string,std::shared_ptr<FieldHandleBase>> _fields;
 };
 
 //---------------------------------------------------------------------------//
