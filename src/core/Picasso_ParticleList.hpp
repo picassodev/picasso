@@ -15,34 +15,6 @@
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
-// Field tag indexer.
-//---------------------------------------------------------------------------//
-template<class Tag, int Size, int N, class FieldTag, class ... FieldTags>
-struct FieldTagIndexerImpl
-{
-    static constexpr std::size_t value =
-        FieldTagIndexerImpl<Tag,Size,N-1,FieldTags...>::value *
-        (std::is_same<Tag,FieldTag>::value ? Size - 1 - N : 1);
-};
-
-template<class Tag, int Size, class FieldTag, class ... FieldTags>
-struct FieldTagIndexerImpl<Tag,Size,0,FieldTag,FieldTags...>
-{
-    static constexpr std::size_t value =
-        std::is_same<Tag,FieldTag>::value ? Size - 1 : 1;
-};
-
-template<class Tag, class ... FieldTags>
-struct FieldTagIndexer
-{
-    static constexpr std::size_t index =
-        FieldTagIndexerImpl<Tag,
-                            sizeof...(FieldTags),
-                            sizeof...(FieldTags)-1,
-                            FieldTags...>::value;
-};
-
-//---------------------------------------------------------------------------//
 // Particle Traits
 //---------------------------------------------------------------------------//
 template<class ... FieldTags>
@@ -134,10 +106,10 @@ KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
     typename Particle<FieldTags...>::tuple_type::template member_value_type<
-        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
+        TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
-    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+    return Cabana::get<TypeIndexer<FieldTag,FieldTags...>::index>(
         particle.tuple(), indices...);
 }
 
@@ -146,10 +118,10 @@ KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
     typename Particle<FieldTags...>::tuple_type::template member_reference_type<
-        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
+        TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
-    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+    return Cabana::get<TypeIndexer<FieldTag,FieldTags...>::index>(
         particle.tuple(), indices...);
 }
 
@@ -164,12 +136,12 @@ typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
     typename ParticleView<
         VectorLength,FieldTags...>::soa_type::template member_value_type<
-        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
+        TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( const ParticleView<VectorLength,FieldTags...>& particle,
      FieldTag,
      IndexTypes... indices )
 {
-    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+    return Cabana::get<TypeIndexer<FieldTag,FieldTags...>::index>(
         particle.soa(), particle.vectorIndex(), indices...);
 }
 
@@ -182,12 +154,12 @@ typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
     typename ParticleView<
         VectorLength,FieldTags...>::soa_type::template member_reference_type<
-        FieldTagIndexer<FieldTag,FieldTags...>::index>>::type
+        TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( ParticleView<VectorLength,FieldTags...>& particle,
      FieldTag,
      IndexTypes... indices )
 {
-    return Cabana::get<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+    return Cabana::get<TypeIndexer<FieldTag,FieldTags...>::index>(
         particle.soa(), particle.vectorIndex(), indices...);
 }
 
@@ -259,10 +231,7 @@ class ParticleList
     {}
 
     // Get the number of particles in the list.
-    std::size_t size() const
-    {
-        return _aosoa.size();
-    }
+    std::size_t size() const { return _aosoa.size(); }
 
     // Get the AoSoA
     aosoa_type& aosoa() { return _aosoa; }
@@ -273,10 +242,10 @@ class ParticleList
 
     // Get a slice of a given field.
     template<class FieldTag>
-    slice_type<FieldTagIndexer<FieldTag,FieldTags...>::index>
+    slice_type<TypeIndexer<FieldTag,FieldTags...>::index>
     slice( FieldTag ) const
     {
-        return Cabana::slice<FieldTagIndexer<FieldTag,FieldTags...>::index>(
+        return Cabana::slice<TypeIndexer<FieldTag,FieldTags...>::index>(
             _aosoa, FieldTag::label() );
     }
 

@@ -147,4 +147,5 @@ Picasso_add_tests(MPI NAMES
   UniformMesh
   AdaptiveMesh
   FieldManager
+  GridOperator
   ParticleLevelSet)

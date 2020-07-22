@@ -215,6 +215,19 @@ struct is_uniform_mesh
 };
 
 //---------------------------------------------------------------------------//
+// Creation function.
+template<class MemorySpace>
+auto createUniformMesh( MemorySpace,
+                        const boost::property_tree::ptree& ptree,
+                        const Kokkos::Array<double,6>& global_bounding_box,
+                        const int minimum_halo_cell_width,
+                        MPI_Comm comm )
+{
+    return std::make_shared<UniformMesh<MemorySpace>>(
+        ptree, global_bounding_box, minimum_halo_cell_width, comm );
+}
+
+//---------------------------------------------------------------------------//
 
 } // end namespace Picasso
 
