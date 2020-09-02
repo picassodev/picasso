@@ -96,10 +96,6 @@ struct ParticleView
 //---------------------------------------------------------------------------//
 // Particle accessor.
 //---------------------------------------------------------------------------//
-namespace Access
-{
-
-//---------------------------------------------------------------------------//
 // Particle accessor
 template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
@@ -192,10 +188,6 @@ get( ParticleType& particle, FieldTag tag )
         ParticleType::vector_length * FieldTag::dim1,
         ParticleType::vector_length );
 }
-
-//---------------------------------------------------------------------------//
-
-} // end namespace Access
 
 //---------------------------------------------------------------------------//
 // Particle List

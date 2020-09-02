@@ -13,6 +13,7 @@ set(CORE_HEADERS
   core/Picasso_LevelSetRedistance.hpp
   core/Picasso_ParticleCommunication.hpp
   core/Picasso_ParticleInit.hpp
+  core/Picasso_ParticleInterpolation.hpp
   core/Picasso_ParticleLevelSet.hpp
   core/Picasso_ParticleList.hpp
   core/Picasso_PolyPIC.hpp

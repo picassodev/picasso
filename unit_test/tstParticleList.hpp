@@ -89,15 +89,15 @@ void particleTest()
             typename list_type::particle_type particle( aosoa.getTuple(p) );
 
             for ( int d = 0; d < 3; ++d )
-                Access::get(particle,Field::LogicalPosition(),d) += p + d;
+                get(particle,Field::LogicalPosition(),d) += p + d;
 
-            Access::get(particle,Field::Mass()) += p;
+            get(particle,Field::Mass()) += p;
 
-            Access::get(particle,Field::Color()) += p;
+            get(particle,Field::Color()) += p;
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    Access::get(particle,Field::DeformationGradient(),i,j)
+                    get(particle,Field::DeformationGradient(),i,j)
                         += p + i + j;
 
             aosoa.setTuple( p, particle.tuple() );
@@ -200,15 +200,15 @@ void particleViewTest()
             typename list_type::particle_view_type particle( aosoa.access(s), a );
 
             for ( int d = 0; d < 3; ++d )
-                Access::get(particle,Field::LogicalPosition(),d) += p + d;
+                get(particle,Field::LogicalPosition(),d) += p + d;
 
-            Access::get(particle,Field::Mass()) += p;
+            get(particle,Field::Mass()) += p;
 
-            Access::get(particle,Field::Color()) += p;
+            get(particle,Field::Color()) += p;
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    Access::get(particle,Field::DeformationGradient(),i,j)
+                    get(particle,Field::DeformationGradient(),i,j)
                         += p + i + j;
         });
 
@@ -308,15 +308,15 @@ void linearAlgebraTest()
                 list_type::particle_view_type::vector_length>::a(p);
             typename list_type::particle_view_type particle( aosoa.access(s), a );
 
-            auto px_v = Access::get(particle,Field::LogicalPosition());
+            auto px_v = get(particle,Field::LogicalPosition());
             for ( int d = 0; d < 3; ++d )
                 px_v(d) += p + d;
 
-            Access::get(particle,Field::Mass()) += p;
+            get(particle,Field::Mass()) += p;
 
-            Access::get(particle,Field::Color()) += p;
+            get(particle,Field::Color()) += p;
 
-            auto pf_m = Access::get(particle,Field::DeformationGradient());
+            auto pf_m = get(particle,Field::DeformationGradient());
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
                     pf_m(i,j) += p + i + j;

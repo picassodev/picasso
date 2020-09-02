@@ -141,20 +141,19 @@ class ProblemManager
                 {
                     // Assign position.
                     for ( int d = 0; d < 3; ++d )
-                        Access::get( p, Field::LogicalPosition(), d ) =
+                        get( p, Field::LogicalPosition(), d ) =
                             x_ref[d];
 
                     // Assign velocity.
                     for ( int d = 0; d < 3; ++d )
-                        Access::get( p, Field::Velocity(), d ) =
+                        get( p, Field::Velocity(), d ) =
                             0.0;
 
                     // Assign volume
-                    Access::get( p, Field::Volume() ) = volume;
+                    get( p, Field::Volume() ) = volume;
 
                     // Deformation gradient determinant.
-                    Access::get(
-                        p, Field::DeformationGradientDeterminant() ) = 1.0;
+                    get( p, Field::DeformationGradientDeterminant() ) = 1.0;
 
                     // Left side.
                     if ( 1 == volume_id )
@@ -165,10 +164,10 @@ class ProblemManager
 
                         // Assign mass.
                         double mass_left = density_left * volume;
-                        Access::get( p, Field::Mass() ) = mass_left;
+                        get( p, Field::Mass() ) = mass_left;
 
                         // Assign internal energy.
-                        Access::get( p, Field::InternalEnergy() ) =
+                        get( p, Field::InternalEnergy() ) =
                             _eos( Field::InternalEnergy(),
                                   pressure_left, density_left ) * mass_left;
                     }
@@ -182,10 +181,10 @@ class ProblemManager
 
                         // Assign mass.
                         double mass_right = density_right * volume;
-                        Access::get( p, Field::Mass() ) = mass_right;
+                        get( p, Field::Mass() ) = mass_right;
 
                         // Assign internal energy.
-                        Access::get( p, Field::InternalEnergy() ) =
+                        get( p, Field::InternalEnergy() ) =
                             _eos( Field::InternalEnergy(),
                                   pressure_right, density_right ) * mass_right;
                     }

@@ -150,22 +150,22 @@ class ProblemManager
                 {
                     // Assign position.
                     for ( int d = 0; d < 3; ++d )
-                        Access::get( p, Field::LogicalPosition(), d ) =
+                        get( p, Field::LogicalPosition(), d ) =
                             x[d];
 
                     // Assign mass.
-                    Access::get( p, Field::Mass() ) = _density * volume;
+                    get( p, Field::Mass() ) = _density * volume;
 
                     // Assign volume.
-                    Access::get( p, Field::Volume() ) = volume;
+                    get( p, Field::Volume() ) = volume;
 
                     // Start with an internal energy at the initial
                     // temperature using a simple equation of state.
-                    Access::get( p, Field::InternalEnergy() ) =
+                    get( p, Field::InternalEnergy() ) =
                         _specific_heat_capacity * init_temp;
 
                     // Color
-                    Access::get( p, Field::Color() ) = 0;
+                    get( p, Field::Color() ) = 0;
 
                     // Return true for created particle.
                     return true;

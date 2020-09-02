@@ -93,9 +93,9 @@ void InitTest( InitType init_type, int ppc )
              x[Dim::K] < box[5] )
         {
             for ( int d = 0; d < 3; ++d )
-                Access::get( p, Foo(), d ) = x[d];
+                get( p, Foo(), d ) = x[d];
 
-            Access::get( p, Bar() ) = v;
+            get( p, Bar() ) = v;
 
             return true;
         }
