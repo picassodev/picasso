@@ -6,12 +6,85 @@
 #include <Cajita.hpp>
 
 #include <string>
+#include <sstream>
 #include <type_traits>
 
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
-// Field locations.
+// General type indexer.
+//---------------------------------------------------------------------------//
+template<class T, int Size, int N, class Type, class ... Types>
+struct TypeIndexerImpl
+{
+    static constexpr std::size_t value =
+        TypeIndexerImpl<T,Size,N-1,Types...>::value *
+        (std::is_same<T,Type>::value ? Size - 1 - N : 1);
+};
+
+template<class T, int Size, class Type, class ... Types>
+struct TypeIndexerImpl<T,Size,0,Type,Types...>
+{
+    static constexpr std::size_t value =
+        std::is_same<T,Type>::value ? Size - 1 : 1;
+};
+
+template<class T, class ... Types>
+struct TypeIndexer
+{
+    static constexpr std::size_t index =
+        TypeIndexerImpl<T,sizeof...(Types),sizeof...(Types)-1,Types...>::value;
+};
+
+//---------------------------------------------------------------------------//
+// Field Layout
+//---------------------------------------------------------------------------//
+// Field layout. A layout contains a location and a field tag.
+template<class Location, class Tag>
+struct FieldLayout
+{
+    using location = Location;
+    using tag = Tag;
+};
+
+//---------------------------------------------------------------------------//
+// FieldViewTuple
+// ---------------------------------------------------------------------------//
+// Device-accessible container for views of fields. This container allows us
+// to wrap a parameter pack of views and let a user access them by the field
+// location and field tag on the device.
+template<class Views, class ... Layouts>
+struct FieldViewTuple
+{
+    static_assert( Cajita::is_parameter_pack<Views>::value,
+                   "Views must be in a Cajita::ParameterPack" );
+
+    Views _views;
+
+    template<class Location, class FieldTag>
+    KOKKOS_INLINE_FUNCTION
+    const auto& get( Location, FieldTag ) const
+    {
+        return
+            Cajita::get<
+                TypeIndexer<FieldLayout<Location,FieldTag>,Layouts...>::index>(
+                    _views );
+    }
+
+    template<class Location, class FieldTag>
+    KOKKOS_INLINE_FUNCTION
+    auto& get( Location, FieldTag )
+    {
+        return
+            Cajita::get<
+                TypeIndexer<FieldLayout<Location,FieldTag>,Layouts...>::index>(
+                    _views );
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Field Location
+//---------------------------------------------------------------------------//
 namespace FieldLocation
 {
 struct Cell
@@ -24,14 +97,24 @@ template<int D>
 struct Face
 {
     using entity_type = Cajita::Face<D>;
-    static std::string label() { return std::string("Face_" + D); }
+    static std::string label()
+    {
+        std::stringstream l;
+        l << "Face_" << D;
+        return l.str();
+    }
 };
 
 template<int D>
 struct Edge
 {
     using entity_type = Cajita::Edge<D>;
-    static std::string label() { return std::string("Edge_" + D); }
+    static std::string label()
+    {
+        std::stringstream l;
+        l << "Edge_" << D;
+        return l.str();
+    }
 };
 
 struct Node
@@ -48,7 +131,8 @@ struct Particle
 } // end namespace FieldLocation
 
 //---------------------------------------------------------------------------//
-// Field type tags
+// Field Tags.
+//---------------------------------------------------------------------------//
 namespace Field
 {
 //---------------------------------------------------------------------------//
@@ -64,18 +148,18 @@ struct Scalar
 };
 
 template <class>
-struct is_scalar_impl : public std::false_type
+struct is_scalar_impl : std::false_type
 {
 };
 
 template <class T>
 struct is_scalar_impl<Scalar<T>>
-    : public std::true_type
+    : std::true_type
 {
 };
 
 template <class T>
-struct is_scalar : public is_scalar_impl<typename std::remove_cv<T>::type>::type
+struct is_scalar : is_scalar_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
@@ -93,18 +177,18 @@ struct Vector
 };
 
 template <class>
-struct is_vector_impl : public std::false_type
+struct is_vector_impl : std::false_type
 {
 };
 
 template <class T, int D>
 struct is_vector_impl<Vector<T,D>>
-    : public std::true_type
+    : std::true_type
 {
 };
 
 template <class T>
-struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
+struct is_vector : is_vector_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
@@ -123,141 +207,141 @@ struct Tensor
 };
 
 template <class>
-struct is_tensor_impl : public std::false_type
+struct is_tensor_impl : std::false_type
 {
 };
 
 template <class T, int D0, int D1>
 struct is_tensor_impl<Tensor<T,D0,D1>>
-    : public std::true_type
+    : std::true_type
 {
 };
 
 template <class T>
-struct is_tensor : public is_tensor_impl<typename std::remove_cv<T>::type>::type
+struct is_tensor : is_tensor_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
 //---------------------------------------------------------------------------//
 // Fields.
-struct PhysicalPosition : public Vector<double,3>
+struct PhysicalPosition : Vector<double,3>
 {
     static std::string label() { return "physical_position"; }
 };
 
-struct LogicalPosition : public Vector<double,3>
+struct LogicalPosition : Vector<double,3>
 {
     static std::string label() { return "logical_position"; }
 };
 
-struct Mass : public Scalar<double>
+struct Mass : Scalar<double>
 {
     static std::string label() { return "mass"; }
 };
 
-struct Volume : public Scalar<double>
+struct Volume : Scalar<double>
 {
     static std::string label() { return "volume"; }
 };
 
-struct Momentum : public Vector<double,3>
+struct Momentum : Vector<double,3>
 {
     static std::string label() { return "momentum"; }
 };
 
-struct Velocity : public Vector<double,3>
+struct Velocity : Vector<double,3>
 {
     static std::string label() { return "velocity"; }
 };
 
-struct Acceleration : public Vector<double,3>
+struct Acceleration : Vector<double,3>
 {
     static std::string label() { return "acceleration"; }
 };
 
-struct AffineVelocity : public Tensor<double,3,3>
+struct AffineVelocity : Tensor<double,3,3>
 {
     static std::string label() { return "affine_velocity"; }
 };
 
 template<int N>
-struct PolynomialVelocity : public Tensor<double,N,3>
+struct PolynomialVelocity : Tensor<double,N,3>
 {
     static constexpr int num_mode = N;
     static std::string label() { return "polynomial_velocity"; }
 };
 
-struct Normal : public Vector<double,3>
+struct Normal : Vector<double,3>
 {
     static std::string label() { return "normal"; }
 };
 
-struct Temperature : public Scalar<double>
+struct Temperature : Scalar<double>
 {
     static std::string label() { return "temperature"; }
 };
 
-struct HeatFlux : public Vector<double,3>
+struct HeatFlux : Vector<double,3>
 {
     static std::string label() { return "heat_flux"; }
 };
 
-struct Pressure : public Scalar<double>
+struct Pressure : Scalar<double>
 {
     static std::string label() { return "pressure"; }
 };
 
-struct InternalEnergy : public Scalar<double>
+struct InternalEnergy : Scalar<double>
 {
     static std::string label() { return "internal_energy"; }
 };
 
-struct Density : public Scalar<double>
+struct Density : Scalar<double>
 {
     static std::string label() { return "density"; }
 };
 
-struct Stress : public Tensor<double,3,3>
+struct Stress : Tensor<double,3,3>
 {
     static std::string label() { return "stress"; }
 };
 
-struct DeformationGradient : public Tensor<double,3,3>
+struct DeformationGradient : Tensor<double,3,3>
 {
     static std::string label() { return "deformation_gradient"; }
 };
 
-struct DeformationGradientDeterminant : public Scalar<double>
+struct DeformationGradientDeterminant : Scalar<double>
 {
     static std::string label() { return "deformation_gradient_det"; }
 };
 
-struct SignedDistance : public Scalar<double>
+struct SignedDistance : Scalar<double>
 {
     static std::string label() { return "signed_distance"; }
 };
 
-struct Color : public Scalar<int>
+struct Color : Scalar<int>
 {
     static std::string label() { return "color"; }
 };
 
-struct MaterialId : public Scalar<int>
+struct MaterialId : Scalar<int>
 {
     static std::string label() { return "material_id"; }
 };
 
-struct PartId : public Scalar<int>
+struct PartId : Scalar<int>
 {
     static std::string label() { return "part_id"; }
 };
 
-struct VolumeId : public Scalar<int>
+struct VolumeId : Scalar<int>
 {
     static std::string label() { return "volume_id"; }
 };
 
-struct BoundaryId : public Scalar<int>
+struct BoundaryId : Scalar<int>
 {
     static std::string label() { return "boundary_id"; }
 };

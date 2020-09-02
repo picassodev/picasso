@@ -3,6 +3,7 @@
 
 #include <Picasso_Types.hpp>
 #include <Picasso_ParticleList.hpp>
+#include <Picasso_UniformMesh.hpp>
 #include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_FieldTypes.hpp>
 
@@ -47,8 +48,7 @@ struct FieldHandle : public FieldHandleBase
                                   typename Mesh::cajita_mesh,
                                   typename Mesh::memory_space>> array;
 
-    std::shared_ptr<Cajita::Halo<typename FieldTag::value_type,
-                                 typename Mesh::memory_space>> halo;
+    std::shared_ptr<Cajita::Halo<typename Mesh::memory_space>> halo;
 };
 
 //---------------------------------------------------------------------------//
@@ -128,7 +128,10 @@ class FieldManager
     void scatter( const Location& location, const FieldTag& tag ) const
     {
         auto handle = getFieldHandle(location,tag);
-        handle->halo->scatter( *(handle->array) );
+        handle->halo->scatter(
+            typename mesh_type::memory_space::execution_space(),
+            Cajita::ScatterReduce::Sum(),
+            *(handle->array) );
     }
 
     // Gather a field.
@@ -136,7 +139,9 @@ class FieldManager
     void gather( const Location& location, const FieldTag& tag ) const
     {
         auto handle = getFieldHandle(location,tag);
-        handle->halo->gather( *(handle->array) );
+        handle->halo->gather(
+            typename mesh_type::memory_space::execution_space(),
+            *(handle->array) );
     }
 
   private:
@@ -178,6 +183,14 @@ class FieldManager
     std::shared_ptr<Mesh> _mesh;
     std::unordered_map<std::string,std::shared_ptr<FieldHandleBase>> _fields;
 };
+
+//---------------------------------------------------------------------------//
+// Creation function.
+template<class Mesh>
+auto createFieldManager( const std::shared_ptr<Mesh>& mesh )
+{
+    return std::make_shared<FieldManager<Mesh>>( mesh );
+}
 
 //---------------------------------------------------------------------------//
 

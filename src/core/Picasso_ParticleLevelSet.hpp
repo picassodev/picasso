@@ -201,7 +201,7 @@ class ParticleLevelSet
                                      entity_type,
                                      Cajita::UniformMesh<double>,
                                      memory_space>;
-    using halo_type = Cajita::Halo<double,memory_space>;
+    using halo_type = Cajita::Halo<memory_space>;
 
     // Construct the level set with particles of a given color. If the input
     // color is negative then all particles will be used in the level set
@@ -353,10 +353,12 @@ class ParticleLevelSet
 
         // Do a reduction to get the minimum distance within the minimum halo
         // width.
-        _halo->scatter( *_distance_estimate, Cajita::ScatterReduce::Min() );
+        _halo->scatter( exec_space,
+                        Cajita::ScatterReduce::Min(),
+                        *_distance_estimate );
 
         // Gather to get updated ghost values.
-        _halo->gather( *_distance_estimate );
+        _halo->gather( exec_space, *_distance_estimate );
 
         // The positive values are correct (at least on those ranks with
         // particles) but the negative values are wrong. Correct the negative
