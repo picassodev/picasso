@@ -349,6 +349,26 @@ struct Matrix
         return *this;
     }
 
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=(
+        const std::initializer_list<std::initializer_list<T>> data )
+    {
+        int i = 0;
+        int j = 0;
+        for ( const auto& row : data )
+        {
+            j = 0;
+            for ( const auto& value : row )
+            {
+                _d[i][j] = value;
+                ++j;
+            }
+            ++i;
+        }
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
@@ -525,6 +545,26 @@ struct MatrixView
         return *this;
     }
 
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    MatrixView& operator=(
+        const std::initializer_list<std::initializer_list<T>> data )
+    {
+        int i = 0;
+        int j = 0;
+        for ( const auto& row : data )
+        {
+            j = 0;
+            for ( const auto& value : row )
+            {
+                (*this)(i,j) = value;
+                ++j;
+            }
+            ++i;
+        }
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     MatrixView& operator=( const T value )
@@ -631,6 +671,19 @@ struct Vector
 #endif
             for ( int i = 0; i < N; ++i )
                 (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    Vector& operator=( const std::initializer_list<T> data )
+    {
+        int i = 0;
+        for ( const auto& value : data )
+        {
+            _d[i] = value;
+            ++i;
+        }
         return *this;
     }
 
@@ -794,6 +847,19 @@ struct VectorView
 #endif
         for ( int i = 0; i < N; ++i )
             (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    VectorView& operator=( const std::initializer_list<T> data )
+    {
+        int i = 0;
+        for ( const auto& value : data )
+        {
+            (*this)(i) = value;
+            ++i;
+        }
         return *this;
     }
 

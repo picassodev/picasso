@@ -493,8 +493,8 @@ class GridOperator
                         GatherDependencies<Layouts...> ) const
     {
         // Create a parameter pack of views. The use of (...) here gets a view
-        // of each field in the layout list and expands it as a parameter
-        // pack.
+        // of each field in the layout list, wraps it for linear algebra
+        // operations, and expands it as a parameter pack.
         auto views = Cajita::makeParameterPack(
             Field::createViewWrapper(
                 Layouts(),
@@ -549,8 +549,8 @@ class GridOperator
                         LocalDependencies<Layouts...> ) const
     {
         // Create a parameter pack of views. The use of (...) here gets a view
-        // of each field in the layout list and expands it as a parameter
-        // pack.
+        // of each field in the layout list, wraps it for linear algebra
+        // operations, and expands it as a parameter pack.
         auto views = Cajita::makeParameterPack(
             Field::createViewWrapper(
                 Layouts(),
