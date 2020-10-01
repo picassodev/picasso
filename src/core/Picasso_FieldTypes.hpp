@@ -5,6 +5,8 @@
 
 #include <Cajita.hpp>
 
+#include <Kokkos_Core.hpp>
+
 #include <string>
 #include <sstream>
 #include <type_traits>
@@ -49,7 +51,7 @@ struct FieldLayout
 
 //---------------------------------------------------------------------------//
 // FieldViewTuple
-// ---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 // Device-accessible container for views of fields. This container allows us
 // to wrap a parameter pack of views and let a user access them by the field
 // location and field tag on the device.
@@ -81,6 +83,13 @@ struct FieldViewTuple
                     _views );
     }
 };
+
+// Creation function.
+template<class ... Layouts, class Views>
+auto createFieldViewTuple( const Views& v )
+{
+    return FieldViewTuple<Views,Layouts...>{v};
+}
 
 //---------------------------------------------------------------------------//
 // Field Location
@@ -131,14 +140,17 @@ struct Particle
 } // end namespace FieldLocation
 
 //---------------------------------------------------------------------------//
-// Field Tags.
-//---------------------------------------------------------------------------//
+
 namespace Field
 {
 //---------------------------------------------------------------------------//
+// Field Tags.
+//---------------------------------------------------------------------------//
 // Scalar field.
+struct ScalarBase {};
+
 template<class T>
-struct Scalar
+struct Scalar : ScalarBase
 {
     using value_type = T;
     static constexpr int rank = 0;
@@ -147,14 +159,8 @@ struct Scalar
     using linear_algebra_type = value_type;
 };
 
-template <class>
-struct is_scalar_impl : std::false_type
-{
-};
-
 template <class T>
-struct is_scalar_impl<Scalar<T>>
-    : std::true_type
+struct is_scalar_impl : std::is_base_of<ScalarBase,T>
 {
 };
 
@@ -165,8 +171,10 @@ struct is_scalar : is_scalar_impl<typename std::remove_cv<T>::type>::type
 
 //---------------------------------------------------------------------------//
 // Vector field.
+struct VectorBase {};
+
 template<class T, int D>
-struct Vector
+struct Vector : VectorBase
 {
     using value_type = T;
     static constexpr int rank = 1;
@@ -176,14 +184,8 @@ struct Vector
     using linear_algebra_type = LinearAlgebra::VectorView<T,D>;
 };
 
-template <class>
-struct is_vector_impl : std::false_type
-{
-};
-
-template <class T, int D>
-struct is_vector_impl<Vector<T,D>>
-    : std::true_type
+template <class T>
+struct is_vector_impl : std::is_base_of<VectorBase,T>
 {
 };
 
@@ -194,8 +196,10 @@ struct is_vector : is_vector_impl<typename std::remove_cv<T>::type>::type
 
 //---------------------------------------------------------------------------//
 // Tensor Field.
+struct TensorBase {};
+
 template<class T, int D0, int D1>
-struct Tensor
+struct Tensor : TensorBase
 {
     using value_type = T;
     static constexpr int rank = 2;
@@ -206,14 +210,8 @@ struct Tensor
     using linear_algebra_type = LinearAlgebra::MatrixView<T,D0,D1>;
 };
 
-template <class>
-struct is_tensor_impl : std::false_type
-{
-};
-
-template <class T, int D0, int D1>
-struct is_tensor_impl<Tensor<T,D0,D1>>
-    : std::true_type
+template <class T>
+struct is_tensor_impl : std::is_base_of<TensorBase,T>
 {
 };
 
@@ -223,7 +221,187 @@ struct is_tensor : is_tensor_impl<typename std::remove_cv<T>::type>::type
 };
 
 //---------------------------------------------------------------------------//
-// Fields.
+// Scalar Field View Wrapper
+//---------------------------------------------------------------------------//
+// Wraps a Kokkos view of a structured grid scalar field at the given index
+// allowing for it to be treated as a scalar in a point-wise manner in kernel
+// operations without needing explicit dimension indices in the syntax.
+template<class View, class Layout>
+struct ScalarViewWrapper
+{
+    using layout_type = Layout;
+    using value_type = typename layout_type::tag::value_type;
+
+    static constexpr int extent = layout_type::tag::size;
+    static constexpr int rank = layout_type::tag::rank;
+
+    static_assert(
+        Field::is_scalar<typename layout_type::tag>::value,
+        "ScalarViewWrappers may only be applied to scalar fields" );
+
+    View _v;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    ScalarViewWrapper() = default;
+
+    // Create a wrapper from an index and a view.
+    KOKKOS_INLINE_FUNCTION
+    ScalarViewWrapper( const View& v )
+        : _v( v )
+    {}
+
+    // Access the view data through point-wise index arguments.
+    KOKKOS_FORCEINLINE_FUNCTION
+    value_type&
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        return _v(i0,i1,i2,0);
+    }
+
+    // Access the view data through full index arguments.
+    KOKKOS_FORCEINLINE_FUNCTION
+    value_type&
+    operator()( const int i0, const int i1, const int i2, const int ) const
+    {
+        return _v(i0,i1,i2,0);
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Vector Field View Wrapper
+//---------------------------------------------------------------------------//
+// Wraps a Kokkos view of a structured grid vector field at the given index
+// allowing for it to be treated as a vector in a point-wise manner in kernel
+// operations without needing explicit dimension indices in the syntax.
+template<class View, class Layout>
+struct VectorViewWrapper
+{
+    using layout_type = Layout;
+    using value_type = typename layout_type::tag::value_type;
+
+    static constexpr int dim0 = layout_type::tag::dim0;
+
+    static_assert(
+        Field::is_vector<typename layout_type::tag>::value,
+        "VectorViewWrappers may only be applied to vector fields" );
+
+    View _v;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    VectorViewWrapper() = default;
+
+    // Create a wrapper from an index and a view.
+    KOKKOS_INLINE_FUNCTION
+    VectorViewWrapper( const View& v )
+        : _v( v )
+    {}
+
+    // Access the view data as a vector through point-wise index arguments.
+    KOKKOS_FORCEINLINE_FUNCTION
+    LinearAlgebra::VectorView<value_type,dim0>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        return LinearAlgebra::VectorView<value_type,dim0>(
+            &_v(i0,i1,i2,0), _v.stride(3) );
+    }
+
+    // Access the view data through full index arguments.
+    KOKKOS_FORCEINLINE_FUNCTION
+    value_type&
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    {
+        return _v(i0,i1,i2,i3);
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Tensor Field View Wrapper
+//---------------------------------------------------------------------------//
+// Wraps a Kokkos view of a structured grid tensor field at the given index
+// allowing for it to be treated as a tensor in a point-wise manner in kernel
+// operations without needing explicit dimension indices in the syntax.
+template<class View, class Layout>
+struct TensorViewWrapper
+{
+    using layout_type = Layout;
+    using value_type = typename layout_type::tag::value_type;
+
+    static constexpr int dim0 = layout_type::tag::dim0;
+    static constexpr int dim1 = layout_type::tag::dim1;
+
+    static_assert(
+        Field::is_tensor<typename layout_type::tag>::value,
+        "TensorViewWrappers may only be applied to tensor fields" );
+
+    View _v;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    TensorViewWrapper() = default;
+
+    // Create a wrapper from an index and a view.
+    KOKKOS_INLINE_FUNCTION
+    TensorViewWrapper( const View& v )
+        : _v( v )
+    {}
+
+    // Access the view data as a tensor through point-wise index
+    // arguments. Note here that because fields are stored as 4D objects the
+    // tensor components are unrolled in the last dimension. We unpack the
+    // field dimension index to add the extra matrix dimension in a similar
+    // way as if we had made a 5D kokkos view such that the matrix data is
+    // ordered as [i][j][k][dim0][dim1] if layout-right and
+    // [dim0][dim1][k][j][i] if layout-left. Note the difference in
+    // layout-left where the dim0 and dim1 dimensions are switched.
+    KOKKOS_FORCEINLINE_FUNCTION
+    LinearAlgebra::MatrixView<value_type,dim0,dim1>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        return LinearAlgebra::MatrixView<value_type,dim0,dim1>(
+            &_v(i0,i1,i2,0), dim1*_v.stride(3), _v.stride(3) );
+    }
+
+    // Access the view data through full index arguments.
+    KOKKOS_FORCEINLINE_FUNCTION
+    value_type&
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    {
+        return _v(i0,i1,i2,i3);
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Field View Wrapper Creation
+//---------------------------------------------------------------------------//
+template<class View, class Layout>
+auto createViewWrapper(
+    Layout, const View& view,
+    std::enable_if_t<Field::is_scalar<typename Layout::tag>::value,int*> = 0 )
+{
+    return ScalarViewWrapper<View,Layout>( view );
+}
+
+template<class View, class Layout>
+auto createViewWrapper(
+    Layout, const View& view,
+    std::enable_if_t<Field::is_vector<typename Layout::tag>::value,int*> = 0 )
+{
+    return VectorViewWrapper<View,Layout>( view );
+}
+
+template<class View, class Layout>
+auto createViewWrapper(
+    Layout, const View& view,
+    std::enable_if_t<Field::is_tensor<typename Layout::tag>::value,int*> = 0 )
+{
+    return TensorViewWrapper<View,Layout>( view );
+}
+
+//---------------------------------------------------------------------------//
+// Fields
+//---------------------------------------------------------------------------//
 struct PhysicalPosition : Vector<double,3>
 {
     static std::string label() { return "physical_position"; }

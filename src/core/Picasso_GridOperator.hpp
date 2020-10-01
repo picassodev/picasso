@@ -484,7 +484,9 @@ class GridOperator
 
     // Create parameter pack of gather dependency views. Gather dependencies
     // don't require a scatter in a kernel so we store them as a parameter
-    // pack Kokkos::View for on-device access.
+    // pack Kokkos::View for on-device access. The resulting views are stored
+    // in field view wrappers so the can be accessed in a point-wise fashion
+    // as needed.
     template<class ... Layouts>
     auto
     createDependencies( const FieldManager<Mesh>& fm,
@@ -494,11 +496,13 @@ class GridOperator
         // of each field in the layout list and expands it as a parameter
         // pack.
         auto views = Cajita::makeParameterPack(
-            fm.view( typename Layouts::location(),
-                     typename Layouts::tag() )... );
+            Field::createViewWrapper(
+                Layouts(),
+                fm.view( typename Layouts::location(),
+                         typename Layouts::tag() ) )... );
 
         // Assign the parameter pack to the dependency fields.
-        return FieldViewTuple<decltype(views),Layouts...>{views};
+        return createFieldViewTuple<Layouts...>( views );
     }
 
     // Create a parameter pack of scatter dependency scatter views. Scatter
@@ -531,13 +535,14 @@ class GridOperator
                          typename Layouts::tag() ))... );
 
         // Assign the parameter pack to the dependency fields.
-        return FieldViewTuple<decltype(scatter_views),Layouts...>{
-            scatter_views};
+        return createFieldViewTuple<Layouts...>( scatter_views );
     }
 
     // Create a parameter pack of local dependency views. Local dependencies
     // don't require a scatter in a kernel so we store them as a parameter
-    // pack Kokkos::View for on-device access.
+    // pack Kokkos::View for on-device access. The resulting views are stored
+    // in field view wrappers so the can be accessed in a point-wise fashion
+    // as needed.
     template<class ... Layouts>
     auto
     createDependencies( const FieldManager<Mesh>& fm,
@@ -547,11 +552,13 @@ class GridOperator
         // of each field in the layout list and expands it as a parameter
         // pack.
         auto views = Cajita::makeParameterPack(
-            fm.view( typename Layouts::location(),
-                     typename Layouts::tag() )... );
+            Field::createViewWrapper(
+                Layouts(),
+                fm.view( typename Layouts::location(),
+                         typename Layouts::tag() ) )... );
 
         // Assign the parameter pack to the dependency fields.
-        return FieldViewTuple<decltype(views),Layouts...>{views};
+        return createFieldViewTuple<Layouts...>(views);
     }
 
     // Complete local scatter by summing the scatter view results into the main
@@ -565,9 +572,15 @@ class GridOperator
         // reference to the destination view even though the implementation
         // details of this in Kokkos take a const reference. Hence we need to
         // make a local copy of all views here so we can avoid taking a
-        // non-const reference to a temporary. Using LocalDependencies here
-        // because it creates Kokkos::View objects.
-        auto views = createDependencies( fm, LocalDependencies<Layouts...>() );
+        // non-const reference to a temporary. Create a parameter pack of
+        // views. The use of (...) here gets a view of each field in the
+        // layout list and expands it as a parameter pack.
+        auto view_pack = Cajita::makeParameterPack(
+            fm.view( typename Layouts::location(),
+                     typename Layouts::tag() )... );
+
+        // Assign the parameter pack to the dependency fields.
+        auto views = createFieldViewTuple<Layouts...>( view_pack );
 
         // Use the initializer list here to achieve a C++17 fold expression in
         // C++14. Contributes each scatter view into its original view in the

@@ -176,6 +176,7 @@ struct MatrixExpression
 {
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
+    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -184,7 +185,6 @@ struct MatrixExpression
     using copy_type = Matrix<T,M,N>;
 
     Func _f;
-    int _extent[2] = {M,N};
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -278,10 +278,10 @@ template<class T, int M, int N>
 struct Matrix
 {
     T _d[M][N];
-    int _extent[2] = {M,N};
 
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
+    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -475,10 +475,10 @@ struct MatrixView
 {
     T* _d;
     int _stride[2];
-    int _extent[2] = {M,N};
 
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
+    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -571,10 +571,10 @@ template<class T, int N>
 struct Vector
 {
     T _d[N];
-    int _extent[2] = {N,1};
 
     static constexpr int extent_0 = N;
     static constexpr int extent_1 = 1;
+    static constexpr int _extent[2] = {N,1};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -752,10 +752,10 @@ struct VectorView
 {
     T* _d;
     int _stride;
-    int _extent[2] = {N,1};
 
     static constexpr int extent_0 = N;
     static constexpr int extent_1 = 1;
+    static constexpr int _extent[2] = {N,1};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
