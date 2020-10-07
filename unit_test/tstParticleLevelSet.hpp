@@ -34,11 +34,11 @@ struct LocateFunctor
         float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
         for ( int d = 0; d < 3; ++d )
         {
-            Access::get( p, Field::PhysicalPosition(), d ) = x[d];
-            Access::get( p, Field::LogicalPosition(), d ) = x[d];
+            get( p, Field::PhysicalPosition(), d ) = x[d];
+            get( p, Field::LogicalPosition(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint(xf,geom);
-        Access::get( p, Field::Color() ) = volume_id;
+        get( p, Field::Color() ) = volume_id;
         return (volume_id >= 0);
     }
 };

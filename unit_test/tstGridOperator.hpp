@@ -1,6 +1,7 @@
 #include <Picasso_GridOperator.hpp>
 #include <Picasso_ParticleInit.hpp>
 #include <Picasso_ParticleList.hpp>
+#include <Picasso_ParticleInterpolation.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_FieldTypes.hpp>
 #include <Picasso_InputParser.hpp>
@@ -79,30 +80,24 @@ struct ParticleFunc
         auto foo_out = scatter_deps.get(FieldLocation::Cell(),FooOut());
         auto bar_out = scatter_deps.get(FieldLocation::Cell(),BarOut());
 
-        // Gather the particle coordinates.
-        auto xp = Access::get( particle, Field::LogicalPosition() );
-        typename decltype(xp)::copy_type xp_copy = xp;
+        // Get particle data.
+        auto foop = get( particle, FooP() );
+        auto& barp = get( particle, BarP() );
 
         // Zero-order cell interpolant.
-        Cajita::SplineData<
-            typename decltype(xp)::value_type,0,Cajita::Cell,
-            Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues>> sd;
-        Cajita::evaluateSpline( local_mesh, xp_copy.data(), sd );
+        auto spline = createSpline( FieldLocation::Cell(),
+                                    InterpolationOrder<0>(),
+                                    local_mesh,
+                                    get(particle,Field::LogicalPosition()),
+                                    SplineValue() );
 
         // Interpolate to the particles.
-        auto foop = Access::get( particle, FooP() );
-        typename decltype(foop)::copy_type foop_copy = foop;
-        Cajita::G2P::value( foo_in, sd, foop_copy.data() );
-        foop = foop_copy;
-
-        auto barp = Access::get( particle, BarP() );
-        Cajita::G2P::value( bar_in, sd, barp );
-        Access::get( particle, BarP() ) = barp;
+        G2P::value( spline, foo_in, foop );
+        G2P::value( spline, bar_in, barp );
 
         // Interpolate back to the grid.
-        double foop_vec[3] = {foop_copy(0),foop_copy(1),foop_copy(2)};
-        Cajita::P2G::value( foop_vec, sd, foo_out );
-        Cajita::P2G::value( barp, sd, bar_out );
+        P2G::value( spline, foop, foo_out );
+        P2G::value( spline, barp, bar_out );
     }
 };
 
@@ -185,7 +180,7 @@ void gatherScatterTest()
     auto particle_init_func =
         KOKKOS_LAMBDA( const double x[3], const double, particle_type& p ){
         for ( int d = 0; d < 3; ++d )
-            Access::get( p, Field::LogicalPosition(), d ) = x[d];
+            get( p, Field::LogicalPosition(), d ) = x[d];
         return true;
     };
 

@@ -38,8 +38,8 @@ namespace LinearAlgebra
   combination of expression templates for lazy evaluation and KokkosKernels
   for eager evaluations when necessary.
 
-  The general philosphy in the implementation for lazy vs. eager evalations is
-  this: if an operation will evaluation the same expression multiple times
+  The general concept in the implementation for lazy vs. eager evalations is
+  this: if an operation will evaluate the same expression multiple times
   (e.g. evaluating the element of a matrix in matrix-matrix multiplication)
   then the expressions are evaluated prior to performing the operation and the
   result of the operation is a copy rather than an expression as a means of
