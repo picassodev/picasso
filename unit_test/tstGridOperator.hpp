@@ -36,22 +36,22 @@ struct FooOut : Field::Vector<double,3>
     static std::string label() { return "foo_out"; }
 };
 
-struct BarP : Field::Scalar<float>
+struct BarP : Field::Scalar<double>
 {
     static std::string label() { return "bar_p"; }
 };
 
-struct BarIn : Field::Scalar<float>
+struct BarIn : Field::Scalar<double>
 {
     static std::string label() { return "bar_in"; }
 };
 
-struct BarOut : Field::Scalar<float>
+struct BarOut : Field::Scalar<double>
 {
     static std::string label() { return "bar_out"; }
 };
 
-struct Baz : Field::Scalar<float>
+struct Baz : Field::Tensor<double,3,3>
 {
     static std::string label() { return "baz"; }
 };
@@ -134,10 +134,17 @@ struct GridFunc
         // Get local dependencies.
         auto baz = local_deps.get(FieldLocation::Cell(),Baz());
 
-        // Assign.
+        // Set up the local dependency to be the identity.
+        baz(i,j,k) = { {1.0,0.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,1.0} };
+
+        // Assign foo_out - build a point-wise expression to do this.
+        auto baz_t_foo_in_t_2 = baz(i,j,k) * (foo_in(i,j,k) + foo_in(i,j,k));
         for ( int d = 0; d < 3; ++d )
-            foo_out_access(i,j,k,d) += foo_in(i,j,k,d) + i + j + k;
-        bar_out_access(i,j,k,0) += bar_in(i,j,k,0) + i + j + k + baz(i,j,k,0);
+            foo_out_access(i,j,k,d) += baz_t_foo_in_t_2(d) + i + j + k;
+
+        // Assign the bar_out - use mixture of field dimension indices
+        // or direct ijk access.
+        bar_out_access(i,j,k,0) += bar_in(i,j,k,0) + bar_in(i,j,k) + i + j + k;
     }
 };
 
@@ -216,9 +223,6 @@ void gatherScatterTest()
     Kokkos::deep_copy( fm->view(FieldLocation::Cell(),FooOut()), -1.1 );
     Kokkos::deep_copy( fm->view(FieldLocation::Cell(),BarOut()), -2.2 );
 
-    // Initialize local fields.
-    Kokkos::deep_copy( fm->view(FieldLocation::Cell(),Baz()), 5.5 );
-
     // Apply the particle operator.
     ParticleFunc particle_func;
     grid_op->apply( FieldLocation::Particle(),
@@ -279,8 +283,8 @@ void gatherScatterTest()
         Cajita::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ){
             for ( int d = 0; d < 3; ++d )
-                EXPECT_EQ( foo_out_host(i,j,k,d), 2.0 + i + j + k );
-            EXPECT_EQ( bar_out_host(i,j,k,0), 3.0 + i + j + k + 5.5 );
+                EXPECT_EQ( foo_out_host(i,j,k,d), 4.0 + i + j + k );
+            EXPECT_EQ( bar_out_host(i,j,k,0), 6.0 + i + j + k );
         });
 }
 
