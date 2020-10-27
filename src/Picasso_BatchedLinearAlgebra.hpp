@@ -82,7 +82,7 @@ namespace LinearAlgebra
 
   Dot product: s = ~x * y;
 
-  Inner product: A = x * y~;
+  Inner product: A = x * ~y;
 
   Cross product: z = x % y; (3-vectors only)
 

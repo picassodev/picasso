@@ -15,7 +15,7 @@
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
-// Affine Particle-in-Cell
+// Affine Particle-in-Cell (APIC)
 //---------------------------------------------------------------------------//
 namespace APIC
 {
@@ -40,45 +40,50 @@ inertialScaling(
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate particle momentum to the nodes. (Second and Third order
-// splines)
-template<class SplineDataType, class MomentumView>
+// Interpolate particle momentum to a collocated momentum grid. (Second and
+// Third order splines)
+template<class ParticleMass,
+         class ParticleVelocity,
+         class ParticleAffineMatrix,
+         class SplineDataType,
+         class GridMomentum>
 KOKKOS_INLINE_FUNCTION
 void p2g(
-    const typename MomentumView::original_value_type m_p,
-    const typename MomentumView::original_value_type u_p[3],
-    const typename MomentumView::original_value_type B_p[3][3],
+    const ParticleMass m_p,
+    const ParticleVelocity u_p,
+    const ParticleAffineMatrix B_p,
     const SplineDataType& sd,
-    const MomentumView& node_momentum,
+    const GridMomentum& grid_momentum,
     typename std::enable_if<
-    (Cajita::isNode<typename SplineDataType::entity_type>::value &&
+    ((Cajita::isNode<typename SplineDataType::entity_type>::value ||
+      Cajita::isCell<typename SplineDataType::entity_type>::value) &&
      (SplineDataType::order==2 || SplineDataType::order==3)),void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<MomentumView>::value,
+    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
                    "P2G requires a Kokkos::ScatterView" );
-    auto momentum_access = node_momentum.access();
+    auto momentum_access = grid_momentum.access();
 
-    using value_type = typename MomentumView::original_value_type;
+    using value_type = typename GridMomentum::original_value_type;
 
     // Scaling factor from inertial tensor with quadratic shape
     // functions.
     value_type D_p_inv = inertialScaling( sd );
 
     // Project momentum.
-    value_type distance[3];
-    value_type B_p_d[3];
+    Vec3<value_type> distance;
     value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
             {
                 // Physical distance to entity.
-                distance[Dim::I] = sd.d[Dim::I][i];
-                distance[Dim::J] = sd.d[Dim::J][j];
-                distance[Dim::K] = sd.d[Dim::K][k];
+                distance(Dim::I) = sd.d[Dim::I][i];
+                distance(Dim::J) = sd.d[Dim::J][j];
+                distance(Dim::K) = sd.d[Dim::K][k];
 
-                // Compute the action of B_p on the distance.
-                DenseLinearAlgebra::matVecMultiply( B_p, distance, B_p_d );
+                // Compute the action of B_p on the distance scaled by the
+                // intertial tensor scaling factor.
+                auto D_p_inv_B_p_d = D_p_inv * B_p * distance;
 
                 // Weight times mass.
                 wm_ip = sd.w[Dim::I][i] *
@@ -87,39 +92,117 @@ void p2g(
                         m_p;
 
                 // Interpolate particle momentum to the entity.
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                 for ( int d = 0; d < 3; ++d )
                     momentum_access( sd.s[Dim::I][i],
                                      sd.s[Dim::J][j],
                                      sd.s[Dim::K][k],
                                      d ) +=
-                        wm_ip * ( u_p[d] + D_p_inv * B_p_d[d] );
+                        wm_ip * ( u_p(d) + D_p_inv_B_p_d(d) );
             }
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate particle momentum to the nodes. (First order splines)
-template<class SplineDataType, class MomentumView>
+// Interpolate particle momentum to a staggered momentum grid. (Second and
+// Third order splines)
+template<class ParticleMass,
+         class ParticleVelocity,
+         class ParticleAffineMatrix,
+         class SplineDataType,
+         class GridMomentum>
 KOKKOS_INLINE_FUNCTION
 void p2g(
-    const typename MomentumView::original_value_type m_p,
-    const typename MomentumView::original_value_type u_p[3],
-    const typename MomentumView::original_value_type B_p[3][3],
+    const ParticleMass m_p,
+    const ParticleVelocity u_p,
+    const ParticleAffineMatrix B_p,
     const SplineDataType& sd,
-    const MomentumView& node_momentum,
+    const GridMomentum& grid_momentum,
     typename std::enable_if<
-    (Cajita::isNode<typename SplineDataType::entity_type>::value &&
-     (SplineDataType::order==1)),void*>::type = 0 )
+    ((Cajita::isEdge<typename SplineDataType::entity_type>::value ||
+      Cajita::isFace<typename SplineDataType::entity_type>::value) &&
+     (SplineDataType::order==2 || SplineDataType::order==3)),void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<MomentumView>::value,
+    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
                    "P2G requires a Kokkos::ScatterView" );
-    auto momentum_access = node_momentum.access();
+    auto momentum_access = grid_momentum.access();
 
-    using value_type = typename MomentumView::original_value_type;
+    using value_type = typename GridMomentum::original_value_type;
+
+    // Get the momentum dimension we are working on.
+    const int dim = SplineDataType::entity_type::dim;
+
+    // Scaling factor from inertial tensor with quadratic shape
+    // functions.
+    value_type D_p_inv = inertialScaling( sd );
 
     // Project momentum.
-    value_type B_g_d[3];
+    Vec3<value_type> distance;
     value_type wm_ip;
-    value_type gm_ip[3];
+    value_type B_p_d;
+    for ( int i = 0; i < SplineDataType::num_knot; ++i )
+        for ( int j = 0; j < SplineDataType::num_knot; ++j )
+            for ( int k = 0; k < SplineDataType::num_knot; ++k )
+            {
+                // Physical distance to entity.
+                distance(Dim::I) = sd.d[Dim::I][i];
+                distance(Dim::J) = sd.d[Dim::J][j];
+                distance(Dim::K) = sd.d[Dim::K][k];
+
+                // Compute the action of B_p on the distance scaled by the
+                // intertial tensor scaling factor.
+                B_p_d = 0.0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+                for ( int d = 0; d < 3; ++d )
+                    B_p_d += B_p(dim,d) * distance(d);
+
+                // Weight times mass.
+                wm_ip = sd.w[Dim::I][i] *
+                        sd.w[Dim::J][j] *
+                        sd.w[Dim::K][k] *
+                        m_p;
+
+                // Interpolate particle momentum to the entity.
+                momentum_access( sd.s[Dim::I][i],
+                                 sd.s[Dim::J][j],
+                                 sd.s[Dim::K][k],
+                                 0 ) +=
+                    wm_ip * ( u_p(dim) + D_p_inv * B_p_d );
+            }
+}
+
+//---------------------------------------------------------------------------//
+// Interpolate particle momentum to a collocated momentum grid. (First order
+// splines)
+template<class ParticleMass,
+         class ParticleVelocity,
+         class ParticleAffineMatrix,
+         class SplineDataType,
+         class GridMomentum>
+KOKKOS_INLINE_FUNCTION
+void p2g(
+    const ParticleMass m_p,
+    const ParticleVelocity u_p,
+    const ParticleAffineMatrix B_p,
+    const SplineDataType& sd,
+    const GridMomentum& entity_momentum,
+    typename std::enable_if<
+    ((Cajita::isNode<typename SplineDataType::entity_type>::value ||
+      Cajita::isCell<typename SplineDataType::entity_type>::value) &&
+     (SplineDataType::order==1)),void*>::type = 0 )
+{
+    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
+                   "P2G requires a Kokkos::ScatterView" );
+    auto momentum_access = entity_momentum.access();
+
+    using value_type = typename GridMomentum::original_value_type;
+
+    // Project momentum.
+    Vec3<value_type> gm_ip;
+    value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
@@ -131,55 +214,133 @@ void p2g(
                         m_p;
 
                 // Weight gradient times mass.
-                gm_ip[0] = sd.g[Dim::I][i] *
+                gm_ip(0) = sd.g[Dim::I][i] *
                            sd.w[Dim::J][j] *
                            sd.w[Dim::K][k] *
                            m_p;
-                gm_ip[1] = sd.w[Dim::I][i] *
+                gm_ip(1) = sd.w[Dim::I][i] *
                            sd.g[Dim::J][j] *
                            sd.w[Dim::K][k] *
                            m_p;
-                gm_ip[2] = sd.w[Dim::I][i] *
+                gm_ip(2) = sd.w[Dim::I][i] *
                            sd.w[Dim::J][j] *
                            sd.g[Dim::K][k] *
                            m_p;
 
                 // Compute the action of B_p on the gradient.
-                DenseLinearAlgebra::matVecMultiply( B_p, gm_ip, B_g_d );
+                auto B_g_d = B_p * gm_ip;
 
                 // Interpolate particle momentum to the entity.
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
                 for ( int d = 0; d < 3; ++d )
                     momentum_access( sd.s[Dim::I][i],
                                      sd.s[Dim::J][j],
                                      sd.s[Dim::K][k],
-                                     d ) += wm_ip * u_p[d] + B_g_d[d];
+                                     d ) += wm_ip * u_p(d) + B_g_d(d);
             }
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate grid node velocity to the particle.
-template<class SplineDataType, class VelocityView>
+// Interpolate particle momentum to a staggered momentum grid. (First order
+// splines)
+template<class ParticleMass,
+         class ParticleVelocity,
+         class ParticleAffineMatrix,
+         class SplineDataType,
+         class GridMomentum>
+KOKKOS_INLINE_FUNCTION
+void p2g(
+    const ParticleMass m_p,
+    const ParticleVelocity u_p,
+    const ParticleAffineMatrix B_p,
+    const SplineDataType& sd,
+    const GridMomentum& entity_momentum,
+    typename std::enable_if<
+    ((Cajita::isEdge<typename SplineDataType::entity_type>::value ||
+      Cajita::isFace<typename SplineDataType::entity_type>::value) &&
+     (SplineDataType::order==1)),void*>::type = 0 )
+{
+    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
+                   "P2G requires a Kokkos::ScatterView" );
+    auto momentum_access = entity_momentum.access();
+
+    using value_type = typename GridMomentum::original_value_type;
+
+    // Get the momentum dimension we are working on.
+    const int dim = SplineDataType::entity_type::dim;
+
+    // Project momentum.
+    Vec3<value_type> gm_ip;
+    value_type wm_ip;
+    value_type B_g_d;
+    for ( int i = 0; i < SplineDataType::num_knot; ++i )
+        for ( int j = 0; j < SplineDataType::num_knot; ++j )
+            for ( int k = 0; k < SplineDataType::num_knot; ++k )
+            {
+                // Weight times mass.
+                wm_ip = sd.w[Dim::I][i] *
+                        sd.w[Dim::J][j] *
+                        sd.w[Dim::K][k] *
+                        m_p;
+
+                // Weight gradient times mass.
+                gm_ip(0) = sd.g[Dim::I][i] *
+                           sd.w[Dim::J][j] *
+                           sd.w[Dim::K][k] *
+                           m_p;
+                gm_ip(1) = sd.w[Dim::I][i] *
+                           sd.g[Dim::J][j] *
+                           sd.w[Dim::K][k] *
+                           m_p;
+                gm_ip(2) = sd.w[Dim::I][i] *
+                           sd.w[Dim::J][j] *
+                           sd.g[Dim::K][k] *
+                           m_p;
+
+                // Compute the action of B_p on the gradient.
+                B_g_d = 0.0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+                for ( int d = 0; d < 3; ++d )
+                    B_g_d += B_p(dim,d) * gm_ip(d);
+
+                // Interpolate particle momentum to the entity.
+                momentum_access( sd.s[Dim::I][i],
+                                 sd.s[Dim::J][j],
+                                 sd.s[Dim::K][k],
+                                 0 ) += wm_ip * u_p(d) + B_g_d(dim);
+            }
+}
+
+//---------------------------------------------------------------------------//
+// Interpolate collocated grid velocity to the particle.
+template<class GridVelocity,
+         class SplineDataType,
+         class ParticleVelocity,
+         class ParticleAffineMatrix>
 KOKKOS_INLINE_FUNCTION
 void g2p(
-    const VelocityView& node_velocity,
+    const GridVelocity& entity_velocity,
     const SplineDataType& sd,
-    typename VelocityView::value_type u_p[3],
-    typename VelocityView::value_type B_p[3][3],
+    ParticleVelocity u_p,
+    ParticleAffineMatrix B_p,
     typename std::enable_if<
-    Cajita::isNode<typename SplineDataType::entity_type>::value,void*>::type = 0 )
+    (Cajita::isNode<typename SplineDataType::entity_type>::value ||
+     Cajita::isCell<typename SplineDataType::entity_type>::value),
+    void*>::type = 0 )
 {
-    using value_type = typename VelocityView::value_type;
+    using value_type = typename GridVelocity::value_type;
 
-    for ( int d = 0; d < 3; ++d )
-        u_p[d] = 0.0;
+    // Reset the particle values.
+    u_p = 0.0;
+    B_p = 0.0;
 
-    for ( int d0 = 0; d0 < 3; ++d0 )
-        for ( int d1 = 0; d1 < 3; ++d1 )
-            B_p[d0][d1] = 0.0;
-
-    value_type distance[3];
+    // Update particle.
+    Vec3<value_type> distance;
     value_type w_ip;
-
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
@@ -187,35 +348,92 @@ void g2p(
                 // Projection weight.
                 w_ip = sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
+                // Entity velocity
+                auto u_i = entity_velocity( sd.s[Dim::I][i],
+                                            sd.s[Dim::J][j],
+                                            sd.s[Dim::K][k] );
+
                 // Update velocity.
-                for ( int d = 0; d < 3; ++d )
-                    u_p[d] +=
-                        w_ip *
-                        node_velocity( sd.s[Dim::I][i],
-                                       sd.s[Dim::J][j],
-                                       sd.s[Dim::K][k],
-                                       d );
+                u_p = u_p + w_ip * u_i;
 
                 // Physical distance to entity.
-                distance[Dim::I] = sd.d[Dim::I][i];
-                distance[Dim::J] = sd.d[Dim::J][j];
-                distance[Dim::K] = sd.d[Dim::K][k];
+                distance(Dim::I) = sd.d[Dim::I][i];
+                distance(Dim::J) = sd.d[Dim::J][j];
+                distance(Dim::K) = sd.d[Dim::K][k];
 
                 // Update affine matrix.
-                for ( int d0 = 0; d0 < 3; ++d0 )
-                    for ( int d1 = 0; d1 < 3; ++d1 )
-                        B_p[d0][d1] += w_ip *
-                                       node_velocity( sd.s[Dim::I][i],
-                                                      sd.s[Dim::J][j],
-                                                      sd.s[Dim::K][k],
-                                                      d0 ) *
-                                       distance[d1];
+                B_p = B_p + w_ip * u_i * ~distance;
+            }
+}
+
+//---------------------------------------------------------------------------//
+// Interpolate staggered grid velocity to the particle.
+template<class GridVelocity,
+         class SplineDataType,
+         class ParticleVelocity,
+         class ParticleAffineMatrix>
+KOKKOS_INLINE_FUNCTION
+void g2p(
+    const GridVelocity& entity_velocity,
+    const SplineDataType& sd,
+    ParticleVelocity u_p,
+    ParticleAffineMatrix B_p,
+    typename std::enable_if<
+    (Cajita::isEdge<typename SplineDataType::entity_type>::value ||
+     Cajita::isFace<typename SplineDataType::entity_type>::value),
+    void*>::type = 0 )
+{
+    using value_type = typename GridVelocity::value_type;
+
+    // Get the velocity dimension we are working on.
+    const int dim = SplineDataType::entity_type::dim;
+
+    // Reset the particle values.
+    u_p(dim) = 0.0;
+
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+    for ( int d = 0; d < 3; ++d )
+        B_p(dim,d) = 0.0;
+
+    // Update particle.
+    Vec3<value_type> distance;
+    value_type w_ip;
+    for ( int i = 0; i < SplineDataType::num_knot; ++i )
+        for ( int j = 0; j < SplineDataType::num_knot; ++j )
+            for ( int k = 0; k < SplineDataType::num_knot; ++k )
+            {
+                // Projection weight.
+                w_ip = sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
+
+                // Entity velocity
+                auto u_i = entity_velocity( sd.s[Dim::I][i],
+                                            sd.s[Dim::J][j],
+                                            sd.s[Dim::K][k] );
+
+                // Update velocity.
+                u_p(dim) += w_ip * u_i(dim);
+
+                // Physical distance to entity.
+                distance(Dim::I) = sd.d[Dim::I][i];
+                distance(Dim::J) = sd.d[Dim::J][j];
+                distance(Dim::K) = sd.d[Dim::K][k];
+
+                // Update affine matrix.
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif                for ( int d = 0; d < 3; ++d)
+                B_p(dim,d) += w_ip * u_i * distance(d);
             }
 }
 
 //---------------------------------------------------------------------------//
 
 } // end namespace APIC
+
+//---------------------------------------------------------------------------//
+
 } // end namespace Picasso
 
 #endif // end PICASSO_APIC_HPP
