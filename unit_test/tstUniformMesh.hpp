@@ -2,8 +2,6 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_InputParser.hpp>
 
-#include <Picasso_ParticleInit.hpp>
-
 #include <Kokkos_Core.hpp>
 
 #include <cmath>

@@ -7,7 +7,6 @@
 #include <Picasso_DenseLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ScatterView.hpp>
 
 #include <type_traits>
 #include <cmath>
@@ -41,7 +40,8 @@ inertialScaling(
 
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum to a collocated momentum grid. (Second and
-// Third order splines)
+// Third order splines). Requires SplineValue, SplineGradient, and
+// SplineDistance when constructing the spline data.
 template<class ParticleMass,
          class ParticleVelocity,
          class ParticleAffineMatrix,
@@ -52,8 +52,8 @@ void p2g(
     const ParticleMass m_p,
     const ParticleVelocity u_p,
     const ParticleAffineMatrix B_p,
-    const SplineDataType& sd,
     const GridMomentum& grid_momentum,
+    const SplineDataType& sd,
     typename std::enable_if<
     ((Cajita::isNode<typename SplineDataType::entity_type>::value ||
       Cajita::isCell<typename SplineDataType::entity_type>::value) &&
@@ -106,7 +106,8 @@ void p2g(
 
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum to a staggered momentum grid. (Second and
-// Third order splines)
+// Third order splines). Requires SplineValue, SplineGradient, and
+// SplineDistance when constructing the spline data.
 template<class ParticleMass,
          class ParticleVelocity,
          class ParticleAffineMatrix,
@@ -117,8 +118,8 @@ void p2g(
     const ParticleMass m_p,
     const ParticleVelocity u_p,
     const ParticleAffineMatrix B_p,
-    const SplineDataType& sd,
     const GridMomentum& grid_momentum,
+    const SplineDataType& sd,
     typename std::enable_if<
     ((Cajita::isEdge<typename SplineDataType::entity_type>::value ||
       Cajita::isFace<typename SplineDataType::entity_type>::value) &&
@@ -152,12 +153,7 @@ void p2g(
 
                 // Compute the action of B_p on the distance scaled by the
                 // intertial tensor scaling factor.
-                B_p_d = 0.0;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-                for ( int d = 0; d < 3; ++d )
-                    B_p_d += B_p(dim,d) * distance(d);
+                B_p_d = ~B_p.row(dim) * distance;
 
                 // Weight times mass.
                 wm_ip = sd.w[Dim::I][i] *
@@ -187,8 +183,8 @@ void p2g(
     const ParticleMass m_p,
     const ParticleVelocity u_p,
     const ParticleAffineMatrix B_p,
-    const SplineDataType& sd,
     const GridMomentum& entity_momentum,
+    const SplineDataType& sd,
     typename std::enable_if<
     ((Cajita::isNode<typename SplineDataType::entity_type>::value ||
       Cajita::isCell<typename SplineDataType::entity_type>::value) &&
@@ -244,7 +240,8 @@ void p2g(
 
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum to a staggered momentum grid. (First order
-// splines)
+// splines). Requires SplineValue and SplineGradient when constructing the
+// spline data.
 template<class ParticleMass,
          class ParticleVelocity,
          class ParticleAffineMatrix,
@@ -255,8 +252,8 @@ void p2g(
     const ParticleMass m_p,
     const ParticleVelocity u_p,
     const ParticleAffineMatrix B_p,
-    const SplineDataType& sd,
     const GridMomentum& entity_momentum,
+    const SplineDataType& sd,
     typename std::enable_if<
     ((Cajita::isEdge<typename SplineDataType::entity_type>::value ||
       Cajita::isFace<typename SplineDataType::entity_type>::value) &&
@@ -300,12 +297,7 @@ void p2g(
                            m_p;
 
                 // Compute the action of B_p on the gradient.
-                B_g_d = 0.0;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-                for ( int d = 0; d < 3; ++d )
-                    B_g_d += B_p(dim,d) * gm_ip(d);
+                B_g_d = ~B_p.row(dim) * gm_ip(d);
 
                 // Interpolate particle momentum to the entity.
                 momentum_access( sd.s[Dim::I][i],
@@ -316,7 +308,8 @@ void p2g(
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate collocated grid velocity to the particle.
+// Interpolate collocated grid velocity to the particle. Requires SplineValue
+// and SplineGradient when constructing the spline data.
 template<class GridVelocity,
          class SplineDataType,
          class ParticleVelocity,
@@ -324,9 +317,9 @@ template<class GridVelocity,
 KOKKOS_INLINE_FUNCTION
 void g2p(
     const GridVelocity& entity_velocity,
-    const SplineDataType& sd,
     ParticleVelocity u_p,
     ParticleAffineMatrix B_p,
+    const SplineDataType& sd,
     typename std::enable_if<
     (Cajita::isNode<typename SplineDataType::entity_type>::value ||
      Cajita::isCell<typename SplineDataType::entity_type>::value),
@@ -375,9 +368,9 @@ template<class GridVelocity,
 KOKKOS_INLINE_FUNCTION
 void g2p(
     const GridVelocity& entity_velocity,
-    const SplineDataType& sd,
     ParticleVelocity u_p,
     ParticleAffineMatrix B_p,
+    const SplineDataType& sd,
     typename std::enable_if<
     (Cajita::isEdge<typename SplineDataType::entity_type>::value ||
      Cajita::isFace<typename SplineDataType::entity_type>::value),
@@ -390,12 +383,7 @@ void g2p(
 
     // Reset the particle values.
     u_p(dim) = 0.0;
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-    for ( int d = 0; d < 3; ++d )
-        B_p(dim,d) = 0.0;
+    B_p.row(dim) = 0.0;
 
     // Update particle.
     Vec3<value_type> distance;
@@ -421,10 +409,7 @@ void g2p(
                 distance(Dim::K) = sd.d[Dim::K][k];
 
                 // Update affine matrix.
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif                for ( int d = 0; d < 3; ++d)
-                B_p(dim,d) += w_ip * u_i * distance(d);
+                B_p.row(dim) = B_p.row(dim) + w_ip * u_i * distance;
             }
 }
 

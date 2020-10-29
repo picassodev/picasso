@@ -53,6 +53,10 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/particle_interpolation_test.json
   COPYONLY)
 configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/polypic_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/polypic_test.json
+  COPYONLY)
+configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/facet_init_example.json
   ${CMAKE_CURRENT_BINARY_DIR}/facet_init_example.json
   COPYONLY)
@@ -141,8 +145,12 @@ macro(Picasso_add_tests)
   endforeach()
 endmacro()
 
-Picasso_add_tests(MPI NAMES
+Picasso_add_tests(NAMES
   BatchedLinearAlgebra
+  LinearPolyPIC
+  )
+
+Picasso_add_tests(MPI NAMES
   FacetGeometry
   ParticleList
   ParticleInit
