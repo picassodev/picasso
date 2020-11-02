@@ -168,6 +168,25 @@ struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
 {};
 
 //---------------------------------------------------------------------------//
+// Expression creation functions.
+//---------------------------------------------------------------------------//
+// Matrix
+template<class T, int M, int N, class Func>
+KOKKOS_INLINE_FUNCTION
+MatrixExpression<T,M,N,Func> createMatrixExpression( const Func& f )
+{
+    return MatrixExpression<T,M,N,Func>(f);
+}
+
+// Vector.
+template<class T, int N, class Func>
+KOKKOS_INLINE_FUNCTION
+VectorExpression<T,N,Func> createVectorExpression( const Func& f )
+{
+    return VectorExpression<T,N,Func>(f);
+}
+
+//---------------------------------------------------------------------------//
 // Expression containers.
 //---------------------------------------------------------------------------//
 // Matrix expression container.
@@ -206,6 +225,22 @@ struct MatrixExpression
     value_type operator()( const int i, const int j ) const
     { return _f(i,j); }
 
+    // Get a row as a vector expression.
+    KOKKOS_INLINE_FUNCTION
+    auto row( const int n ) const
+    {
+        return createVectorExpression<T,N>(
+            [=]( const int i ){ return (*this)(n,i); } );
+    }
+
+    // Get a column as a vector expression.
+    KOKKOS_INLINE_FUNCTION
+    auto column( const int n ) const
+    {
+        return createVectorExpression<T,M>(
+            [=]( const int i ){ return (*this)(i,n); } );
+    }
+
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
     Matrix<T,M,N> LU() const
@@ -216,14 +251,6 @@ struct MatrixExpression
         return lu;
     }
 };
-
-// Creation function.
-template<class T, int M, int N, class Func>
-KOKKOS_INLINE_FUNCTION
-MatrixExpression<T,M,N,Func> createMatrixExpression( const Func& f )
-{
-    return MatrixExpression<T,M,N,Func>(f);
-}
 
 //---------------------------------------------------------------------------//
 // Vector expression container.
@@ -261,14 +288,6 @@ struct VectorExpression
     value_type operator()( const int i ) const
     { return _f(i); }
 };
-
-// Creation function.
-template<class T, int N, class Func>
-KOKKOS_INLINE_FUNCTION
-VectorExpression<T,N,Func> createVectorExpression( const Func& f )
-{
-    return VectorExpression<T,N,Func>(f);
-}
 
 //---------------------------------------------------------------------------//
 // Matrix
@@ -404,6 +423,20 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     pointer data() const
     { return const_cast<pointer>(&_d[0][0]); }
+
+    // Get a row as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T,N> row( const int n ) const
+    {
+        return VectorView<T,N>( const_cast<T*>(&_d[n][0]), 1 );
+    }
+
+    // Get a column as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T,M> column( const int n ) const
+    {
+        return VectorView<T,M>( const_cast<T*>(&_d[0][n]), N );
+    }
 
     // LU decomposition.
     KOKKOS_INLINE_FUNCTION
@@ -596,6 +629,20 @@ struct MatrixView
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i, const int j )
     { return _d[_stride[0]*i + _stride[1]*j]; }
+
+    // Get a row as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T,N> row( const int n ) const
+    {
+        return VectorView<T,N>( const_cast<T*>(&_d[_stride[0]*n]), _stride[1] );
+    }
+
+    // Get a column as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T,M> column( const int n ) const
+    {
+        return VectorView<T,M>( const_cast<T*>(&_d[_stride[1]*n]), _stride[0] );
+    }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION

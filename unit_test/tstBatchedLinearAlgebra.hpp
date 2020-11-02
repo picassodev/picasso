@@ -29,6 +29,59 @@ void matrixTest()
     EXPECT_EQ( a(1,1), 2.6 );
     EXPECT_EQ( a(1,2), -0.1 );
 
+    // Check rows.
+    for ( int i = 0; i < 2; ++ i )
+    {
+        auto row = a.row(i);
+        EXPECT_EQ( row.stride_0(), 1 );
+        EXPECT_EQ( row.extent(0), 3 );
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_EQ( row(j), a(i,j) );
+    }
+
+    // Check columns.
+    for ( int j = 0; j < 3; ++j )
+    {
+        auto column = a.column(j);
+        EXPECT_EQ( column.stride_0(), 3 );
+        EXPECT_EQ( column.extent(0), 2 );
+        for ( int i = 0; i < 2; ++i )
+            EXPECT_EQ( column(i), a(i,j) );
+    }
+
+    // Check matrix view.
+    LinearAlgebra::MatrixView<double,2,3> a_view(
+        a.data(), a.stride_0(), a.stride_1() );
+    EXPECT_EQ( a_view.stride_0(), 3 );
+    EXPECT_EQ( a_view.stride_1(), 1 );
+    EXPECT_EQ( a_view.extent(0), 2 );
+    EXPECT_EQ( a_view.extent(1), 3 );
+
+    EXPECT_EQ( a_view(0,0), 1.2 );
+    EXPECT_EQ( a_view(0,1), -3.5 );
+    EXPECT_EQ( a_view(0,2), 5.4 );
+    EXPECT_EQ( a_view(1,0), 8.6 );
+    EXPECT_EQ( a_view(1,1), 2.6 );
+    EXPECT_EQ( a_view(1,2), -0.1 );
+
+    // Check view rows.
+    for ( int i = 0; i < 2; ++ i )
+    {
+        auto row = a_view.row(i);
+        EXPECT_EQ( row.extent(0), 3 );
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_EQ( row(j), a_view(i,j) );
+    }
+
+    // Check view columns.
+    for ( int j = 0; j < 3; ++j )
+    {
+        auto column = a.column(j);
+        EXPECT_EQ( column.extent(0), 2 );
+        for ( int i = 0; i < 2; ++i )
+            EXPECT_EQ( column(i), a_view(i,j) );
+    }
+
     // Check a deep copy.
     auto a_c = a;
     EXPECT_EQ( a_c.stride_0(), 3 );
@@ -54,6 +107,24 @@ void matrixTest()
     EXPECT_EQ( a_t(0,1), 8.6 );
     EXPECT_EQ( a_t(1,1), 2.6 );
     EXPECT_EQ( a_t(2,1), -0.1 );
+
+    // Check expression rows.
+    for ( int i = 0; i < 3; ++ i )
+    {
+        auto row = a_t.row(i);
+        EXPECT_EQ( row.extent(0), 2 );
+        for ( int j = 0; j < 2; ++j )
+            EXPECT_EQ( row(j), a_t(i,j) );
+    }
+
+    // Check expression columns.
+    for ( int j = 0; j < 2; ++j )
+    {
+        auto column = a_t.column(j);
+        EXPECT_EQ( column.extent(0), 3 );
+        for ( int i = 0; i < 3; ++i )
+            EXPECT_EQ( column(i), a_t(i,j) );
+    }
 
     // Check transpose of transpose shallow copy.
     auto a_t_t = ~a_t;
@@ -111,7 +182,7 @@ void matrixTest()
         for ( int j = 0; j < 3; ++j )
             EXPECT_EQ( d(i,j), 64.6 );
 
-    // Check scalr division.
+    // Check scalar division.
     auto e = d / 2.0;
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
@@ -129,6 +200,15 @@ void vectorTest()
     EXPECT_EQ( x(0), 1.2 );
     EXPECT_EQ( x(1), -3.5 );
     EXPECT_EQ( x(2), 5.4 );
+
+    // Check a vector view.
+    LinearAlgebra::VectorView<double,3> x_view( x.data(), x.stride_0() );
+    EXPECT_EQ( x_view.stride_0(), 1 );
+    EXPECT_EQ( x_view.extent(0), 3 );
+
+    EXPECT_EQ( x_view(0), 1.2 );
+    EXPECT_EQ( x_view(1), -3.5 );
+    EXPECT_EQ( x_view(2), 5.4 );
 
     // Check a deep copy
     auto x_c = x;
