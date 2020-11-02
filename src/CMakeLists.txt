@@ -17,11 +17,14 @@ set(HEADERS
   Picasso_ParticleLevelSet.hpp
   Picasso_ParticleList.hpp
   Picasso_PolyPIC.hpp
-  Picasso_SiloParticleWriter.hpp
   Picasso_Types.hpp
   Picasso_UniformMesh.hpp
   Picasso_Version.hpp
   )
+
+if(Picasso_ENABLE_SILO)
+  list(APPEND HEADERS Picasso_SiloParticleWriter.hpp)
+endif()
 
 set(SOURCES
   Picasso_InputParser.cpp
@@ -37,9 +40,12 @@ target_link_libraries(picasso
   MPI::MPI_CXX
   Cabana::cabanacore
   Cabana::Cajita
-  Silo::silo
   ArborX::ArborX
   Boost::boost )
+
+if(Picasso_ENABLE_SILO)
+  target_link_libraries(picasso Silo::silo)
+endif()
 
 target_include_directories(picasso
   PUBLIC

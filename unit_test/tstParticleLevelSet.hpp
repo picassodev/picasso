@@ -7,7 +7,10 @@
 #include <Picasso_FieldManager.hpp>
 
 #include <Picasso_ParticleInit.hpp>
+
+#ifdef Picasso_ENABLE_SILO
 #include <Picasso_SiloParticleWriter.hpp>
+#endif
 
 #include <Cajita.hpp>
 
@@ -86,6 +89,7 @@ void zalesaksTest( const std::string& filename )
 
     // Write the initial particle state.
     double time = 0.0;
+#ifdef Picasso_ENABLE_SILO
     SiloParticleWriter::writeTimeStep(
         mesh->localGrid()->globalGrid(),
         0,
@@ -93,6 +97,7 @@ void zalesaksTest( const std::string& filename )
         particles->slice(Field::PhysicalPosition()),
         particles->slice(Field::Color()),
         particles->slice(Field::PartId()) );
+#endif
 
     // Build a level set for disk.
     int disk_color = 0;
@@ -162,6 +167,7 @@ void zalesaksTest( const std::string& filename )
 
         // Write the particle state.
         time += 1.0;
+#ifdef Picasso_ENABLE_SILO
         SiloParticleWriter::writeTimeStep(
             mesh->localGrid()->globalGrid(),
             t+1,
@@ -169,6 +175,7 @@ void zalesaksTest( const std::string& filename )
             particles->slice(Field::PhysicalPosition()),
             particles->slice(Field::Color()),
             particles->slice(Field::PartId()) );
+#endif
 
         // Compute the level set.
         level_set.updateSignedDistance( TEST_EXECSPACE() );

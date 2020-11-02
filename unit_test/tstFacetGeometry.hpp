@@ -4,7 +4,10 @@
 #include <Picasso_ParticleList.hpp>
 
 #include <Picasso_ParticleInit.hpp>
+
+#ifdef Picasso_ENABLE_SILO
 #include <Picasso_SiloParticleWriter.hpp>
+#endif
 
 #include <Kokkos_Core.hpp>
 
@@ -546,12 +549,14 @@ void initExample()
     initializeParticles(
         InitUniform(), TEST_EXECSPACE(), 1, init_func, particles );
 
+#ifdef Picasso_ENABLE_SILO
     SiloParticleWriter::writeTimeStep(
         mesh->localGrid()->globalGrid(),
         0,
         0.0,
         particles.slice(Field::PhysicalPosition()),
         particles.slice(Field::VolumeId()) );
+#endif
 }
 
 TEST( TEST_CATEGORY, init_example )

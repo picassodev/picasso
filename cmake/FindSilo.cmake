@@ -9,7 +9,7 @@ find_package_handle_standard_args(Silo DEFAULT_MSG Silo_INCLUDE_DIR Silo_LIBRARY
 
 mark_as_advanced(Silo_INCLUDE_DIR Silo_LIBRARY)
 
-if(Silo_INCLUDE_DIR AND Silo_LIBRARY)
+if(Silo_INCLUDE_DIR AND Silo_LIBRARY AND NOT TARGET Silo::silo)
   add_library(Silo::silo UNKNOWN IMPORTED)
   set_target_properties(Silo::silo PROPERTIES
     IMPORTED_LOCATION ${Silo_LIBRARY}
