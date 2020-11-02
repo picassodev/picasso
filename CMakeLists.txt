@@ -26,9 +26,25 @@ find_package(MPI REQUIRED)
 find_package(Kokkos 3 REQUIRED)
 find_package(KokkosKernels 3 REQUIRED)
 find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
-find_package(Silo REQUIRED)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
+
+# find dependencies (from Cabana CMakeLists.txt)
+macro(Picasso_add_dependency)
+  cmake_parse_arguments(PICASSO_DEPENDENCY "" "PACKAGE" "" ${ARGN})
+  find_package( ${PICASSO_DEPENDENCY_PACKAGE} QUIET )
+  string(TOUPPER "${PICASSO_DEPENDENCY_PACKAGE}" PICASSO_DEPENDENCY_OPTION )
+  option(
+    Picasso_REQUIRE_${PICASSO_DEPENDENCY_OPTION}
+    "Require Picasso to build with ${PICASSO_DEPENDENCY_PACKAGE} support" ${PICASSO_DEPENDENCY_PACKAGE}_FOUND)
+  if(Picasso_REQUIRE_${PICASSO_DEPENDENCY_OPTION})
+    find_package( ${PICASSO_DEPENDENCY_PACKAGE} REQUIRED )
+  endif()
+  set(Picasso_ENABLE_${PICASSO_DEPENDENCY_OPTION} ${${PICASSO_DEPENDENCY_PACKAGE}_FOUND})
+endmacro()
+
+# find Silo
+Picasso_add_dependency(PACKAGE Silo)
 
 # enable testing
 option(Picasso_ENABLE_TESTING "Build tests" OFF)

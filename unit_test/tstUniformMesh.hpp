@@ -3,7 +3,6 @@
 #include <Picasso_InputParser.hpp>
 
 #include <Picasso_ParticleInit.hpp>
-#include <Picasso_SiloParticleWriter.hpp>
 
 #include <Kokkos_Core.hpp>
 

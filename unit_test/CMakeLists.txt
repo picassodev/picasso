@@ -147,10 +147,14 @@ Picasso_add_tests(MPI NAMES
   ParticleList
   ParticleInit
   ParticleCommunication
-  SiloParticleWriter
   UniformMesh
   AdaptiveMesh
   FieldManager
   GridOperator
   ParticleInterpolation
   ParticleLevelSet)
+
+if(Picasso_ENABLE_SILO)
+  Picasso_add_tests(MPI NAMES
+    SiloParticleWriter)
+endif()
