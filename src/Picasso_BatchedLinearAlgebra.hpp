@@ -195,7 +195,6 @@ struct MatrixExpression
 {
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
-    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -217,8 +216,8 @@ struct MatrixExpression
 
     // Extent.
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    constexpr int extent( const int d ) const
+    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
@@ -280,7 +279,7 @@ struct VectorExpression
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int ) const
+    constexpr int extent( const int ) const
     { return N; }
 
     // Evaluate the expression at an index.
@@ -300,7 +299,6 @@ struct Matrix
 
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
-    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -407,8 +405,8 @@ struct Matrix
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    constexpr int extent( const int d ) const
+    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
@@ -495,7 +493,7 @@ struct Matrix<T,1,1>
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int ) const
+    constexpr int extent( const int ) const
     { return 1; }
 
     // Access an individual element.
@@ -531,7 +529,6 @@ struct MatrixView
 
     static constexpr int extent_0 = M;
     static constexpr int extent_1 = N;
-    static constexpr int _extent[2] = {M,N};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -618,8 +615,8 @@ struct MatrixView
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    constexpr int extent( const int d ) const
+    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
@@ -661,7 +658,6 @@ struct Vector
 
     static constexpr int extent_0 = N;
     static constexpr int extent_1 = 1;
-    static constexpr int _extent[2] = {N,1};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -754,8 +750,8 @@ struct Vector
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    constexpr int extent( const int d ) const
+    { return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 ); }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
@@ -819,7 +815,7 @@ struct Vector<T,1>
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int ) const
+    constexpr int extent( const int ) const
     { return 1; }
 
     // Access an individual element.
@@ -855,7 +851,6 @@ struct VectorView
 
     static constexpr int extent_0 = N;
     static constexpr int extent_1 = 1;
-    static constexpr int _extent[2] = {N,1};
 
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
@@ -930,8 +925,8 @@ struct VectorView
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    int extent( const int d ) const
-    { return _extent[d]; }
+    constexpr int extent( const int d ) const
+    { return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 ); }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
