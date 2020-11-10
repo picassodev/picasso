@@ -147,7 +147,8 @@ endmacro()
 
 Picasso_add_tests(NAMES
   BatchedLinearAlgebra
-  LinearPolyPIC
+  PolyPIC
+  APIC
   )
 
 Picasso_add_tests(MPI NAMES

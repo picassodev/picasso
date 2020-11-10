@@ -60,6 +60,10 @@ namespace LinearAlgebra
 
   Copy assignment: A = B; x = y;
 
+  Addition assignment: A += B; x += y;
+
+  Subtraction assignment: A -= B; x -= y;
+
   Data access: A(i,j) = s; x(i) = s;
 
   Matrix transpose: ~A (if A is MxN, ~A is NxM)
@@ -360,6 +364,36 @@ struct Matrix
         return *this;
     }
 
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
+    operator+=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) += e(i,j);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
+    operator-=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) -= e(i,j);
+        return *this;
+    }
+
     // Initializer list assignment operator.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=(
@@ -560,6 +594,36 @@ struct MatrixView
         return *this;
     }
 
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
+    operator+=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) += e(i,j);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
+    operator-=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) -= e(i,j);
+        return *this;
+    }
+
     // Initializer list assignment operator.
     KOKKOS_INLINE_FUNCTION
     MatrixView& operator=(
@@ -699,6 +763,34 @@ struct Vector
 #endif
             for ( int i = 0; i < N; ++i )
                 (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
+    operator+=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) += e(i);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
+    operator-=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) -= e(i);
         return *this;
     }
 
@@ -874,6 +966,34 @@ struct VectorView
 #endif
         for ( int i = 0; i < N; ++i )
             (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
+    operator+=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            (*this)(i) += e(i);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
+    operator-=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            (*this)(i) -= e(i);
         return *this;
     }
 
