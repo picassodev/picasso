@@ -187,6 +187,19 @@ void matrixTest()
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_EQ( e(i,j), 32.3 );
+
+    // Check addition assignment.
+    LinearAlgebra::Matrix<double,2,3> f = e;
+    f += d;
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_DOUBLE_EQ( f(i,j), 96.9 );
+
+    // Check subtraction assignment.
+    f -= d;
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_DOUBLE_EQ( f(i,j), 32.3 );
 }
 
 //---------------------------------------------------------------------------//
@@ -268,6 +281,17 @@ void vectorTest()
     auto j = f | g;
     EXPECT_EQ( j(0), 0.5 );
     EXPECT_EQ( j(1), 0.5 );
+
+    // Check addition assignment.
+    LinearAlgebra::Vector<double,3> q = z;
+    q += d;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_DOUBLE_EQ( q(i), 96.9 );
+
+    // Check subtraction assignment.
+    q -= d;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_DOUBLE_EQ( q(i), 32.3 );
 }
 
 //---------------------------------------------------------------------------//

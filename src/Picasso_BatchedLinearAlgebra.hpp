@@ -22,6 +22,8 @@
 
 #include <KokkosBatched_SolveLU_Decl.hpp>
 
+#include <KokkosBatched_InverseLU_Decl.hpp>
+
 #include <type_traits>
 #include <cmath>
 #include <functional>
@@ -58,9 +60,11 @@ namespace LinearAlgebra
 
   Copy assignment: A = B; x = y;
 
-  Data access: A(i,j) = s; x(i) = s;
+  Addition assignment: A += B; x += y;
 
-  LU decomposition: A_lu = A.LU(); (returns a copy of the matrix decomposed)
+  Subtraction assignment: A -= B; x -= y;
+
+  Data access: A(i,j) = s; x(i) = s;
 
   Matrix transpose: ~A (if A is MxN, ~A is NxM)
 
@@ -82,7 +86,7 @@ namespace LinearAlgebra
 
   Dot product: s = ~x * y;
 
-  Inner product: A = x * y~;
+  Inner product: A = x * ~y;
 
   Cross product: z = x % y; (3-vectors only)
 
@@ -91,6 +95,10 @@ namespace LinearAlgebra
   Element-wise vector division: z = x | y;
 
   Matrix determinants: s = !A;
+
+  LU decomposition: A_lu = LU(A); (returns a copy of the matrix decomposed)
+
+  Matrix inverse: A_inv = inverse(A) (returns a copy of the matrix inverted)
 
   NxN linear solve (A*x=b): x = A ^ b;
 
@@ -239,16 +247,6 @@ struct MatrixExpression
         return createVectorExpression<T,M>(
             [=]( const int i ){ return (*this)(i,n); } );
     }
-
-    // LU decomposition.
-    KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N> LU() const
-    {
-        Matrix<T,M,N> lu = *this;
-        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke(
-            lu );
-        return lu;
-    }
 };
 
 //---------------------------------------------------------------------------//
@@ -366,6 +364,36 @@ struct Matrix
         return *this;
     }
 
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
+    operator+=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) += e(i,j);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
+    operator-=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) -= e(i,j);
+        return *this;
+    }
+
     // Initializer list assignment operator.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=(
@@ -434,15 +462,6 @@ struct Matrix
     VectorView<T,M> column( const int n ) const
     {
         return VectorView<T,M>( const_cast<T*>(&_d[0][n]), N );
-    }
-
-    // LU decomposition.
-    KOKKOS_INLINE_FUNCTION
-    Matrix<T,M,N> LU() const
-    {
-        Matrix<T,M,N> lu = *this;
-        KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
-        return lu;
     }
 };
 
@@ -572,6 +591,36 @@ struct MatrixView
 #endif
             for ( int j = 0; j < N; ++j )
                 (*this)(i,j) = e(i,j);
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
+    operator+=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) += e(i,j);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
+    operator-=( const Expression& e )
+    {
+        for ( int i = 0; i < M; ++i )
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                (*this)(i,j) -= e(i,j);
         return *this;
     }
 
@@ -714,6 +763,34 @@ struct Vector
 #endif
             for ( int i = 0; i < N; ++i )
                 (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
+    operator+=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) += e(i);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
+    operator-=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+            for ( int i = 0; i < N; ++i )
+                (*this)(i) -= e(i);
         return *this;
     }
 
@@ -889,6 +966,34 @@ struct VectorView
 #endif
         for ( int i = 0; i < N; ++i )
             (*this)(i) = e(i);
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
+    operator+=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            (*this)(i) += e(i);
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template<class Expression>
+    KOKKOS_INLINE_FUNCTION
+    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
+    operator-=( const Expression& e )
+    {
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            (*this)(i) -= e(i);
         return *this;
     }
 
@@ -1345,24 +1450,31 @@ operator!( const Expression& a )
 }
 
 //---------------------------------------------------------------------------//
-// Linear solve.
+// LU decomposition.
 //---------------------------------------------------------------------------//
-// 2x2 specialization. Single and multiple RHS supported.
-template<class ExpressionA, class ExpressionB>
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                          typename ExpressionA::copy_type>
+LU( const ExpressionA& a )
+{
+    typename ExpressionA::copy_type lu = a;
+    KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+    return lu;
+}
+
+//---------------------------------------------------------------------------//
+// Matrix inverse.
+//---------------------------------------------------------------------------//
+// 2x2 specialization.
+template<class ExpressionA>
 KOKKOS_INLINE_FUNCTION
 typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
     ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
-    typename ExpressionB::copy_type>
-operator^( const ExpressionA& a, const ExpressionB& b )
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a )
 {
-    static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionB::value_type>::value,
-                   "value_type must be the same" );
-    static_assert( ExpressionB::extent_0 == 2,
-                   "extent_0 must be 2" );
-
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = 1.0 / !a_eval;
@@ -1374,26 +1486,19 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     a_inv(1,0) = -a_eval(1,0) * a_det_inv;
     a_inv(1,1) = a_eval(0,0) * a_det_inv;
 
-    return a_inv * b;
+    return a_inv;
 }
 
 //---------------------------------------------------------------------------//
-// 3x3 specialization. Single and multiple RHS supported.
-template<class ExpressionA, class ExpressionB>
+// 3x3 specialization.
+template<class ExpressionA>
 KOKKOS_INLINE_FUNCTION
 typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
     ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
-    typename ExpressionB::copy_type>
-operator^( const ExpressionA& a, const ExpressionB& b )
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a )
 {
-    static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionB::value_type>::value,
-                   "value_type must be the same" );
-    static_assert( ExpressionB::extent_0 == 3,
-                   "extent_0 must be 3" );
-
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = 1.0 / !a_eval;
@@ -1412,7 +1517,55 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     a_inv(2,1) = (a_eval(0,1)*a_eval(2,0) - a_eval(0,0)*a_eval(2,1)) * a_det_inv;
     a_inv(2,2) = (a_eval(0,0)*a_eval(1,1) - a_eval(0,1)*a_eval(1,0)) * a_det_inv;
 
-    return a_inv * b;
+    return a_inv;
+}
+
+//---------------------------------------------------------------------------//
+// General case.
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<
+    is_matrix<ExpressionA>::value &&
+    !(ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2) &&
+    !(ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3),
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a )
+{
+    auto a_lu = LU(a);
+    typename ExpressionA::copy_type a_inv;
+    KokkosBatched::SerialInverseLU<
+        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, a_inv );
+    return a_inv;
+}
+
+//---------------------------------------------------------------------------//
+// Linear solve.
+//---------------------------------------------------------------------------//
+// 2x2 specialization. Single and multiple RHS supported.
+template<class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<
+    is_matrix<ExpressionA>::value &&
+    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
+    ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
+    typename ExpressionB::copy_type>
+operator^( const ExpressionA& a, const ExpressionB& b )
+{
+    return inverse(a) * b;
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization. Single and multiple RHS supported.
+template<class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<
+    is_matrix<ExpressionA>::value &&
+    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
+    ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
+    typename ExpressionB::copy_type>
+operator^( const ExpressionA& a, const ExpressionB& b )
+{
+    return inverse(a) * b;
 }
 
 //---------------------------------------------------------------------------//
@@ -1432,7 +1585,7 @@ operator^( const ExpressionA& a, const ExpressionB& b )
                    "value_type must be the same" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_0,
                    "Inner extent must match" );
-    auto a_lu = a.LU();
+    auto a_lu = LU(a);
     typename ExpressionB::copy_type x = b;
     KokkosBatched::SerialSolveLU<
         KokkosBatched::Trans::NoTranspose,

@@ -1,7 +1,7 @@
 #ifndef PICASSO_FACETGEOMETRY_HPP
 #define PICASSO_FACETGEOMETRY_HPP
 
-#include <Picasso_DenseLinearAlgebra.hpp>
+#include <Picasso_BatchedLinearAlgebra.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -499,28 +499,25 @@ bool pointFacetProjection( const float x[3],
 {
     // Build the system of equations to solve for intersection. Fire the ray
     // in the Y direction - this choice is arbitary.
-    float A[3][3];
-    float b[3];
+    Mat3<float> A;
+    Vec3<float> b;
     for ( int i = 0; i < 3; ++i )
     {
-        A[i][0] = facets(f,1,i) - facets(f,0,i);
-        A[i][1] = facets(f,2,i) - facets(f,0,i);
-        A[i][2] = -r[i];
-        b[i] = x[i] - facets(f,0,i);
+        A(i,0) = facets(f,1,i) - facets(f,0,i);
+        A(i,1) = facets(f,2,i) - facets(f,0,i);
+        A(i,2) = -r[i];
+        b(i) = x[i] - facets(f,0,i);
     }
 
     // Check the determinant of the matrix. If zero then the ray is parallel
     // so no intersection.
-    auto det_A = DenseLinearAlgebra::determinant( A );
+    auto det_A = !A;
     if ( 0.0 == det_A )
         return false;
 
-    // Invert the matrix.
-    float A_inv[3][3];
-    DenseLinearAlgebra::inverse( A, det_A, A_inv );
-
     // Solve the system.
-    DenseLinearAlgebra::matVecMultiply( A_inv, b, y );
+    VecView3<float> y_view( y, 1 );
+    y_view = A ^ b;
 
     // Check the solution for inclusion in the triangle.
     return ( y[0] >= 0.0 && y[1] >= 0.0 && y[0]+y[1] <= 1.0 );
