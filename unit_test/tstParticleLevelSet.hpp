@@ -71,13 +71,13 @@ void zalesaksTest( const std::string& filename )
                                    Field::PhysicalPosition,
                                    Field::LogicalPosition,
                                    Field::Color,
-                                   Field::PartId>;
+                                   Field::CommRank>;
     auto particles = createParticleList(
         "particles", mesh,
         ParticleTraits<Field::PhysicalPosition,
         Field::LogicalPosition,
         Field::Color,
-        Field::PartId>() );
+        Field::CommRank>() );
 
     // Assign particles a color equal to the volume id in which they are
     // located. The implicit complement is not constructed.
@@ -96,7 +96,7 @@ void zalesaksTest( const std::string& filename )
         time,
         particles->slice(Field::PhysicalPosition()),
         particles->slice(Field::Color()),
-        particles->slice(Field::PartId()) );
+        particles->slice(Field::CommRank()) );
 #endif
 
     // Build a level set for disk.
@@ -123,7 +123,7 @@ void zalesaksTest( const std::string& filename )
         // Get slices.
         auto xp = particles->slice( Field::PhysicalPosition() );
         auto xl = particles->slice( Field::LogicalPosition() );
-        auto xr = particles->slice( Field::PartId() );
+        auto xr = particles->slice( Field::CommRank() );
 
         // Move the particles around the circle.
         Kokkos::parallel_for(
@@ -174,7 +174,7 @@ void zalesaksTest( const std::string& filename )
             time,
             particles->slice(Field::PhysicalPosition()),
             particles->slice(Field::Color()),
-            particles->slice(Field::PartId()) );
+            particles->slice(Field::CommRank()) );
 #endif
 
         // Compute the level set.
