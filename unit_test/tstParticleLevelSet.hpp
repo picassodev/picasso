@@ -67,11 +67,6 @@ void zalesaksTest( const std::string& filename )
         geometry.globalBoundingBox(), minimum_halo_size, MPI_COMM_WORLD );
 
     // Create particles.
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition,
-                                   Field::LogicalPosition,
-                                   Field::Color,
-                                   Field::CommRank>;
     auto particles = createParticleList(
         "particles", mesh,
         ParticleTraits<Field::PhysicalPosition,
@@ -101,19 +96,21 @@ void zalesaksTest( const std::string& filename )
 
     // Build a level set for disk.
     int disk_color = 0;
-    ParticleLevelSet<list_type,FieldLocation::Node> level_set(
-        parser.propertyTree(), particles, disk_color );
-    level_set.updateParticleIndices( TEST_EXECSPACE() );
+    auto level_set = createParticleLevelSet<FieldLocation::Node>(
+        parser.propertyTree(), mesh, disk_color );
+    level_set->updateParticleColors(
+        TEST_EXECSPACE(), particles->slice(Field::Color()) );
 
     // Compute the initial level set.
-    level_set.estimateSignedDistance( TEST_EXECSPACE() );
-    level_set.redistance( TEST_EXECSPACE(), true );
+    level_set->estimateSignedDistance(
+        TEST_EXECSPACE(), particles->slice(Field::LogicalPosition()) );
+    level_set->redistance( TEST_EXECSPACE(), true );
 
     // Write the initial level set.
     Cajita::BovWriter::Experimental::writeTimeStep(
-        0, time, *(level_set.getDistanceEstimate()) );
+        0, time, *(level_set->getDistanceEstimate()) );
     Cajita::BovWriter::Experimental::writeTimeStep(
-        0, time, *(level_set.getSignedDistance()) );
+        0, time, *(level_set->getSignedDistance()) );
 
     // Advect the disk one full rotation.
     double pi = 4.0 * atan(1.0);
@@ -164,7 +161,8 @@ void zalesaksTest( const std::string& filename )
         // If they went to new ranks, update the list of colors which write to
         // the level set.
         if ( did_redistribute )
-            level_set.updateParticleIndices( TEST_EXECSPACE() );
+            level_set->updateParticleColors(
+                TEST_EXECSPACE(), particles->slice(Field::Color()) );
 
         // Write the particle state.
         time += 1.0;
@@ -179,14 +177,15 @@ void zalesaksTest( const std::string& filename )
 #endif
 
         // Compute the level set.
-        level_set.estimateSignedDistance( TEST_EXECSPACE() );
-        level_set.redistance( TEST_EXECSPACE(), true );
+        level_set->estimateSignedDistance(
+            TEST_EXECSPACE(), particles->slice(Field::LogicalPosition()) );
+        level_set->redistance( TEST_EXECSPACE(), true );
 
         // Write the level set.
         Cajita::BovWriter::Experimental::writeTimeStep(
-            t+1, time, *(level_set.getDistanceEstimate()) );
+            t+1, time, *(level_set->getDistanceEstimate()) );
         Cajita::BovWriter::Experimental::writeTimeStep(
-            t+1, time, *(level_set.getSignedDistance()) );
+            t+1, time, *(level_set->getSignedDistance()) );
     }
 }
 

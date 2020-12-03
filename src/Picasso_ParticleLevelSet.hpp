@@ -188,13 +188,13 @@ namespace Picasso
 //---------------------------------------------------------------------------//
 // Particle level set. Composes a signed distance function for particles of a
 // given color.
-template<class ParticleListType, class SignedDistanceLocation>
+template<class MeshType, class SignedDistanceLocation>
 class ParticleLevelSet
 {
   public:
 
-    using mesh_type = typename ParticleListType::mesh_type;
-    using memory_space = typename ParticleListType::memory_space;
+    using mesh_type = MeshType;
+    using memory_space = typename mesh_type::memory_space;
     using location_type = SignedDistanceLocation;
     using entity_type = typename location_type::entity_type;
     using array_type = Cajita::Array<double,
@@ -203,21 +203,26 @@ class ParticleLevelSet
                                      memory_space>;
     using halo_type = Cajita::Halo<memory_space>;
 
-    // Construct the level set with particles of a given color. If the input
-    // color is negative then all particles will be used in the level set
-    // regardless of color.
+    /*!
+      \brief Construct the level set with particles of a given color. If the
+      input color is negative then all particles will be used in the level set
+      regardless of color.
+      \param ptree Level set settings.
+      \param mesh The mesh over which to build the signed distnace function.
+      \param The particle color over which to build the level set. Use -1 if
+      the level set is to be built over all particles.
+    */
     ParticleLevelSet( const boost::property_tree::ptree& ptree,
-                      const std::shared_ptr<ParticleListType>& particles,
+                      const std::shared_ptr<MeshType>& mesh,
                       const int color )
-        : _particles( particles )
+        : _mesh( mesh )
         , _color( color )
     {
         // Create array data.
-        const auto& mesh = _particles->mesh();
         _distance_estimate = createArray(
-            mesh, location_type(), Field::SignedDistance() );
+            *_mesh, location_type(), Field::SignedDistance() );
         _signed_distance = createArray(
-            mesh, location_type(), Field::SignedDistance() );
+            *_mesh, location_type(), Field::SignedDistance() );
         _halo = Cajita::createHalo<double,memory_space>(
             *(_signed_distance->layout()), Cajita::FullHaloPattern() );
 
@@ -226,7 +231,7 @@ class ParticleLevelSet
 
         // Particles have an analytic spherical level set. Get the radius as a
         // fraction of the cell size.
-        _dx = mesh.localGrid()->globalGrid().globalMesh().cellSize(0);
+        _dx = _mesh->localGrid()->globalGrid().globalMesh().cellSize(0);
         _radius = _dx * params.get<double>("particle_radius",0.5);
 
         // Get the Hopf-Lax redistancing parameters.
@@ -242,15 +247,20 @@ class ParticleLevelSet
             params.get<int>("redistance_max_projection_iter",200);
     }
 
-    // Update the set of particle indices for the color we are building the
-    // set for. This operation is needed any time the particle population is
-    // updated (e.g. after a redistribution).
-    template<class ExecutionSpace>
-    void updateParticleIndices( const ExecutionSpace& exec_space )
+    /*!
+      \brief Update the set of particle indices for the color we are building
+      the set for. This operation is needed any time the particle population
+      is updated (e.g. after a redistribution).
+      \param exec_space The execution space to use for parallel kernels.
+      \param c_p A view or slice containing the particle colors. The number
+      and order of particles with respect to these colors must remain
+      consistent in between calls to this function (e.g. in subsequent calls
+      to estimateSignedDistance()).
+    */
+    template<class ExecutionSpace, class ParticleColors>
+    void updateParticleColors( const ExecutionSpace& exec_space,
+                               const ParticleColors& c_p )
     {
-        // Get the colors.
-        auto c_p = _particles->slice( Field::Color() );
-
         // Initialize color indices.
         _color_indices = Kokkos::View<int*,memory_space>(
             Kokkos::ViewAllocateWithoutInitializing("color_indices"),
@@ -270,7 +280,8 @@ class ParticleLevelSet
             _color_count = 0;
             Kokkos::parallel_for(
                 "count_color",
-                Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, c_p.size() ),
+                Kokkos::RangePolicy<ExecutionSpace>(
+                    exec_space, 0, c_p.size() ),
                 KOKKOS_LAMBDA( const int p ){
                     if ( _color == c_p(p) )
                     {
@@ -287,25 +298,34 @@ class ParticleLevelSet
             _color_count = c_p.size();
             Kokkos::parallel_for(
                 "fill_color_indices",
-                Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, c_p.size() ),
+                Kokkos::RangePolicy<ExecutionSpace>(
+                    exec_space, 0, c_p.size() ),
                 KOKKOS_LAMBDA( const int p ){
                     _color_indices(p) = p;
                 });
         }
     }
 
-    // Compute the signed distance function estimate from the current particle
-    // locations. All the positive values will be correct but the negative
-    // values will only have the correct sign until redistanced.
-    template<class ExecutionSpace>
-    void estimateSignedDistance( const ExecutionSpace& exec_space )
+    /*!
+      \brief Compute the signed distance function estimate from the current
+      particle locations. All the positive values will be correct but the
+      negative values will only have the correct sign until redistanced.
+      \param exec_space The execution space to use for parallel kernels.
+      \param x_p A view or slice of particle positions. If the grid is
+      adaptive these positions must be in the logical frame. The number and
+      order of particles with respect to these positions must be consistent
+      with the colors provided to the last call to updateParticleColors().
+    */
+    template<class ExecutionSpace, class ParticlePositions>
+    void estimateSignedDistance( const ExecutionSpace& exec_space,
+                                 const ParticlePositions& x_p )
     {
         // View of the distance estimate.
         auto estimate_view = _distance_estimate->view();
 
         // Local mesh.
         auto local_mesh = Cajita::createLocalMesh<memory_space>(
-            *(_particles->mesh().localGrid()) );
+            *(_mesh->localGrid()) );
 
         // If we have no particles of the given color on this rank then we are
         // in a region of positive distance. Estimate the signed distance
@@ -315,7 +335,7 @@ class ParticleLevelSet
         if ( 0 == _color_count )
         {
             double min_dist =
-                _dx * _particles->mesh().localGrid()->haloCellWidth();
+                _dx * _mesh->localGrid()->haloCellWidth();
             Cajita::ArrayOp::assign(
                 *_distance_estimate, min_dist, Cajita::Ghost() );
         }
@@ -325,8 +345,7 @@ class ParticleLevelSet
         else
         {
             // Build the tree
-            auto x_p = _particles->slice( Field::LogicalPosition() );
-            ParticleLevelSetPrimitiveData<decltype(x_p)> primitive_data;
+            ParticleLevelSetPrimitiveData<ParticlePositions> primitive_data;
             primitive_data.x = x_p;
             primitive_data.c = _color_indices;
             primitive_data.num_color = _color_count;
@@ -335,7 +354,7 @@ class ParticleLevelSet
 
             // Make the search predicates.
             ParticleLevelSetPredicateData<decltype(local_mesh),entity_type>
-                predicate_data( local_mesh, *(_particles->mesh().localGrid()) );
+                predicate_data( local_mesh, *(_mesh->localGrid()) );
 
             // Make the distance callback.
             ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
@@ -363,19 +382,23 @@ class ParticleLevelSet
         _halo->gather( exec_space, *_distance_estimate );
     }
 
-    // Redistance the signed distance function.
+    /*!
+      \brief Redistance the signed distance function.
+      \param exec_space The execution space to use for parallel kernels.
+      \param subtract_radius If the boundary particles are deemed to lie
+      exactly on the zero isocontour then the radius should be subtracted and
+      this value should be set to true.
+    */
     template<class ExecutionSpace>
     void redistance( const ExecutionSpace& exec_space,
                      const bool subtract_radius )
     {
-        // Compute the radius to subtract from the redistanced fields. If the
-        // boundary particles are deemed to lie exactly on the zero isocontour
-        // then the radius should be subtracted.
+        // Compute the radius to subtract from the redistanced fields.
         double radius_mod = subtract_radius ? _radius : 0.0;
 
         // Local mesh.
         auto local_mesh = Cajita::createLocalMesh<memory_space>(
-            *(_particles->mesh().localGrid()) );
+            *(_mesh->localGrid()) );
 
         // Views.
         auto estimate_view = _distance_estimate->view();
@@ -385,7 +408,7 @@ class ParticleLevelSet
         // particles) but the negative values are wrong. Correct the negative
         // values with redistancing.
         // View of the distance estimate.
-        auto own_entities = _particles->mesh().localGrid()->indexSpace(
+        auto own_entities = _mesh->localGrid()->indexSpace(
             Cajita::Own(), entity_type(), Cajita::Local() );
         Kokkos::parallel_for(
             "redistance",
@@ -435,7 +458,7 @@ class ParticleLevelSet
 
   private:
 
-    std::shared_ptr<ParticleListType> _particles;
+    std::shared_ptr<MeshType> _mesh;
     int _color;
     std::shared_ptr<array_type> _distance_estimate;
     std::shared_ptr<array_type> _signed_distance;
@@ -450,6 +473,25 @@ class ParticleLevelSet
     Kokkos::View<int*,memory_space> _color_indices;
     int _color_count;
 };
+
+//---------------------------------------------------------------------------//
+/*!
+  \brief Create a particle level set over particles of the given color. A
+  color of -1 will create the level set over all particles.
+  \param ptree Level set settings.
+  \param mesh The mesh over which to build the signed distnace function.
+  \param The particle color over which to build the level set. Use -1 if
+  the level set is to be built over all particles.
+*/
+template<class SignedDistanceLocation, class MeshType>
+std::shared_ptr<ParticleLevelSet<MeshType,SignedDistanceLocation>>
+createParticleLevelSet( const boost::property_tree::ptree& ptree,
+                        const std::shared_ptr<MeshType>& mesh,
+                        const int color )
+{
+    return std::make_shared<ParticleLevelSet<MeshType,SignedDistanceLocation>>(
+        ptree, mesh, color );
+}
 
 //---------------------------------------------------------------------------//
 
