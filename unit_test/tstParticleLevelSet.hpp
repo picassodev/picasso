@@ -106,7 +106,8 @@ void zalesaksTest( const std::string& filename )
     level_set.updateParticleIndices( TEST_EXECSPACE() );
 
     // Compute the initial level set.
-    level_set.updateSignedDistance( TEST_EXECSPACE() );
+    level_set.estimateSignedDistance( TEST_EXECSPACE() );
+    level_set.redistance( TEST_EXECSPACE(), true );
 
     // Write the initial level set.
     Cajita::BovWriter::Experimental::writeTimeStep(
@@ -178,7 +179,8 @@ void zalesaksTest( const std::string& filename )
 #endif
 
         // Compute the level set.
-        level_set.updateSignedDistance( TEST_EXECSPACE() );
+        level_set.estimateSignedDistance( TEST_EXECSPACE() );
+        level_set.redistance( TEST_EXECSPACE(), true );
 
         // Write the level set.
         Cajita::BovWriter::Experimental::writeTimeStep(

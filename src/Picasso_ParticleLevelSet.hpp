@@ -294,10 +294,11 @@ class ParticleLevelSet
         }
     }
 
-    // Compute the signed distance function from the current particle
-    // locations.
+    // Compute the signed distance function estimate from the current particle
+    // locations. All the positive values will be correct but the negative
+    // values will only have the correct sign until redistanced.
     template<class ExecutionSpace>
-    void updateSignedDistance( const ExecutionSpace& exec_space )
+    void estimateSignedDistance( const ExecutionSpace& exec_space )
     {
         // View of the distance estimate.
         auto estimate_view = _distance_estimate->view();
@@ -341,13 +342,14 @@ class ParticleLevelSet
             distance_callback.distance_estimate = estimate_view;
             distance_callback.radius = static_cast<float>(_radius);
 
-            // Query the particle tree with the mesh entities to find the closest
-            // particle and compute the initial signed distance estimate. Dummy
-            // arguments are needed even though we don't care about the output.
+            // Query the particle tree with the mesh entities to find the
+            // closest particle and compute the initial signed distance
+            // estimate. Dummy arguments are needed even though we don't care
+            // about the output.
             Kokkos::View<int *, device_type> indices(
-                Kokkos::view_alloc( "indices", Kokkos::WithoutInitializing ), 0 );
+                Kokkos::view_alloc("indices",Kokkos::WithoutInitializing), 0 );
             Kokkos::View<int *, device_type> offset(
-                Kokkos::view_alloc( "offset", Kokkos::WithoutInitializing ), 0 );
+                Kokkos::view_alloc("offset",Kokkos::WithoutInitializing), 0 );
             bvh.query( predicate_data, distance_callback, indices, offset );
         }
 
@@ -359,11 +361,30 @@ class ParticleLevelSet
 
         // Gather to get updated ghost values.
         _halo->gather( exec_space, *_distance_estimate );
+    }
+
+    // Redistance the signed distance function.
+    template<class ExecutionSpace>
+    void redistance( const ExecutionSpace& exec_space,
+                     const bool subtract_radius )
+    {
+        // Compute the radius to subtract from the redistanced fields. If the
+        // boundary particles are deemed to lie exactly on the zero isocontour
+        // then the radius should be subtracted.
+        double radius_mod = subtract_radius ? _radius : 0.0;
+
+        // Local mesh.
+        auto local_mesh = Cajita::createLocalMesh<memory_space>(
+            *(_particles->mesh().localGrid()) );
+
+        // Views.
+        auto estimate_view = _distance_estimate->view();
+        auto distance_view = _signed_distance->view();
 
         // The positive values are correct (at least on those ranks with
         // particles) but the negative values are wrong. Correct the negative
         // values with redistancing.
-        auto distance_view = _signed_distance->view();
+        // View of the distance estimate.
         auto own_entities = _particles->mesh().localGrid()->indexSpace(
             Cajita::Own(), entity_type(), Cajita::Local() );
         Kokkos::parallel_for(
@@ -396,7 +417,7 @@ class ParticleLevelSet
 
                 // Subtract the radius to get the true distance to the
                 // zero-isocontour on the outer-most particles.
-                distance_view(i,j,k,0) -= _radius;
+                distance_view(i,j,k,0) -= radius_mod;
             });
     }
 
