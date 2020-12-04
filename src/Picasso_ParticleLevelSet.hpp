@@ -220,7 +220,7 @@ class ParticleLevelSet
     {
         // Create array data.
         _distance_estimate = createArray(
-            *_mesh, location_type(), Field::SignedDistance() );
+            *_mesh, location_type(), Field::DistanceEstimate() );
         _signed_distance = createArray(
             *_mesh, location_type(), Field::SignedDistance() );
         _halo = Cajita::createHalo<double,memory_space>(

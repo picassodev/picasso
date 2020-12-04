@@ -61,6 +61,10 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/facet_init_example.json
   COPYONLY)
 configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/level_set_redistance_test.json
+  ${CMAKE_CURRENT_BINARY_DIR}/level_set_redistance_test.json
+  COPYONLY)
+configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/inputs/particle_level_set_zalesaks_disk.json
   ${CMAKE_CURRENT_BINARY_DIR}/particle_level_set_zalesaks_disk.json
   COPYONLY)
@@ -161,6 +165,7 @@ Picasso_add_tests(MPI NAMES
   FieldManager
   GridOperator
   ParticleInterpolation
+  LevelSetRedistance
   ParticleLevelSet)
 
 if(Picasso_ENABLE_SILO)
