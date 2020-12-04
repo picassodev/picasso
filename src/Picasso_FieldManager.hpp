@@ -98,7 +98,8 @@ class FieldManager
         return _mesh;
     }
 
-    // Add a field.
+    // Add a field. The field will be allocated and a halo created if it does
+    // not already exist.
     template<class Location, class FieldTag>
     void add( const Location& location, const FieldTag& tag )
     {

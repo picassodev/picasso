@@ -46,92 +46,92 @@ void uniformTest()
 
     // Add some fields. Add the same field so we can insure the variants are
     // loaded into different maps.
-    fm.add( FieldLocation::Node(), Field::Density() );
-    fm.add( FieldLocation::Cell(), Field::Density() );
-    fm.add( FieldLocation::Face<Dim::I>(), Field::Density() );
-    fm.add( FieldLocation::Face<Dim::J>(), Field::Density() );
-    fm.add( FieldLocation::Face<Dim::K>(), Field::Density() );
-    fm.add( FieldLocation::Edge<Dim::I>(), Field::Density() );
-    fm.add( FieldLocation::Edge<Dim::J>(), Field::Density() );
-    fm.add( FieldLocation::Edge<Dim::K>(), Field::Density() );
+    fm.add( FieldLocation::Node(), Field::Color() );
+    fm.add( FieldLocation::Cell(), Field::Color() );
+    fm.add( FieldLocation::Face<Dim::I>(), Field::Color() );
+    fm.add( FieldLocation::Face<Dim::J>(), Field::Color() );
+    fm.add( FieldLocation::Face<Dim::K>(), Field::Color() );
+    fm.add( FieldLocation::Edge<Dim::I>(), Field::Color() );
+    fm.add( FieldLocation::Edge<Dim::J>(), Field::Color() );
+    fm.add( FieldLocation::Edge<Dim::K>(), Field::Color() );
 
     // Put data in the fields.
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Node(),Field::Density()), 1.0, Cajita::Own() );
+        *fm.array(FieldLocation::Node(),Field::Color()), 1, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Cell(),Field::Density()), 2.0, Cajita::Own() );
+        *fm.array(FieldLocation::Cell(),Field::Color()), 2, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Face<Dim::I>(),Field::Density()),
-        3.0, Cajita::Own() );
+        *fm.array(FieldLocation::Face<Dim::I>(),Field::Color()),
+        3, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Face<Dim::J>(),Field::Density()),
-        4.0, Cajita::Own() );
+        *fm.array(FieldLocation::Face<Dim::J>(),Field::Color()),
+        4, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Face<Dim::K>(),Field::Density()),
-        5.0, Cajita::Own() );
+        *fm.array(FieldLocation::Face<Dim::K>(),Field::Color()),
+        5, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Edge<Dim::I>(),Field::Density()),
-        6.0, Cajita::Own() );
+        *fm.array(FieldLocation::Edge<Dim::I>(),Field::Color()),
+        6, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Edge<Dim::J>(),Field::Density()),
-        7.0, Cajita::Own() );
+        *fm.array(FieldLocation::Edge<Dim::J>(),Field::Color()),
+        7, Cajita::Own() );
     Cajita::ArrayOp::assign(
-        *fm.array(FieldLocation::Edge<Dim::K>(),Field::Density()),
-        8.0, Cajita::Own() );
+        *fm.array(FieldLocation::Edge<Dim::K>(),Field::Color()),
+        8, Cajita::Own() );
 
     // Gather into the ghost zones.
-    fm.gather( FieldLocation::Node(), Field::Density() );
-    fm.gather( FieldLocation::Cell(), Field::Density() );
-    fm.gather( FieldLocation::Face<Dim::I>(), Field::Density() );
-    fm.gather( FieldLocation::Face<Dim::J>(), Field::Density() );
-    fm.gather( FieldLocation::Face<Dim::K>(), Field::Density() );
-    fm.gather( FieldLocation::Edge<Dim::I>(), Field::Density() );
-    fm.gather( FieldLocation::Edge<Dim::J>(), Field::Density() );
-    fm.gather( FieldLocation::Edge<Dim::K>(), Field::Density() );
+    fm.gather( FieldLocation::Node(), Field::Color() );
+    fm.gather( FieldLocation::Cell(), Field::Color() );
+    fm.gather( FieldLocation::Face<Dim::I>(), Field::Color() );
+    fm.gather( FieldLocation::Face<Dim::J>(), Field::Color() );
+    fm.gather( FieldLocation::Face<Dim::K>(), Field::Color() );
+    fm.gather( FieldLocation::Edge<Dim::I>(), Field::Color() );
+    fm.gather( FieldLocation::Edge<Dim::J>(), Field::Color() );
+    fm.gather( FieldLocation::Edge<Dim::K>(), Field::Color() );
 
     // Check the gather.
-    checkGather( fm.view(FieldLocation::Node(),Field::Density()),
+    checkGather( fm.view(FieldLocation::Node(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Node(),Cajita::Local()),
-                 1.0 );
-    checkGather( fm.view(FieldLocation::Cell(),Field::Density()),
+                 1 );
+    checkGather( fm.view(FieldLocation::Cell(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Cell(),Cajita::Local()),
-                 2.0 );
-    checkGather( fm.view(FieldLocation::Face<Dim::I>(),Field::Density()),
+                 2 );
+    checkGather( fm.view(FieldLocation::Face<Dim::I>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Face<Dim::I>(),Cajita::Local()),
-                 3.0 );
-    checkGather( fm.view(FieldLocation::Face<Dim::J>(),Field::Density()),
+                 3 );
+    checkGather( fm.view(FieldLocation::Face<Dim::J>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Face<Dim::J>(),Cajita::Local()),
-                 4.0 );
-    checkGather( fm.view(FieldLocation::Face<Dim::K>(),Field::Density()),
+                 4 );
+    checkGather( fm.view(FieldLocation::Face<Dim::K>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Face<Dim::K>(),Cajita::Local()),
-                 5.0 );
-    checkGather( fm.view(FieldLocation::Edge<Dim::I>(),Field::Density()),
+                 5 );
+    checkGather( fm.view(FieldLocation::Edge<Dim::I>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Edge<Dim::I>(),Cajita::Local()),
-                 6.0 );
-    checkGather( fm.view(FieldLocation::Edge<Dim::J>(),Field::Density()),
+                 6 );
+    checkGather( fm.view(FieldLocation::Edge<Dim::J>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Edge<Dim::J>(),Cajita::Local()),
-                 7.0 );
-    checkGather( fm.view(FieldLocation::Edge<Dim::K>(),Field::Density()),
+                 7 );
+    checkGather( fm.view(FieldLocation::Edge<Dim::K>(),Field::Color()),
                  mesh->localGrid()->indexSpace(
                      Cajita::Ghost(),Cajita::Edge<Dim::K>(),Cajita::Local()),
-                 8.0 );
+                 8 );
 
     // Scatter back to owned.
-    fm.scatter( FieldLocation::Node(), Field::Density() );
-    fm.scatter( FieldLocation::Cell(), Field::Density() );
-    fm.scatter( FieldLocation::Face<Dim::I>(), Field::Density() );
-    fm.scatter( FieldLocation::Face<Dim::J>(), Field::Density() );
-    fm.scatter( FieldLocation::Face<Dim::K>(), Field::Density() );
-    fm.scatter( FieldLocation::Edge<Dim::I>(), Field::Density() );
-    fm.scatter( FieldLocation::Edge<Dim::J>(), Field::Density() );
-    fm.scatter( FieldLocation::Edge<Dim::K>(), Field::Density() );
+    fm.scatter( FieldLocation::Node(), Field::Color() );
+    fm.scatter( FieldLocation::Cell(), Field::Color() );
+    fm.scatter( FieldLocation::Face<Dim::I>(), Field::Color() );
+    fm.scatter( FieldLocation::Face<Dim::J>(), Field::Color() );
+    fm.scatter( FieldLocation::Face<Dim::K>(), Field::Color() );
+    fm.scatter( FieldLocation::Edge<Dim::I>(), Field::Color() );
+    fm.scatter( FieldLocation::Edge<Dim::J>(), Field::Color() );
+    fm.scatter( FieldLocation::Edge<Dim::K>(), Field::Color() );
 }
 
 //---------------------------------------------------------------------------//

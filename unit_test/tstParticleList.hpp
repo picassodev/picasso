@@ -14,6 +14,18 @@ using namespace Picasso;
 namespace Test
 {
 //---------------------------------------------------------------------------//
+// Fields.
+struct Foo : Field::Scalar<double>
+{
+    static std::string label() { return "foo"; }
+};
+
+struct Bar : Field::Tensor<double,3,3>
+{
+    static std::string label() { return "bar"; }
+};
+
+//---------------------------------------------------------------------------//
 void particleTest()
 {
     // Get inputs for mesh.
@@ -30,9 +42,9 @@ void particleTest()
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
                                    Field::LogicalPosition,
-                                   Field::Mass,
+                                   Foo,
                                    Field::Color,
-                                   Field::DeformationGradient>;
+                                   Bar>;
 
     list_type particles( "test_particles", mesh );
 
@@ -44,9 +56,9 @@ void particleTest()
 
     // Populate fields.
     auto px = particles.slice( Field::LogicalPosition() );
-    auto pm = particles.slice( Field::Mass() );
+    auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
-    auto pf = particles.slice( Field::DeformationGradient() );
+    auto pf = particles.slice( Bar() );
 
     Cabana::deep_copy( px, 1.23 );
     Cabana::deep_copy( pm, 3.3 );
@@ -55,9 +67,9 @@ void particleTest()
 
     // Check the slices.
     EXPECT_EQ( px.label(), "logical_position" );
-    EXPECT_EQ( pm.label(), "mass" );
+    EXPECT_EQ( pm.label(), "foo" );
     EXPECT_EQ( pc.label(), "color" );
-    EXPECT_EQ( pf.label(), "deformation_gradient" );
+    EXPECT_EQ( pf.label(), "bar" );
 
     // Check deep copy.
     auto aosoa_host = Cabana::create_mirror_view_and_copy(
@@ -91,13 +103,13 @@ void particleTest()
             for ( int d = 0; d < 3; ++d )
                 get(particle,Field::LogicalPosition(),d) += p + d;
 
-            get(particle,Field::Mass()) += p;
+            get(particle,Foo()) += p;
 
             get(particle,Field::Color()) += p;
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    get(particle,Field::DeformationGradient(),i,j)
+                    get(particle,Bar(),i,j)
                         += p + i + j;
 
             aosoa.setTuple( p, particle.tuple() );
@@ -137,9 +149,9 @@ void particleViewTest()
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
                                    Field::LogicalPosition,
-                                   Field::Mass,
+                                   Foo,
                                    Field::Color,
-                                   Field::DeformationGradient>;
+                                   Bar>;
 
     list_type particles( "test_particles", mesh );
 
@@ -151,9 +163,9 @@ void particleViewTest()
 
     // Populate fields.
     auto px = particles.slice( Field::LogicalPosition() );
-    auto pm = particles.slice( Field::Mass() );
+    auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
-    auto pf = particles.slice( Field::DeformationGradient() );
+    auto pf = particles.slice( Bar() );
 
     Cabana::deep_copy( px, 1.23 );
     Cabana::deep_copy( pm, 3.3 );
@@ -162,9 +174,9 @@ void particleViewTest()
 
     // Check the slices.
     EXPECT_EQ( px.label(), "logical_position" );
-    EXPECT_EQ( pm.label(), "mass" );
+    EXPECT_EQ( pm.label(), "foo" );
     EXPECT_EQ( pc.label(), "color" );
-    EXPECT_EQ( pf.label(), "deformation_gradient" );
+    EXPECT_EQ( pf.label(), "bar" );
 
     // Check deep copy.
     auto aosoa_host = Cabana::create_mirror_view_and_copy(
@@ -202,13 +214,13 @@ void particleViewTest()
             for ( int d = 0; d < 3; ++d )
                 get(particle,Field::LogicalPosition(),d) += p + d;
 
-            get(particle,Field::Mass()) += p;
+            get(particle,Foo()) += p;
 
             get(particle,Field::Color()) += p;
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    get(particle,Field::DeformationGradient(),i,j)
+                    get(particle,Bar(),i,j)
                         += p + i + j;
         });
 
@@ -246,9 +258,9 @@ void linearAlgebraTest()
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
                                    Field::LogicalPosition,
-                                   Field::Mass,
+                                   Foo,
                                    Field::Color,
-                                   Field::DeformationGradient>;
+                                   Bar>;
 
     list_type particles( "test_particles", mesh );
 
@@ -260,9 +272,9 @@ void linearAlgebraTest()
 
     // Populate fields.
     auto px = particles.slice( Field::LogicalPosition() );
-    auto pm = particles.slice( Field::Mass() );
+    auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
-    auto pf = particles.slice( Field::DeformationGradient() );
+    auto pf = particles.slice( Bar() );
 
     Cabana::deep_copy( px, 1.23 );
     Cabana::deep_copy( pm, 3.3 );
@@ -271,9 +283,9 @@ void linearAlgebraTest()
 
     // Check the slices.
     EXPECT_EQ( px.label(), "logical_position" );
-    EXPECT_EQ( pm.label(), "mass" );
+    EXPECT_EQ( pm.label(), "foo" );
     EXPECT_EQ( pc.label(), "color" );
-    EXPECT_EQ( pf.label(), "deformation_gradient" );
+    EXPECT_EQ( pf.label(), "bar" );
 
     // Check deep copy.
     auto aosoa_host = Cabana::create_mirror_view_and_copy(
@@ -312,11 +324,11 @@ void linearAlgebraTest()
             for ( int d = 0; d < 3; ++d )
                 px_v(d) += p + d;
 
-            get(particle,Field::Mass()) += p;
+            get(particle,Foo()) += p;
 
             get(particle,Field::Color()) += p;
 
-            auto pf_m = get(particle,Field::DeformationGradient());
+            auto pf_m = get(particle,Bar());
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
                     pf_m(i,j) += p + i + j;

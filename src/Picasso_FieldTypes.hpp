@@ -412,88 +412,6 @@ struct LogicalPosition : Vector<double,3>
     static std::string label() { return "logical_position"; }
 };
 
-struct Mass : Scalar<double>
-{
-    static std::string label() { return "mass"; }
-};
-
-struct Volume : Scalar<double>
-{
-    static std::string label() { return "volume"; }
-};
-
-struct Momentum : Vector<double,3>
-{
-    static std::string label() { return "momentum"; }
-};
-
-struct Velocity : Vector<double,3>
-{
-    static std::string label() { return "velocity"; }
-};
-
-struct Acceleration : Vector<double,3>
-{
-    static std::string label() { return "acceleration"; }
-};
-
-struct AffineVelocity : Tensor<double,3,3>
-{
-    static std::string label() { return "affine_velocity"; }
-};
-
-template<int N>
-struct PolynomialVelocity : Tensor<double,N,3>
-{
-    static constexpr int num_mode = N;
-    static std::string label() { return "polynomial_velocity"; }
-};
-
-struct Normal : Vector<double,3>
-{
-    static std::string label() { return "normal"; }
-};
-
-struct Temperature : Scalar<double>
-{
-    static std::string label() { return "temperature"; }
-};
-
-struct HeatFlux : Vector<double,3>
-{
-    static std::string label() { return "heat_flux"; }
-};
-
-struct Pressure : Scalar<double>
-{
-    static std::string label() { return "pressure"; }
-};
-
-struct InternalEnergy : Scalar<double>
-{
-    static std::string label() { return "internal_energy"; }
-};
-
-struct Density : Scalar<double>
-{
-    static std::string label() { return "density"; }
-};
-
-struct Stress : Tensor<double,3,3>
-{
-    static std::string label() { return "stress"; }
-};
-
-struct DeformationGradient : Tensor<double,3,3>
-{
-    static std::string label() { return "deformation_gradient"; }
-};
-
-struct DeformationGradientDeterminant : Scalar<double>
-{
-    static std::string label() { return "deformation_gradient_det"; }
-};
-
 struct SignedDistance : Scalar<double>
 {
     static std::string label() { return "signed_distance"; }
@@ -504,16 +422,6 @@ struct Color : Scalar<int>
     static std::string label() { return "color"; }
 };
 
-struct MaterialId : Scalar<int>
-{
-    static std::string label() { return "material_id"; }
-};
-
-struct PartId : Scalar<int>
-{
-    static std::string label() { return "part_id"; }
-};
-
 struct VolumeId : Scalar<int>
 {
     static std::string label() { return "volume_id"; }
@@ -522,6 +430,11 @@ struct VolumeId : Scalar<int>
 struct BoundaryId : Scalar<int>
 {
     static std::string label() { return "boundary_id"; }
+};
+
+struct CommRank : Scalar<int>
+{
+    static std::string label() { return "comm_rank"; }
 };
 
 //---------------------------------------------------------------------------//
