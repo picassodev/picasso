@@ -12,7 +12,7 @@
 
 namespace Picasso
 {
-namespace LevelSet
+namespace LevelSetRedistance
 {
 //---------------------------------------------------------------------------//
 // Distance between two points. Return the scalar distance.
@@ -352,7 +352,7 @@ double redistanceEntity( EntityType,
 
 //---------------------------------------------------------------------------//
 
-} // end namespace LevelSet
+} // end namespace LevelSetRedistance
 } // end namespace Picasso
 
 #endif // end PICASSO_LEVELSETREDISTANCE_HPP

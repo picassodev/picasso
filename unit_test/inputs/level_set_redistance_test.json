@@ -1,9 +1,16 @@
 {
     "mesh": {
-        "global_num_cell": [18, 18, 18],
+        "global_num_cell": [43, 43, 43],
         "periodic": [true, true, true],
         "partitioner": {
             "type": "uniform_dim"
         }
+    },
+    "level_set": {
+        "redistance_secant_tol": 0.1,
+        "redistance_max_secant_iter": 10,
+        "redistance_num_random_guess": 5,
+        "redistance_projection_tol": 0.1,
+        "redistance_max_projection_iter": 200
     }
 }
