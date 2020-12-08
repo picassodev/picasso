@@ -73,8 +73,9 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r )
     level_set->redistance( TEST_EXECSPACE() );
 
     // Test epsilon. Our grid is pretty coarse so this is pretty large with
-    // respect to the analytic value.
-    double test_eps = 1.0e-2;
+    // respect to the analytic value. This still means we are resolving the to
+    // a fraction ofthe cell width
+    double test_eps = 0.5 * dx;
 
     // Check results. The should be correct if the signed distance magnitude
     // is less than the halo.
@@ -106,7 +107,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r )
             // want to use the estimate to determine the narrow band here as
             // it may be wrong. So here we check for correctness within the
             // narrow band minus our tolerance.
-            if ( fabs(expected) < halo_width - test_eps*dx)
+            if ( fabs(expected) < halo_width - test_eps )
             {
                 EXPECT_NEAR( expected, observed, test_eps );
             }
@@ -154,83 +155,83 @@ TEST( TEST_CATEGORY, sphere_redistance_good_guess_test )
 }
 
 //---------------------------------------------------------------------------//
-// TEST( TEST_CATEGORY, box_redistance_good_guess_test )
-// {
-//     // Box of sides 0.5 centered at (0.5,0.5,0.5)
-
-//     // Actual distance. Use this as the guess to see if we get it the same
-//     // thing out within our discrete error bounds.
-//     auto phi_r =
-//         KOKKOS_LAMBDA( const double x, const double y, const double z ){
-
-//         // Compute distance to each box face.
-//         double dxlo = 0.25 - x;
-//         double dxhi = x - 0.75;
-
-//         double dylo = 0.25 - y;
-//         double dyhi = y - 0.75;
-
-//         double dzlo = 0.25 - z;
-//         double dzhi = z - 0.75;
-
-//         // Compute closest distance to the box.
-//         double dx = fmax(dxlo,dxhi);
-//         double dy = fmax(dylo,dyhi);
-//         double dz = fmax(dzlo,dzhi);
-
-//         // Inside.
-//         if ( dx <= 0.0 && dy <= 0.0 && dz <= 0.0 )
-//         {
-//             return fmax( dx, fmax(dy,dz) );
-//         }
-
-//         // Outside
-//         else
-//         {
-//             double xval = (dx > 0.0) ? dx : 0.0;
-//             double yval = (dy > 0.0) ? dy : 0.0;
-//             double zval = (dz > 0.0) ? dz : 0.0;
-//             return sqrt( xval*xval + yval*yval + zval*zval );
-//         }
-//     };
-
-//     // Test
-//     runTest( phi_r, phi_r );
-// }
-
-//---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, sphere_redistance_test )
+TEST( TEST_CATEGORY, box_redistance_good_guess_test )
 {
-    // Sphere with radius of 0.25 centered at (0.5,0.5,0.5)
+    // Box of sides 0.5 centered at (0.5,0.5,0.5)
 
-    // Initial data. We interpret negative values to be inside the level
-    // set. In this function we then just get inside/outside correct.
-    auto phi_0 =
-        KOKKOS_LAMBDA( const double x, const double y, const double z ){
-
-        double dx = 0.5 - x;
-        double dy = 0.5 - y;
-        double dz = 0.5 - z;
-        double r = sqrt( dx*dx + dy*dy + dz*dz );
-
-        return ( r < 0.25 ) ? -1.0 : 1.0;
-    };
-
-    // Actual distance.
+    // Actual distance. Use this as the guess to see if we get it the same
+    // thing out within our discrete error bounds.
     auto phi_r =
         KOKKOS_LAMBDA( const double x, const double y, const double z ){
 
-        double dx = 0.5 - x;
-        double dy = 0.5 - y;
-        double dz = 0.5 - z;
-        double r = sqrt( dx*dx + dy*dy + dz*dz );
+        // Compute distance to each box face.
+        double dxlo = 0.25 - x;
+        double dxhi = x - 0.75;
 
-        return r - 0.25;
-   };
+        double dylo = 0.25 - y;
+        double dyhi = y - 0.75;
+
+        double dzlo = 0.25 - z;
+        double dzhi = z - 0.75;
+
+        // Compute closest distance to the box.
+        double dx = fmax(dxlo,dxhi);
+        double dy = fmax(dylo,dyhi);
+        double dz = fmax(dzlo,dzhi);
+
+        // Inside.
+        if ( dx <= 0.0 && dy <= 0.0 && dz <= 0.0 )
+        {
+            return fmax( dx, fmax(dy,dz) );
+        }
+
+        // Outside
+        else
+        {
+            double xval = (dx > 0.0) ? dx : 0.0;
+            double yval = (dy > 0.0) ? dy : 0.0;
+            double zval = (dz > 0.0) ? dz : 0.0;
+            return sqrt( xval*xval + yval*yval + zval*zval );
+        }
+    };
 
     // Test
-    runTest( phi_0, phi_r );
+    runTest( phi_r, phi_r );
 }
+
+//---------------------------------------------------------------------------//
+// TEST( TEST_CATEGORY, sphere_redistance_test )
+// {
+//     // Sphere with radius of 0.25 centered at (0.5,0.5,0.5)
+
+//     // Initial data. We interpret negative values to be inside the level
+//     // set. In this function we then just get inside/outside correct.
+//     auto phi_0 =
+//         KOKKOS_LAMBDA( const double x, const double y, const double z ){
+
+//         double dx = 0.5 - x;
+//         double dy = 0.5 - y;
+//         double dz = 0.5 - z;
+//         double r = sqrt( dx*dx + dy*dy + dz*dz );
+
+//         return ( r < 0.25 ) ? -1.0 : 1.0;
+//     };
+
+//     // Actual distance.
+//     auto phi_r =
+//         KOKKOS_LAMBDA( const double x, const double y, const double z ){
+
+//         double dx = 0.5 - x;
+//         double dy = 0.5 - y;
+//         double dz = 0.5 - z;
+//         double r = sqrt( dx*dx + dy*dy + dz*dz );
+
+//         return r - 0.25;
+//    };
+
+//     // Test
+//     runTest( phi_0, phi_r );
+// }
 
 //---------------------------------------------------------------------------//
 // TEST( TEST_CATEGORY, box_redistance_test )

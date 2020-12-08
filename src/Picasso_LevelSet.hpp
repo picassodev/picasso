@@ -61,13 +61,11 @@ class LevelSet
         _redistance_secant_tol =
             params.get<double>("redistance_secant_tol",0.1);
         _redistance_max_secant_iter =
-            params.get<int>("redistance_max_secant_iter",100);
+            params.get<int>("redistance_max_secant_iter",10);
         _redistance_num_random_guess =
-            params.get<int>("redistance_num_random_guess",10);
-        _redistance_projection_tol =
-            params.get<double>("redistance_projection_tol",0.1);
-        _redistance_max_projection_iter =
-            params.get<int>("redistance_max_projection_iter",200);
+            params.get<int>("redistance_num_random_guess",5);
+        _redistance_num_projection_iter =
+            params.get<int>("redistance_num_projection_iter",200);
     }
 
     /*!
@@ -121,8 +119,7 @@ class LevelSet
                             _redistance_secant_tol,
                             _redistance_max_secant_iter,
                             _redistance_num_random_guess,
-                            _redistance_projection_tol,
-                            _redistance_max_projection_iter );
+                            _redistance_num_projection_iter );
                 }
             });
 
@@ -227,8 +224,8 @@ class LevelSet
             Cajita::createExecutionPolicy(own_entities,exec_space),
             KOKKOS_LAMBDA( const int i, const int j, const int k ){
 
-                // Only redistance on the fine grid if less than the threshold
-                // redistance.
+                // Only redistance on the fine grid if the estimate is less
+                // than the threshold distance.
                 if ( fabs(estimate_view(i,j,k,0)) < threshold )
                 {
                     int entity_index[3] = {i,j,k};
@@ -241,8 +238,7 @@ class LevelSet
                             _redistance_secant_tol,
                             _redistance_max_secant_iter,
                             _redistance_num_random_guess,
-                            _redistance_projection_tol,
-                            _redistance_max_projection_iter );
+                            _redistance_num_projection_iter );
                 }
 
                 // Otherwise just assign the distance to be our estimate.
@@ -281,8 +277,7 @@ class LevelSet
     double _redistance_secant_tol;
     int _redistance_max_secant_iter;
     int _redistance_num_random_guess;
-    double _redistance_projection_tol;
-    int _redistance_max_projection_iter;
+    int _redistance_num_projection_iter;
 };
 
 //---------------------------------------------------------------------------//
