@@ -59,13 +59,13 @@ class LevelSet
 
         // Get the Hopf-Lax redistancing parameters.
         _redistance_secant_tol =
-            params.get<double>("redistance_secant_tol",0.1);
+            params.get<double>("redistance_secant_tol",0.25);
         _redistance_max_secant_iter =
-            params.get<int>("redistance_max_secant_iter",10);
+            params.get<int>("redistance_max_secant_iter",50);
         _redistance_num_random_guess =
             params.get<int>("redistance_num_random_guess",5);
         _redistance_num_projection_iter =
-            params.get<int>("redistance_num_projection_iter",200);
+            params.get<int>("redistance_num_projection_iter",50);
     }
 
     /*!

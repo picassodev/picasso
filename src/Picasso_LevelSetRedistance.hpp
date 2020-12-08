@@ -145,7 +145,8 @@ double globalMin( const SignedDistanceView& phi_0,
         // Create a random point in a sphere about x larger than the current
         // t_k. Then project back to the ball of t_k so a larger fraction of
         // points will end up on the boundary of the ball while some are still
-        // in the interior.
+        // in the interior. The performance of this could likely be improved
+        // in the future.
         mag = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
@@ -153,7 +154,7 @@ double globalMin( const SignedDistanceView& phi_0,
                 rand_state, -1.0, 1.0 );
             mag += ray[d]*ray[d];
         }
-        mag = Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 2.0*t_k ) /
+        mag = t_k * (1-exp(Kokkos::rand<RandState,double>::draw(rand_state,-4.0,0.0))) /
               sqrt(mag);
         for ( int d = 0; d < 3; ++d )
         {
@@ -236,7 +237,7 @@ double redistanceEntity( EntityType,
     double sign = copysign( 1.0, phi_old );
     phi_old *= sign;
 
-    // First step is of size 2*dx to get the iteration started.
+    // First step is of size tol*dx to get the iteration started.
     double t_new = secant_tol*dx;
     double phi_new;
 
@@ -248,24 +249,27 @@ double redistanceEntity( EntityType,
     double delta_t;
     double delta_t_max = 5.0 * dx;
 
+    // Compute the secant initial iterate.
+    phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
+                         num_projection_iter,
+                         num_random, rng, sd, y );
+
+    // Check for convergence.
+    if ( fabs(phi_new) < dx*secant_tol )
+        return sign * t_new;
+
     // Perform secant iterations to compute the signed distance. Stop when
     // either we reach our convergence tolerance or we hit a maximum number of
     // iterations.
-    int iteration = 0;
-    do
+    for ( int i = 0; i < max_secant_iter; ++i )
     {
-        // Find the global minimum on the current ball.
-        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                             num_projection_iter,
-                             num_random, rng, sd, y );
-
         // Compute secant step size.
         delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
 
-        // Clamp the step size if it exceeds 100x the maximum step size. This
+        // Clamp the step size if it exceeds the maximum step size. This
         // is needed to detect near division-by-zero resulting from a local
         // minimum.
-        if ( fabs(delta_t) > 10.0*delta_t_max )
+        if ( fabs(delta_t) > delta_t_max )
         {
             delta_t = (phi_new > 0.0) ? delta_t_max : -delta_t_max;
         }
@@ -274,12 +278,20 @@ double redistanceEntity( EntityType,
         t_old = t_new;
         t_new += delta_t;
         phi_old = phi_new;
-        ++iteration;
+
+        // Find the global minimum on the current ball.
+        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
+                             num_projection_iter,
+                             num_random, rng, sd, y );
+
+        // Check for convergence.
+        if ( fabs(phi_new) < dx*secant_tol )
+            break;
     }
-    while ( fabs(phi_new) > dx*secant_tol && iteration < max_secant_iter );
+
 
     // Return the signed distance.
-    return sign * distance(x,y);
+    return sign * t_new;
 }
 
 //---------------------------------------------------------------------------//
