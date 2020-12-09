@@ -16,16 +16,6 @@ namespace Picasso
 namespace LevelSetRedistance
 {
 //---------------------------------------------------------------------------//
-// Distance between two points. Return the scalar distance.
-KOKKOS_INLINE_FUNCTION
-double distance( const double x[3], const double y[3] )
-{
-    return sqrt( (x[0]-y[0])*(x[0]-y[0]) +
-                 (x[1]-y[1])*(x[1]-y[1]) +
-                 (x[2]-y[2])*(x[2]-y[2]) );
-}
-
-//---------------------------------------------------------------------------//
 // Distance between two points. Return the distance vector as well.
 KOKKOS_INLINE_FUNCTION
 double distance( const double x[3], const double y[3], double z[3] )
@@ -77,6 +67,7 @@ double evaluate( const SignedDistanceView& phi_0,
                  const LocalMeshType& local_mesh,
                  const double x[3],
                  const double t_k,
+                 const double tol,
                  const int max_iter,
                  SplineDataType& sd,
                  double y[3] )
@@ -87,19 +78,36 @@ double evaluate( const SignedDistanceView& phi_0,
 
     // Perform gradient projections to get the minimum argument on the ball.
     double grad_phi_0[3];
+    double y_old[3] = { y[0], y[1], y[2] };
+    double error_num, error_div;
+    double tol_sqr = tol * tol;
     for ( int i = 0; i < max_iter; ++i )
     {
         // Move the point back into the local domain if necessary.
-        clampPointToLocalDomain( local_mesh, y );
+        clampPointToLocalDomain( local_mesh, y_old );
 
         // Do a gradient projection.
-        Cajita::evaluateSpline( local_mesh, y, sd );
+        Cajita::evaluateSpline( local_mesh, y_old, sd );
         Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
-            y[d] = y[d] - sign_dx * grad_phi_0[d];
+            y[d] = y_old[d] - sign_dx * grad_phi_0[d];
 
         // Project the estimate to the ball.
         projectToBall( x, t_k, y );
+
+        // Update the iterate.
+        error_num = 0.0;
+        error_div = 0.0;
+        for ( int d = 0; d < 3; ++d )
+        {
+            error_num += (y[d]-y_old[d])*(y[d]-y_old[d]);
+            error_div += y_old[d] * y_old[d];
+            y_old[d] = y[d];
+        }
+
+        // Check for a stationary point.
+        if ( error_num / error_div < tol_sqr )
+            break;
     }
 
     // Evaluate the signed distance function at the minimum argument.
@@ -123,7 +131,8 @@ double globalMin( const SignedDistanceView& phi_0,
                   const LocalMeshType& local_mesh,
                   const double x[3],
                   const double t_k,
-                  const int num_projection_iter,
+                  const double projection_tol,
+                  const int max_projection_iter,
                   const int num_random,
                   RandState& rand_state,
                   SplineDataType& sd,
@@ -133,7 +142,7 @@ double globalMin( const SignedDistanceView& phi_0,
     projectToBall( x, t_k, y );
     double phi_min =
         evaluate( phi_0, sign, local_mesh, x, t_k,
-                  num_projection_iter, sd, y );
+                  projection_tol, max_projection_iter, sd, y );
 
     // Compare the initial estimate to random points in the ball.
     double y_trial[3];
@@ -160,16 +169,15 @@ double globalMin( const SignedDistanceView& phi_0,
         {
             y_trial[d] = x[d] + ray[d]*mag;
         }
-        projectToBall( x, t_k, y_trial );
 
         // Compute the random point argmin.
         phi_trial =
             evaluate( phi_0, sign, local_mesh, x, t_k,
-                      num_projection_iter, sd, y_trial );
+                      projection_tol, max_projection_iter, sd, y_trial );
 
         // If less than the current value assign the results as the new
         // minimum.
-        if ( phi_trial < phi_min )
+        if ( fabs(phi_trial) < fabs(phi_min) )
         {
             phi_min = phi_trial;
             for ( int d = 0; d < 3; ++d )
@@ -204,7 +212,8 @@ double redistanceEntity( EntityType,
                          const double secant_tol,
                          const int max_secant_iter,
                          const int num_random,
-                         const int num_projection_iter )
+                         const double projection_tol,
+                         const int max_projection_iter )
 {
     // Grid interpolant.
     using SplineTags = Cajita::SplineDataMemberTypes<
@@ -251,7 +260,7 @@ double redistanceEntity( EntityType,
 
     // Compute the secant initial iterate.
     phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                         num_projection_iter,
+                         projection_tol, max_projection_iter,
                          num_random, rng, sd, y );
 
     // Check for convergence.
@@ -281,14 +290,15 @@ double redistanceEntity( EntityType,
 
         // Find the global minimum on the current ball.
         phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                             num_projection_iter,
+                             projection_tol, max_projection_iter,
                              num_random, rng, sd, y );
 
         // Check for convergence.
         if ( fabs(phi_new) < dx*secant_tol )
+        {
             break;
+        }
     }
-
 
     // Return the signed distance.
     return sign * t_new;

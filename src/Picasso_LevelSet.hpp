@@ -61,11 +61,13 @@ class LevelSet
         _redistance_secant_tol =
             params.get<double>("redistance_secant_tol",0.25);
         _redistance_max_secant_iter =
-            params.get<int>("redistance_max_secant_iter",50);
+            params.get<int>("redistance_max_secant_iter",10);
         _redistance_num_random_guess =
             params.get<int>("redistance_num_random_guess",5);
-        _redistance_num_projection_iter =
-            params.get<int>("redistance_num_projection_iter",50);
+        _redistance_projection_tol =
+            params.get<double>("redistance_projection_tol",1.0e-4);
+        _redistance_max_projection_iter =
+            params.get<int>("redistance_max_projection_iter",200);
     }
 
     /*!
@@ -119,7 +121,8 @@ class LevelSet
                             _redistance_secant_tol,
                             _redistance_max_secant_iter,
                             _redistance_num_random_guess,
-                            _redistance_num_projection_iter );
+                            _redistance_projection_tol,
+                            _redistance_max_projection_iter );
                 }
             });
 
@@ -238,7 +241,8 @@ class LevelSet
                             _redistance_secant_tol,
                             _redistance_max_secant_iter,
                             _redistance_num_random_guess,
-                            _redistance_num_projection_iter );
+                            _redistance_projection_tol,
+                            _redistance_max_projection_iter );
                 }
 
                 // Otherwise just assign the distance to be our estimate.
@@ -277,7 +281,8 @@ class LevelSet
     double _redistance_secant_tol;
     int _redistance_max_secant_iter;
     int _redistance_num_random_guess;
-    int _redistance_num_projection_iter;
+    double _redistance_projection_tol;
+    int _redistance_max_projection_iter;
 };
 
 //---------------------------------------------------------------------------//

@@ -206,8 +206,8 @@ class ParticleLevelSet
       regardless of color.
       \param ptree Level set settings.
       \param mesh The mesh over which to build the signed distnace function.
-      \param The particle color over which to build the level set. Use -1 if
-      the level set is to be built over all particles.
+      \param color The particle color over which to build the level set. Use
+      -1 if the level set is to be built over all particles.
     */
     ParticleLevelSet( const boost::property_tree::ptree& ptree,
                       const std::shared_ptr<MeshType>& mesh,
@@ -387,7 +387,7 @@ class ParticleLevelSet
   color of -1 will create the level set over all particles.
   \param ptree Level set settings.
   \param mesh The mesh over which to build the signed distance function.
-  \param The particle color over which to build the level set. Use -1 if
+  \param color The particle color over which to build the level set. Use -1 if
   the level set is to be built over all particles.
 */
 template<class SignedDistanceLocation, class MeshType>
