@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
+include(GNUInstallDirs)
+
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
@@ -44,13 +46,31 @@ macro(Picasso_add_dependency)
 endmacro()
 
 # find Silo
-Picasso_add_dependency(PACKAGE Silo)
+Picasso_add_dependency(PACKAGE SILO)
+if(SILO_FOUND)
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSILO.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso )
+endif()
 
 # enable testing
 option(Picasso_ENABLE_TESTING "Build tests" OFF)
 if(Picasso_ENABLE_TESTING)
   enable_testing()
 endif()
+
+# Print the revision number to stdout
+find_package(Git)
+if(GIT_FOUND AND IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  execute_process(
+    COMMAND           ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE   Picasso_GIT_COMMIT_HASH
+    )
+else()
+  set(Picasso_GIT_COMMIT_HASH "Not a git repository")
+endif()
+message(STATUS "Picasso Revision = '${Picasso_GIT_COMMIT_HASH}'")
 
 # library
 add_subdirectory(src)
@@ -60,3 +80,13 @@ add_subdirectory(unit_test)
 
 # examples
 add_subdirectory(examples)
+
+# Package Configuration
+write_basic_package_version_file("PicassoConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION} COMPATIBILITY ExactVersion)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoConfig.cmakein
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso)
