@@ -9,6 +9,7 @@ set(HEADERS
   Picasso_FieldManager.hpp
   Picasso_FieldTypes.hpp
   Picasso_InputParser.hpp
+  Picasso_LevelSet.hpp
   Picasso_LevelSetRedistance.hpp
   Picasso_ParticleCommunication.hpp
   Picasso_ParticleInit.hpp

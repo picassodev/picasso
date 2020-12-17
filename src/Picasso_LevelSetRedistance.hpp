@@ -9,21 +9,12 @@
 #include <Kokkos_Random.hpp>
 
 #include <cmath>
+#include <limits>
 
 namespace Picasso
 {
-namespace LevelSet
+namespace LevelSetRedistance
 {
-//---------------------------------------------------------------------------//
-// Distance between two points. Return the scalar distance.
-KOKKOS_INLINE_FUNCTION
-double distance( const double x[3], const double y[3] )
-{
-    return sqrt( (x[0]-y[0])*(x[0]-y[0]) +
-                 (x[1]-y[1])*(x[1]-y[1]) +
-                 (x[2]-y[2])*(x[2]-y[2]) );
-}
-
 //---------------------------------------------------------------------------//
 // Distance between two points. Return the distance vector as well.
 KOKKOS_INLINE_FUNCTION
@@ -48,7 +39,7 @@ void clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
 }
 
 //---------------------------------------------------------------------------//
-// Hopf-Lax projection innto the ball about x.
+// Hopf-Lax projection into the ball of radius t_k about x.
 KOKKOS_INLINE_FUNCTION
 void projectToBall( const double x[3],
                     const double t_k,
@@ -61,23 +52,6 @@ void projectToBall( const double x[3],
     // Check the dist against the current secant root and project to the
     // boundary if outside the ball.
     if ( dist > t_k )
-        for ( int d = 0; d < 3; ++ d )
-            y[d] = x[d] - t_k * z[d] / dist;
-}
-
-//---------------------------------------------------------------------------//
-// Hopf-Lax projection onto the boundary of the ball about x.
-KOKKOS_INLINE_FUNCTION
-void projectToBallBoundary( const double x[3],
-                            const double t_k,
-                            double y[3] )
-{
-    // Compute the distance from the node to the argument on the ball.
-    double z[3];
-    double dist = distance(x,y,z);
-
-    // Project to the boundary.
-    if ( dist > 0.0 )
         for ( int d = 0; d < 3; ++ d )
             y[d] = x[d] - t_k * z[d] / dist;
 }
@@ -101,37 +75,38 @@ double evaluate( const SignedDistanceView& phi_0,
     // Get the cell size. We assume a uniform cell size in this implementation.
     Cajita::evaluateSpline( local_mesh, y, sd );
     double sign_dx = sign * sd.dx[0];
-    double conv_tol = (tol * sd.dx[0]) * (tol * sd.dx[0]);
 
     // Perform gradient projections to get the minimum argument on the ball.
     double grad_phi_0[3];
-    double y_j[3];
-    double step;
-    double step_mag;
+    double y_old[3] = { y[0], y[1], y[2] };
+    double error_num, error_div;
+    double tol_sqr = tol * tol;
     for ( int i = 0; i < max_iter; ++i )
     {
+        // Move the point back into the local domain if necessary.
+        clampPointToLocalDomain( local_mesh, y_old );
+
         // Do a gradient projection.
-        clampPointToLocalDomain( local_mesh, y );
-        Cajita::evaluateSpline( local_mesh, y, sd );
+        Cajita::evaluateSpline( local_mesh, y_old, sd );
         Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
-            y_j[d] = y[d] - sign_dx * grad_phi_0[d];
+            y[d] = y_old[d] - sign_dx * grad_phi_0[d];
 
         // Project the estimate to the ball.
-        projectToBall( x, t_k, y_j );
+        projectToBall( x, t_k, y );
 
         // Update the iterate.
-        step_mag = 0.0;
+        error_num = 0.0;
+        error_div = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
-            step = y_j[d] - y[d];
-            step_mag += step*step;
-            y[d] = y_j[d];
+            error_num += (y[d]-y_old[d])*(y[d]-y_old[d]);
+            error_div += y_old[d] * y_old[d];
+            y_old[d] = y[d];
         }
 
-        // Check for convergence. We converge when we step some small amount
-        // relative to the grid size.
-        if ( step_mag < conv_tol )
+        // Check for a stationary point.
+        if ( error_num / error_div < tol_sqr )
             break;
     }
 
@@ -163,38 +138,24 @@ double globalMin( const SignedDistanceView& phi_0,
                   SplineDataType& sd,
                   double y[3] )
 {
-    // Project y_0 to the boundary as the first argmin evaluation.
-    double y_trial[3] = { y[0], y[1], y[2] };
-    projectToBallBoundary( x, t_k, y_trial );
-    clampPointToLocalDomain( local_mesh, y_trial );
-    double phi_trial;
-    Cajita::evaluateSpline( local_mesh, y_trial, sd );
-    Cajita::G2P::value( phi_0, sd, phi_trial );
-    phi_trial *= sign;
-
-    // Find the argmin from the initial point.
+    // Estimate the argmin from the initial point.
+    projectToBall( x, t_k, y );
     double phi_min =
         evaluate( phi_0, sign, local_mesh, x, t_k,
                   projection_tol, max_projection_iter, sd, y );
 
-    // If less than the current value assign the results as the new
-    // minimum.
-    if ( phi_trial < phi_min )
-    {
-        phi_min = phi_trial;
-        for ( int d = 0; d < 3; ++d )
-            y[d] = y_trial[d];
-    }
-
-    // Evaluate at random points.
+    // Compare the initial estimate to random points in the ball.
+    double y_trial[3];
+    double phi_trial;
     double ray[3];
     double mag;
     for ( int n = 0; n < num_random; ++n )
     {
-        // Create a random points in a sphere about x larger than the current
+        // Create a random point in a sphere about x larger than the current
         // t_k. Then project back to the ball of t_k so a larger fraction of
         // points will end up on the boundary of the ball while some are still
-        // in the interior.
+        // in the interior. The performance of this could likely be improved
+        // in the future.
         mag = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
@@ -202,13 +163,12 @@ double globalMin( const SignedDistanceView& phi_0,
                 rand_state, -1.0, 1.0 );
             mag += ray[d]*ray[d];
         }
-        mag = Kokkos::rand<RandState,double>::draw( rand_state, 0.0, 2.0*t_k ) /
+        mag = t_k * (1-exp(Kokkos::rand<RandState,double>::draw(rand_state,-4.0,0.0))) /
               sqrt(mag);
         for ( int d = 0; d < 3; ++d )
         {
             y_trial[d] = x[d] + ray[d]*mag;
         }
-        projectToBall( x, t_k, y_trial );
 
         // Compute the random point argmin.
         phi_trial =
@@ -217,7 +177,7 @@ double globalMin( const SignedDistanceView& phi_0,
 
         // If less than the current value assign the results as the new
         // minimum.
-        if ( phi_trial < phi_min )
+        if ( fabs(phi_trial) < fabs(phi_min) )
         {
             phi_min = phi_trial;
             for ( int d = 0; d < 3; ++d )
@@ -233,11 +193,14 @@ double globalMin( const SignedDistanceView& phi_0,
 // Redistance a signed distance function at a single entity with the Hopf-Lax
 // method.
 //
-// NOTE - this implementation is specifically implimented for uniform grids
-// with Cubic cells. For adaptive grids that should be fine as we can map from
-// the distance function from the natural system to the reference system. For
+// NOTE - this implementation is specifically implemented for uniform
+// grids. For adaptive grids that should be fine as we can map from the
+// distance function from the natural system to the reference system. For
 // uniform grids with general distances in each cell dimension, we will need
 // some small adjustments. Particularly to how we use dx in different places.
+//
+// NOTE - If needed, this function could also be easily modified to return the
+// normal field per section 2.4 in the reference.
 template<class EntityType,
          class SignedDistanceView,
          class LocalMeshType>
@@ -253,7 +216,11 @@ double redistanceEntity( EntityType,
                          const int max_projection_iter )
 {
     // Grid interpolant.
-    Cajita::SplineData<double,1,EntityType> sd;
+    using SplineTags = Cajita::SplineDataMemberTypes<
+        Cajita::SplineWeightValues,
+        Cajita::SplineWeightPhysicalGradients,
+        Cajita::SplinePhysicalCellSize>;
+    Cajita::SplineData<double,1,EntityType,SplineTags> sd;
 
     // Random number generator.
     using rand_type =
@@ -279,8 +246,8 @@ double redistanceEntity( EntityType,
     double sign = copysign( 1.0, phi_old );
     phi_old *= sign;
 
-    // First step is of size 2*dx to get the iteration started.
-    double t_new = 2.0*dx;
+    // First step is of size tol*dx to get the iteration started.
+    double t_new = secant_tol*dx;
     double phi_new;
 
     // Initial argmin at the entity location. The ball radius starts at 0 so
@@ -291,65 +258,55 @@ double redistanceEntity( EntityType,
     double delta_t;
     double delta_t_max = 5.0 * dx;
 
-    // Perform secant iterations to compute the signed distance.
-    double div_0_tol = 1.0e-5;
+    // Compute the secant initial iterate.
+    phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
+                         projection_tol, max_projection_iter,
+                         num_random, rng, sd, y );
+
+    // Check for convergence.
+    if ( fabs(phi_new) < dx*secant_tol )
+        return sign * t_new;
+
+    // Perform secant iterations to compute the signed distance. Stop when
+    // either we reach our convergence tolerance or we hit a maximum number of
+    // iterations.
     for ( int i = 0; i < max_secant_iter; ++i )
     {
-        // Find the global minimum on the current ball.
-        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                             projection_tol, max_projection_iter,
-                             num_random, rng, sd, y );
+        // Compute secant step size.
+        delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
 
-        // Update the secant step size. Check first to see if we divide by
-        // zero to within some tolerance. If we don't then we haven't reached
-        // a minimum yet.
-        if ( fabs(phi_new-phi_old) > div_0_tol )
+        // Clamp the step size if it exceeds the maximum step size. This
+        // is needed to detect near division-by-zero resulting from a local
+        // minimum.
+        if ( fabs(delta_t) > delta_t_max )
         {
-            delta_t = phi_new * ( t_old - t_new ) / ( phi_new - phi_old );
+            delta_t = (phi_new > 0.0) ? delta_t_max : -delta_t_max;
         }
-
-        // Division by zero means a possible minimum.
-        else
-        {
-            // Check for a false local minimum. If phi isn't small enough to
-            // stop the iteration step farther outward by one cell to see if
-            // we find a better minimum.
-            if ( fabs(phi_new) > secant_tol*dx )
-            {
-                delta_t = (phi_new > 0.0) ? dx : -dx;
-            }
-
-            // Otherwise we are at a real minimum so no need to step further.
-            else
-            {
-                break;
-            }
-        }
-
-        // // Clamp the step size.
-        delta_t = fmin( delta_t_max, fmax(-delta_t_max,delta_t) );
 
         // Step.
         t_old = t_new;
         t_new += delta_t;
         phi_old = phi_new;
+
+        // Find the global minimum on the current ball.
+        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
+                             projection_tol, max_projection_iter,
+                             num_random, rng, sd, y );
+
+        // Check for convergence.
+        if ( fabs(phi_new) < dx*secant_tol )
+        {
+            break;
+        }
     }
 
-    // Return the signed distance. Note here that the literature indicates we
-    // should just be able to return (sign * t_k) here as t_k is the
-    // distance. However, I found that the sign of t_k could switch at times
-    // and therefore this was unreliable, even though the correct location of
-    // the minimum, y, was found. This could be due to the fact that we have
-    // no good estimate for the magnitude of the signed distance when it is
-    // negative - we just know that it is negative. So for now returning the
-    // explicit signed distance to the minimum location was found to be more
-    // robust.
-    return sign * distance(x,y);
+    // Return the signed distance.
+    return sign * t_new;
 }
 
 //---------------------------------------------------------------------------//
 
-} // end namespace LevelSet
+} // end namespace LevelSetRedistance
 } // end namespace Picasso
 
 #endif // end PICASSO_LEVELSETREDISTANCE_HPP

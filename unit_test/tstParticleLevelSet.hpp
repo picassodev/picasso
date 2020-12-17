@@ -104,13 +104,13 @@ void zalesaksTest( const std::string& filename )
     // Compute the initial level set.
     level_set->estimateSignedDistance(
         TEST_EXECSPACE(), particles->slice(Field::LogicalPosition()) );
-    level_set->redistance( TEST_EXECSPACE(), true );
+    level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
     // Write the initial level set.
     Cajita::BovWriter::Experimental::writeTimeStep(
-        0, time, *(level_set->getDistanceEstimate()) );
+        0, time, *(level_set->levelSet()->getDistanceEstimate()) );
     Cajita::BovWriter::Experimental::writeTimeStep(
-        0, time, *(level_set->getSignedDistance()) );
+        0, time, *(level_set->levelSet()->getSignedDistance()) );
 
     // Advect the disk one full rotation.
     double pi = 4.0 * atan(1.0);
@@ -179,13 +179,13 @@ void zalesaksTest( const std::string& filename )
         // Compute the level set.
         level_set->estimateSignedDistance(
             TEST_EXECSPACE(), particles->slice(Field::LogicalPosition()) );
-        level_set->redistance( TEST_EXECSPACE(), true );
+        level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
         // Write the level set.
         Cajita::BovWriter::Experimental::writeTimeStep(
-            t+1, time, *(level_set->getDistanceEstimate()) );
+            t+1, time, *(level_set->levelSet()->getDistanceEstimate()) );
         Cajita::BovWriter::Experimental::writeTimeStep(
-            t+1, time, *(level_set->getSignedDistance()) );
+            t+1, time, *(level_set->levelSet()->getSignedDistance()) );
     }
 }
 

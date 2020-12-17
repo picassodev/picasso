@@ -417,6 +417,11 @@ struct SignedDistance : Scalar<double>
     static std::string label() { return "signed_distance"; }
 };
 
+struct DistanceEstimate : Scalar<double>
+{
+    static std::string label() { return "distance_estimate"; }
+};
+
 struct Color : Scalar<int>
 {
     static std::string label() { return "color"; }
