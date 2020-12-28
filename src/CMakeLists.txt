@@ -8,6 +8,7 @@ set(HEADERS
   Picasso_FacetGeometry.hpp
   Picasso_FieldManager.hpp
   Picasso_FieldTypes.hpp
+  Picasso_GridOperator.hpp
   Picasso_InputParser.hpp
   Picasso_LevelSet.hpp
   Picasso_LevelSetRedistance.hpp
