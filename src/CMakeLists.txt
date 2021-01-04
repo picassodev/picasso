@@ -2,6 +2,7 @@
 configure_file(Picasso_config.hpp.cmakein Picasso_config.hpp)
 
 set(HEADERS
+  Picasso.hpp
   Picasso_AdaptiveMesh.hpp
   Picasso_APIC.hpp
   Picasso_BatchedLinearAlgebra.hpp
