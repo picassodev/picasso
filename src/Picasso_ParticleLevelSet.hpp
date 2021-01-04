@@ -31,15 +31,18 @@ struct ParticleLevelSetPrimitiveData
     int num_color;
 };
 
-// Predicate index - store the the 3d index of the mesh entity we are going to
-// search the tree with.
+// Predicate storage - store the the 3d index of the mesh entity we are going to
+// search the tree with along with its coordinates.
 template<class IndexType>
-struct ParticleLevelSetPredicateIndex
+struct ParticleLevelSetPredicateStorage
 {
     using size_type = IndexType;
     size_type i;
     size_type j;
     size_type k;
+    float x;
+    float y;
+    float z;
 };
 
 // Search predicates. We search the tree with the mesh entities on which we
@@ -68,7 +71,7 @@ struct ParticleLevelSetPredicateData
     }
 
     KOKKOS_FUNCTION void convertIndexTo3d(
-        size_type i, ParticleLevelSetPredicateIndex<size_type>& ijk ) const
+        size_type i, ParticleLevelSetPredicateStorage<size_type>& ijk ) const
     {
         ijk.k = i / ij_size;
         size_type k_size = ijk.k * ij_size;
@@ -81,33 +84,29 @@ struct ParticleLevelSetPredicateData
 // Query callback. When the query occurs we store the distance to the closest
 // point. We don't use the tree graph so we don't insert anything into the
 // graph.
-template<class DistanceEstimateView>
+template<class CoordinateSlice, class DistanceEstimateView>
 struct ParticleLevelSetCallback
 {
+    ParticleLevelSetPrimitiveData<CoordinateSlice> primitive_data;
     DistanceEstimateView distance_estimate;
     float radius;
-    using tag = ArborX::Details::InlineCallbackTag;
-    template <typename Predicate, typename OutputFunctor>
+
+    template <typename Predicate>
     KOKKOS_FUNCTION void operator()(Predicate const &predicate,
-                                    int,
-                                    float distance,
-                                    OutputFunctor const &) const
+                                    int primitive_index) const
     {
-        // Get the entity index.
-        auto ijk = getData( predicate );
+        // Get the actual index of the particle.
+        auto p = primitive_data.c( primitive_index );
+
+        // Get the predicate storage.
+        auto storage = getData( predicate );
 
         // Compute the distance from the grid entity to the particle sphere.
-        auto estimate = distance - radius;
-
-        // If a distance is negative we are going to correct via redistancing
-        // it so clamp all negative distances to the radius because it can't
-        // be farther away than that if it is inside the spehere. This will
-        // allow for the projected gradient iterations in the redistancing
-        // algorithm to converge quickly when the entire region in the ball is
-        // negative as we will need to extend the ball anyway to find the zero
-        // isocontour.
-        distance_estimate( ijk.i, ijk.j, ijk.k, 0 ) =
-            ( estimate >= 0.0 ) ? estimate : -radius;
+        float dx = static_cast<float>(primitive_data.x(p,0)) - storage.x;
+        float dy = static_cast<float>(primitive_data.x(p,1)) - storage.y;
+        float dz = static_cast<float>(primitive_data.x(p,2)) - storage.z;
+        distance_estimate( storage.i, storage.j, storage.k, 0 ) =
+            sqrt(dx*dx + dy*dy + dz*dz) - radius;
     }
 };
 
@@ -162,21 +161,21 @@ struct AccessTraits<Picasso::ParticleLevelSetPredicateData<LocalMesh,EntityType>
     static KOKKOS_FUNCTION auto get( const predicate_data& data, size_type i )
     {
         // Get the entity index.
-        Picasso::ParticleLevelSetPredicateIndex<size_type> ijk;
-        data.convertIndexTo3d( i, ijk );
-        int index[3] = { ijk.i, ijk.j, ijk.k };
+        Picasso::ParticleLevelSetPredicateStorage<size_type> storage;
+        data.convertIndexTo3d( i, storage );
+        int index[3] = { storage.i, storage.j, storage.k };
 
         // Get the coordinates of the entity.
         double x[3];
         data.local_mesh.coordinates( entity_type(), index, x );
+        storage.x = x[0];
+        storage.y = x[1];
+        storage.z = x[2];
 
         // Find the nearest particle to the entity. Attach the entity index to
         // use in the callback.
-        return attach(
-            nearest(Point{static_cast<float>(x[0]),
-                          static_cast<float>(x[1]),
-                          static_cast<float>(x[2])}, 1),
-            ijk );
+        return attach( nearest(Point{storage.x,storage.y,storage.z},1),
+                       storage );
     }
 };
 
@@ -329,15 +328,16 @@ class ParticleLevelSet
             primitive_data.x = x_p;
             primitive_data.c = _color_indices;
             primitive_data.num_color = _color_count;
-            using device_type = Kokkos::Device<ExecutionSpace,memory_space>;
-            ArborX::BVH<device_type> bvh( primitive_data );
+            ArborX::BVH<memory_space> bvh( exec_space, primitive_data );
 
             // Make the search predicates.
             ParticleLevelSetPredicateData<decltype(local_mesh),entity_type>
                 predicate_data( local_mesh, *local_grid );
 
             // Make the distance callback.
-            ParticleLevelSetCallback<decltype(estimate_view)> distance_callback;
+            ParticleLevelSetCallback<
+                ParticlePositions,decltype(estimate_view)> distance_callback;
+            distance_callback.primitive_data = primitive_data;
             distance_callback.distance_estimate = estimate_view;
             distance_callback.radius = static_cast<float>(_radius);
 
@@ -345,11 +345,7 @@ class ParticleLevelSet
             // closest particle and compute the initial signed distance
             // estimate. Dummy arguments are needed even though we don't care
             // about the output.
-            Kokkos::View<int *, device_type> indices(
-                Kokkos::view_alloc("indices",Kokkos::WithoutInitializing), 0 );
-            Kokkos::View<int *, device_type> offset(
-                Kokkos::view_alloc("offset",Kokkos::WithoutInitializing), 0 );
-            bvh.query( predicate_data, distance_callback, indices, offset );
+            bvh.query( exec_space, predicate_data, distance_callback );
         }
 
         // Do a reduction to get the minimum distance within the minimum halo
