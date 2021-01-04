@@ -132,10 +132,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
         });
 }
 
-//---------------------------------------------------------------------------//
-// RUN TESTS
-//---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, sphere_redistance_good_guess_test )
+void sphere_redistance()
 {
     // Sphere with radius of 0.25 centered at (0.5,0.5,0.5)
 
@@ -158,7 +155,7 @@ TEST( TEST_CATEGORY, sphere_redistance_good_guess_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, scaled_sphere_redistance_test )
+void scaled_sphere_redistance()
 {
     // Scaled sphere with radius of 0.25 centered at (0.5,0.5,0.5).
 
@@ -189,6 +186,18 @@ TEST( TEST_CATEGORY, scaled_sphere_redistance_test )
     // Test. Use a smaller tolerance as we can resolve the smooth values
     // relatively well.
     runTest( phi_0, phi_r, 0.5 );
+}
+
+//---------------------------------------------------------------------------//
+// RUN TESTS
+//---------------------------------------------------------------------------//
+TEST( TEST_CATEGORY, sphere_redistance_good_guess_test )
+{
+    sphere_redistance();
+}
+TEST( TEST_CATEGORY, scaled_sphere_redistance_test )
+{
+    scaled_sphere_redistance();
 }
 
 //---------------------------------------------------------------------------//
