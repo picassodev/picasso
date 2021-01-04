@@ -23,6 +23,7 @@ namespace APIC
 // Inertial tensor scale factor.
 template<class SplineDataType>
 typename SplineDataType::scalar_type
+KOKKOS_INLINE_FUNCTION
 inertialScaling(
     const SplineDataType& sd,
     typename std::enable_if<(2==SplineDataType::order),void*>::type = 0)
@@ -32,6 +33,7 @@ inertialScaling(
 
 template<class SplineDataType>
 typename SplineDataType::scalar_type
+KOKKOS_INLINE_FUNCTION
 inertialScaling(
     const SplineDataType& sd,
     typename std::enable_if<(3==SplineDataType::order),void*>::type = 0)
