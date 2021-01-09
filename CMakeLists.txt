@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
+enable_language(C)
+
 include(GNUInstallDirs)
 
 # Download and unpack googletest at configure time
@@ -26,6 +28,7 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
 find_package(MPI REQUIRED)
+find_package(HYPRE REQUIRED)
 find_package(Kokkos REQUIRED)
 find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(HYPRE REQUIRED)

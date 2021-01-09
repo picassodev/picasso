@@ -173,7 +173,8 @@ Picasso_add_tests(MPI NAMES
   GridOperator2d
   ParticleInterpolation
   LevelSetRedistance
-  ParticleLevelSet)
+  ParticleLevelSet
+  MarchingCubes)
 
 if(Picasso_ENABLE_SILO)
   Picasso_add_tests(MPI NAMES
