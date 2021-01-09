@@ -250,6 +250,12 @@ class LevelSet
                     distance_view( i, j, k, 0 ) = estimate_view( i, j, k, 0 );
                 }
             } );
+
+        // Gather again to get narrow-band updated ghost values. We could
+        // defer this gather to when the user needs it but most things that we
+        // will do with this level set function will required the gathered
+        // values.
+        _halo->gather( exec_space, *_signed_distance );
     }
 
     // Get the signed distance estimate.

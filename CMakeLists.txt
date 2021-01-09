@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.12)
 
 project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
+enable_language(C)
+
 include(GNUInstallDirs)
 
 # find dependencies (MPI, Kokkos, and HYPRE found through Cabana)
