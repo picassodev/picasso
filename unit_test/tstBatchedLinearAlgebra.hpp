@@ -688,6 +688,118 @@ void kernelTest()
 }
 
 //---------------------------------------------------------------------------//
+void eigendecompositionTest()
+{
+    LinearAlgebra::Matrix<double,4,4> A =
+        {{1, 2, 3, 4}, {1, 4, 3, 2}, {1, 1, 2, 1}, {2, 1, 4, 1}};
+
+    LinearAlgebra::Vector<double,4> e_real;
+    LinearAlgebra::Vector<double,4> e_imag;
+    LinearAlgebra::Matrix<double,4,4> u_left;
+    LinearAlgebra::Matrix<double,4,4> u_right;
+
+    LinearAlgebra::eigendecomposition( A, e_real, e_imag, u_left, u_right );
+
+    // Check real eigenvalues
+    EXPECT_FLOAT_EQ( 7.699393945291155, e_real(0) );
+    EXPECT_FLOAT_EQ( 2.045317716995864, e_real(1) );
+    EXPECT_FLOAT_EQ( -1.584394776530825, e_real(2) );
+    EXPECT_FLOAT_EQ( -0.1603168857561950, e_real(3) );
+
+    // No complex eigenvalues
+    EXPECT_FLOAT_EQ( 0.0, e_imag(0) );
+    EXPECT_FLOAT_EQ( 0.0, e_imag(1) );
+    EXPECT_FLOAT_EQ( 0.0, e_imag(2) );
+    EXPECT_FLOAT_EQ( 0.0, e_imag(3) );
+
+    // Check right eigenvector.
+    EXPECT_FLOAT_EQ( -0.5772831579170088, -u_right(0,0) );
+    EXPECT_FLOAT_EQ( -0.6262445857026205, -u_right(1,0) );
+    EXPECT_FLOAT_EQ( -0.2879754733142472, -u_right(2,0) );
+    EXPECT_FLOAT_EQ( -0.4377579253799459, -u_right(3,0) );
+
+    EXPECT_FLOAT_EQ( -0.3935576398313519, -u_right(0,1) );
+    EXPECT_FLOAT_EQ( 0.8091338559680495, -u_right(1,1) );
+    EXPECT_FLOAT_EQ( -0.1154744868351802, -u_right(2,1) );
+    EXPECT_FLOAT_EQ( -0.4208092562513370, -u_right(3,1) );
+
+    EXPECT_FLOAT_EQ( -0.8496726353484932, -u_right(0,2) );
+    EXPECT_FLOAT_EQ( -0.09431174848941145, -u_right(1,2) );
+    EXPECT_FLOAT_EQ( 0.1227267748072847, -u_right(2,2) );
+    EXPECT_FLOAT_EQ( 0.5040831732781987, -u_right(3,2) );
+
+    EXPECT_FLOAT_EQ( 0.8702121374980452, -u_right(0,3) );
+    EXPECT_FLOAT_EQ( 0.1109808921593327, -u_right(1,3) );
+    EXPECT_FLOAT_EQ( -0.4773906708806565, -u_right(2,3) );
+    EXPECT_FLOAT_EQ( 0.05012209774858267, -u_right(3,3) );
+
+    LinearAlgebra::Matrix<double,4,4> identity = 0.0;
+    for ( int i = 0; i < 4; ++i )
+        identity(i,i) = 1.0;
+
+    // Check right eigenvalue identity.
+    for ( int i = 0; i < 4; ++i )
+    {
+        auto ur_ident = (A-e_real(i)*identity)*u_right.column(i);
+        for ( int j = 0; j < 4; ++j )
+        {
+            EXPECT_FLOAT_EQ( 1.0, 1.0 - ur_ident(j) );
+        }
+    }
+
+    // Check left eigenvalue identity.
+    for ( int i = 0; i < 4; ++i )
+    {
+        auto ul_ident = (~A-e_real(i)*identity)*u_left.row(i);
+        for ( int j = 0; j < 4; ++j )
+        {
+            EXPECT_FLOAT_EQ( 1.0, 1.0 - ul_ident(j) );
+        }
+    }
+
+    // Check inverse of right eigenvectors.
+    auto ur_inv = LinearAlgebra::inverse( u_right );
+
+    EXPECT_FLOAT_EQ( -0.3525146608046934, -ur_inv(0,0) );
+    EXPECT_FLOAT_EQ( -0.5469292354121372, -ur_inv(0,1) );
+    EXPECT_FLOAT_EQ( -0.8218494119447979, -ur_inv(0,2) );
+    EXPECT_FLOAT_EQ( -0.4964279684321965, -ur_inv(0,3) );
+
+    EXPECT_FLOAT_EQ( -0.3648950659157645, -ur_inv(1,0) );
+    EXPECT_FLOAT_EQ( 0.8089980125933259, -ur_inv(1,1) );
+    EXPECT_FLOAT_EQ( -0.5126586109009551, -ur_inv(1,2) );
+    EXPECT_FLOAT_EQ( -0.3388853394692466, -ur_inv(1,3) );
+
+    EXPECT_FLOAT_EQ( -0.6246987297746988, -ur_inv(2,0) );
+    EXPECT_FLOAT_EQ( 0.1823766827069634, -ur_inv(2,1) );
+    EXPECT_FLOAT_EQ( -0.9702233208689864, -ur_inv(2,2) );
+    EXPECT_FLOAT_EQ( 1.201157386148598, -ur_inv(2,3) );
+
+    EXPECT_FLOAT_EQ( 0.1403135639951463, -ur_inv(3,0) );
+    EXPECT_FLOAT_EQ( 0.1811222598704855, -ur_inv(3,1) );
+    EXPECT_FLOAT_EQ( -1.724375790756904, -ur_inv(3,2) );
+    EXPECT_FLOAT_EQ( 0.6902226666411088, -ur_inv(3,3) );
+
+    // Check the right eigenvector operator identity.
+    LinearAlgebra::Matrix<double,4,4> lambda = 0.0;
+    for ( int i = 0; i < 4; ++i )
+        lambda(i,i) = e_real(i);
+    auto r_op_ident = u_right * lambda * ur_inv;
+    for ( int i = 0; i < 4; ++i )
+        for ( int j = 0; j < 4; ++j )
+            EXPECT_FLOAT_EQ( A(i,j), r_op_ident(i,j) );
+
+    // Check inverse of left eigenvectors.
+    auto ul_inv = LinearAlgebra::inverse( u_left );
+
+    // Check the left eigenvector operator identity.
+    auto l_op_ident = ~(~u_left * lambda * ~ul_inv);
+    for ( int i = 0; i < 4; ++i )
+        for ( int j = 0; j < 4; ++j )
+            EXPECT_FLOAT_EQ( A(i,j), l_op_ident(i,j) );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, matrix_test )
@@ -761,6 +873,11 @@ TEST( TEST_CATEGORY, kernelTest )
     kernelTest<4>();
     kernelTest<10>();
     kernelTest<20>();
+}
+
+TEST( TEST_CATEGORY, eigendecomposition_test )
+{
+    eigendecompositionTest();
 }
 
 //---------------------------------------------------------------------------//

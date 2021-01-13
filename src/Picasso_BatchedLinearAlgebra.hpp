@@ -24,6 +24,9 @@
 
 #include <KokkosBatched_InverseLU_Decl.hpp>
 
+#include <KokkosBatched_Eigendecomposition_Decl.hpp>
+#include <KokkosBatched_Eigendecomposition_Serial_Impl.hpp>
+
 #include <type_traits>
 #include <cmath>
 #include <functional>
@@ -101,6 +104,8 @@ namespace LinearAlgebra
   Matrix inverse: A_inv = inverse(A) (returns a copy of the matrix inverted)
 
   NxN linear solve (A*x=b): x = A ^ b;
+
+  General asymmetric eigendecomposition
 
 
   We can string together multiple expressions to create a more complex
@@ -1532,10 +1537,10 @@ typename std::enable_if_t<
 inverse( const ExpressionA& a )
 {
     auto a_lu = LU(a);
-    typename ExpressionA::copy_type a_inv;
+    typename ExpressionA::copy_type work;
     KokkosBatched::SerialInverseLU<
-        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, a_inv );
-    return a_inv;
+        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, work );
+    return a_lu;
 }
 
 //---------------------------------------------------------------------------//
@@ -1591,6 +1596,34 @@ operator^( const ExpressionA& a, const ExpressionB& b )
         KokkosBatched::Trans::NoTranspose,
         KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, x );
     return x;
+}
+
+//---------------------------------------------------------------------------//
+// Eigendecomposition
+//---------------------------------------------------------------------------//
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                          typename ExpressionA::copy_type>
+eigendecomposition(
+    const ExpressionA& a,
+    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>& e_real,
+    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>& e_imag,
+    Matrix<typename ExpressionA::value_type,ExpressionA::extent_0,ExpressionA::extent_0>& u_left,
+    Matrix<typename ExpressionA::value_type,ExpressionA::extent_0,ExpressionA::extent_0>& u_right )
+{
+    static_assert( ExpressionA::extent_0 == ExpressionA::extent_1,
+                   "Matrix must be square" );
+
+    const auto extent = ExpressionA::extent_0;
+    typename ExpressionA::copy_type a_schur = a;
+    Vector<typename ExpressionA::value_type,2*extent*extent+5*extent> work;
+    KokkosBatched::SerialEigendecomposition::invoke(
+        a_schur, e_real, e_imag, u_left, u_right, work );
+
+    // Return the matrix transformed to a quasi upper triangular matrix of the
+    // Schur decomposition.
+    return a_schur;
 }
 
 //---------------------------------------------------------------------------//
