@@ -146,6 +146,11 @@ namespace Field
 //---------------------------------------------------------------------------//
 // Field Tags.
 //---------------------------------------------------------------------------//
+// Forward declarations.
+template<class T> Scalar;
+template<class T, int D> Vector;
+template<class T, int D0, int D1> Tensor;
+//---------------------------------------------------------------------------//
 // Scalar field.
 struct ScalarBase {};
 
@@ -157,6 +162,8 @@ struct Scalar : ScalarBase
     static constexpr int size = 1;
     using data_type = value_type;
     using linear_algebra_type = value_type;
+    template<class U> using field_type = Scalar<U>;
+    template<int NumSpaceDim> using gradient_type = Vector<T,NumSpaceDim>;
 };
 
 template <class T>
@@ -182,6 +189,8 @@ struct Vector : VectorBase
     static constexpr int dim0 = D;
     using data_type = value_type[D];
     using linear_algebra_type = LinearAlgebra::VectorView<T,D>;
+    template<class U> using field_type = Vector<U,D>;
+    template<int NumSpaceDim> using gradient_type = Tensor<T,D,NumSpaceDim>;
 };
 
 template <class T>
@@ -208,6 +217,7 @@ struct Tensor : TensorBase
     static constexpr int dim1 = D1;
     using data_type = value_type[D0][D1];
     using linear_algebra_type = LinearAlgebra::MatrixView<T,D0,D1>;
+    template<class U> using field_type = Tensor<U,D0,D1>;
 };
 
 template <class T>
