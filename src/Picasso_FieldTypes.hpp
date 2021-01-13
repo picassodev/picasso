@@ -147,9 +147,10 @@ namespace Field
 // Field Tags.
 //---------------------------------------------------------------------------//
 // Forward declarations.
-template<class T> Scalar;
-template<class T, int D> Vector;
-template<class T, int D0, int D1> Tensor;
+template<class T> struct Scalar;
+template<class T, int D> struct Vector;
+template<class T, int D0, int D1> struct Tensor;
+
 //---------------------------------------------------------------------------//
 // Scalar field.
 struct ScalarBase {};
