@@ -25,8 +25,8 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 # find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(MPI REQUIRED)
-find_package(Kokkos 3 REQUIRED)
-find_package(KokkosKernels 3 REQUIRED)
+find_package(Kokkos REQUIRED)
+find_package(KokkosKernels REQUIRED)
 find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
