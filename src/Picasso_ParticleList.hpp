@@ -177,11 +177,12 @@ template<class ParticleType, class FieldTag>
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
+    const typename FieldTag::linear_algebra_type>::type
 get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &(get(particle,tag,0)), ParticleType::vector_length );
+        const_cast<typename FieldTag::value_type*>(&(get(particle,tag,0))),
+        ParticleType::vector_length );
 }
 
 //---------------------------------------------------------------------------//
@@ -204,11 +205,11 @@ template<class ParticleType, class FieldTag>
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
+    const typename FieldTag::linear_algebra_type>::type
 get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &(get(particle,tag,0,0)),
+        const_cast<typename FieldTag::value_type*>(&(get(particle,tag,0,0))),
         ParticleType::vector_length * FieldTag::dim1,
         ParticleType::vector_length );
 }
