@@ -307,6 +307,7 @@ struct Matrix
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = MatrixView<T,M,N>;
     using copy_type = Matrix<T,M,N>;
@@ -443,7 +444,7 @@ struct Matrix
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i, const int j ) const
+    const_reference operator()( const int i, const int j ) const
     { return _d[i][j]; }
 
     KOKKOS_INLINE_FUNCTION
@@ -484,6 +485,7 @@ struct Matrix<T,1,1>
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = MatrixView<T,1,1>;
     using copy_type = Matrix<T,1,1>;
@@ -526,7 +528,7 @@ struct Matrix<T,1,1>
     { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int, const int )
+    const_reference operator()( const int, const int )
     { return _d; }
 
     // Get the raw data.
@@ -558,6 +560,7 @@ struct MatrixView
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = MatrixView<T,M,N>;
     using copy_type = Matrix<T,M,N>;
@@ -674,7 +677,7 @@ struct MatrixView
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i, const int j ) const
+    const_reference operator()( const int i, const int j ) const
     { return _d[_stride[0]*i + _stride[1]*j]; }
 
     KOKKOS_INLINE_FUNCTION
@@ -717,6 +720,7 @@ struct Vector
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = VectorView<T,N>;
     using copy_type = Vector<T,N>;
@@ -837,7 +841,7 @@ struct Vector
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i ) const
+    const_reference operator()( const int i ) const
     { return _d[i]; }
 
     KOKKOS_INLINE_FUNCTION
@@ -864,6 +868,7 @@ struct Vector<T,1>
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = VectorView<T,1>;
     using copy_type = Vector<T,1>;
@@ -902,7 +907,7 @@ struct Vector<T,1>
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int ) const
+    const_reference operator()( const int ) const
     { return _d; }
 
     KOKKOS_INLINE_FUNCTION
@@ -938,6 +943,7 @@ struct VectorView
     using non_const_value_type = typename std::remove_cv<T>::type;
     using pointer = T*;
     using reference = T&;
+    using const_reference = const T&;
 
     using eval_type = VectorView<T,N>;
     using copy_type = Vector<T,N>;
@@ -1040,7 +1046,7 @@ struct VectorView
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i ) const
+    const_reference operator()( const int i ) const
     { return _d[_stride*i]; }
 
     KOKKOS_INLINE_FUNCTION
