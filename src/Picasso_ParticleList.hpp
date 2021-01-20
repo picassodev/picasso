@@ -112,7 +112,7 @@ template<class FieldTag, class ... FieldTags, class ... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
-    const typename Particle<FieldTags...>::tuple_type::template member_const_reference_type<
+    typename Particle<FieldTags...>::tuple_type::template member_const_reference_type<
         TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
@@ -141,7 +141,7 @@ template<class FieldTag,
 KOKKOS_FORCEINLINE_FUNCTION
 typename std::enable_if<
     sizeof...(IndexTypes) == FieldTag::rank,
-    const typename ParticleView<
+    typename ParticleView<
         VectorLength,FieldTags...>::soa_type::template member_const_reference_type<
         TypeIndexer<FieldTag,FieldTags...>::index>>::type
 get( const ParticleView<VectorLength,FieldTags...>& particle,
