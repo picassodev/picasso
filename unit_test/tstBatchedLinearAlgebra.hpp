@@ -211,6 +211,17 @@ void matrixTest()
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_DOUBLE_EQ( f(i,j), 32.3 );
+
+    // Check identity
+    LinearAlgebra::Matrix<double,3,3> I;
+    LinearAlgebra::identity( I );
+    for ( int i = 0; i < 3; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_DOUBLE_EQ( I(i,j), (i==j) ? 1.0 : 0.0 );
+
+    // Check trace.
+    auto tr_I = LinearAlgebra::trace( I );
+    EXPECT_DOUBLE_EQ( 3.0, tr_I );
 }
 
 //---------------------------------------------------------------------------//
