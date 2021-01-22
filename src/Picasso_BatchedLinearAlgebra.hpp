@@ -1486,6 +1486,45 @@ LU( const ExpressionA& a )
 }
 
 //---------------------------------------------------------------------------//
+// Matrix trace
+//---------------------------------------------------------------------------//
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                          typename ExpressionA::value_type>
+trace( const ExpressionA& a )
+{
+    static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
+                   "matrix must be square" );
+
+    typename ExpressionA::value_type trace = 0.0;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+    for ( int i = 0; i < ExpressionA::extent_0; ++i )
+        trace += a(i,i);
+    return trace;
+}
+
+//---------------------------------------------------------------------------//
+// Identity
+//---------------------------------------------------------------------------//
+template<class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+typename std::enable_if_t<is_matrix<ExpressionA>::value,void>
+identity( ExpressionA& a )
+{
+    static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
+                   "matrix must be square" );
+    a = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+    for ( int i = 0; i < ExpressionA::extent_0; ++i )
+        a(i,i) = Kokkos::ArithTraits<typename ExpressionA::value_type>::one();
+}
+
+//---------------------------------------------------------------------------//
 // Matrix inverse.
 //---------------------------------------------------------------------------//
 // 2x2 specialization.
