@@ -33,37 +33,35 @@ double distance( const double x[3], const double y[3], double z[3] )
 {
     for ( int d = 0; d < 3; ++d )
         z[d] = x[d] - y[d];
-    return sqrt( z[0]*z[0] + z[1]*z[1] + z[2]*z[2] );
+    return sqrt( z[0] * z[0] + z[1] * z[1] + z[2] * z[2] );
 }
 
 //---------------------------------------------------------------------------//
 // Clamp a point into the local domain.
-template<class LocalMeshType>
-KOKKOS_INLINE_FUNCTION
-void clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
+template <class LocalMeshType>
+KOKKOS_INLINE_FUNCTION void
+clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
 {
     for ( int d = 0; d < 3; ++d )
     {
-        x[d] = fmin( local_mesh.highCorner(Cajita::Ghost(),d),
-                     fmax( local_mesh.lowCorner(Cajita::Ghost(),d), x[d] ) );
+        x[d] = fmin( local_mesh.highCorner( Cajita::Ghost(), d ),
+                     fmax( local_mesh.lowCorner( Cajita::Ghost(), d ), x[d] ) );
     }
 }
 
 //---------------------------------------------------------------------------//
 // Hopf-Lax projection into the ball of radius t_k about x.
 KOKKOS_INLINE_FUNCTION
-void projectToBall( const double x[3],
-                    const double t_k,
-                    double y[3] )
+void projectToBall( const double x[3], const double t_k, double y[3] )
 {
     // Compute the dist from the node to the argument on the ball.
     double z[3];
-    double dist = distance(x,y,z);
+    double dist = distance( x, y, z );
 
     // Check the dist against the current secant root and project to the
     // boundary if outside the ball.
     if ( dist > t_k )
-        for ( int d = 0; d < 3; ++ d )
+        for ( int d = 0; d < 3; ++d )
             y[d] = x[d] - t_k * z[d] / dist;
 }
 
@@ -71,17 +69,12 @@ void projectToBall( const double x[3],
 // Evaluate the Hopf-Lax formula for the signed distance estimate via gradient
 // projection. Find the argmin of phi_0 on the ball and return phi_0 evaluated
 // at the argmin.
-template<class SignedDistanceView, class LocalMeshType, class SplineDataType>
-KOKKOS_INLINE_FUNCTION
-double evaluate( const SignedDistanceView& phi_0,
-                 const double sign,
-                 const LocalMeshType& local_mesh,
-                 const double x[3],
-                 const double t_k,
-                 const double tol,
-                 const int max_iter,
-                 SplineDataType& sd,
-                 double y[3] )
+template <class SignedDistanceView, class LocalMeshType, class SplineDataType>
+KOKKOS_INLINE_FUNCTION double
+evaluate( const SignedDistanceView& phi_0, const double sign,
+          const LocalMeshType& local_mesh, const double x[3], const double t_k,
+          const double tol, const int max_iter, SplineDataType& sd,
+          double y[3] )
 {
     // Get the cell size. We assume a uniform cell size in this implementation.
     Cajita::evaluateSpline( local_mesh, y, sd );
@@ -111,7 +104,7 @@ double evaluate( const SignedDistanceView& phi_0,
         error_div = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
-            error_num += (y[d]-y_old[d])*(y[d]-y_old[d]);
+            error_num += ( y[d] - y_old[d] ) * ( y[d] - y_old[d] );
             error_div += y_old[d] * y_old[d];
             y_old[d] = y[d];
         }
@@ -132,28 +125,19 @@ double evaluate( const SignedDistanceView& phi_0,
 //---------------------------------------------------------------------------//
 // Evaluate the Hopf-Lax formula multiple times to find a global minimizer for
 // the given secant iterate.
-template<class SignedDistanceView,
-         class LocalMeshType,
-         class SplineDataType,
-         class RandState>
-KOKKOS_INLINE_FUNCTION
-double globalMin( const SignedDistanceView& phi_0,
-                  const double sign,
-                  const LocalMeshType& local_mesh,
-                  const double x[3],
-                  const double t_k,
-                  const double projection_tol,
-                  const int max_projection_iter,
-                  const int num_random,
-                  RandState& rand_state,
-                  SplineDataType& sd,
-                  double y[3] )
+template <class SignedDistanceView, class LocalMeshType, class SplineDataType,
+          class RandState>
+KOKKOS_INLINE_FUNCTION double
+globalMin( const SignedDistanceView& phi_0, const double sign,
+           const LocalMeshType& local_mesh, const double x[3], const double t_k,
+           const double projection_tol, const int max_projection_iter,
+           const int num_random, RandState& rand_state, SplineDataType& sd,
+           double y[3] )
 {
     // Estimate the argmin from the initial point.
     projectToBall( x, t_k, y );
-    double phi_min =
-        evaluate( phi_0, sign, local_mesh, x, t_k,
-                  projection_tol, max_projection_iter, sd, y );
+    double phi_min = evaluate( phi_0, sign, local_mesh, x, t_k, projection_tol,
+                               max_projection_iter, sd, y );
 
     // Compare the initial estimate to random points in the ball.
     double y_trial[3];
@@ -170,25 +154,26 @@ double globalMin( const SignedDistanceView& phi_0,
         mag = 0.0;
         for ( int d = 0; d < 3; ++d )
         {
-            ray[d] = Kokkos::rand<RandState,double>::draw(
-                rand_state, -1.0, 1.0 );
-            mag += ray[d]*ray[d];
+            ray[d] =
+                Kokkos::rand<RandState, double>::draw( rand_state, -1.0, 1.0 );
+            mag += ray[d] * ray[d];
         }
-        mag = t_k * (1-exp(Kokkos::rand<RandState,double>::draw(rand_state,-4.0,0.0))) /
-              sqrt(mag);
+        mag = t_k *
+              ( 1 - exp( Kokkos::rand<RandState, double>::draw(
+                        rand_state, -4.0, 0.0 ) ) ) /
+              sqrt( mag );
         for ( int d = 0; d < 3; ++d )
         {
-            y_trial[d] = x[d] + ray[d]*mag;
+            y_trial[d] = x[d] + ray[d] * mag;
         }
 
         // Compute the random point argmin.
-        phi_trial =
-            evaluate( phi_0, sign, local_mesh, x, t_k,
-                      projection_tol, max_projection_iter, sd, y_trial );
+        phi_trial = evaluate( phi_0, sign, local_mesh, x, t_k, projection_tol,
+                              max_projection_iter, sd, y_trial );
 
         // If less than the current value assign the results as the new
         // minimum.
-        if ( fabs(phi_trial) < fabs(phi_min) )
+        if ( fabs( phi_trial ) < fabs( phi_min ) )
         {
             phi_min = phi_trial;
             for ( int d = 0; d < 3; ++d )
@@ -212,26 +197,20 @@ double globalMin( const SignedDistanceView& phi_0,
 //
 // NOTE - If needed, this function could also be easily modified to return the
 // normal field per section 2.4 in the reference.
-template<class EntityType,
-         class SignedDistanceView,
-         class LocalMeshType>
-KOKKOS_INLINE_FUNCTION
-double redistanceEntity( EntityType,
-                         const SignedDistanceView& phi_0,
-                         const LocalMeshType& local_mesh,
-                         const int entity_index[3],
-                         const double secant_tol,
-                         const int max_secant_iter,
-                         const int num_random,
-                         const double projection_tol,
-                         const int max_projection_iter )
+template <class EntityType, class SignedDistanceView, class LocalMeshType>
+KOKKOS_INLINE_FUNCTION double
+redistanceEntity( EntityType, const SignedDistanceView& phi_0,
+                  const LocalMeshType& local_mesh, const int entity_index[3],
+                  const double secant_tol, const int max_secant_iter,
+                  const int num_random, const double projection_tol,
+                  const int max_projection_iter )
 {
     // Grid interpolant.
-    using SplineTags = Cajita::SplineDataMemberTypes<
-        Cajita::SplineWeightValues,
-        Cajita::SplineWeightPhysicalGradients,
-        Cajita::SplinePhysicalCellSize>;
-    Cajita::SplineData<double,1,EntityType,SplineTags> sd;
+    using SplineTags =
+        Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues,
+                                      Cajita::SplineWeightPhysicalGradients,
+                                      Cajita::SplinePhysicalCellSize>;
+    Cajita::SplineData<double, 1, EntityType, SplineTags> sd;
 
     // Random number generator.
     using rand_type =
@@ -243,7 +222,7 @@ double redistanceEntity( EntityType,
     local_mesh.coordinates( EntityType(), entity_index, x );
 
     // Uniform mesh spacing.
-    int low_id[3] = {0, 0, 0};
+    int low_id[3] = { 0, 0, 0 };
     double dx = local_mesh.measure( Cajita::Edge<Dim::I>(), low_id );
 
     // Initial guess. The signed distance estimate is the phi value at time
@@ -258,7 +237,7 @@ double redistanceEntity( EntityType,
     phi_old *= sign;
 
     // First step is of size tol*dx to get the iteration started.
-    double t_new = secant_tol*dx;
+    double t_new = secant_tol * dx;
     double phi_new;
 
     // Initial argmin at the entity location. The ball radius starts at 0 so
@@ -270,12 +249,11 @@ double redistanceEntity( EntityType,
     double delta_t_max = 5.0 * dx;
 
     // Compute the secant initial iterate.
-    phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                         projection_tol, max_projection_iter,
-                         num_random, rng, sd, y );
+    phi_new = globalMin( phi_0, sign, local_mesh, x, t_new, projection_tol,
+                         max_projection_iter, num_random, rng, sd, y );
 
     // Check for convergence.
-    if ( fabs(phi_new) < dx*secant_tol )
+    if ( fabs( phi_new ) < dx * secant_tol )
         return sign * t_new;
 
     // Perform secant iterations to compute the signed distance. Stop when
@@ -289,9 +267,9 @@ double redistanceEntity( EntityType,
         // Clamp the step size if it exceeds the maximum step size. This
         // is needed to detect near division-by-zero resulting from a local
         // minimum.
-        if ( fabs(delta_t) > delta_t_max )
+        if ( fabs( delta_t ) > delta_t_max )
         {
-            delta_t = (phi_new > 0.0) ? delta_t_max : -delta_t_max;
+            delta_t = ( phi_new > 0.0 ) ? delta_t_max : -delta_t_max;
         }
 
         // Step.
@@ -300,12 +278,11 @@ double redistanceEntity( EntityType,
         phi_old = phi_new;
 
         // Find the global minimum on the current ball.
-        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new,
-                             projection_tol, max_projection_iter,
-                             num_random, rng, sd, y );
+        phi_new = globalMin( phi_0, sign, local_mesh, x, t_new, projection_tol,
+                             max_projection_iter, num_random, rng, sd, y );
 
         // Check for convergence.
-        if ( fabs(phi_new) < dx*secant_tol )
+        if ( fabs( phi_new ) < dx * secant_tol )
         {
             break;
         }

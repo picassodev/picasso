@@ -22,7 +22,6 @@ namespace Picasso
 class InputParser
 {
   public:
-
     //! Input argument constructor.
     InputParser( int argc, char* argv[] );
 
@@ -33,11 +32,9 @@ class InputParser
     const boost::property_tree::ptree& propertyTree() const;
 
   private:
-
     void parse( const std::string& filename, const std::string& type );
 
   private:
-
     boost::property_tree::ptree _ptree;
 };
 

@@ -24,6 +24,7 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 
 # find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+find_package(CLANG_FORMAT 10)
 find_package(MPI REQUIRED)
 find_package(Kokkos REQUIRED)
 find_package(KokkosKernels REQUIRED)
@@ -90,3 +91,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoConfig.cmakein
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso)
+
+# Clang Format
+if(CLANG_FORMAT_FOUND)
+  file(GLOB_RECURSE FORMAT_SOURCES src/*.cpp src/*.hpp unit_test/*.cpp unit_test/*.hpp)
+  add_custom_target(format
+    COMMAND ${CLANG_FORMAT_EXECUTABLE} -i -style=file ${FORMAT_SOURCES}
+    DEPENDS ${FORMAT_SOURCES})
+endif()

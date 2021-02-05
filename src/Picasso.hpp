@@ -12,8 +12,8 @@
 #ifndef PICASSO_HPP
 #define PICASSO_HPP
 
-#include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_APIC.hpp>
+#include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FacetGeometry.hpp>
 #include <Picasso_FieldManager.hpp>

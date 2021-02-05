@@ -10,9 +10,9 @@
  ****************************************************************************/
 
 #include <Picasso_FacetGeometry.hpp>
-#include <Picasso_Types.hpp>
 #include <Picasso_InputParser.hpp>
 #include <Picasso_ParticleList.hpp>
+#include <Picasso_Types.hpp>
 
 #include <Picasso_ParticleInit.hpp>
 
@@ -34,19 +34,19 @@ namespace Test
 void rayFireTestXY()
 {
     // Create a facet in the XY plane
-    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+    Kokkos::View<float* [4][3], Kokkos::HostSpace> facet( "facet", 1 );
 
-    facet(0,0,0) = 0.0;
-    facet(0,0,1) = 0.0;
-    facet(0,0,2) = 0.0;
+    facet( 0, 0, 0 ) = 0.0;
+    facet( 0, 0, 1 ) = 0.0;
+    facet( 0, 0, 2 ) = 0.0;
 
-    facet(0,1,0) = 1.0;
-    facet(0,1,1) = 0.0;
-    facet(0,1,2) = 0.0;
+    facet( 0, 1, 0 ) = 1.0;
+    facet( 0, 1, 1 ) = 0.0;
+    facet( 0, 1, 2 ) = 0.0;
 
-    facet(0,2,0) = 0.0;
-    facet(0,2,1) = 1.0;
-    facet(0,2,2) = 0.0;
+    facet( 0, 2, 0 ) = 0.0;
+    facet( 0, 2, 1 ) = 1.0;
+    facet( 0, 2, 2 ) = 0.0;
 
     // Rays will be perpendicular in z.
     float r[3] = { 0.0, 0.0, 1.0 };
@@ -56,8 +56,7 @@ void rayFireTestXY()
 
     // Check the projection.
     float y[3];
-    auto result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    auto result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -65,14 +64,13 @@ void rayFireTestXY()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle.
     p[2] = -1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -80,14 +78,13 @@ void rayFireTestXY()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point above the triangle.
     p[2] = 1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -95,7 +92,7 @@ void rayFireTestXY()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle at the  origin.
     p[0] = 0.0;
@@ -103,8 +100,7 @@ void rayFireTestXY()
     p[2] = -1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -112,26 +108,26 @@ void rayFireTestXY()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 }
 
 //---------------------------------------------------------------------------//
 void rayFireTestYZ()
 {
     // Create a facet in the YZ plane
-    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+    Kokkos::View<float* [4][3], Kokkos::HostSpace> facet( "facet", 1 );
 
-    facet(0,0,0) = 0.0;
-    facet(0,0,1) = 0.0;
-    facet(0,0,2) = 0.0;
+    facet( 0, 0, 0 ) = 0.0;
+    facet( 0, 0, 1 ) = 0.0;
+    facet( 0, 0, 2 ) = 0.0;
 
-    facet(0,1,0) = 0.0;
-    facet(0,1,1) = 1.0;
-    facet(0,1,2) = 0.0;
+    facet( 0, 1, 0 ) = 0.0;
+    facet( 0, 1, 1 ) = 1.0;
+    facet( 0, 1, 2 ) = 0.0;
 
-    facet(0,2,0) = 0.0;
-    facet(0,2,1) = 0.0;
-    facet(0,2,2) = 1.0;
+    facet( 0, 2, 0 ) = 0.0;
+    facet( 0, 2, 1 ) = 0.0;
+    facet( 0, 2, 2 ) = 1.0;
 
     // Rays will be perpendicular in x.
     float r[3] = { 1.0, 0.0, 0.0 };
@@ -141,8 +137,7 @@ void rayFireTestYZ()
 
     // Check the projection.
     float y[3];
-    auto result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    auto result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -150,14 +145,13 @@ void rayFireTestYZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle.
     p[0] = -1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -165,14 +159,13 @@ void rayFireTestYZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point above the triangle.
     p[0] = 1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -180,7 +173,7 @@ void rayFireTestYZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle at the  origin.
     p[0] = -1.0;
@@ -188,8 +181,7 @@ void rayFireTestYZ()
     p[2] = 0.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -197,26 +189,26 @@ void rayFireTestYZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 }
 
 //---------------------------------------------------------------------------//
 void rayFireTestXZ()
 {
     // Create a facet in the XZ plane
-    Kokkos::View<float*[4][3],Kokkos::HostSpace> facet( "facet", 1 );
+    Kokkos::View<float* [4][3], Kokkos::HostSpace> facet( "facet", 1 );
 
-    facet(0,0,0) = 0.0;
-    facet(0,0,1) = 0.0;
-    facet(0,0,2) = 0.0;
+    facet( 0, 0, 0 ) = 0.0;
+    facet( 0, 0, 1 ) = 0.0;
+    facet( 0, 0, 2 ) = 0.0;
 
-    facet(0,1,0) = 1.0;
-    facet(0,1,1) = 0.0;
-    facet(0,1,2) = 0.0;
+    facet( 0, 1, 0 ) = 1.0;
+    facet( 0, 1, 1 ) = 0.0;
+    facet( 0, 1, 2 ) = 0.0;
 
-    facet(0,2,0) = 0.0;
-    facet(0,2,1) = 0.0;
-    facet(0,2,2) = 1.0;
+    facet( 0, 2, 0 ) = 0.0;
+    facet( 0, 2, 1 ) = 0.0;
+    facet( 0, 2, 2 ) = 1.0;
 
     // Rays will be perpendicular in y.
     float r[3] = { 0.0, 1.0, 0.0 };
@@ -226,8 +218,7 @@ void rayFireTestXZ()
 
     // Check the projection.
     float y[3];
-    auto result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    auto result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -235,14 +226,13 @@ void rayFireTestXZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle.
     p[1] = -1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -250,14 +240,13 @@ void rayFireTestXZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point above the triangle.
     p[1] = 1.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -265,7 +254,7 @@ void rayFireTestXZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_FALSE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 
     // Move the point below the triangle at the  origin.
     p[0] = 0.0;
@@ -273,8 +262,7 @@ void rayFireTestXZ()
     p[2] = 0.0;
 
     // Check the projection.
-    result =
-        FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
+    result = FacetGeometryOps::pointFacetProjection( p, r, facet, 0, y );
     EXPECT_TRUE( result );
 
     // Check distance.
@@ -282,7 +270,7 @@ void rayFireTestXZ()
 
     // Check the ray facet intersection - a point on the surface is not
     // included.
-    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect(p,r,facet,0) );
+    EXPECT_TRUE( FacetGeometryOps::rayFacetIntersect( p, r, facet, 0 ) );
 }
 
 //---------------------------------------------------------------------------//
@@ -307,9 +295,9 @@ void constructionTest()
 
     // Check the global-to-local id conversion.
     for ( int i = 0; i < 3; ++i )
-        EXPECT_EQ( geometry.localVolumeId(i+1), i );
+        EXPECT_EQ( geometry.localVolumeId( i + 1 ), i );
     for ( int i = 0; i < 13; ++i )
-        EXPECT_EQ( geometry.localSurfaceId(i+1), i );
+        EXPECT_EQ( geometry.localSurfaceId( i + 1 ), i );
 
     // Get the facets for the sphere volume.
     auto num_volume_facet = geometry.numVolumeFacet( 1 );
@@ -317,16 +305,15 @@ void constructionTest()
 
     // Check that a point is in the volume. All normals point outward if a
     // point is in the sphere all distances should be negative.
-    Kokkos::Array<float,3> point_in = {-1.2, 0.4, 1.9 };
+    Kokkos::Array<float, 3> point_in = { -1.2, 0.4, 1.9 };
     int volume_inside = 0;
     Kokkos::parallel_reduce(
         "check_inside_volume",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_volume_facet),
-        KOKKOS_LAMBDA( const int f, int& result ){
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, num_volume_facet ),
+        KOKKOS_LAMBDA( const int f, int& result ) {
             auto volume_facets = geom_data.volumeFacets( 1 );
-            auto dist =
-                FacetGeometryOps::distanceToFacetPlane(point_in.data(),
-                                                       volume_facets, f);
+            auto dist = FacetGeometryOps::distanceToFacetPlane(
+                point_in.data(), volume_facets, f );
             if ( dist < 0.0 )
                 ++result;
         },
@@ -336,12 +323,11 @@ void constructionTest()
     // Check again with the point-in-volume primitive.
     volume_inside = 0;
     Kokkos::parallel_reduce(
-        "check_inside_volume",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
+        "check_inside_volume", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
             auto volume_facets = geom_data.volumeFacets( 1 );
-            if ( FacetGeometryOps::pointInVolume(
-                     point_in.data(),volume_facets) )
+            if ( FacetGeometryOps::pointInVolume( point_in.data(),
+                                                  volume_facets ) )
                 ++result;
         },
         volume_inside );
@@ -350,16 +336,15 @@ void constructionTest()
     // Check that a point is outside the volume. Some distances will be
     // negative, some will be positive. Check that some positive distances
     // were computed indicating an outside point.
-    Kokkos::Array<float,3> point_out = {22.1, 1.4, -0.9 };
+    Kokkos::Array<float, 3> point_out = { 22.1, 1.4, -0.9 };
     int volume_outside = 0;
     Kokkos::parallel_reduce(
         "check_outside_volume",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_volume_facet),
-        KOKKOS_LAMBDA( const int f, int& result ){
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, num_volume_facet ),
+        KOKKOS_LAMBDA( const int f, int& result ) {
             auto volume_facets = geom_data.volumeFacets( 1 );
-            auto dist =
-                FacetGeometryOps::distanceToFacetPlane(point_out.data(),
-                                                       volume_facets, f);
+            auto dist = FacetGeometryOps::distanceToFacetPlane(
+                point_out.data(), volume_facets, f );
             if ( dist > 0.0 )
                 ++result;
         },
@@ -369,12 +354,11 @@ void constructionTest()
     // Check again with the point-in-volume primitive.
     volume_outside = 0;
     Kokkos::parallel_reduce(
-        "check_outside_volume",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
+        "check_outside_volume", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
             auto volume_facets = geom_data.volumeFacets( 1 );
-            if ( !FacetGeometryOps::pointInVolume(
-                     point_out.data(),volume_facets) )
+            if ( !FacetGeometryOps::pointInVolume( point_out.data(),
+                                                   volume_facets ) )
                 ++result;
         },
         volume_outside );
@@ -389,12 +373,11 @@ void constructionTest()
     int surface_inside = 0;
     Kokkos::parallel_reduce(
         "check_inside_surface",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_surface_facet),
-        KOKKOS_LAMBDA( const int f, int& result ){
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, num_surface_facet ),
+        KOKKOS_LAMBDA( const int f, int& result ) {
             auto surface_facets = geom_data.surfaceFacets( 6 );
-            auto dist =
-                FacetGeometryOps::distanceToFacetPlane(point_in.data(),
-                                                       surface_facets, f);
+            auto dist = FacetGeometryOps::distanceToFacetPlane(
+                point_in.data(), surface_facets, f );
             if ( dist < 0.0 )
                 ++result;
         },
@@ -407,12 +390,11 @@ void constructionTest()
     int surface_outside = 0;
     Kokkos::parallel_reduce(
         "check_outside_surface",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,num_surface_facet),
-        KOKKOS_LAMBDA( const int f, int& result ){
+        Kokkos::RangePolicy<TEST_EXECSPACE>( 0, num_surface_facet ),
+        KOKKOS_LAMBDA( const int f, int& result ) {
             auto surface_facets = geom_data.surfaceFacets( 6 );
-            auto dist =
-                FacetGeometryOps::distanceToFacetPlane(point_out.data(),
-                                                       surface_facets, f);
+            auto dist = FacetGeometryOps::distanceToFacetPlane(
+                point_out.data(), surface_facets, f );
             if ( dist > 0.0 )
                 ++result;
         },
@@ -440,52 +422,44 @@ void constructionTest()
 
     // Locate a point in the sphere.
     int volume_id = -100;
-    Kokkos::Array<float,3> p1 = {0.0,0.0,0.0};
+    Kokkos::Array<float, 3> p1 = { 0.0, 0.0, 0.0 };
     Kokkos::parallel_reduce(
-        "check_point_location",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
-            result =
-                FacetGeometryOps::locatePoint(p1.data(),geom_data);
+        "check_point_location", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
+            result = FacetGeometryOps::locatePoint( p1.data(), geom_data );
         },
         volume_id );
     EXPECT_EQ( volume_id, 1 );
 
     // Locate a point in the box.
     volume_id = -100;
-    Kokkos::Array<float,3> p2 = {14.0,14.0,14.0};
+    Kokkos::Array<float, 3> p2 = { 14.0, 14.0, 14.0 };
     Kokkos::parallel_reduce(
-        "check_point_location",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
-            result =
-                FacetGeometryOps::locatePoint(p2.data(),geom_data);
+        "check_point_location", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
+            result = FacetGeometryOps::locatePoint( p2.data(), geom_data );
         },
         volume_id );
     EXPECT_EQ( volume_id, 0 );
 
     // Locate a point in the implicit complement
     volume_id = -100;
-    Kokkos::Array<float,3> p3 = {-11.0, -11.0, -11.0};
+    Kokkos::Array<float, 3> p3 = { -11.0, -11.0, -11.0 };
     Kokkos::parallel_reduce(
-        "check_point_location",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
-            result =
-                FacetGeometryOps::locatePoint(p3.data(),geom_data);
+        "check_point_location", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
+            result = FacetGeometryOps::locatePoint( p3.data(), geom_data );
         },
         volume_id );
     EXPECT_EQ( volume_id, -1 );
 
     // Locate a point outside the domain.
     volume_id = -100;
-    Kokkos::Array<float,3> p4 = {-20.0, 0.0, 0.0};
+    Kokkos::Array<float, 3> p4 = { -20.0, 0.0, 0.0 };
     Kokkos::parallel_reduce(
-        "check_point_location",
-        Kokkos::RangePolicy<TEST_EXECSPACE>(0,1),
-        KOKKOS_LAMBDA( const int, int& result ){
-            result =
-                FacetGeometryOps::locatePoint(p4.data(),geom_data);
+        "check_point_location", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
+        KOKKOS_LAMBDA( const int, int& result ) {
+            result = FacetGeometryOps::locatePoint( p4.data(), geom_data );
         },
         volume_id );
     EXPECT_EQ( volume_id, -2 );
@@ -502,29 +476,26 @@ TEST( TEST_CATEGORY, ray_fire_test )
 }
 
 //---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, construction_test )
-{
-    constructionTest();
-}
+TEST( TEST_CATEGORY, construction_test ) { constructionTest(); }
 
 //---------------------------------------------------------------------------//
-template<class MemorySpace>
+template <class MemorySpace>
 struct LocateFunctor
 {
     FacetGeometryData<MemorySpace> geom;
 
-    template<class ParticleType>
-    KOKKOS_INLINE_FUNCTION
-    bool operator()( const double x[3], const double, ParticleType& p ) const
+    template <class ParticleType>
+    KOKKOS_INLINE_FUNCTION bool operator()( const double x[3], const double,
+                                            ParticleType& p ) const
     {
-        float xf[3] = {float(x[0]),float(x[1]),float(x[2])};
+        float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )
         {
             get( p, Field::PhysicalPosition(), d ) = x[d];
         }
-        auto volume_id = FacetGeometryOps::locatePoint(xf,geom);
+        auto volume_id = FacetGeometryOps::locatePoint( xf, geom );
         get( p, Field::VolumeId() ) = volume_id;
-        return (volume_id > -2);
+        return ( volume_id > -2 );
     }
 };
 
@@ -534,46 +505,36 @@ void initExample()
     InputParser parser( "facet_init_example.json", "json" );
 
     // Make mesh.
-    std::array<double,3> global_low_corner = { -12.0, -12.0, -12.0 };
-    std::array<double,3> global_high_corner = { 20.0, 20.0, 20.0 };
-    Kokkos::Array<double,6> global_box = { global_low_corner[0],
-                                           global_low_corner[1],
-                                           global_low_corner[2],
-                                           global_high_corner[0],
-                                           global_high_corner[1],
-                                           global_high_corner[2] };
+    std::array<double, 3> global_low_corner = { -12.0, -12.0, -12.0 };
+    std::array<double, 3> global_high_corner = { 20.0, 20.0, 20.0 };
+    Kokkos::Array<double, 6> global_box = {
+        global_low_corner[0],  global_low_corner[1],  global_low_corner[2],
+        global_high_corner[0], global_high_corner[1], global_high_corner[2] };
     int minimum_halo_size = 0;
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(),
-        global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition,
-                                   Field::VolumeId>;
+                                   Field::PhysicalPosition, Field::VolumeId>;
     list_type particles( "particles", mesh );
 
-    FacetGeometry<TEST_MEMSPACE> geometry(
-        parser.propertyTree(), TEST_EXECSPACE() );
+    FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
+                                           TEST_EXECSPACE() );
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    initializeParticles(
-        InitUniform(), TEST_EXECSPACE(), 1, init_func, particles );
+    initializeParticles( InitUniform(), TEST_EXECSPACE(), 1, init_func,
+                         particles );
 
 #ifdef Picasso_ENABLE_SILO
     SiloParticleWriter::writeTimeStep(
-        mesh->localGrid()->globalGrid(),
-        0,
-        0.0,
-        particles.slice(Field::PhysicalPosition()),
-        particles.slice(Field::VolumeId()) );
+        mesh->localGrid()->globalGrid(), 0, 0.0,
+        particles.slice( Field::PhysicalPosition() ),
+        particles.slice( Field::VolumeId() ) );
 #endif
 }
 
-TEST( TEST_CATEGORY, init_example )
-{
-    initExample();
-}
+TEST( TEST_CATEGORY, init_example ) { initExample(); }
 
 //---------------------------------------------------------------------------//
 

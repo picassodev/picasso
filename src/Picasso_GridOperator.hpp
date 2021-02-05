@@ -12,8 +12,8 @@
 #ifndef PICASSO_GRIDOPERATOR_HPP
 #define PICASSO_GRIDOPERATOR_HPP
 
-#include <Picasso_FieldTypes.hpp>
 #include <Picasso_FieldManager.hpp>
+#include <Picasso_FieldTypes.hpp>
 
 #include <Cajita.hpp>
 
@@ -21,8 +21,8 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <type_traits>
 #include <memory>
+#include <type_traits>
 
 namespace Picasso
 {
@@ -31,8 +31,10 @@ namespace Picasso
 // gathered prior to the evaluation of an operator. The parameter pack
 // arguments must be FieldLayout types which give a location and tag to fully
 // define the field. Gather dependencies are read-only.
-template<class ... Layouts>
-struct GatherDependencies {};
+template <class... Layouts>
+struct GatherDependencies
+{
+};
 
 //---------------------------------------------------------------------------//
 // Grid operator scatter dependencies. Defines which grid fields will be
@@ -40,8 +42,10 @@ struct GatherDependencies {};
 // must be FieldLayout types which give a location and tag to fully define the
 // field. Scatter dependencies are write-only and they are set to zero before
 // the application of the operator.
-template<class ... Layouts>
-struct ScatterDependencies {};
+template <class... Layouts>
+struct ScatterDependencies
+{
+};
 
 //---------------------------------------------------------------------------//
 // Grid operator local dependencies. Defines which grid fields an operator
@@ -50,8 +54,10 @@ struct ScatterDependencies {};
 // operations are purely local or a gather has already been performed). The
 // parameter pack arguments must be FieldLayout types which give a location
 // and tag to fully define the field.
-template<class ... Layouts>
-struct LocalDependencies {};
+template <class... Layouts>
+struct LocalDependencies
+{
+};
 
 //---------------------------------------------------------------------------//
 // Grid operator dependency traits.
@@ -79,11 +85,11 @@ struct LocalDependencies {};
 // are specified or the dependency template unrolling reaches the end
 // (i.e. when a certain type of dependency is not specified) then the empty
 // implementation below is generated.
-template<class ... Dependencies>
+template <class... Dependencies>
 struct GridOperatorDependencies;
 
 // No dependencies.
-template<>
+template <>
 struct GridOperatorDependencies<>
 {
     // Dependency types.
@@ -92,93 +98,101 @@ struct GridOperatorDependencies<>
     using local_dep_type = LocalDependencies<>;
 
     // Add gather fields to the field manager.
-    template<class FieldManager_t>
-    static void addGatherFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addGatherFields( FieldManager_t& )
+    {
+    }
 
     // Add scatter fields to the field manager.
-    template<class FieldManager_t>
-    static void addScatterFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addScatterFields( FieldManager_t& )
+    {
+    }
 
     // Add local fields to the field manager.
-    template<class FieldManager_t>
-    static void addLocalFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addLocalFields( FieldManager_t& )
+    {
+    }
 
     // Create a halo for the gather fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
-    { return nullptr; }
+    {
+        return nullptr;
+    }
 
     // Create a halo for the scatter fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t&, MemorySpace )
-    { return nullptr; }
+    {
+        return nullptr;
+    }
 
     // Gather the gather fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void gather( const Halo&,
-                        const FieldManager_t&,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void gather( const Halo&, const FieldManager_t&,
                         const ExecutionSpace& )
-    {}
+    {
+    }
 
     // Scatter the scatter fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void scatter( const Halo&,
-                         const FieldManager_t&,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void scatter( const Halo&, const FieldManager_t&,
                          const ExecutionSpace& )
-    {}
+    {
+    }
 };
 
 // Gather dependenices. These come first in the order if they exist.
-template<class ... Layouts, class ... Dependencies>
-struct GridOperatorDependencies<
-    GatherDependencies<Layouts...>,Dependencies...>
+template <class... Layouts, class... Dependencies>
+struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
 {
     // Dependency types.
     using gather_dep_type = GatherDependencies<Layouts...>;
-    using scatter_dep_type = typename GridOperatorDependencies<
-        Dependencies...>::scatter_dep_type;
+    using scatter_dep_type =
+        typename GridOperatorDependencies<Dependencies...>::scatter_dep_type;
     using local_dep_type =
         typename GridOperatorDependencies<Dependencies...>::local_dep_type;
 
     // Add gather fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addGatherFields( FieldManager_t& fm )
     {
-        std::ignore =
-            std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(),
-                      typename Layouts::tag() ), 0 )...};
+        std::ignore = std::initializer_list<int>{
+            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
+              0 )... };
     }
 
     // Add scatter fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addScatterFields( FieldManager_t& fm )
     {
-        GridOperatorDependencies<Dependencies...>::addScatterFields(fm);
+        GridOperatorDependencies<Dependencies...>::addScatterFields( fm );
     }
 
     // Add local fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addLocalFields( FieldManager_t& fm )
     {
-        GridOperatorDependencies<Dependencies...>::addLocalFields(fm);
+        GridOperatorDependencies<Dependencies...>::addLocalFields( fm );
     }
 
     // Create a halo for the gather fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t& fm, MemorySpace )
     {
         return Cajita::createHalo(
             Cajita::FullHaloPattern(), -1,
-            (*fm.array(typename Layouts::location(),
-                       typename Layouts::tag()))... );
+            ( *fm.array( typename Layouts::location(),
+                         typename Layouts::tag() ) )... );
     }
 
     // Create a halo for the scatter fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t& fm, MemorySpace space )
     {
@@ -187,31 +201,28 @@ struct GridOperatorDependencies<
     }
 
     // Gather the gather fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void gather( const Halo& halo,
-                        const FieldManager_t& fm,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void gather( const Halo& halo, const FieldManager_t& fm,
                         const ExecutionSpace& space )
     {
-        halo->gather( space,
-                      *(fm.array(typename Layouts::location(),
-                                 typename Layouts::tag()))... );
+        halo->gather( space, *( fm.array( typename Layouts::location(),
+                                          typename Layouts::tag() ) )... );
     }
 
     // Scatter the scatter fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void scatter( const Halo& halo,
-                         const FieldManager_t& fm,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void scatter( const Halo& halo, const FieldManager_t& fm,
                          const ExecutionSpace& space )
     {
-        GridOperatorDependencies<Dependencies...>::scatter(halo,fm,space);
+        GridOperatorDependencies<Dependencies...>::scatter( halo, fm, space );
     }
 };
 
 // Scatter dependencies. These come second after gather dependencies if they
 // exist.
-template<class ... Layouts, class ... Dependencies>
-struct GridOperatorDependencies<
-    ScatterDependencies<Layouts...>,Dependencies...>
+template <class... Layouts, class... Dependencies>
+struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
+                                Dependencies...>
 {
     // Dependency types.
     using gather_dep_type = GatherDependencies<>;
@@ -220,66 +231,67 @@ struct GridOperatorDependencies<
         typename GridOperatorDependencies<Dependencies...>::local_dep_type;
 
     // Add gather fields to the field manager.
-    template<class FieldManager_t>
-    static void addGatherFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addGatherFields( FieldManager_t& )
+    {
+    }
 
     // Add scatter fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addScatterFields( FieldManager_t& fm )
     {
-        std::ignore =
-            std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(),
-                      typename Layouts::tag() ), 0 )...};
+        std::ignore = std::initializer_list<int>{
+            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
+              0 )... };
     }
 
     // Add local fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addLocalFields( FieldManager_t& fm )
     {
-        GridOperatorDependencies<Dependencies...>::addLocalFields(fm);
+        GridOperatorDependencies<Dependencies...>::addLocalFields( fm );
     }
 
     // Create a halo for the gather fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
-    { return nullptr; }
+    {
+        return nullptr;
+    }
 
     // Create a halo for the scatter fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t& fm, MemorySpace )
     {
         return Cajita::createHalo(
             Cajita::FullHaloPattern(), -1,
-            (*fm.array(typename Layouts::location(),
-                       typename Layouts::tag()))... );
+            ( *fm.array( typename Layouts::location(),
+                         typename Layouts::tag() ) )... );
     }
 
     // Gather the gather fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void gather( const Halo&,
-                        const FieldManager_t&,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void gather( const Halo&, const FieldManager_t&,
                         const ExecutionSpace& )
-    {}
+    {
+    }
 
     // Scatter the scatter fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void scatter( const Halo& halo,
-                         const FieldManager_t& fm,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void scatter( const Halo& halo, const FieldManager_t& fm,
                          const ExecutionSpace& space )
     {
-        halo->scatter( space,
-                       Cajita::ScatterReduce::Sum(),
-                       *(fm.array(typename Layouts::location(),
-                                  typename Layouts::tag()))... );
+        halo->scatter( space, Cajita::ScatterReduce::Sum(),
+                       *( fm.array( typename Layouts::location(),
+                                    typename Layouts::tag() ) )... );
     }
 };
 
 // Local dependencies. These come last after scatter dependencies if they
 // exist.
-template<class ... Layouts>
+template <class... Layouts>
 struct GridOperatorDependencies<LocalDependencies<Layouts...>>
 {
     // Dependency types.
@@ -288,31 +300,36 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
     using local_dep_type = LocalDependencies<Layouts...>;
 
     // Add gather fields to the field manager.
-    template<class FieldManager_t>
-    static void addGatherFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addGatherFields( FieldManager_t& )
+    {
+    }
 
     // Add scatter fields to the field manager.
-    template<class FieldManager_t>
-    static void addScatterFields( FieldManager_t& ) {}
+    template <class FieldManager_t>
+    static void addScatterFields( FieldManager_t& )
+    {
+    }
 
     // Add local fields to the field manager.
-    template<class FieldManager_t>
+    template <class FieldManager_t>
     static void addLocalFields( FieldManager_t& fm )
     {
-        std::ignore =
-            std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(),
-                      typename Layouts::tag() ), 0 )...};
+        std::ignore = std::initializer_list<int>{
+            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
+              0 )... };
     }
 
     // Create a halo for the gather fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
-    { return nullptr; }
+    {
+        return nullptr;
+    }
 
     // Create a halo for the scatter fields.
-    template<class FieldManager_t, class MemorySpace>
+    template <class FieldManager_t, class MemorySpace>
     static std::shared_ptr<Cajita::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t&, MemorySpace )
     {
@@ -320,18 +337,18 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
     }
 
     // Gather the gather fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void gather( const Halo&,
-                        const FieldManager_t&,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void gather( const Halo&, const FieldManager_t&,
                         const ExecutionSpace& )
-    {}
+    {
+    }
 
     // Scatter the scatter fields.
-    template<class Halo, class FieldManager_t, class ExecutionSpace>
-    static void scatter( const Halo&,
-                         const FieldManager_t&,
+    template <class Halo, class FieldManager_t, class ExecutionSpace>
+    static void scatter( const Halo&, const FieldManager_t&,
                          const ExecutionSpace& )
-    {}
+    {
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -351,11 +368,10 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
 //
 // The order of the dependency templates (if there are any dependencies) is
 // defined above in the documentation for GridOperatorDependencies.
-template<class Mesh, class ... Dependencies>
+template <class Mesh, class... Dependencies>
 class GridOperator
 {
   public:
-
     using mesh_type = Mesh;
     using memory_space = typename mesh_type::memory_space;
     using field_deps = GridOperatorDependencies<Dependencies...>;
@@ -363,7 +379,8 @@ class GridOperator
     // Constructor.
     GridOperator( const std::shared_ptr<Mesh>& mesh )
         : _mesh( mesh )
-    {}
+    {
+    }
 
     // Setup the operator
     void setup( FieldManager<Mesh>& fm )
@@ -388,19 +405,14 @@ class GridOperator
     //
     // The functor is given a ParticleView allowing the kernel to read and
     // write particle data.
-    template<class ExecutionSpace,
-             class ParticleList_t,
-             class WorkTag,
-             class Func>
-    void apply( FieldLocation::Particle,
-                const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm,
-                const ParticleList_t& pl,
-                const WorkTag&,
-                const Func& func ) const
+    template <class ExecutionSpace, class ParticleList_t, class WorkTag,
+              class Func>
+    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
+                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
+                const WorkTag&, const Func& func ) const
     {
-        applyImpl<WorkTag>( fm, exec_space,
-                            FieldLocation::Particle(), pl, func );
+        applyImpl<WorkTag>( fm, exec_space, FieldLocation::Particle(), pl,
+                            func );
     }
 
     // Apply the operator in a loop over particles. Functor does not have a
@@ -411,15 +423,12 @@ class GridOperator
     //
     // The functor is given a ParticleView allowing the kernel to read and
     // write particle data.
-    template<class ExecutionSpace, class ParticleList_t, class Func>
-    void apply( FieldLocation::Particle,
-                const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm,
-                const ParticleList_t& pl,
+    template <class ExecutionSpace, class ParticleList_t, class Func>
+    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
+                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
                 const Func& func ) const
     {
-        applyImpl<void>( fm, exec_space,
-                         FieldLocation::Particle(), pl, func );
+        applyImpl<void>( fm, exec_space, FieldLocation::Particle(), pl, func );
     }
 
     // Apply the operator in a loop over the owned entities of the given
@@ -428,14 +437,9 @@ class GridOperator
     // Functor signature:
     // func( work_tag, local_mesh,
     //       gather_deps, scatter_deps, local_deps, i, j, k )
-    template<class ExecutionSpace,
-             class Location,
-             class WorkTag,
-             class Func>
-    void apply( const Location& location,
-                const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm,
-                const WorkTag&,
+    template <class ExecutionSpace, class Location, class WorkTag, class Func>
+    void apply( const Location& location, const ExecutionSpace& exec_space,
+                const FieldManager<Mesh>& fm, const WorkTag&,
                 const Func& func ) const
     {
         applyImpl<WorkTag>( fm, exec_space, location, func );
@@ -445,19 +449,16 @@ class GridOperator
     // type. Functor does not have a work tag.
     // Functor signature:
     // func( local_mesh, gather_deps, scatter_deps, local_deps, i, j, k )
-    template<class ExecutionSpace, class Location, class Func>
-    void apply( const Location& location,
-                const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm,
-                const Func& func ) const
+    template <class ExecutionSpace, class Location, class Func>
+    void apply( const Location& location, const ExecutionSpace& exec_space,
+                const FieldManager<Mesh>& fm, const Func& func ) const
     {
         applyImpl<void>( fm, exec_space, location, func );
     }
 
   public:
-
     // Manage field dependencies and apply the operator.
-    template<class WorkTag, class ExecutionSpace, class ... Args>
+    template <class WorkTag, class ExecutionSpace, class... Args>
     void applyImpl( const FieldManager<Mesh>& fm,
                     const ExecutionSpace& exec_space,
                     const Args&... args ) const
@@ -478,12 +479,11 @@ class GridOperator
             createDependencies( fm, typename field_deps::local_dep_type() );
 
         // Create local mesh.
-        auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>(
-            *(_mesh->localGrid()) );
+        auto local_mesh =
+            Cajita::createLocalMesh<ExecutionSpace>( *( _mesh->localGrid() ) );
 
         // Apply the operator.
-        applyOp<WorkTag>( local_mesh,
-                          gather_deps, scatter_deps, local_deps,
+        applyOp<WorkTag>( local_mesh, gather_deps, scatter_deps, local_deps,
                           exec_space, args... );
 
         // Contribute local scatter view results.
@@ -498,19 +498,16 @@ class GridOperator
     // pack Kokkos::View for on-device access. The resulting views are stored
     // in field view wrappers so the can be accessed in a point-wise fashion
     // as needed.
-    template<class ... Layouts>
-    auto
-    createDependencies( const FieldManager<Mesh>& fm,
-                        GatherDependencies<Layouts...> ) const
+    template <class... Layouts>
+    auto createDependencies( const FieldManager<Mesh>& fm,
+                             GatherDependencies<Layouts...> ) const
     {
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cajita::makeParameterPack(
-            Field::createViewWrapper(
-                Layouts(),
-                fm.view( typename Layouts::location(),
-                         typename Layouts::tag() ) )... );
+        auto views = Cajita::makeParameterPack( Field::createViewWrapper(
+            Layouts(), fm.view( typename Layouts::location(),
+                                typename Layouts::tag() ) )... );
 
         // Assign the parameter pack to the dependency fields.
         return createFieldViewTuple<Layouts...>( views );
@@ -519,10 +516,9 @@ class GridOperator
     // Create a parameter pack of scatter dependency scatter views. Scatter
     // dependencies are write-only in a kernel so we store them as a parameter
     // pack of Kokkos::ScatterView for on-device access.
-    template<class ... Layouts>
-    auto
-    createDependencies( const FieldManager<Mesh>& fm,
-                        ScatterDependencies<Layouts...>  ) const
+    template <class... Layouts>
+    auto createDependencies( const FieldManager<Mesh>& fm,
+                             ScatterDependencies<Layouts...> ) const
     {
         // While we are still using C++14, this expression allows us to reset
         // each scatter field to 0. The (...) in the initializer list is a
@@ -532,18 +528,18 @@ class GridOperator
         // second, hence giving the initializer list something to hold on to
         // while it expands the rest of the Layouts parameter pack. With C++17
         // we would just use fold expressions.
-        std::ignore =
-            std::initializer_list<int>{
-            (Kokkos::deep_copy(fm.view(typename Layouts::location(),
-                                       typename Layouts::tag()),0.0),0)... };
+        std::ignore = std::initializer_list<int>{
+            ( Kokkos::deep_copy( fm.view( typename Layouts::location(),
+                                          typename Layouts::tag() ),
+                                 0.0 ),
+              0 )... };
 
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list and expands it as a parameter
         // pack.
         auto scatter_views = Cajita::makeParameterPack(
-            Kokkos::Experimental::create_scatter_view(
-                fm.view( typename Layouts::location(),
-                         typename Layouts::tag() ))... );
+            Kokkos::Experimental::create_scatter_view( fm.view(
+                typename Layouts::location(), typename Layouts::tag() ) )... );
 
         // Assign the parameter pack to the dependency fields.
         return createFieldViewTuple<Layouts...>( scatter_views );
@@ -554,30 +550,27 @@ class GridOperator
     // pack Kokkos::View for on-device access. The resulting views are stored
     // in field view wrappers so the can be accessed in a point-wise fashion
     // as needed.
-    template<class ... Layouts>
-    auto
-    createDependencies( const FieldManager<Mesh>& fm,
-                        LocalDependencies<Layouts...> ) const
+    template <class... Layouts>
+    auto createDependencies( const FieldManager<Mesh>& fm,
+                             LocalDependencies<Layouts...> ) const
     {
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cajita::makeParameterPack(
-            Field::createViewWrapper(
-                Layouts(),
-                fm.view( typename Layouts::location(),
-                         typename Layouts::tag() ) )... );
+        auto views = Cajita::makeParameterPack( Field::createViewWrapper(
+            Layouts(), fm.view( typename Layouts::location(),
+                                typename Layouts::tag() ) )... );
 
         // Assign the parameter pack to the dependency fields.
-        return createFieldViewTuple<Layouts...>(views);
+        return createFieldViewTuple<Layouts...>( views );
     }
 
     // Complete local scatter by summing the scatter view results into the main
     // view results.
-    template<class Views, class ... Layouts>
+    template <class Views, class... Layouts>
     void contributeScatterDependencies(
         const FieldManager<Mesh>& fm,
-        const FieldViewTuple<Views,Layouts...>& scatter_deps ) const
+        const FieldViewTuple<Views, Layouts...>& scatter_deps ) const
     {
         // The Kokkos scatter view contribute interface wants a non-const
         // reference to the destination view even though the implementation
@@ -586,9 +579,8 @@ class GridOperator
         // non-const reference to a temporary. Create a parameter pack of
         // views. The use of (...) here gets a view of each field in the
         // layout list and expands it as a parameter pack.
-        auto view_pack = Cajita::makeParameterPack(
-            fm.view( typename Layouts::location(),
-                     typename Layouts::tag() )... );
+        auto view_pack = Cajita::makeParameterPack( fm.view(
+            typename Layouts::location(), typename Layouts::tag() )... );
 
         // Assign the parameter pack to the dependency fields.
         auto views = createFieldViewTuple<Layouts...>( view_pack );
@@ -596,49 +588,41 @@ class GridOperator
         // Use the initializer list here to achieve a C++17 fold expression in
         // C++14. Contributes each scatter view into its original view in the
         // field manager
-        std::ignore =
-            std::initializer_list<int>{
-            (Kokkos::Experimental::contribute(
-                views.get(typename Layouts::location(),typename Layouts::tag()),
-                scatter_deps.get(
-                    typename Layouts::location(),typename Layouts::tag()))
-             ,0)...};
+        std::ignore = std::initializer_list<int>{
+            ( Kokkos::Experimental::contribute(
+                  views.get( typename Layouts::location(),
+                             typename Layouts::tag() ),
+                  scatter_deps.get( typename Layouts::location(),
+                                    typename Layouts::tag() ) ),
+              0 )... };
     }
 
     // Call a functor without a work tag.
-    template<class WorkTag, class Functor, class ... Args>
+    template <class WorkTag, class Functor, class... Args>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if_t<std::is_same<WorkTag,void>::value>
-    functorTagDispatch( const Functor& functor, Args&&... args ) const
+        typename std::enable_if_t<std::is_same<WorkTag, void>::value>
+        functorTagDispatch( const Functor& functor, Args&&... args ) const
     {
-        functor( std::forward<Args>(args)... );
+        functor( std::forward<Args>( args )... );
     }
 
     // Call a functor with a work tag
-    template<class WorkTag, class Functor, class ... Args>
+    template <class WorkTag, class Functor, class... Args>
     KOKKOS_FORCEINLINE_FUNCTION
-    typename std::enable_if_t<!std::is_same<WorkTag,void>::value>
-    functorTagDispatch( const Functor& functor, Args&&... args ) const
+        typename std::enable_if_t<!std::is_same<WorkTag, void>::value>
+        functorTagDispatch( const Functor& functor, Args&&... args ) const
     {
-        functor( WorkTag{}, std::forward<Args>(args)... );
+        functor( WorkTag{}, std::forward<Args>( args )... );
     }
 
     // Apply the operator in a particle loop.
-    template<class WorkTag,
-             class LocalMesh,
-             class GatherFields,
-             class ScatterFields,
-             class LocalFields,
-             class ExecutionSpace,
-             class ParticleList_t,
-             class Func>
-    void applyOp( const LocalMesh& local_mesh,
-                  const GatherFields& gather_deps,
+    template <class WorkTag, class LocalMesh, class GatherFields,
+              class ScatterFields, class LocalFields, class ExecutionSpace,
+              class ParticleList_t, class Func>
+    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
                   const ScatterFields& scatter_deps,
-                  const LocalFields& local_deps,
-                  const ExecutionSpace&,
-                  FieldLocation::Particle,
-                  const ParticleList_t& pl,
+                  const LocalFields& local_deps, const ExecutionSpace&,
+                  FieldLocation::Particle, const ParticleList_t& pl,
                   const Func& func ) const
     {
         // Get the particle aosoa.
@@ -649,38 +633,28 @@ class GridOperator
         // for geometric operations, gather, scatter, and local dependencies
         // for field operations (all of which may be empty), and a view of
         // the particle they are currently working on.
-        Cabana::SimdPolicy<vector_length,ExecutionSpace>
-            simd_policy( 0, pl.size() );
+        Cabana::SimdPolicy<vector_length, ExecutionSpace> simd_policy(
+            0, pl.size() );
         Cabana::simd_parallel_for(
             simd_policy,
-            KOKKOS_LAMBDA( const int s, const int a ){
+            KOKKOS_LAMBDA( const int s, const int a ) {
                 typename ParticleList_t::particle_view_type particle(
-                    aosoa.access(s), a );
-                functorTagDispatch<WorkTag>( func,
-                                             local_mesh,
-                                             gather_deps,
-                                             scatter_deps,
-                                             local_deps,
+                    aosoa.access( s ), a );
+                functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
+                                             scatter_deps, local_deps,
                                              particle );
             },
             "operator_apply" );
     }
 
     // Apply the operator in a loop over the owned entities of the given type.
-    template<class WorkTag,
-             class LocalMesh,
-             class GatherFields,
-             class ScatterFields,
-             class LocalFields,
-             class ExecutionSpace,
-             class Location,
-             class Func>
-    void applyOp( const LocalMesh& local_mesh,
-                  const GatherFields& gather_deps,
+    template <class WorkTag, class LocalMesh, class GatherFields,
+              class ScatterFields, class LocalFields, class ExecutionSpace,
+              class Location, class Func>
+    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
                   const ScatterFields& scatter_deps,
                   const LocalFields& local_deps,
-                  const ExecutionSpace& exec_space,
-                  Location,
+                  const ExecutionSpace& exec_space, Location,
                   const Func& func ) const
     {
         // Apply kernel to each entity. The user functor gets a local mesh for
@@ -688,21 +662,16 @@ class GridOperator
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
         Cajita::grid_parallel_for(
-            "operator_apply",
-            exec_space, *(_mesh->localGrid()),
+            "operator_apply", exec_space, *( _mesh->localGrid() ),
             Cajita::Own(), typename Location::entity_type(),
-            KOKKOS_LAMBDA( const int i, const int j, const int k ){
-                functorTagDispatch<WorkTag>( func,
-                                             local_mesh,
-                                             gather_deps,
-                                             scatter_deps,
-                                             local_deps,
-                                             i, j, k );
-            });
+            KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+                functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
+                                             scatter_deps, local_deps, i, j,
+                                             k );
+            } );
     }
 
   private:
-
     std::shared_ptr<Mesh> _mesh;
     std::shared_ptr<Cajita::Halo<memory_space>> _gather_halo;
     std::shared_ptr<Cajita::Halo<memory_space>> _scatter_halo;
@@ -711,11 +680,11 @@ class GridOperator
 //---------------------------------------------------------------------------//
 // Creation function. Dependencies (if there are any) must be ordered by the
 // precedence established in GridOperatorDependencies.
-template<class Mesh, class ... Dependencies>
+template <class Mesh, class... Dependencies>
 auto createGridOperator( const std::shared_ptr<Mesh>& mesh,
                          const Dependencies&... )
 {
-    return std::make_shared<GridOperator<Mesh,Dependencies...>>(mesh);
+    return std::make_shared<GridOperator<Mesh, Dependencies...>>( mesh );
 }
 
 //---------------------------------------------------------------------------//

@@ -38,9 +38,9 @@
 #include <KokkosBatched_Eigendecomposition_Decl.hpp>
 #include <KokkosBatched_Eigendecomposition_Serial_Impl.hpp>
 
-#include <type_traits>
 #include <cmath>
 #include <functional>
+#include <type_traits>
 
 namespace Picasso
 {
@@ -139,82 +139,98 @@ namespace LinearAlgebra
 //---------------------------------------------------------------------------//
 // Forward declarations.
 //---------------------------------------------------------------------------//
-template<class T, int M, int N, class Func> struct MatrixExpression;
-template<class T, int M, int N> struct Matrix;
-template<class T, int M, int N> struct MatrixView;
-template<class T, int N, class Func> struct VectorExpression;
-template<class T, int N> struct Vector;
-template<class T, int N> struct VectorView;
+template <class T, int M, int N, class Func>
+struct MatrixExpression;
+template <class T, int M, int N>
+struct Matrix;
+template <class T, int M, int N>
+struct MatrixView;
+template <class T, int N, class Func>
+struct VectorExpression;
+template <class T, int N>
+struct Vector;
+template <class T, int N>
+struct VectorView;
 
 //---------------------------------------------------------------------------//
 // Type traits.
 //---------------------------------------------------------------------------//
 // Matrix
-template<class>
+template <class>
 struct is_matrix_impl : public std::false_type
-{};
+{
+};
 
-template<class T, int M, int N, class Func>
-struct is_matrix_impl<MatrixExpression<T,M,N,Func>> : public std::true_type
-{};
+template <class T, int M, int N, class Func>
+struct is_matrix_impl<MatrixExpression<T, M, N, Func>> : public std::true_type
+{
+};
 
-template<class T, int M, int N>
-struct is_matrix_impl<Matrix<T,M,N>> : public std::true_type
-{};
+template <class T, int M, int N>
+struct is_matrix_impl<Matrix<T, M, N>> : public std::true_type
+{
+};
 
-template<class T, int M, int N>
-struct is_matrix_impl<MatrixView<T,M,N>> : public std::true_type
-{};
+template <class T, int M, int N>
+struct is_matrix_impl<MatrixView<T, M, N>> : public std::true_type
+{
+};
 
-template<class T>
+template <class T>
 struct is_matrix : public is_matrix_impl<typename std::remove_cv<T>::type>::type
-{};
+{
+};
 
 // Vector
-template<class>
+template <class>
 struct is_vector_impl : public std::false_type
-{};
+{
+};
 
-template<class T, int N, class Func>
-struct is_vector_impl<VectorExpression<T,N,Func>> : public std::true_type
-{};
+template <class T, int N, class Func>
+struct is_vector_impl<VectorExpression<T, N, Func>> : public std::true_type
+{
+};
 
-template<class T, int N>
-struct is_vector_impl<Vector<T,N>> : public std::true_type
-{};
+template <class T, int N>
+struct is_vector_impl<Vector<T, N>> : public std::true_type
+{
+};
 
-template<class T, int N>
-struct is_vector_impl<VectorView<T,N>> : public std::true_type
-{};
+template <class T, int N>
+struct is_vector_impl<VectorView<T, N>> : public std::true_type
+{
+};
 
-template<class T>
+template <class T>
 struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
-{};
+{
+};
 
 //---------------------------------------------------------------------------//
 // Expression creation functions.
 //---------------------------------------------------------------------------//
 // Matrix
-template<class T, int M, int N, class Func>
-KOKKOS_INLINE_FUNCTION
-MatrixExpression<T,M,N,Func> createMatrixExpression( const Func& f )
+template <class T, int M, int N, class Func>
+KOKKOS_INLINE_FUNCTION MatrixExpression<T, M, N, Func>
+createMatrixExpression( const Func& f )
 {
-    return MatrixExpression<T,M,N,Func>(f);
+    return MatrixExpression<T, M, N, Func>( f );
 }
 
 // Vector.
-template<class T, int N, class Func>
-KOKKOS_INLINE_FUNCTION
-VectorExpression<T,N,Func> createVectorExpression( const Func& f )
+template <class T, int N, class Func>
+KOKKOS_INLINE_FUNCTION VectorExpression<T, N, Func>
+createVectorExpression( const Func& f )
 {
-    return VectorExpression<T,N,Func>(f);
+    return VectorExpression<T, N, Func>( f );
 }
 
 //---------------------------------------------------------------------------//
 // Expression containers.
 //---------------------------------------------------------------------------//
 // Matrix expression container.
-template<class T, int M, int N, class Func>
+template <class T, int M, int N, class Func>
 struct MatrixExpression
 {
     static constexpr int extent_0 = M;
@@ -223,8 +239,8 @@ struct MatrixExpression
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
 
-    using eval_type = Matrix<T,M,N>;
-    using copy_type = Matrix<T,M,N>;
+    using eval_type = Matrix<T, M, N>;
+    using copy_type = Matrix<T, M, N>;
 
     Func _f;
 
@@ -236,38 +252,43 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     MatrixExpression( const Func& f )
         : _f( f )
-    {}
+    {
+    }
 
     // Extent.
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
-    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
+    }
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
     value_type operator()( const int i, const int j ) const
-    { return _f(i,j); }
+    {
+        return _f( i, j );
+    }
 
     // Get a row as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
     {
-        return createVectorExpression<T,N>(
-            [=]( const int i ){ return (*this)(n,i); } );
+        return createVectorExpression<T, N>(
+            [=]( const int i ) { return ( *this )( n, i ); } );
     }
 
     // Get a column as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto column( const int n ) const
     {
-        return createVectorExpression<T,M>(
-            [=]( const int i ){ return (*this)(i,n); } );
+        return createVectorExpression<T, M>(
+            [=]( const int i ) { return ( *this )( i, n ); } );
     }
 };
 
 //---------------------------------------------------------------------------//
 // Vector expression container.
-template<class T, int N, class Func>
+template <class T, int N, class Func>
 struct VectorExpression
 {
     static constexpr int extent_0 = N;
@@ -276,8 +297,8 @@ struct VectorExpression
     using value_type = T;
     using non_const_value_type = typename std::remove_cv<T>::type;
 
-    using eval_type = Vector<T,N>;
-    using copy_type = Vector<T,N>;
+    using eval_type = Vector<T, N>;
+    using copy_type = Vector<T, N>;
 
     Func _f;
 
@@ -289,24 +310,23 @@ struct VectorExpression
     KOKKOS_INLINE_FUNCTION
     VectorExpression( const Func& f )
         : _f( f )
-    {}
+    {
+    }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const
-    { return N; }
+    constexpr int extent( const int ) const { return N; }
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i ) const
-    { return _f(i); }
+    value_type operator()( const int i ) const { return _f( i ); }
 };
 
 //---------------------------------------------------------------------------//
 // Matrix
 //---------------------------------------------------------------------------//
 // Dense matrix with a KokkosKernels compatible data interface.
-template<class T, int M, int N>
+template <class T, int M, int N>
 struct Matrix
 {
     T _d[M][N];
@@ -320,8 +340,8 @@ struct Matrix
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = MatrixView<T,M,N>;
-    using copy_type = Matrix<T,M,N>;
+    using eval_type = MatrixView<T, M, N>;
+    using copy_type = Matrix<T, M, N>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -346,17 +366,17 @@ struct Matrix
     }
 
     // Deep copy constructor. Triggers expression evaluation.
-    template<class Expression,
-             typename std::enable_if<is_matrix<Expression>::value,int>::type = 0>
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const Expression& e )
+    template <
+        class Expression,
+        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) = e(i,j);
+                ( *this )( i, j ) = e( i, j );
     }
 
     // Scalar constructor.
@@ -367,54 +387,54 @@ struct Matrix
     }
 
     // Assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
-    operator=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) = e(i,j);
+                ( *this )( i, j ) = e( i, j );
         return *this;
     }
 
     // Addition assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
-    operator+=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator+=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) += e(i,j);
+                ( *this )( i, j ) += e( i, j );
         return *this;
     }
 
     // Subtraction assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,Matrix&>::type
-    operator-=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator-=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) -= e(i,j);
+                ( *this )( i, j ) -= e( i, j );
         return *this;
     }
 
     // Initializer list assignment operator.
     KOKKOS_INLINE_FUNCTION
-    Matrix& operator=(
-        const std::initializer_list<std::initializer_list<T>> data )
+    Matrix&
+    operator=( const std::initializer_list<std::initializer_list<T>> data )
     {
         int i = 0;
         int j = 0;
@@ -441,51 +461,51 @@ struct Matrix
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return N; }
+    int stride_0() const { return N; }
 
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 1; }
+    int stride_1() const { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
-    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
+    }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
     const_reference operator()( const int i, const int j ) const
-    { return _d[i][j]; }
+    {
+        return _d[i][j];
+    }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j )
-    { return _d[i][j]; }
+    reference operator()( const int i, const int j ) { return _d[i][j]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(&_d[0][0]); }
+    pointer data() const { return const_cast<pointer>( &_d[0][0] ); }
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T,N> row( const int n ) const
+    VectorView<T, N> row( const int n ) const
     {
-        return VectorView<T,N>( const_cast<T*>(&_d[n][0]), 1 );
+        return VectorView<T, N>( const_cast<T*>( &_d[n][0] ), 1 );
     }
 
     // Get a column as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T,M> column( const int n ) const
+    VectorView<T, M> column( const int n ) const
     {
-        return VectorView<T,M>( const_cast<T*>(&_d[0][n]), N );
+        return VectorView<T, M>( const_cast<T*>( &_d[0][n] ), N );
     }
 };
 
 //---------------------------------------------------------------------------//
 // Scalar overload.
-template<class T>
-struct Matrix<T,1,1>
+template <class T>
+struct Matrix<T, 1, 1>
 {
     T _d;
 
@@ -498,8 +518,8 @@ struct Matrix<T,1,1>
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = MatrixView<T,1,1>;
-    using copy_type = Matrix<T,1,1>;
+    using eval_type = MatrixView<T, 1, 1>;
+    using copy_type = Matrix<T, 1, 1>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -509,7 +529,8 @@ struct Matrix<T,1,1>
     KOKKOS_INLINE_FUNCTION
     Matrix( const T value )
         : _d( value )
-    {}
+    {
+    }
 
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
@@ -521,36 +542,29 @@ struct Matrix<T,1,1>
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return 1; }
+    int stride_0() const { return 1; }
 
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 1; }
+    int stride_1() const { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const
-    { return 1; }
+    constexpr int extent( const int ) const { return 1; }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int, const int ) const
-    { return _d; }
+    value_type operator()( const int, const int ) const { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int, const int )
-    { return _d; }
+    const_reference operator()( const int, const int ) { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(&_d); }
+    pointer data() const { return const_cast<pointer>( &_d ); }
 
     // Scalar conversion operator.
     KOKKOS_INLINE_FUNCTION
-    operator value_type() const
-    { return _d; }
+    operator value_type() const { return _d; }
 };
 
 //---------------------------------------------------------------------------//
@@ -558,7 +572,7 @@ struct Matrix<T,1,1>
 // interface.
 //
 // NOTE: Data in this view may be non-contiguous.
-template<class T, int M, int N>
+template <class T, int M, int N>
 struct MatrixView
 {
     T* _d;
@@ -573,8 +587,8 @@ struct MatrixView
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = MatrixView<T,M,N>;
-    using copy_type = Matrix<T,M,N>;
+    using eval_type = MatrixView<T, M, N>;
+    using copy_type = Matrix<T, M, N>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -582,7 +596,7 @@ struct MatrixView
 
     // Matrix constructor.
     KOKKOS_INLINE_FUNCTION
-    MatrixView( const Matrix<T,M,N>& m )
+    MatrixView( const Matrix<T, M, N>& m )
         : _d( m.data() )
     {
         _stride[0] = m.stride_0();
@@ -599,54 +613,54 @@ struct MatrixView
     }
 
     // Assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
-    operator=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
+        operator=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) = e(i,j);
+                ( *this )( i, j ) = e( i, j );
         return *this;
     }
 
     // Addition assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
-    operator+=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
+        operator+=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) += e(i,j);
+                ( *this )( i, j ) += e( i, j );
         return *this;
     }
 
     // Subtraction assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_matrix<Expression>::value,MatrixView&>::type
-    operator-=( const Expression& e )
+        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
+        operator-=( const Expression& e )
     {
         for ( int i = 0; i < M; ++i )
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < N; ++j )
-                (*this)(i,j) -= e(i,j);
+                ( *this )( i, j ) -= e( i, j );
         return *this;
     }
 
     // Initializer list assignment operator.
     KOKKOS_INLINE_FUNCTION
-    MatrixView& operator=(
-        const std::initializer_list<std::initializer_list<T>> data )
+    MatrixView&
+    operator=( const std::initializer_list<std::initializer_list<T>> data )
     {
         int i = 0;
         int j = 0;
@@ -655,7 +669,7 @@ struct MatrixView
             j = 0;
             for ( const auto& value : row )
             {
-                (*this)(i,j) = value;
+                ( *this )( i, j ) = value;
                 ++j;
             }
             ++i;
@@ -673,53 +687,58 @@ struct MatrixView
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return _stride[0]; }
+    int stride_0() const { return _stride[0]; }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return _stride[1]; }
+    int stride_1() const { return _stride[1]; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
-    { return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 ); }
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
+    }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
     const_reference operator()( const int i, const int j ) const
-    { return _d[_stride[0]*i + _stride[1]*j]; }
+    {
+        return _d[_stride[0] * i + _stride[1] * j];
+    }
 
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i, const int j )
-    { return _d[_stride[0]*i + _stride[1]*j]; }
+    {
+        return _d[_stride[0] * i + _stride[1] * j];
+    }
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T,N> row( const int n ) const
+    VectorView<T, N> row( const int n ) const
     {
-        return VectorView<T,N>( const_cast<T*>(&_d[_stride[0]*n]), _stride[1] );
+        return VectorView<T, N>( const_cast<T*>( &_d[_stride[0] * n] ),
+                                 _stride[1] );
     }
 
     // Get a column as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T,M> column( const int n ) const
+    VectorView<T, M> column( const int n ) const
     {
-        return VectorView<T,M>( const_cast<T*>(&_d[_stride[1]*n]), _stride[0] );
+        return VectorView<T, M>( const_cast<T*>( &_d[_stride[1] * n] ),
+                                 _stride[0] );
     }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(_d); }
+    pointer data() const { return const_cast<pointer>( _d ); }
 };
 
 //---------------------------------------------------------------------------//
 // Vector
 //---------------------------------------------------------------------------//
 // Dense vector with a KokkosKernels compatible data interface.
-template<class T, int N>
+template <class T, int N>
 struct Vector
 {
     T _d[N];
@@ -733,8 +752,8 @@ struct Vector
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = VectorView<T,N>;
-    using copy_type = Vector<T,N>;
+    using eval_type = VectorView<T, N>;
+    using copy_type = Vector<T, N>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -753,16 +772,16 @@ struct Vector
     }
 
     // Deep copy constructor. Triggers expression evaluation.
-    template<class Expression,
-             typename std::enable_if<is_vector<Expression>::value,int>::type = 0>
-    KOKKOS_INLINE_FUNCTION
-    Vector( const Expression& e )
+    template <
+        class Expression,
+        typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
-            for ( int i = 0; i < N; ++i )
-                (*this)(i) = e(i);
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) = e( i );
     }
 
     // Scalar constructor.
@@ -773,44 +792,44 @@ struct Vector
     }
 
     // Deep copy assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
-    operator=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
-            for ( int i = 0; i < N; ++i )
-                (*this)(i) = e(i);
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) = e( i );
         return *this;
     }
 
     // Addition assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
-    operator+=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator+=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
-            for ( int i = 0; i < N; ++i )
-                (*this)(i) += e(i);
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) += e( i );
         return *this;
     }
 
     // Subtraction assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,Vector&>::type
-    operator-=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator-=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
-            for ( int i = 0; i < N; ++i )
-                (*this)(i) -= e(i);
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) -= e( i );
         return *this;
     }
 
@@ -837,38 +856,35 @@ struct Vector
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return 1; }
+    int stride_0() const { return 1; }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 0; }
+    int stride_1() const { return 0; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
-    { return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 ); }
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
+    }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i ) const
-    { return _d[i]; }
+    const_reference operator()( const int i ) const { return _d[i]; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i )
-    { return _d[i]; }
+    reference operator()( const int i ) { return _d[i]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(&_d[0]); }
+    pointer data() const { return const_cast<pointer>( &_d[0] ); }
 };
 
 //---------------------------------------------------------------------------//
 // Scalar overload.
-template<class T>
-struct Vector<T,1>
+template <class T>
+struct Vector<T, 1>
 {
     T _d;
 
@@ -881,8 +897,8 @@ struct Vector<T,1>
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = VectorView<T,1>;
-    using copy_type = Vector<T,1>;
+    using eval_type = VectorView<T, 1>;
+    using copy_type = Vector<T, 1>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -892,7 +908,8 @@ struct Vector<T,1>
     KOKKOS_INLINE_FUNCTION
     Vector( const T value )
         : _d( value )
-    {}
+    {
+    }
 
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
@@ -904,36 +921,29 @@ struct Vector<T,1>
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return 1; }
+    int stride_0() const { return 1; }
 
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 1; }
+    int stride_1() const { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const
-    { return 1; }
+    constexpr int extent( const int ) const { return 1; }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int ) const
-    { return _d; }
+    const_reference operator()( const int ) const { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int )
-    { return _d; }
+    reference operator()( const int ) { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(&_d); }
+    pointer data() const { return const_cast<pointer>( &_d ); }
 
     // Scalar conversion operator.
     KOKKOS_INLINE_FUNCTION
-    operator value_type() const
-    { return _d; }
+    operator value_type() const { return _d; }
 };
 
 //---------------------------------------------------------------------------//
@@ -941,7 +951,7 @@ struct Vector<T,1>
 // compatible data interface.
 //
 // NOTE: Data in this view may be non-contiguous.
-template<class T, int N>
+template <class T, int N>
 struct VectorView
 {
     T* _d;
@@ -956,8 +966,8 @@ struct VectorView
     using reference = T&;
     using const_reference = const T&;
 
-    using eval_type = VectorView<T,N>;
-    using copy_type = Vector<T,N>;
+    using eval_type = VectorView<T, N>;
+    using copy_type = Vector<T, N>;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
@@ -965,57 +975,59 @@ struct VectorView
 
     // Vector construtor.
     KOKKOS_INLINE_FUNCTION
-    VectorView( const Vector<T,N>& v )
+    VectorView( const Vector<T, N>& v )
         : _d( v.data() )
         , _stride( v.stride_0() )
-    {}
+    {
+    }
 
     // Pointer constructor.
     KOKKOS_INLINE_FUNCTION
     VectorView( T* data, const int stride )
         : _d( data )
         , _stride( stride )
-    {}
+    {
+    }
 
     // Assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
-    operator=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
+        operator=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
         for ( int i = 0; i < N; ++i )
-            (*this)(i) = e(i);
+            ( *this )( i ) = e( i );
         return *this;
     }
 
     // Addition assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
-    operator+=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
+        operator+=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
         for ( int i = 0; i < N; ++i )
-            (*this)(i) += e(i);
+            ( *this )( i ) += e( i );
         return *this;
     }
 
     // Subtraction assignment operator. Triggers expression evaluation.
-    template<class Expression>
+    template <class Expression>
     KOKKOS_INLINE_FUNCTION
-    typename std::enable_if<is_vector<Expression>::value,VectorView&>::type
-    operator-=( const Expression& e )
+        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
+        operator-=( const Expression& e )
     {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
         for ( int i = 0; i < N; ++i )
-            (*this)(i) -= e(i);
+            ( *this )( i ) -= e( i );
         return *this;
     }
 
@@ -1026,7 +1038,7 @@ struct VectorView
         int i = 0;
         for ( const auto& value : data )
         {
-            (*this)(i) = value;
+            ( *this )( i ) = value;
             ++i;
         }
         return *this;
@@ -1042,346 +1054,310 @@ struct VectorView
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_0() const
-    { return _stride; }
+    int stride_0() const { return _stride; }
 
     // Strides.
     KOKKOS_INLINE_FUNCTION
-    int stride_1() const
-    { return 0; }
+    int stride_1() const { return 0; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
-    { return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 ); }
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
+    }
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i ) const
-    { return _d[_stride*i]; }
+    const_reference operator()( const int i ) const { return _d[_stride * i]; }
 
     KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i )
-    { return _d[_stride*i]; }
+    reference operator()( const int i ) { return _d[_stride * i]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
-    pointer data() const
-    { return const_cast<pointer>(_d); }
+    pointer data() const { return const_cast<pointer>( _d ); }
 };
 
 //---------------------------------------------------------------------------//
 // Transpose.
 //---------------------------------------------------------------------------//
 // Matrix operator.
-template<class Expression,
-         typename std::enable_if_t<is_matrix<Expression>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator~( const Expression& e )
+template <class Expression,
+          typename std::enable_if_t<is_matrix<Expression>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
 {
-    return createMatrixExpression<
-        typename Expression::value_type,
-        Expression::extent_1,
-        Expression::extent_0>(
-            [=]( const int i, const int j ){ return e(j,i); } );
+    return createMatrixExpression<typename Expression::value_type,
+                                  Expression::extent_1, Expression::extent_0>(
+        [=]( const int i, const int j ) { return e( j, i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Vector operator.
-template<class Expression,
-         typename std::enable_if_t<is_vector<Expression>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator~( const Expression& e )
+template <class Expression,
+          typename std::enable_if_t<is_vector<Expression>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
 {
-    return createMatrixExpression<
-        typename Expression::value_type,1,Expression::extent_0>(
-            [=]( const int, const int j ){ return e(j); } );
+    return createMatrixExpression<typename Expression::value_type, 1,
+                                  Expression::extent_0>(
+        [=]( const int, const int j ) { return e( j ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Matrix-matrix addition.
 //---------------------------------------------------------------------------//
-template<class ExpressionA,
-         class ExpressionB,
-         typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                   is_matrix<ExpressionB>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator+( const ExpressionA& a, const ExpressionB& b )
+template <class ExpressionA, class ExpressionB,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                        is_matrix<ExpressionB>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionA& a,
+                                       const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionB::value_type>::value,
+                                typename ExpressionB::value_type>::value,
                    "value_type must match" );
     static_assert( ExpressionA::extent_0 == ExpressionB::extent_0,
                    "extent_0 must match" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_1,
                    "extent_1 must match" );
-    return createMatrixExpression<
-        typename ExpressionA::value_type,
-        ExpressionA::extent_0,
-        ExpressionA::extent_1>(
-            [=]( const int i, const int j ){ return a(i,j) + b(i,j); } );
+    return createMatrixExpression<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionA::extent_1>(
+        [=]( const int i, const int j ) { return a( i, j ) + b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Matrix-matrix subtraction.
 //---------------------------------------------------------------------------//
-template<class ExpressionA,
-         class ExpressionB,
-         typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                   is_matrix<ExpressionB>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator-( const ExpressionA& a, const ExpressionB& b )
+template <class ExpressionA, class ExpressionB,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                        is_matrix<ExpressionB>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionA& a,
+                                       const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionA::value_type>::value,
+                                typename ExpressionA::value_type>::value,
                    "value_type must match" );
     static_assert( ExpressionA::extent_0 == ExpressionB::extent_0,
                    "extent_0 must match" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_1,
                    "extent_1 must_match" );
-    return createMatrixExpression<
-        typename ExpressionA::value_type,
-        ExpressionA::extent_0,
-        ExpressionA::extent_1>(
-            [=]( const int i, const int j ){ return a(i,j) - b(i,j); } );
+    return createMatrixExpression<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionA::extent_1>(
+        [=]( const int i, const int j ) { return a( i, j ) - b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Matrix-matrix multiplication.
 //---------------------------------------------------------------------------//
-template<class ExpressionA, class ExpressionB>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value && is_matrix<ExpressionB>::value,
-    Matrix<typename ExpressionA::value_type,
-           ExpressionA::extent_0,ExpressionB::extent_1>>
+    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+           ExpressionB::extent_1>>
 operator*( const ExpressionA& a, const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionB::value_type>::value,
+                                typename ExpressionB::value_type>::value,
                    "value_type must match" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_0,
                    "inner extent must match" );
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionB::eval_type b_eval = b;
-    Matrix<typename ExpressionA::value_type,
-           ExpressionA::extent_0,
-           ExpressionB::extent_1> c =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            a_eval,
-            b_eval,
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            c );
+    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+           ExpressionB::extent_1>
+        c = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Algo::Gemm::Unblocked>::
+        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                a_eval, b_eval,
+                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                c );
     return c;
 }
 
 //---------------------------------------------------------------------------//
 // Matrix-vector multiplication
 //---------------------------------------------------------------------------//
-template<class ExpressionA, class ExpressionX>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionX>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value && is_vector<ExpressionX>::value,
-    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>>
+    Vector<typename ExpressionA::value_type, ExpressionA::extent_0>>
 operator*( const ExpressionA& a, const ExpressionX& x )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionX::value_type>::value,
+                                typename ExpressionX::value_type>::value,
                    "value_type must match" );
     static_assert( ExpressionA::extent_1 == ExpressionX::extent_0,
                    "inner extent must match" );
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
-    Vector<typename ExpressionA::value_type,ExpressionA::extent_0> y =
+    Vector<typename ExpressionA::value_type, ExpressionA::extent_0> y =
         Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemv<
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Algo::Gemv::Unblocked>::invoke(
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            a_eval,
-            x_eval,
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            y );
+    KokkosBatched::SerialGemv<KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Algo::Gemv::Unblocked>::
+        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                a_eval, x_eval,
+                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                y );
     return y;
 }
 
 //---------------------------------------------------------------------------//
 // Vector-matrix multiplication
 //---------------------------------------------------------------------------//
-template<class ExpressionA, class ExpressionX>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionX>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value && is_vector<ExpressionX>::value,
-    Matrix<typename ExpressionA::value_type,
-           ExpressionX::extent_0,
+    Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
            ExpressionA::extent_1>>
 operator*( const ExpressionX& x, const ExpressionA& a )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionX::value_type>::value,
+                                typename ExpressionX::value_type>::value,
                    "value_type must match" );
     static_assert( ExpressionX::extent_1 == ExpressionA::extent_0,
                    "inner extent must match" );
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
-    Matrix<typename ExpressionA::value_type,
-           ExpressionX::extent_0,
-           ExpressionA::extent_1> y =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Algo::Gemm::Unblocked>::invoke(
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            x_eval,
-            a_eval,
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-            y );
+    Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
+           ExpressionA::extent_1>
+        y = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Trans::NoTranspose,
+                              KokkosBatched::Algo::Gemm::Unblocked>::
+        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                x_eval, a_eval,
+                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
+                y );
     return y;
 }
 
 //---------------------------------------------------------------------------//
 // Vector-vector addition.
 //---------------------------------------------------------------------------//
-template<class ExpressionX,
-         class ExpressionY,
-         typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                   is_vector<ExpressionY>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator+( const ExpressionX& x, const ExpressionY& y )
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                        is_vector<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
+                                       const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
-                   typename ExpressionY::value_type>::value,
-                   "value_type must match");
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<
-        typename ExpressionX::value_type,ExpressionX::extent_0>(
-            [=]( const int i ){ return x(i) + y(i); } );
+    return createVectorExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) + y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Vector-vector subtraction.
 //---------------------------------------------------------------------------//
-template<class ExpressionX,
-         class ExpressionY,
-         typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                   is_vector<ExpressionY>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator-( const ExpressionX& x, const ExpressionY& y )
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                        is_vector<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
+                                       const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
-                   typename ExpressionY::value_type>::value,
-                   "value_type must match");
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<
-        typename ExpressionX::value_type,ExpressionX::extent_0>(
-            [=]( const int i ){ return x(i) - y(i); } );
+    return createVectorExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) - y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Vector products.
 //---------------------------------------------------------------------------//
 // Cross product
-template<class ExpressionX, class ExpressionY>
+template <class ExpressionX, class ExpressionY>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
-    is_vector<ExpressionX>::value && is_vector<ExpressionY>::value,
-    Vector<typename ExpressionX::value_type,3>>
-operator%( const ExpressionX& x,
-           const ExpressionY& y )
+    typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                  is_vector<ExpressionY>::value,
+                              Vector<typename ExpressionX::value_type, 3>>
+    operator%( const ExpressionX& x, const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
-                   typename ExpressionY::value_type>::value,
-                   "value_type must match");
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
     static_assert( ExpressionX::extent_0 == 3,
                    "cross product is for 3-vectors" );
     static_assert( ExpressionY::extent_0 == 3,
                    "cross product is for 3-vectors" );
     typename ExpressionX::eval_type x_eval = x;
     typename ExpressionY::eval_type y_eval = y;
-    return Vector<typename ExpressionX::value_type,3>{
-        x_eval(1)*y_eval(2) - x_eval(2)*y_eval(1),
-            x_eval(2)*y_eval(0) - x_eval(0)*y_eval(2),
-            x_eval(0)*y_eval(1) - x_eval(1)*y_eval(0) };
+    return Vector<typename ExpressionX::value_type, 3>{
+        x_eval( 1 ) * y_eval( 2 ) - x_eval( 2 ) * y_eval( 1 ),
+        x_eval( 2 ) * y_eval( 0 ) - x_eval( 0 ) * y_eval( 2 ),
+        x_eval( 0 ) * y_eval( 1 ) - x_eval( 1 ) * y_eval( 0 ) };
 }
 
 //---------------------------------------------------------------------------//
 // Element-wise multiplication.
-template<class ExpressionX,
-         class ExpressionY,
-         typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                   is_vector<ExpressionY>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator&( const ExpressionX& x, const ExpressionY& y )
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                        is_vector<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
+                                       const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
-                   typename ExpressionY::value_type>::value,
-                   "value_type must match");
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent_0 must match" );
-    return createVectorExpression<
-        typename ExpressionX::value_type,ExpressionX::extent_0>(
-            [=]( const int i ){ return x(i) * y(i); } );
+    return createVectorExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) * y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Element-wise division.
-template<class ExpressionX,
-         class ExpressionY,
-         typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                   is_vector<ExpressionY>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator|( const ExpressionX& x, const ExpressionY& y )
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                        is_vector<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
+                                       const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
-                   typename ExpressionY::value_type>::value,
-                   "value_type must match");
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<
-        typename ExpressionX::value_type,ExpressionX::extent_0>(
-            [=]( const int i ){ return x(i) / y(i); } );
+    return createVectorExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) / y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Scalar multiplication.
 //---------------------------------------------------------------------------//
 // Matrix.
-template<class ExpressionA,
-         typename std::enable_if_t<is_matrix<ExpressionA>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator*( const typename ExpressionA::value_type s, const ExpressionA& a )
+template <class ExpressionA,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const typename ExpressionA::value_type s,
+                                       const ExpressionA& a )
 {
-    return createMatrixExpression<
-        typename ExpressionA::value_type,
-        ExpressionA::extent_0,
-        ExpressionA::extent_1>(
-            [=]( const int i, const int j ){ return s * a(i,j); } );
+    return createMatrixExpression<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionA::extent_1>(
+        [=]( const int i, const int j ) { return s * a( i, j ); } );
 }
 
-template<class ExpressionA,
-         typename std::enable_if_t<is_matrix<ExpressionA>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
+template <class ExpressionA,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
 operator*( const ExpressionA& a, const typename ExpressionA::value_type s )
 {
     return s * a;
@@ -1389,21 +1365,19 @@ operator*( const ExpressionA& a, const typename ExpressionA::value_type s )
 
 //---------------------------------------------------------------------------//
 // Vector.
-template<class ExpressionX,
-         typename std::enable_if_t<is_vector<ExpressionX>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
-operator*( const typename ExpressionX::value_type s, const ExpressionX& x )
+template <class ExpressionX,
+          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const typename ExpressionX::value_type s,
+                                       const ExpressionX& x )
 {
-    return createVectorExpression<
-        typename ExpressionX::value_type,ExpressionX::extent_0>(
-            [=]( const int i ){ return s * x(i); } );
+    return createVectorExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0>(
+        [=]( const int i ) { return s * x( i ); } );
 }
 
-template<class ExpressionX,
-         typename std::enable_if_t<is_vector<ExpressionX>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
+template <class ExpressionX,
+          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
 operator*( const ExpressionX& x, const typename ExpressionX::value_type s )
 {
     return s * x;
@@ -1413,10 +1387,9 @@ operator*( const ExpressionX& x, const typename ExpressionX::value_type s )
 // Scalar division.
 //---------------------------------------------------------------------------//
 // Matrix.
-template<class ExpressionA,
-         typename std::enable_if_t<is_matrix<ExpressionA>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
+template <class ExpressionA,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionA& a, const typename ExpressionA::value_type s )
 {
     auto s_inv =
@@ -1426,10 +1399,9 @@ operator/( const ExpressionA& a, const typename ExpressionA::value_type s )
 
 //---------------------------------------------------------------------------//
 // Vector.
-template<class ExpressionX,
-         typename std::enable_if_t<is_vector<ExpressionX>::value,int> = 0>
-KOKKOS_INLINE_FUNCTION
-auto
+template <class ExpressionX,
+          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionX& x, const typename ExpressionX::value_type s )
 {
     auto s_inv =
@@ -1441,44 +1413,43 @@ operator/( const ExpressionX& x, const typename ExpressionX::value_type s )
 // Matrix determinants.
 //---------------------------------------------------------------------------//
 // 2x2 specialization
-template<class Expression>
+template <class Expression>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<Expression>::value &&
-                          Expression::extent_0 == 2 &&
-                          Expression::extent_1 == 2,
-                          typename Expression::value_type>
-operator!( const Expression& a )
+    typename std::enable_if_t<is_matrix<Expression>::value &&
+                                  Expression::extent_0 == 2 &&
+                                  Expression::extent_1 == 2,
+                              typename Expression::value_type>
+    operator!( const Expression& a )
 {
-    return a(0,0) * a(1,1) - a(0,1) * a(1,0);
+    return a( 0, 0 ) * a( 1, 1 ) - a( 0, 1 ) * a( 1, 0 );
 }
 
 //---------------------------------------------------------------------------//
 // 3x3 specialization
-template<class Expression>
+template <class Expression>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<Expression>::value &&
-                          Expression::extent_0 == 3 &&
-                          Expression::extent_1 == 3,
-                          typename Expression::value_type>
-operator!( const Expression& a )
+    typename std::enable_if_t<is_matrix<Expression>::value &&
+                                  Expression::extent_0 == 3 &&
+                                  Expression::extent_1 == 3,
+                              typename Expression::value_type>
+    operator!( const Expression& a )
 {
-    return
-        a(0,0) * a(1,1) * a(2,2) +
-        a(0,1) * a(1,2) * a(2,0) +
-        a(0,2) * a(1,0) * a(2,1) -
-        a(0,2) * a(1,1) * a(2,0) -
-        a(0,1) * a(1,0) * a(2,2) -
-        a(0,0) * a(1,2) * a(2,1);
+    return a( 0, 0 ) * a( 1, 1 ) * a( 2, 2 ) +
+           a( 0, 1 ) * a( 1, 2 ) * a( 2, 0 ) +
+           a( 0, 2 ) * a( 1, 0 ) * a( 2, 1 ) -
+           a( 0, 2 ) * a( 1, 1 ) * a( 2, 0 ) -
+           a( 0, 1 ) * a( 1, 0 ) * a( 2, 2 ) -
+           a( 0, 0 ) * a( 1, 2 ) * a( 2, 1 );
 }
 
 //---------------------------------------------------------------------------//
 // LU decomposition.
 //---------------------------------------------------------------------------//
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                          typename ExpressionA::copy_type>
-LU( const ExpressionA& a )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                              typename ExpressionA::copy_type>
+    LU( const ExpressionA& a )
 {
     typename ExpressionA::copy_type lu = a;
     KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
@@ -1488,111 +1459,129 @@ LU( const ExpressionA& a )
 //---------------------------------------------------------------------------//
 // Matrix trace
 //---------------------------------------------------------------------------//
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                          typename ExpressionA::value_type>
-trace( const ExpressionA& a )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                              typename ExpressionA::value_type>
+    trace( const ExpressionA& a )
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
 
     typename ExpressionA::value_type trace = 0.0;
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
-        trace += a(i,i);
+        trace += a( i, i );
     return trace;
 }
 
 //---------------------------------------------------------------------------//
 // Identity
 //---------------------------------------------------------------------------//
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<ExpressionA>::value,void>
-identity( ExpressionA& a )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value, void>
+    identity( ExpressionA& a )
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
     a = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
-        a(i,i) = Kokkos::ArithTraits<typename ExpressionA::value_type>::one();
+        a( i, i ) =
+            Kokkos::ArithTraits<typename ExpressionA::value_type>::one();
 }
 
 //---------------------------------------------------------------------------//
 // Matrix inverse.
 //---------------------------------------------------------------------------//
 // 2x2 specialization.
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
-    ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
-    typename ExpressionA::copy_type>
-inverse( const ExpressionA& a )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                  ExpressionA::extent_0 == 2 &&
+                                  ExpressionA::extent_1 == 2,
+                              typename ExpressionA::copy_type>
+    inverse( const ExpressionA& a )
 {
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = 1.0 / !a_eval;
 
-    Matrix<typename ExpressionA::value_type,2,2> a_inv;
+    Matrix<typename ExpressionA::value_type, 2, 2> a_inv;
 
-    a_inv(0,0) = a_eval(1,1) * a_det_inv;
-    a_inv(0,1) = -a_eval(0,1) * a_det_inv;
-    a_inv(1,0) = -a_eval(1,0) * a_det_inv;
-    a_inv(1,1) = a_eval(0,0) * a_det_inv;
+    a_inv( 0, 0 ) = a_eval( 1, 1 ) * a_det_inv;
+    a_inv( 0, 1 ) = -a_eval( 0, 1 ) * a_det_inv;
+    a_inv( 1, 0 ) = -a_eval( 1, 0 ) * a_det_inv;
+    a_inv( 1, 1 ) = a_eval( 0, 0 ) * a_det_inv;
 
     return a_inv;
 }
 
 //---------------------------------------------------------------------------//
 // 3x3 specialization.
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
-    ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
-    typename ExpressionA::copy_type>
-inverse( const ExpressionA& a )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                  ExpressionA::extent_0 == 3 &&
+                                  ExpressionA::extent_1 == 3,
+                              typename ExpressionA::copy_type>
+    inverse( const ExpressionA& a )
 {
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = 1.0 / !a_eval;
 
-    Matrix<typename ExpressionA::value_type,3,3> a_inv;
+    Matrix<typename ExpressionA::value_type, 3, 3> a_inv;
 
-    a_inv(0,0) = (a_eval(1,1)*a_eval(2,2) - a_eval(1,2)*a_eval(2,1)) * a_det_inv;
-    a_inv(0,1) = (a_eval(0,2)*a_eval(2,1) - a_eval(0,1)*a_eval(2,2)) * a_det_inv;
-    a_inv(0,2) = (a_eval(0,1)*a_eval(1,2) - a_eval(0,2)*a_eval(1,1)) * a_det_inv;
+    a_inv( 0, 0 ) =
+        ( a_eval( 1, 1 ) * a_eval( 2, 2 ) - a_eval( 1, 2 ) * a_eval( 2, 1 ) ) *
+        a_det_inv;
+    a_inv( 0, 1 ) =
+        ( a_eval( 0, 2 ) * a_eval( 2, 1 ) - a_eval( 0, 1 ) * a_eval( 2, 2 ) ) *
+        a_det_inv;
+    a_inv( 0, 2 ) =
+        ( a_eval( 0, 1 ) * a_eval( 1, 2 ) - a_eval( 0, 2 ) * a_eval( 1, 1 ) ) *
+        a_det_inv;
 
-    a_inv(1,0) = (a_eval(1,2)*a_eval(2,0) - a_eval(1,0)*a_eval(2,2)) * a_det_inv;
-    a_inv(1,1) = (a_eval(0,0)*a_eval(2,2) - a_eval(0,2)*a_eval(2,0)) * a_det_inv;
-    a_inv(1,2) = (a_eval(0,2)*a_eval(1,0) - a_eval(0,0)*a_eval(1,2)) * a_det_inv;
+    a_inv( 1, 0 ) =
+        ( a_eval( 1, 2 ) * a_eval( 2, 0 ) - a_eval( 1, 0 ) * a_eval( 2, 2 ) ) *
+        a_det_inv;
+    a_inv( 1, 1 ) =
+        ( a_eval( 0, 0 ) * a_eval( 2, 2 ) - a_eval( 0, 2 ) * a_eval( 2, 0 ) ) *
+        a_det_inv;
+    a_inv( 1, 2 ) =
+        ( a_eval( 0, 2 ) * a_eval( 1, 0 ) - a_eval( 0, 0 ) * a_eval( 1, 2 ) ) *
+        a_det_inv;
 
-    a_inv(2,0) = (a_eval(1,0)*a_eval(2,1) - a_eval(1,1)*a_eval(2,0)) * a_det_inv;
-    a_inv(2,1) = (a_eval(0,1)*a_eval(2,0) - a_eval(0,0)*a_eval(2,1)) * a_det_inv;
-    a_inv(2,2) = (a_eval(0,0)*a_eval(1,1) - a_eval(0,1)*a_eval(1,0)) * a_det_inv;
+    a_inv( 2, 0 ) =
+        ( a_eval( 1, 0 ) * a_eval( 2, 1 ) - a_eval( 1, 1 ) * a_eval( 2, 0 ) ) *
+        a_det_inv;
+    a_inv( 2, 1 ) =
+        ( a_eval( 0, 1 ) * a_eval( 2, 0 ) - a_eval( 0, 0 ) * a_eval( 2, 1 ) ) *
+        a_det_inv;
+    a_inv( 2, 2 ) =
+        ( a_eval( 0, 0 ) * a_eval( 1, 1 ) - a_eval( 0, 1 ) * a_eval( 1, 0 ) ) *
+        a_det_inv;
 
     return a_inv;
 }
 
 //---------------------------------------------------------------------------//
 // General case.
-template<class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    !(ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2) &&
-    !(ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3),
+        !( ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2 ) &&
+        !( ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3 ),
     typename ExpressionA::copy_type>
 inverse( const ExpressionA& a )
 {
-    auto a_lu = LU(a);
+    auto a_lu = LU( a );
     typename ExpressionA::copy_type work;
     KokkosBatched::SerialInverseLU<
         KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, work );
@@ -1603,50 +1592,47 @@ inverse( const ExpressionA& a )
 // Linear solve.
 //---------------------------------------------------------------------------//
 // 2x2 specialization. Single and multiple RHS supported.
-template<class ExpressionA, class ExpressionB>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
-    ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
+        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+        ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
     typename ExpressionB::copy_type>
 operator^( const ExpressionA& a, const ExpressionB& b )
 {
-    return inverse(a) * b;
+    return inverse( a ) * b;
 }
 
 //---------------------------------------------------------------------------//
 // 3x3 specialization. Single and multiple RHS supported.
-template<class ExpressionA, class ExpressionB>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
-    ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
+        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+        ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
     typename ExpressionB::copy_type>
 operator^( const ExpressionA& a, const ExpressionB& b )
 {
-    return inverse(a) * b;
+    return inverse( a ) * b;
 }
 
 //---------------------------------------------------------------------------//
 // General case. Single and multiple RHS supported.
-template<class ExpressionA, class ExpressionB>
-KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<
+template <class ExpressionA, class ExpressionB>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     is_matrix<ExpressionA>::value &&
-    (is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value) &&
-    !(ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2) &&
-    !(ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3),
+        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+        !( ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2 ) &&
+        !( ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3 ),
     typename ExpressionB::copy_type>
 operator^( const ExpressionA& a, const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
-                   typename ExpressionB::value_type>::value,
+                                typename ExpressionB::value_type>::value,
                    "value_type must be the same" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_0,
                    "Inner extent must match" );
-    auto a_lu = LU(a);
+    auto a_lu = LU( a );
     typename ExpressionB::copy_type x = b;
     KokkosBatched::SerialSolveLU<
         KokkosBatched::Trans::NoTranspose,
@@ -1657,25 +1643,28 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 //---------------------------------------------------------------------------//
 // Eigendecomposition
 //---------------------------------------------------------------------------//
-template<class ExpressionA>
+template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
-typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                          typename ExpressionA::copy_type>
-eigendecomposition(
-    const ExpressionA& a,
-    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>& e_real,
-    Vector<typename ExpressionA::value_type,ExpressionA::extent_0>& e_imag,
-    Matrix<typename ExpressionA::value_type,ExpressionA::extent_0,ExpressionA::extent_0>& u_left,
-    Matrix<typename ExpressionA::value_type,ExpressionA::extent_0,ExpressionA::extent_0>& u_right )
+    typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                              typename ExpressionA::copy_type>
+    eigendecomposition(
+        const ExpressionA& a,
+        Vector<typename ExpressionA::value_type, ExpressionA::extent_0>& e_real,
+        Vector<typename ExpressionA::value_type, ExpressionA::extent_0>& e_imag,
+        Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+               ExpressionA::extent_0>& u_left,
+        Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+               ExpressionA::extent_0>& u_right )
 {
     static_assert( ExpressionA::extent_0 == ExpressionA::extent_1,
                    "Matrix must be square" );
 
     const auto extent = ExpressionA::extent_0;
     typename ExpressionA::copy_type a_schur = a;
-    Vector<typename ExpressionA::value_type,2*extent*extent+5*extent> work;
-    KokkosBatched::SerialEigendecomposition::invoke(
-        a_schur, e_real, e_imag, u_left, u_right, work );
+    Vector<typename ExpressionA::value_type, 2 * extent * extent + 5 * extent>
+        work;
+    KokkosBatched::SerialEigendecomposition::invoke( a_schur, e_real, e_imag,
+                                                     u_left, u_right, work );
 
     // Return the matrix transformed to a quasi upper triangular matrix of the
     // Schur decomposition.
@@ -1690,23 +1679,23 @@ eigendecomposition(
 // Type aliases.
 //---------------------------------------------------------------------------//
 
-template<class T>
-using Mat2 = LinearAlgebra::Matrix<T,2,2>;
-template<class T>
-using MatView2 = LinearAlgebra::MatrixView<T,2,2>;
-template<class T>
-using Vec2 = LinearAlgebra::Vector<T,2>;
-template<class T>
-using VecView2 = LinearAlgebra::VectorView<T,2>;
+template <class T>
+using Mat2 = LinearAlgebra::Matrix<T, 2, 2>;
+template <class T>
+using MatView2 = LinearAlgebra::MatrixView<T, 2, 2>;
+template <class T>
+using Vec2 = LinearAlgebra::Vector<T, 2>;
+template <class T>
+using VecView2 = LinearAlgebra::VectorView<T, 2>;
 
-template<class T>
-using Mat3 = LinearAlgebra::Matrix<T,3,3>;
-template<class T>
-using MatView3 = LinearAlgebra::MatrixView<T,3,3>;
-template<class T>
-using Vec3 = LinearAlgebra::Vector<T,3>;
-template<class T>
-using VecView3 = LinearAlgebra::VectorView<T,3>;
+template <class T>
+using Mat3 = LinearAlgebra::Matrix<T, 3, 3>;
+template <class T>
+using MatView3 = LinearAlgebra::MatrixView<T, 3, 3>;
+template <class T>
+using Vec3 = LinearAlgebra::Vector<T, 3>;
+template <class T>
+using VecView3 = LinearAlgebra::VectorView<T, 3>;
 
 //---------------------------------------------------------------------------//
 
