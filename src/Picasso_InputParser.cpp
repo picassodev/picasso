@@ -23,18 +23,18 @@ InputParser::InputParser( int argc, char* argv[] )
     // Get the filename from the input.
     bool found_arg = false;
     std::string filename;
-    for ( int n = 0; n < argc-1; ++n )
+    for ( int n = 0; n < argc - 1; ++n )
     {
-        if( 0 == std::strcmp(argv[n],"--picasso-input-json") )
+        if ( 0 == std::strcmp( argv[n], "--picasso-input-json" ) )
         {
-            filename = std::string(argv[n+1]);
+            filename = std::string( argv[n + 1] );
             found_arg = true;
             parse( filename, "json" );
             break;
         }
-        else if( 0 == std::strcmp(argv[n],"--picasso-input-xml") )
+        else if ( 0 == std::strcmp( argv[n], "--picasso-input-xml" ) )
         {
-            filename = std::string(argv[n+1]);
+            filename = std::string( argv[n + 1] );
             found_arg = true;
             parse( filename, "xml" );
             break;
@@ -50,8 +50,7 @@ InputParser::InputParser( int argc, char* argv[] )
 
 //---------------------------------------------------------------------------//
 //! Filename constructor.
-InputParser::InputParser( const std::string& filename,
-                          const std::string& type )
+InputParser::InputParser( const std::string& filename, const std::string& type )
 {
     parse( filename, type );
 }
@@ -65,23 +64,21 @@ const boost::property_tree::ptree& InputParser::propertyTree() const
 
 //---------------------------------------------------------------------------//
 // Parse the field.
-void InputParser::parse( const std::string& filename,
-                         const std::string& type )
+void InputParser::parse( const std::string& filename, const std::string& type )
 {
     // Get the filename from the input.
-    if ( 0 == type.compare("json") )
+    if ( 0 == type.compare( "json" ) )
     {
         boost::property_tree::read_json( filename, _ptree );
     }
-    else if ( 0 == type.compare("xml") )
+    else if ( 0 == type.compare( "xml" ) )
     {
         boost::property_tree::read_xml( filename, _ptree );
     }
     else
     // Check that we found the filename.
     {
-        throw std::runtime_error(
-            "Only json or xml inputs supported" );
+        throw std::runtime_error( "Only json or xml inputs supported" );
     }
 }
 

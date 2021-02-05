@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
-#include <Picasso_Types.hpp>
-#include <Picasso_InputParser.hpp>
-#include <Picasso_UniformMesh.hpp>
 #include <Picasso_FieldManager.hpp>
+#include <Picasso_InputParser.hpp>
 #include <Picasso_LevelSet.hpp>
+#include <Picasso_Types.hpp>
+#include <Picasso_UniformMesh.hpp>
 
 #include <Cajita.hpp>
 
@@ -33,12 +33,11 @@ struct ErrorField : public Field::Scalar<double>
 };
 
 //---------------------------------------------------------------------------//
-template<class Phi0, class PhiR>
+template <class Phi0, class PhiR>
 void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
 {
     // Global parameters.
-    Kokkos::Array<double,6> global_box = { 0.0, 0.0, 0.0,
-                                           1.0, 1.0, 1.0 };
+    Kokkos::Array<double, 6> global_box = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 
     // Get inputs for mesh.
     InputParser parser( "level_set_redistance_test.json", "json" );
@@ -48,7 +47,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     int minimum_halo_size = 4;
     auto mesh = createUniformMesh( TEST_MEMSPACE(), pt, global_box,
                                    minimum_halo_size, MPI_COMM_WORLD );
-    auto dx = mesh->localGrid()->globalGrid().globalMesh().cellSize(0);
+    auto dx = mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
     auto halo_width = dx * minimum_halo_size;
 
     // Create a level set.
@@ -63,27 +62,26 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     auto distance_view = distance->view();
 
     // Local mesh.
-    auto local_mesh = Cajita::createLocalMesh<TEST_MEMSPACE>(
-        *(mesh->localGrid()) );
+    auto local_mesh =
+        Cajita::createLocalMesh<TEST_MEMSPACE>( *( mesh->localGrid() ) );
 
     // Populate the initial estimate.
     auto own_entities = mesh->localGrid()->indexSpace(
         Cajita::Own(), Cajita::Node(), Cajita::Local() );
     Kokkos::parallel_for(
         "estimate",
-        Cajita::createExecutionPolicy(own_entities,TEST_EXECSPACE()),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ){
-
+        Cajita::createExecutionPolicy( own_entities, TEST_EXECSPACE() ),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Get the entity index.
-            int entity_index[3] = {i,j,k};
+            int entity_index[3] = { i, j, k };
 
             // Get the entity location.
             double x[3];
             local_mesh.coordinates( Cajita::Node(), entity_index, x );
 
             // Assign the estimate value.
-            estimate_view(i,j,k,0) = phi_0( x[0], x[1], x[2] );
-        });
+            estimate_view( i, j, k, 0 ) = phi_0( x[0], x[1], x[2] );
+        } );
 
     // Redistance.
     level_set->redistance( TEST_EXECSPACE() );
@@ -97,25 +95,23 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     // is less than the halo.
     auto host_distance = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), distance_view );
-    auto host_mesh = Cajita::createLocalMesh<Kokkos::HostSpace>(
-        *(mesh->localGrid()) );
+    auto host_mesh =
+        Cajita::createLocalMesh<Kokkos::HostSpace>( *( mesh->localGrid() ) );
     Kokkos::parallel_for(
-        "test",
-        Cajita::createExecutionPolicy(own_entities,Kokkos::Serial()),
-        [=]( const int i, const int j, const int k ){
-
+        "test", Cajita::createExecutionPolicy( own_entities, Kokkos::Serial() ),
+        [=]( const int i, const int j, const int k ) {
             // Get the entity index.
-            int entity_index[3] = {i,j,k};
+            int entity_index[3] = { i, j, k };
 
             // Get the entity location.
             double x[3];
             host_mesh.coordinates( Cajita::Node(), entity_index, x );
 
             // Observed result.
-            auto observed = host_distance(i,j,k,0);
+            auto observed = host_distance( i, j, k, 0 );
 
             // Expected result.
-            auto expected = phi_r(x[0],x[1],x[2]);
+            auto expected = phi_r( x[0], x[1], x[2] );
 
             // Check the distance result in the narrow band. The
             // narrow-banding is done with the initial coarse grid estimate
@@ -123,7 +119,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
             // want to use the estimate to determine the narrow band here as
             // it may be wrong. So here we check for correctness within the
             // narrow band minus our tolerance.
-            if ( fabs(expected) < halo_width - tolerance )
+            if ( fabs( expected ) < halo_width - tolerance )
             {
                 EXPECT_NEAR( expected, observed, tolerance );
             }
@@ -140,7 +136,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
                     EXPECT_TRUE( observed < 0.0 );
                 }
             }
-        });
+        } );
 }
 
 void sphere_redistance()
@@ -149,16 +145,16 @@ void sphere_redistance()
 
     // Actual distance. Use this as the guess to see if we get it the same
     // thing out within our discrete error bounds.
-    auto phi_r =
-        KOKKOS_LAMBDA( const double x, const double y, const double z ){
+    auto phi_r = KOKKOS_LAMBDA( const double x, const double y, const double z )
+    {
 
         double dx = 0.5 - x;
         double dy = 0.5 - y;
         double dz = 0.5 - z;
-        double r = sqrt( dx*dx + dy*dy + dz*dz );
+        double r = sqrt( dx * dx + dy * dy + dz * dz );
 
         return r - 0.25;
-   };
+    };
 
     // Test. Use a smaller tolerance as we can resolve the smooth values
     // relatively well.
@@ -171,28 +167,28 @@ void scaled_sphere_redistance()
     // Scaled sphere with radius of 0.25 centered at (0.5,0.5,0.5).
 
     // Initial data.
-    auto phi_0 =
-        KOKKOS_LAMBDA( const double x, const double y, const double z ){
+    auto phi_0 = KOKKOS_LAMBDA( const double x, const double y, const double z )
+    {
 
         double dx = 0.5 - x;
         double dy = 0.5 - y;
         double dz = 0.5 - z;
-        double r = sqrt( dx*dx + dy*dy + dz*dz );
+        double r = sqrt( dx * dx + dy * dy + dz * dz );
 
-        return 2.8 * (exp(r - 0.25) - 1.0);
+        return 2.8 * ( exp( r - 0.25 ) - 1.0 );
     };
 
     // Actual distance.
-    auto phi_r =
-        KOKKOS_LAMBDA( const double x, const double y, const double z ){
+    auto phi_r = KOKKOS_LAMBDA( const double x, const double y, const double z )
+    {
 
         double dx = 0.5 - x;
         double dy = 0.5 - y;
         double dz = 0.5 - z;
-        double r = sqrt( dx*dx + dy*dy + dz*dz );
+        double r = sqrt( dx * dx + dy * dy + dz * dz );
 
         return r - 0.25;
-   };
+    };
 
     // Test. Use a smaller tolerance as we can resolve the smooth values
     // relatively well.

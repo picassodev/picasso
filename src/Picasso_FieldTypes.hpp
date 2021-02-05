@@ -18,8 +18,8 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <string>
 #include <sstream>
+#include <string>
 #include <type_traits>
 
 namespace Picasso
@@ -27,33 +27,34 @@ namespace Picasso
 //---------------------------------------------------------------------------//
 // General type indexer.
 //---------------------------------------------------------------------------//
-template<class T, int Size, int N, class Type, class ... Types>
+template <class T, int Size, int N, class Type, class... Types>
 struct TypeIndexerImpl
 {
     static constexpr std::size_t value =
-        TypeIndexerImpl<T,Size,N-1,Types...>::value *
-        (std::is_same<T,Type>::value ? Size - 1 - N : 1);
+        TypeIndexerImpl<T, Size, N - 1, Types...>::value *
+        ( std::is_same<T, Type>::value ? Size - 1 - N : 1 );
 };
 
-template<class T, int Size, class Type, class ... Types>
-struct TypeIndexerImpl<T,Size,0,Type,Types...>
+template <class T, int Size, class Type, class... Types>
+struct TypeIndexerImpl<T, Size, 0, Type, Types...>
 {
     static constexpr std::size_t value =
-        std::is_same<T,Type>::value ? Size - 1 : 1;
+        std::is_same<T, Type>::value ? Size - 1 : 1;
 };
 
-template<class T, class ... Types>
+template <class T, class... Types>
 struct TypeIndexer
 {
     static constexpr std::size_t index =
-        TypeIndexerImpl<T,sizeof...(Types),sizeof...(Types)-1,Types...>::value;
+        TypeIndexerImpl<T, sizeof...( Types ), sizeof...( Types ) - 1,
+                        Types...>::value;
 };
 
 //---------------------------------------------------------------------------//
 // Field Layout
 //---------------------------------------------------------------------------//
 // Field layout. A layout contains a location and a field tag.
-template<class Location, class Tag>
+template <class Location, class Tag>
 struct FieldLayout
 {
     using location = Location;
@@ -66,7 +67,7 @@ struct FieldLayout
 // Device-accessible container for views of fields. This container allows us
 // to wrap a parameter pack of views and let a user access them by the field
 // location and field tag on the device.
-template<class Views, class ... Layouts>
+template <class Views, class... Layouts>
 struct FieldViewTuple
 {
     static_assert( Cajita::is_parameter_pack<Views>::value,
@@ -74,32 +75,28 @@ struct FieldViewTuple
 
     Views _views;
 
-    template<class Location, class FieldTag>
-    KOKKOS_INLINE_FUNCTION
-    const auto& get( Location, FieldTag ) const
+    template <class Location, class FieldTag>
+    KOKKOS_INLINE_FUNCTION const auto& get( Location, FieldTag ) const
     {
-        return
-            Cajita::get<
-                TypeIndexer<FieldLayout<Location,FieldTag>,Layouts...>::index>(
-                    _views );
+        return Cajita::get<
+            TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
+            _views );
     }
 
-    template<class Location, class FieldTag>
-    KOKKOS_INLINE_FUNCTION
-    auto& get( Location, FieldTag )
+    template <class Location, class FieldTag>
+    KOKKOS_INLINE_FUNCTION auto& get( Location, FieldTag )
     {
-        return
-            Cajita::get<
-                TypeIndexer<FieldLayout<Location,FieldTag>,Layouts...>::index>(
-                    _views );
+        return Cajita::get<
+            TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
+            _views );
     }
 };
 
 // Creation function.
-template<class ... Layouts, class Views>
+template <class... Layouts, class Views>
 auto createFieldViewTuple( const Views& v )
 {
-    return FieldViewTuple<Views,Layouts...>{v};
+    return FieldViewTuple<Views, Layouts...>{ v };
 }
 
 //---------------------------------------------------------------------------//
@@ -113,7 +110,7 @@ struct Cell
     static std::string label() { return "Cell"; }
 };
 
-template<int D>
+template <int D>
 struct Face
 {
     using entity_type = Cajita::Face<D>;
@@ -125,7 +122,7 @@ struct Face
     }
 };
 
-template<int D>
+template <int D>
 struct Edge
 {
     using entity_type = Cajita::Edge<D>;
@@ -158,15 +155,20 @@ namespace Field
 // Field Tags.
 //---------------------------------------------------------------------------//
 // Forward declarations.
-template<class T> struct Scalar;
-template<class T, int D> struct Vector;
-template<class T, int D0, int D1> struct Tensor;
+template <class T>
+struct Scalar;
+template <class T, int D>
+struct Vector;
+template <class T, int D0, int D1>
+struct Tensor;
 
 //---------------------------------------------------------------------------//
 // Scalar field.
-struct ScalarBase {};
+struct ScalarBase
+{
+};
 
-template<class T>
+template <class T>
 struct Scalar : ScalarBase
 {
     using value_type = T;
@@ -174,12 +176,14 @@ struct Scalar : ScalarBase
     static constexpr int size = 1;
     using data_type = value_type;
     using linear_algebra_type = value_type;
-    template<class U> using field_type = Scalar<U>;
-    template<int NumSpaceDim> using gradient_type = Vector<T,NumSpaceDim>;
+    template <class U>
+    using field_type = Scalar<U>;
+    template <int NumSpaceDim>
+    using gradient_type = Vector<T, NumSpaceDim>;
 };
 
 template <class T>
-struct is_scalar_impl : std::is_base_of<ScalarBase,T>
+struct is_scalar_impl : std::is_base_of<ScalarBase, T>
 {
 };
 
@@ -190,9 +194,11 @@ struct is_scalar : is_scalar_impl<typename std::remove_cv<T>::type>::type
 
 //---------------------------------------------------------------------------//
 // Vector field.
-struct VectorBase {};
+struct VectorBase
+{
+};
 
-template<class T, int D>
+template <class T, int D>
 struct Vector : VectorBase
 {
     using value_type = T;
@@ -200,13 +206,15 @@ struct Vector : VectorBase
     static constexpr int size = D;
     static constexpr int dim0 = D;
     using data_type = value_type[D];
-    using linear_algebra_type = LinearAlgebra::VectorView<T,D>;
-    template<class U> using field_type = Vector<U,D>;
-    template<int NumSpaceDim> using gradient_type = Tensor<T,D,NumSpaceDim>;
+    using linear_algebra_type = LinearAlgebra::VectorView<T, D>;
+    template <class U>
+    using field_type = Vector<U, D>;
+    template <int NumSpaceDim>
+    using gradient_type = Tensor<T, D, NumSpaceDim>;
 };
 
 template <class T>
-struct is_vector_impl : std::is_base_of<VectorBase,T>
+struct is_vector_impl : std::is_base_of<VectorBase, T>
 {
 };
 
@@ -217,9 +225,11 @@ struct is_vector : is_vector_impl<typename std::remove_cv<T>::type>::type
 
 //---------------------------------------------------------------------------//
 // Tensor Field.
-struct TensorBase {};
+struct TensorBase
+{
+};
 
-template<class T, int D0, int D1>
+template <class T, int D0, int D1>
 struct Tensor : TensorBase
 {
     using value_type = T;
@@ -228,12 +238,13 @@ struct Tensor : TensorBase
     static constexpr int dim0 = D0;
     static constexpr int dim1 = D1;
     using data_type = value_type[D0][D1];
-    using linear_algebra_type = LinearAlgebra::MatrixView<T,D0,D1>;
-    template<class U> using field_type = Tensor<U,D0,D1>;
+    using linear_algebra_type = LinearAlgebra::MatrixView<T, D0, D1>;
+    template <class U>
+    using field_type = Tensor<U, D0, D1>;
 };
 
 template <class T>
-struct is_tensor_impl : std::is_base_of<TensorBase,T>
+struct is_tensor_impl : std::is_base_of<TensorBase, T>
 {
 };
 
@@ -248,7 +259,7 @@ struct is_tensor : is_tensor_impl<typename std::remove_cv<T>::type>::type
 // Wraps a Kokkos view of a structured grid scalar field at the given index
 // allowing for it to be treated as a scalar in a point-wise manner in kernel
 // operations without needing explicit dimension indices in the syntax.
-template<class View, class Layout>
+template <class View, class Layout>
 struct ScalarViewWrapper
 {
     using layout_type = Layout;
@@ -257,9 +268,8 @@ struct ScalarViewWrapper
     static constexpr int extent = layout_type::tag::size;
     static constexpr int rank = layout_type::tag::rank;
 
-    static_assert(
-        Field::is_scalar<typename layout_type::tag>::value,
-        "ScalarViewWrappers may only be applied to scalar fields" );
+    static_assert( Field::is_scalar<typename layout_type::tag>::value,
+                   "ScalarViewWrappers may only be applied to scalar fields" );
 
     View _v;
 
@@ -271,22 +281,22 @@ struct ScalarViewWrapper
     KOKKOS_INLINE_FUNCTION
     ScalarViewWrapper( const View& v )
         : _v( v )
-    {}
+    {
+    }
 
     // Access the view data through point-wise index arguments.
     KOKKOS_FORCEINLINE_FUNCTION
-    value_type&
-    operator()( const int i0, const int i1, const int i2 ) const
+    value_type& operator()( const int i0, const int i1, const int i2 ) const
     {
-        return _v(i0,i1,i2,0);
+        return _v( i0, i1, i2, 0 );
     }
 
     // Access the view data through full index arguments.
     KOKKOS_FORCEINLINE_FUNCTION
-    value_type&
-    operator()( const int i0, const int i1, const int i2, const int ) const
+    value_type& operator()( const int i0, const int i1, const int i2,
+                            const int ) const
     {
-        return _v(i0,i1,i2,0);
+        return _v( i0, i1, i2, 0 );
     }
 };
 
@@ -296,7 +306,7 @@ struct ScalarViewWrapper
 // Wraps a Kokkos view of a structured grid vector field at the given index
 // allowing for it to be treated as a vector in a point-wise manner in kernel
 // operations without needing explicit dimension indices in the syntax.
-template<class View, class Layout>
+template <class View, class Layout>
 struct VectorViewWrapper
 {
     using layout_type = Layout;
@@ -304,9 +314,8 @@ struct VectorViewWrapper
 
     static constexpr int dim0 = layout_type::tag::dim0;
 
-    static_assert(
-        Field::is_vector<typename layout_type::tag>::value,
-        "VectorViewWrappers may only be applied to vector fields" );
+    static_assert( Field::is_vector<typename layout_type::tag>::value,
+                   "VectorViewWrappers may only be applied to vector fields" );
 
     View _v;
 
@@ -318,23 +327,24 @@ struct VectorViewWrapper
     KOKKOS_INLINE_FUNCTION
     VectorViewWrapper( const View& v )
         : _v( v )
-    {}
+    {
+    }
 
     // Access the view data as a vector through point-wise index arguments.
     KOKKOS_FORCEINLINE_FUNCTION
-    LinearAlgebra::VectorView<value_type,dim0>
+    LinearAlgebra::VectorView<value_type, dim0>
     operator()( const int i0, const int i1, const int i2 ) const
     {
-        return LinearAlgebra::VectorView<value_type,dim0>(
-            &_v(i0,i1,i2,0), _v.stride(3) );
+        return LinearAlgebra::VectorView<value_type, dim0>(
+            &_v( i0, i1, i2, 0 ), _v.stride( 3 ) );
     }
 
     // Access the view data through full index arguments.
     KOKKOS_FORCEINLINE_FUNCTION
-    value_type&
-    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    value_type& operator()( const int i0, const int i1, const int i2,
+                            const int i3 ) const
     {
-        return _v(i0,i1,i2,i3);
+        return _v( i0, i1, i2, i3 );
     }
 };
 
@@ -344,7 +354,7 @@ struct VectorViewWrapper
 // Wraps a Kokkos view of a structured grid tensor field at the given index
 // allowing for it to be treated as a tensor in a point-wise manner in kernel
 // operations without needing explicit dimension indices in the syntax.
-template<class View, class Layout>
+template <class View, class Layout>
 struct TensorViewWrapper
 {
     using layout_type = Layout;
@@ -353,9 +363,8 @@ struct TensorViewWrapper
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
 
-    static_assert(
-        Field::is_tensor<typename layout_type::tag>::value,
-        "TensorViewWrappers may only be applied to tensor fields" );
+    static_assert( Field::is_tensor<typename layout_type::tag>::value,
+                   "TensorViewWrappers may only be applied to tensor fields" );
 
     View _v;
 
@@ -367,7 +376,8 @@ struct TensorViewWrapper
     KOKKOS_INLINE_FUNCTION
     TensorViewWrapper( const View& v )
         : _v( v )
-    {}
+    {
+    }
 
     // Access the view data as a tensor through point-wise index
     // arguments. Note here that because fields are stored as 4D objects the
@@ -378,58 +388,58 @@ struct TensorViewWrapper
     // [dim0][dim1][k][j][i] if layout-left. Note the difference in
     // layout-left where the dim0 and dim1 dimensions are switched.
     KOKKOS_FORCEINLINE_FUNCTION
-    LinearAlgebra::MatrixView<value_type,dim0,dim1>
+    LinearAlgebra::MatrixView<value_type, dim0, dim1>
     operator()( const int i0, const int i1, const int i2 ) const
     {
-        return LinearAlgebra::MatrixView<value_type,dim0,dim1>(
-            &_v(i0,i1,i2,0), dim1*_v.stride(3), _v.stride(3) );
+        return LinearAlgebra::MatrixView<value_type, dim0, dim1>(
+            &_v( i0, i1, i2, 0 ), dim1 * _v.stride( 3 ), _v.stride( 3 ) );
     }
 
     // Access the view data through full index arguments.
     KOKKOS_FORCEINLINE_FUNCTION
-    value_type&
-    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    value_type& operator()( const int i0, const int i1, const int i2,
+                            const int i3 ) const
     {
-        return _v(i0,i1,i2,i3);
+        return _v( i0, i1, i2, i3 );
     }
 };
 
 //---------------------------------------------------------------------------//
 // Field View Wrapper Creation
 //---------------------------------------------------------------------------//
-template<class View, class Layout>
+template <class View, class Layout>
 auto createViewWrapper(
     Layout, const View& view,
-    std::enable_if_t<Field::is_scalar<typename Layout::tag>::value,int*> = 0 )
+    std::enable_if_t<Field::is_scalar<typename Layout::tag>::value, int*> = 0 )
 {
-    return ScalarViewWrapper<View,Layout>( view );
+    return ScalarViewWrapper<View, Layout>( view );
 }
 
-template<class View, class Layout>
+template <class View, class Layout>
 auto createViewWrapper(
     Layout, const View& view,
-    std::enable_if_t<Field::is_vector<typename Layout::tag>::value,int*> = 0 )
+    std::enable_if_t<Field::is_vector<typename Layout::tag>::value, int*> = 0 )
 {
-    return VectorViewWrapper<View,Layout>( view );
+    return VectorViewWrapper<View, Layout>( view );
 }
 
-template<class View, class Layout>
+template <class View, class Layout>
 auto createViewWrapper(
     Layout, const View& view,
-    std::enable_if_t<Field::is_tensor<typename Layout::tag>::value,int*> = 0 )
+    std::enable_if_t<Field::is_tensor<typename Layout::tag>::value, int*> = 0 )
 {
-    return TensorViewWrapper<View,Layout>( view );
+    return TensorViewWrapper<View, Layout>( view );
 }
 
 //---------------------------------------------------------------------------//
 // Fields
 //---------------------------------------------------------------------------//
-struct PhysicalPosition : Vector<double,3>
+struct PhysicalPosition : Vector<double, 3>
 {
     static std::string label() { return "physical_position"; }
 };
 
-struct LogicalPosition : Vector<double,3>
+struct LogicalPosition : Vector<double, 3>
 {
     static std::string label() { return "logical_position"; }
 };

@@ -15,6 +15,6 @@
 #define TEST_CATEGORY cuda
 #define TEST_EXECSPACE Kokkos::Cuda
 #define TEST_MEMSPACE Kokkos::CudaSpace
-#define TEST_DEVICE Kokkos::Device<TEST_EXECSPACE,TEST_MEMSPACE>
+#define TEST_DEVICE Kokkos::Device<TEST_EXECSPACE, TEST_MEMSPACE>
 
 #endif // end PICASSO_TEST_CUDA_CATEGORY_HPP
