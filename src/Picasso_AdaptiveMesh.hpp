@@ -130,7 +130,7 @@ class AdaptiveMesh
 
         // Create the partitioner.
         const auto& part_params = mesh_params.get_child( "partitioner" );
-        std::shared_ptr<Cajita::Partitioner> partitioner;
+        std::shared_ptr<Cajita::BlockPartitioner<3>> partitioner;
         if ( part_params.get<std::string>( "type" ).compare( "uniform_dim" ) ==
              0 )
         {
