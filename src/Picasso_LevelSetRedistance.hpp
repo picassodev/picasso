@@ -210,7 +210,7 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
         Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues,
                                       Cajita::SplineWeightPhysicalGradients,
                                       Cajita::SplinePhysicalCellSize>;
-    Cajita::SplineData<double, 1, EntityType, SplineTags> sd;
+    Cajita::SplineData<double, 1, 3, EntityType, SplineTags> sd;
 
     // Random number generator.
     using rand_type =

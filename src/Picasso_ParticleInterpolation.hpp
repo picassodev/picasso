@@ -95,7 +95,7 @@ createSpline( Location, Order, const LocalMesh& local_mesh,
     // operator() of the input point data for interpolation.
     typename PositionVector::value_type x[3] = { position( 0 ), position( 1 ),
                                                  position( 2 ) };
-    Cajita::SplineData<typename PositionVector::value_type, Order::value,
+    Cajita::SplineData<typename PositionVector::value_type, Order::value, 3,
                        typename Location::entity_type,
                        Cajita::SplineDataMemberTypes<
                            typename SplineMembers::spline_data_member...>>
