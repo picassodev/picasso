@@ -249,8 +249,8 @@ void gatherScatterTest()
     auto bar_out_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), BarOut() ) );
     Cajita::grid_parallel_for(
-        "check_grid_out", Kokkos::Serial(), *( mesh->localGrid() ),
-        Cajita::Own(), Cajita::Cell(),
+        "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             for ( int d = 0; d < 3; ++d )
                 EXPECT_EQ( foo_out_host( i, j, k, d ), ppc * 2.0 );
@@ -268,8 +268,8 @@ void gatherScatterTest()
     Kokkos::deep_copy( bar_out_host,
                        fm->view( FieldLocation::Cell(), BarOut() ) );
     Cajita::grid_parallel_for(
-        "check_grid_out", Kokkos::Serial(), *( mesh->localGrid() ),
-        Cajita::Own(), Cajita::Cell(),
+        "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             for ( int d = 0; d < 3; ++d )
                 EXPECT_EQ( foo_out_host( i, j, k, d ), 4.0 + i + j + k );

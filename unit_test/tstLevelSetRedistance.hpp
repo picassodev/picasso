@@ -98,7 +98,9 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     auto host_mesh =
         Cajita::createLocalMesh<Kokkos::HostSpace>( *( mesh->localGrid() ) );
     Kokkos::parallel_for(
-        "test", Cajita::createExecutionPolicy( own_entities, Kokkos::Serial() ),
+        "test",
+        Cajita::createExecutionPolicy( own_entities,
+                                       Kokkos::DefaultHostExecutionSpace() ),
         [=]( const int i, const int j, const int k ) {
             // Get the entity index.
             int entity_index[3] = { i, j, k };
