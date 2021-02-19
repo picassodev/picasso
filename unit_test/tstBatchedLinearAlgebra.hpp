@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <array>
 #include <random>
 
 using namespace Picasso;
@@ -823,6 +825,43 @@ void eigendecompositionTest()
 }
 
 //---------------------------------------------------------------------------//
+// Test a matrix for which the KokkosKernels eigendecomposition gives the wrong
+// answer.
+//---------------------------------------------------------------------------//
+void eigendecompositionTestBad()
+{
+    LinearAlgebra::Matrix<double, 5, 5> A = { { 0.5, 0.0, 2.5, 0.0, 0.0 },
+                                              { 0.0, 0.5, 0.0, 0.0, 0.0 },
+                                              { 0.0, 0.0, 0.5, 0.0, 0.4 },
+                                              { 0.0, 0.0, 0.0, 0.5, 0.0 },
+                                              { 0.0, 0.0, 1.05, 0.0, 0.5 } };
+
+    LinearAlgebra::Vector<double, 5> e_real;
+    LinearAlgebra::Vector<double, 5> e_imag;
+    LinearAlgebra::Matrix<double, 5, 5> u_left;
+    LinearAlgebra::Matrix<double, 5, 5> u_right;
+
+    LinearAlgebra::eigendecomposition( A, e_real, e_imag, u_left, u_right );
+
+    // All eigenvalues should be real
+    for ( int i = 0; i < 5; ++i )
+        EXPECT_EQ( 0.0, e_imag( i ) ) << "i = " << i;
+
+    // Sort eigenvalues
+    std::array<double, 5> sorted_e_real;
+    for ( int i = 0; i < 5; ++i )
+        sorted_e_real[i] = e_real( i );
+    std::sort( sorted_e_real.begin(), sorted_e_real.end() );
+
+    // Test sorted eigenvalues
+    EXPECT_DOUBLE_EQ( -0.14807406984078597, sorted_e_real[0] );
+    EXPECT_DOUBLE_EQ( 0.5, sorted_e_real[1] );
+    EXPECT_DOUBLE_EQ( 0.5, sorted_e_real[2] );
+    EXPECT_DOUBLE_EQ( 0.5, sorted_e_real[3] );
+    EXPECT_DOUBLE_EQ( 1.148074069840786, sorted_e_real[4] );
+}
+
+//---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
 TEST( TEST_CATEGORY, matrix_test ) { matrixTest(); }
@@ -866,6 +905,11 @@ TEST( TEST_CATEGORY, kernelTest )
 }
 
 TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }
+
+TEST( TEST_CATEGORY, eigendecomposition_test_bad )
+{
+    eigendecompositionTestBad();
+}
 
 //---------------------------------------------------------------------------//
 
