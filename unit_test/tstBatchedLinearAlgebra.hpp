@@ -711,7 +711,6 @@ void kernelTest()
 }
 
 //---------------------------------------------------------------------------//
-/*
 void eigendecompositionTest()
 {
     LinearAlgebra::Matrix<double, 4, 4> A = {
@@ -822,7 +821,6 @@ void eigendecompositionTest()
         for ( int j = 0; j < 4; ++j )
             EXPECT_FLOAT_EQ( A( i, j ), l_op_ident( i, j ) );
 }
-*/
 
 //---------------------------------------------------------------------------//
 // RUN TESTS
@@ -867,8 +865,7 @@ TEST( TEST_CATEGORY, kernelTest )
     kernelTest<20>();
 }
 
-// FIXME_KOKKOSKERNELS
-// TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }
+TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }
 
 //---------------------------------------------------------------------------//
 
