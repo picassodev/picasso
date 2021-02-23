@@ -1,0 +1,10 @@
+{
+    "mesh": {
+        "global_num_cell": [40, 40, 40],
+        "periodic": [true, true, true],
+        "partitioner": {
+            "type": "uniform_dim"
+        },
+        "halo_cell_width": 2
+    }
+}

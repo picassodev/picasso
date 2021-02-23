@@ -1499,18 +1499,19 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // Matrix inverse.
 //---------------------------------------------------------------------------//
-// 2x2 specialization.
+// 2x2 specialization with determinant given.
 template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
     typename std::enable_if_t<is_matrix<ExpressionA>::value &&
                                   ExpressionA::extent_0 == 2 &&
                                   ExpressionA::extent_1 == 2,
                               typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a )
+    inverse( const ExpressionA& a,
+             const typename ExpressionA::value_type a_det )
 {
     typename ExpressionA::eval_type a_eval = a;
 
-    auto a_det_inv = 1.0 / !a_eval;
+    auto a_det_inv = 1.0 / a_det;
 
     Matrix<typename ExpressionA::value_type, 2, 2> a_inv;
 
@@ -1523,18 +1524,33 @@ KOKKOS_INLINE_FUNCTION
 }
 
 //---------------------------------------------------------------------------//
-// 3x3 specialization.
+// 2x2 specialization.
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                  ExpressionA::extent_0 == 2 &&
+                                  ExpressionA::extent_1 == 2,
+                              typename ExpressionA::copy_type>
+    inverse( const ExpressionA& a )
+{
+    typename ExpressionA::eval_type a_eval = a;
+    return inverse( a_eval, !a_eval );
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization with determinant given.
 template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION
     typename std::enable_if_t<is_matrix<ExpressionA>::value &&
                                   ExpressionA::extent_0 == 3 &&
                                   ExpressionA::extent_1 == 3,
                               typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a )
+    inverse( const ExpressionA& a,
+             const typename ExpressionA::value_type a_det )
 {
     typename ExpressionA::eval_type a_eval = a;
 
-    auto a_det_inv = 1.0 / !a_eval;
+    auto a_det_inv = 1.0 / a_det;
 
     Matrix<typename ExpressionA::value_type, 3, 3> a_inv;
 
@@ -1569,6 +1585,20 @@ KOKKOS_INLINE_FUNCTION
         a_det_inv;
 
     return a_inv;
+}
+
+//---------------------------------------------------------------------------//
+// 3x3 specialization.
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                  ExpressionA::extent_0 == 3 &&
+                                  ExpressionA::extent_1 == 3,
+                              typename ExpressionA::copy_type>
+    inverse( const ExpressionA& a )
+{
+    typename ExpressionA::eval_type a_eval = a;
+    return inverse( a_eval, !a_eval );
 }
 
 //---------------------------------------------------------------------------//

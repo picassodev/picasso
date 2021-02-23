@@ -40,6 +40,8 @@ class UniformMesh
 
     using local_grid = Cajita::LocalGrid<cajita_mesh>;
 
+    static constexpr std::size_t num_space_dim = 3;
+
     // Construct a mesh manager from the problem bounding box and a property
     // tree.
     UniformMesh( const boost::property_tree::ptree& ptree,

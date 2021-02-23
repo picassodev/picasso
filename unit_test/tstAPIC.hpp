@@ -566,9 +566,9 @@ void collocatedTest()
     double pz = -3.34;
 
     // Particle cell location.
-    int cx = 118;
-    int cy = 83;
-    int cz = 93;
+    int cx = 120;
+    int cy = 85;
+    int cz = 95;
 
     // Particle velocity.
     Kokkos::View<double[3], TEST_MEMSPACE> pu( "pu" );
@@ -583,10 +583,13 @@ void collocatedTest()
         "fill_grid_vector", TEST_EXECSPACE(),
         grid_vector->layout()->indexSpace( Cajita::Own(), Cajita::Local() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int d ) {
-            gv_view( i, j, k, d ) = 0.0000000001 * ( d + 1 ) * pow( i, 5 ) -
-                                    0.0000000012 * pow( ( d + 1 ) + j * i, 3 ) +
-                                    0.0000000001 * pow( i * j * k, 2 ) +
-                                    pow( ( d + 1 ), 2 );
+            int ic = i - 2;
+            int jc = j - 2;
+            int kc = k - 2;
+            gv_view( i, j, k, d ) =
+                0.0000000001 * ( d + 1 ) * pow( ic, 5 ) -
+                0.0000000012 * pow( ( d + 1 ) + jc * ic, 3 ) +
+                0.0000000001 * pow( ic * jc * kc, 2 ) + pow( ( d + 1 ), 2 );
         } );
 
     // Check the grid velocity. Computed in Mathematica.
@@ -740,9 +743,9 @@ void staggeredTest()
     double pz = -3.34;
 
     // Particle cell location.
-    int cx = 118;
-    int cy = 83;
-    int cz = 93;
+    int cx = 120;
+    int cy = 85;
+    int cz = 95;
 
     // Particle velocity.
     Kokkos::View<double[3], TEST_MEMSPACE> pu( "pu" );
@@ -757,10 +760,13 @@ void staggeredTest()
         "fill_grid_scalar", TEST_EXECSPACE(),
         grid_scalar->layout()->indexSpace( Cajita::Own(), Cajita::Local() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int ) {
+            int ic = i - 2;
+            int jc = j - 2;
+            int kc = k - 2;
             gs_view( i, j, k, 0 ) =
-                0.0000000001 * ( Dim + 1 ) * pow( i, 5 ) -
-                0.0000000012 * pow( ( Dim + 1 ) + j * i, 3 ) +
-                0.0000000001 * pow( i * j * k, 2 ) + pow( ( Dim + 1 ), 2 );
+                0.0000000001 * ( Dim + 1 ) * pow( ic, 5 ) -
+                0.0000000012 * pow( ( Dim + 1 ) + jc * ic, 3 ) +
+                0.0000000001 * pow( ic * jc * kc, 2 ) + pow( ( Dim + 1 ), 2 );
         } );
 
     // Check the grid velocity. Computed in Mathematica.

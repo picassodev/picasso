@@ -14,11 +14,20 @@
 
 #include <Cajita.hpp>
 
+#include <type_traits>
+
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Logical dimension index.
 using Dim = Cajita::Dim;
+
+//---------------------------------------------------------------------------//
+// Spatial dimension selector.
+template <std::size_t N>
+struct SpaceDim : public std::integral_constant<std::size_t, N>
+{
+};
 
 //---------------------------------------------------------------------------//
 

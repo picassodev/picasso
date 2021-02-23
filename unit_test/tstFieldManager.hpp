@@ -41,7 +41,7 @@ void checkGather( const View& view, const IndexSpace& index_space,
 void uniformTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "uniform_mesh_test_1.json", "json" );
+    InputParser parser( "field_manager_test.json", "json" );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 0;
@@ -147,7 +147,7 @@ void uniformTest()
 void adaptiveTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "adaptive_mesh_test_1.json", "json" );
+    InputParser parser( "field_manager_test.json", "json" );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 1;
