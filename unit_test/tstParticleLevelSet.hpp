@@ -114,9 +114,9 @@ void zalesaksTest( const std::string& filename )
     level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
     // Write the initial level set.
-    Cajita::BovWriter::Experimental::writeTimeStep(
+    Cajita::Experimental::BovWriter::writeTimeStep(
         0, time, *( level_set->levelSet()->getDistanceEstimate() ) );
-    Cajita::BovWriter::Experimental::writeTimeStep(
+    Cajita::Experimental::BovWriter::writeTimeStep(
         0, time, *( level_set->levelSet()->getSignedDistance() ) );
 
     // Advect the disk one full rotation.
@@ -187,9 +187,9 @@ void zalesaksTest( const std::string& filename )
         level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
         // Write the level set.
-        Cajita::BovWriter::Experimental::writeTimeStep(
+        Cajita::Experimental::BovWriter::writeTimeStep(
             t + 1, time, *( level_set->levelSet()->getDistanceEstimate() ) );
-        Cajita::BovWriter::Experimental::writeTimeStep(
+        Cajita::Experimental::BovWriter::writeTimeStep(
             t + 1, time, *( level_set->levelSet()->getSignedDistance() ) );
     }
 }
