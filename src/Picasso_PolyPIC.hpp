@@ -34,12 +34,15 @@ namespace PolyPIC
 // ---------------------------------------------------------------------------//
 // Interpolate mass-weighted particle field and mass to a collocated
 // grid. (First order splines). Requires SplineValue, SplineDistance when
-// constructing the spline data.
-template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+// constructing the spline data. Note: The reconstructed particle field could
+// be the particle velocity. The given particle velocity must use same shape
+// functions and PolyPIC decomposition as the field to be reconstructed.
+template <class ParticleMass, class ParticleVelocity, class ParticleField,
+          class SplineDataType, class GridField, class GridMass>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const double dt, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleVelocity& u_p,
+     const ParticleField& c_p, const GridField& mu_i, const GridMass& m_i,
+     const double dt, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
              Cajita::isCell<typename SplineDataType::entity_type>::value ) &&
@@ -62,6 +65,12 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
+    static_assert( 8 == ParticleVelocity::extent_0,
+                   "PolyPIC with linear basis requires 8 modes" );
+
+    static_assert( 3 == ParticleVelocity::extent_1,
+                   "PolyPIC requires 3 space dimensions" );
+
     static_assert( 8 == ParticleField::extent_0,
                    "PolyPIC with linear basis requires 8 modes" );
 
@@ -70,9 +79,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     // Affine material motion operator.
     Mat3<value_type> am_p = {
-        { 1.0 + dt * c_p( 1, 0 ), dt * c_p( 1, 1 ), dt * c_p( 1, 2 ) },
-        { dt * c_p( 2, 0 ), 1.0 + dt * c_p( 2, 1 ), dt * c_p( 2, 2 ) },
-        { dt * c_p( 3, 0 ), dt * c_p( 3, 1 ), 1.0 + dt * c_p( 3, 2 ) } };
+        { 1.0 + dt * u_p( 1, 0 ), dt * u_p( 1, 1 ), dt * u_p( 1, 2 ) },
+        { dt * u_p( 2, 0 ), 1.0 + dt * u_p( 2, 1 ), dt * u_p( 2, 2 ) },
+        { dt * u_p( 3, 0 ), dt * u_p( 3, 1 ), 1.0 + dt * u_p( 3, 2 ) } };
 
     // Invert the affine operator.
     auto am_inv_p = LinearAlgebra::inverse( am_p );
@@ -123,12 +132,15 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 //---------------------------------------------------------------------------//
 // Interpolate mass-weighted particle field and mass to a staggered grid. (First
 // order splines). Requires SplineValue and SplineDistance when constructing
-// the spline data.
-template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+// the spline data. Note: The reconstructed particle field could
+// be the particle velocity. The given particle velocity must use same shape
+// functions and PolyPIC decomposition as the field to be reconstructed.
+template <class ParticleMass, class ParticleVelocity, class ParticleField,
+          class SplineDataType, class GridField, class GridMass>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const double dt, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleVelocity& u_p,
+     const ParticleField& c_p, const GridField& mu_i, const GridMass& m_i,
+     const double dt, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isFace<typename SplineDataType::entity_type>::value ||
              Cajita::isEdge<typename SplineDataType::entity_type>::value ) &&
@@ -151,6 +163,12 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
+    static_assert( 8 == ParticleVelocity::extent_0,
+                   "PolyPIC with linear basis requires 8 modes" );
+
+    static_assert( 3 == ParticleVelocity::extent_1,
+                   "PolyPIC requires 3 space dimensions" );
+
     static_assert( 8 == ParticleField::extent_0,
                    "PolyPIC with linear basis requires 8 modes" );
 
@@ -163,9 +181,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     // Affine material motion operator.
     Mat3<value_type> am_p = {
-        { 1.0 + dt * c_p( 1, 0 ), dt * c_p( 1, 1 ), dt * c_p( 1, 2 ) },
-        { dt * c_p( 2, 0 ), 1.0 + dt * c_p( 2, 1 ), dt * c_p( 2, 2 ) },
-        { dt * c_p( 3, 0 ), dt * c_p( 3, 1 ), 1.0 + dt * c_p( 3, 2 ) } };
+        { 1.0 + dt * u_p( 1, 0 ), dt * u_p( 1, 1 ), dt * u_p( 1, 2 ) },
+        { dt * u_p( 2, 0 ), 1.0 + dt * u_p( 2, 1 ), dt * u_p( 2, 2 ) },
+        { dt * u_p( 3, 0 ), dt * u_p( 3, 1 ), 1.0 + dt * u_p( 3, 2 ) } };
 
     // Invert the affine operator.
     auto am_inv_p = LinearAlgebra::inverse( am_p );

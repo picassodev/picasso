@@ -310,7 +310,7 @@ void collocatedTest()
                 for ( int d = 0; d < 3; ++d )
                     modes( r, d ) = pc( r, d );
 
-            PolyPIC::p2g( pm, modes, gv_sv, gm_sv, dt, sd );
+            PolyPIC::p2g( pm, modes, modes, gv_sv, gm_sv, dt, sd );
         } );
     Kokkos::Experimental::contribute( gv_view, gv_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
@@ -476,7 +476,7 @@ void staggeredTest()
                 for ( int d = 0; d < 3; ++d )
                     modes( r, d ) = pc( r, d );
 
-            PolyPIC::p2g( pm, modes, gs_sv, gm_sv, dt, sd );
+            PolyPIC::p2g( pm, modes, modes, gs_sv, gm_sv, dt, sd );
         } );
     Kokkos::Experimental::contribute( gs_view, gs_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
