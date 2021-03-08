@@ -20,7 +20,7 @@ jobs:
         cmake_build_type: ['Debug', 'Release']
         kokkos_ver: ['3.2.01', 'master', 'develop']
     runs-on: ubuntu-20.04
-    container: ghcr.io/kokkos/ci-containers/${{ matrix.distro }}
+    container: ghcr.io/ecp-copa/ci-containers/${{ matrix.distro }}
     steps:
       - name: Get trail license
         if: ${{ matrix.cxx == 'icpc' }}
