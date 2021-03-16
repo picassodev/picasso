@@ -314,6 +314,12 @@ void vectorTest()
     q -= d;
     for ( int i = 0; i < 3; ++i )
         EXPECT_DOUBLE_EQ( q( i ), 32.3 );
+
+    // Check diagonal matrix construction.
+    auto q_diag = LinearAlgebra::diagonal( q );
+    for ( int i = 0; i < 3; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_DOUBLE_EQ( q_diag( i, j ), ( i == j ) ? q( i ) : 0.0 );
 }
 
 //---------------------------------------------------------------------------//

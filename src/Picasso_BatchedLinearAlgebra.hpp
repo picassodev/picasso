@@ -1497,6 +1497,22 @@ KOKKOS_INLINE_FUNCTION
 }
 
 //---------------------------------------------------------------------------//
+// Diagonal matrix.
+//---------------------------------------------------------------------------//
+template <class ExpressionX,
+          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
+{
+    return createMatrixExpression<typename ExpressionX::value_type,
+                                  ExpressionX::extent_0, ExpressionX::extent_0>(
+        [=]( const int i, const int j ) {
+            return ( i == j ) ? x( i )
+                              : Kokkos::ArithTraits<
+                                    typename ExpressionX::value_type>::zero();
+        } );
+}
+
+//---------------------------------------------------------------------------//
 // Matrix inverse.
 //---------------------------------------------------------------------------//
 // 2x2 specialization with determinant given.
