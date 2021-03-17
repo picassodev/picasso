@@ -16,6 +16,8 @@
 
 #include <Cajita.hpp>
 
+#include <Cabana_Core.hpp>
+
 #include <Kokkos_Core.hpp>
 
 #include <sstream>
@@ -70,7 +72,7 @@ struct FieldLayout
 template <class Views, class... Layouts>
 struct FieldViewTuple
 {
-    static_assert( Cajita::is_parameter_pack<Views>::value,
+    static_assert( Cabana::is_parameter_pack<Views>::value,
                    "Views must be in a Cajita::ParameterPack" );
 
     Views _views;
@@ -78,7 +80,7 @@ struct FieldViewTuple
     template <class Location, class FieldTag>
     KOKKOS_INLINE_FUNCTION const auto& get( Location, FieldTag ) const
     {
-        return Cajita::get<
+        return Cabana::get<
             TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
             _views );
     }
@@ -86,7 +88,7 @@ struct FieldViewTuple
     template <class Location, class FieldTag>
     KOKKOS_INLINE_FUNCTION auto& get( Location, FieldTag )
     {
-        return Cajita::get<
+        return Cabana::get<
             TypeIndexer<FieldLayout<Location, FieldTag>, Layouts...>::index>(
             _views );
     }
