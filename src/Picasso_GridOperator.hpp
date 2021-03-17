@@ -505,7 +505,7 @@ class GridOperator
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cajita::makeParameterPack( Field::createViewWrapper(
+        auto views = Cabana::makeParameterPack( Field::createViewWrapper(
             Layouts(), fm.view( typename Layouts::location(),
                                 typename Layouts::tag() ) )... );
 
@@ -537,7 +537,7 @@ class GridOperator
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list and expands it as a parameter
         // pack.
-        auto scatter_views = Cajita::makeParameterPack(
+        auto scatter_views = Cabana::makeParameterPack(
             Kokkos::Experimental::create_scatter_view( fm.view(
                 typename Layouts::location(), typename Layouts::tag() ) )... );
 
@@ -557,7 +557,7 @@ class GridOperator
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cajita::makeParameterPack( Field::createViewWrapper(
+        auto views = Cabana::makeParameterPack( Field::createViewWrapper(
             Layouts(), fm.view( typename Layouts::location(),
                                 typename Layouts::tag() ) )... );
 
@@ -579,7 +579,7 @@ class GridOperator
         // non-const reference to a temporary. Create a parameter pack of
         // views. The use of (...) here gets a view of each field in the
         // layout list and expands it as a parameter pack.
-        auto view_pack = Cajita::makeParameterPack( fm.view(
+        auto view_pack = Cabana::makeParameterPack( fm.view(
             typename Layouts::location(), typename Layouts::tag() )... );
 
         // Assign the parameter pack to the dependency fields.

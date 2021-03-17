@@ -70,11 +70,11 @@ class FieldManager
     using mesh_type = Mesh;
 
   public:
-    // Uniform Mesh constructor.
+    // Non-adaptive mesh constructor.
     template <class M = Mesh>
     FieldManager(
         const std::shared_ptr<M>& mesh,
-        typename std::enable_if<is_uniform_mesh<M>::value>::type* = 0 )
+        typename std::enable_if<!is_adaptive_mesh<M>::value>::type* = 0 )
         : _mesh( mesh )
     {
     }
@@ -96,12 +96,13 @@ class FieldManager
         handle->halo =
             Cajita::createHalo<typename Field::PhysicalPosition::value_type,
                                typename Mesh::memory_space>(
-                *( handle->array->layout() ), Cajita::FullHaloPattern() );
+                *( handle->array->layout() ),
+                Cajita::NodeHaloPattern<Mesh::num_space_dim>() );
         _fields.emplace( key, handle );
     }
 
     // Get the mesh.
-    const Mesh& mesh() const { return _mesh; }
+    const Mesh& mesh() const { return *_mesh; }
 
     // Add a field. The field will be allocated and a halo created if it does
     // not already exist.
@@ -166,7 +167,8 @@ class FieldManager
         handle->array = createArray( *_mesh, location, tag );
         handle->halo = Cajita::createHalo<typename FieldTag::value_type,
                                           typename Mesh::memory_space>(
-            *( handle->array->layout() ), Cajita::FullHaloPattern() );
+            *( handle->array->layout() ),
+            Cajita::NodeHaloPattern<Mesh::num_space_dim>() );
         return handle;
     }
 

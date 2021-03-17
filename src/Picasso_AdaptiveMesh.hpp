@@ -42,6 +42,8 @@ class AdaptiveMesh
     using node_array = Cajita::Array<double, Cajita::Node,
                                      Cajita::UniformMesh<double>, MemorySpace>;
 
+    static constexpr std::size_t num_space_dim = 3;
+
     // Construct an adaptive mesh from the problem bounding box and a property
     // tree.
     template <class ExecutionSpace>
