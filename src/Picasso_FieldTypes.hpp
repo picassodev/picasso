@@ -476,6 +476,16 @@ struct CommRank : Scalar<int>
     static std::string label() { return "comm_rank"; }
 };
 
+struct PolyPicScalar : Tensor<double, 8, 1>
+{
+    static std::string label() { return "poly_pic_scalar"; }
+};
+
+struct PolyPicVelocity : Tensor<double, 8, 3>
+{
+    static std::string label() { return "poly_pic_velocity"; }
+};
+
 //---------------------------------------------------------------------------//
 
 } // end namespace Field
