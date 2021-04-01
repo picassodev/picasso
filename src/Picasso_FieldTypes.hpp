@@ -265,10 +265,12 @@ template <class View, class Layout>
 struct ScalarViewWrapper
 {
     using layout_type = Layout;
-    using value_type = typename layout_type::tag::value_type;
+    using field_tag = typename layout_type::tag;
+    using field_location = typename layout_type::location;
+    using value_type = typename field_tag::value_type;
+    using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int extent = layout_type::tag::size;
-    static constexpr int rank = layout_type::tag::rank;
+    static constexpr int view_rank = View::Rank;
 
     static_assert( Field::is_scalar<typename layout_type::tag>::value,
                    "ScalarViewWrappers may only be applied to scalar fields" );
@@ -287,18 +289,33 @@ struct ScalarViewWrapper
     }
 
     // Access the view data through point-wise index arguments.
-    KOKKOS_FORCEINLINE_FUNCTION
-    value_type& operator()( const int i0, const int i1, const int i2 ) const
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type&>
+    operator()( const int i0, const int i1, const int i2 ) const
     {
         return _v( i0, i1, i2, 0 );
     }
 
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type&>
+    operator()( const int i0, const int i1 ) const
+    {
+        return _v( i0, i1, 0 );
+    }
+
     // Access the view data through full index arguments.
-    KOKKOS_FORCEINLINE_FUNCTION
-    value_type& operator()( const int i0, const int i1, const int i2,
-                            const int ) const
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2, const int ) const
     {
         return _v( i0, i1, i2, 0 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
+    operator()( const int i0, const int i1, const int ) const
+    {
+        return _v( i0, i1, 0 );
     }
 };
 
@@ -312,7 +329,12 @@ template <class View, class Layout>
 struct VectorViewWrapper
 {
     using layout_type = Layout;
+    using field_tag = typename layout_type::tag;
+    using field_location = typename layout_type::location;
     using value_type = typename layout_type::tag::value_type;
+    using linear_algebra_type = typename field_tag::linear_algebra_type;
+
+    static constexpr int view_rank = View::Rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
 
@@ -333,20 +355,33 @@ struct VectorViewWrapper
     }
 
     // Access the view data as a vector through point-wise index arguments.
-    KOKKOS_FORCEINLINE_FUNCTION
-    LinearAlgebra::VectorView<value_type, dim0>
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
     operator()( const int i0, const int i1, const int i2 ) const
     {
-        return LinearAlgebra::VectorView<value_type, dim0>(
-            &_v( i0, i1, i2, 0 ), _v.stride( 3 ) );
+        return linear_algebra_type( &_v( i0, i1, i2, 0 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1 ) const
+    {
+        return linear_algebra_type( &_v( i0, i1, 0 ), _v.stride( 2 ) );
     }
 
     // Access the view data through full index arguments.
-    KOKKOS_FORCEINLINE_FUNCTION
-    value_type& operator()( const int i0, const int i1, const int i2,
-                            const int i3 ) const
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
     {
         return _v( i0, i1, i2, i3 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        return _v( i0, i1, i2 );
     }
 };
 
@@ -360,7 +395,12 @@ template <class View, class Layout>
 struct TensorViewWrapper
 {
     using layout_type = Layout;
+    using field_tag = typename layout_type::tag;
+    using field_location = typename layout_type::location;
     using value_type = typename layout_type::tag::value_type;
+    using linear_algebra_type = typename field_tag::linear_algebra_type;
+
+    static constexpr int view_rank = View::Rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
@@ -389,20 +429,35 @@ struct TensorViewWrapper
     // ordered as [i][j][k][dim0][dim1] if layout-right and
     // [dim0][dim1][k][j][i] if layout-left. Note the difference in
     // layout-left where the dim0 and dim1 dimensions are switched.
-    KOKKOS_FORCEINLINE_FUNCTION
-    LinearAlgebra::MatrixView<value_type, dim0, dim1>
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
     operator()( const int i0, const int i1, const int i2 ) const
     {
-        return LinearAlgebra::MatrixView<value_type, dim0, dim1>(
-            &_v( i0, i1, i2, 0 ), dim1 * _v.stride( 3 ), _v.stride( 3 ) );
+        return linear_algebra_type( &_v( i0, i1, i2, 0 ), dim1 * _v.stride( 3 ),
+                                    _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1 ) const
+    {
+        return linear_algebra_type( &_v( i0, i1, 0 ), dim1 * _v.stride( 2 ),
+                                    _v.stride( 2 ) );
     }
 
     // Access the view data through full index arguments.
-    KOKKOS_FORCEINLINE_FUNCTION
-    value_type& operator()( const int i0, const int i1, const int i2,
-                            const int i3 ) const
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
     {
         return _v( i0, i1, i2, i3 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        return _v( i0, i1, i2 );
     }
 };
 
