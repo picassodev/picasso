@@ -32,6 +32,11 @@ find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 
+# FIXME_KOKKOSKERNELS (build with external or Trillinos kokkos-kernels)
+if(NOT TARGET Kokkos::kokkoskernels)
+  add_library(Kokkos::kokkoskernels ALIAS kokkoskernels)
+endif()
+
 # find dependencies (from Cabana CMakeLists.txt)
 macro(Picasso_add_dependency)
   cmake_parse_arguments(PICASSO_DEPENDENCY "" "PACKAGE" "" ${ARGN})
