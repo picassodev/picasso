@@ -169,7 +169,8 @@ Picasso_add_tests(MPI NAMES
   UniformMesh
   AdaptiveMesh
   FieldManager
-  GridOperator
+  GridOperator3d
+  GridOperator2d
   ParticleInterpolation
   LevelSetRedistance
   ParticleLevelSet)

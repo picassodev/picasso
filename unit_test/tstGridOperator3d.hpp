@@ -95,7 +95,7 @@ struct ParticleFunc
         // Zero-order cell interpolant.
         auto spline = createSpline(
             FieldLocation::Cell(), InterpolationOrder<0>(), local_mesh,
-            get( particle, Field::LogicalPosition() ), SplineValue() );
+            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
 
         // Interpolate to the particles.
         G2P::value( spline, foo_in, foop );
@@ -182,7 +182,7 @@ void gatherScatterTest()
 
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::LogicalPosition, FooP, BarP>;
+                                   Field::LogicalPosition<3>, FooP, BarP>;
     list_type particles( "test_particles", mesh );
     using particle_type = typename list_type::particle_type;
 
@@ -191,7 +191,7 @@ void gatherScatterTest()
         KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition(), d ) = x[d];
+            get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 

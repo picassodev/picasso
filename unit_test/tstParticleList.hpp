@@ -51,7 +51,7 @@ void particleTest()
 
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition, Foo,
+        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>, Foo,
                      Field::Color, Bar>;
 
     list_type particles( "test_particles", mesh );
@@ -63,7 +63,7 @@ void particleTest()
     EXPECT_EQ( particles.aosoa().size(), 10 );
 
     // Populate fields.
-    auto px = particles.slice( Field::LogicalPosition() );
+    auto px = particles.slice( Field::LogicalPosition<3>() );
     auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
     auto pf = particles.slice( Bar() );
@@ -107,7 +107,7 @@ void particleTest()
             typename list_type::particle_type particle( aosoa.getTuple( p ) );
 
             for ( int d = 0; d < 3; ++d )
-                get( particle, Field::LogicalPosition(), d ) += p + d;
+                get( particle, Field::LogicalPosition<3>(), d ) += p + d;
 
             get( particle, Foo() ) += p;
 
@@ -152,7 +152,7 @@ void particleViewTest()
 
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition, Foo,
+        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>, Foo,
                      Field::Color, Bar>;
 
     list_type particles( "test_particles", mesh );
@@ -164,7 +164,7 @@ void particleViewTest()
     EXPECT_EQ( particles.aosoa().size(), 10 );
 
     // Populate fields.
-    auto px = particles.slice( Field::LogicalPosition() );
+    auto px = particles.slice( Field::LogicalPosition<3>() );
     auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
     auto pf = particles.slice( Bar() );
@@ -213,7 +213,7 @@ void particleViewTest()
                                                              a );
 
             for ( int d = 0; d < 3; ++d )
-                get( particle, Field::LogicalPosition(), d ) += p + d;
+                get( particle, Field::LogicalPosition<3>(), d ) += p + d;
 
             get( particle, Foo() ) += p;
 
@@ -256,7 +256,7 @@ void linearAlgebraTest()
 
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition, Foo,
+        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>, Foo,
                      Field::Color, Bar>;
 
     list_type particles( "test_particles", mesh );
@@ -268,7 +268,7 @@ void linearAlgebraTest()
     EXPECT_EQ( particles.aosoa().size(), 10 );
 
     // Populate fields.
-    auto px = particles.slice( Field::LogicalPosition() );
+    auto px = particles.slice( Field::LogicalPosition<3>() );
     auto pm = particles.slice( Foo() );
     auto pc = particles.slice( Field::Color() );
     auto pf = particles.slice( Bar() );
@@ -316,7 +316,7 @@ void linearAlgebraTest()
             typename list_type::particle_view_type particle( aosoa.access( s ),
                                                              a );
 
-            auto px_v = get( particle, Field::LogicalPosition() );
+            auto px_v = get( particle, Field::LogicalPosition<3>() );
             for ( int d = 0; d < 3; ++d )
                 px_v( d ) += p + d;
 

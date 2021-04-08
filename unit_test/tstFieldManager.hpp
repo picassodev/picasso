@@ -162,7 +162,8 @@ void adaptiveTest()
     FieldManager<AdaptiveMesh<TEST_MEMSPACE>> fm( mesh );
 
     // Check that the adaptive mesh coordinates got loaded.
-    auto nodes = fm.array( FieldLocation::Node(), Field::PhysicalPosition() );
+    auto nodes =
+        fm.array( FieldLocation::Node(), Field::PhysicalPosition<3>() );
     auto host_coords = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(),
                                                             nodes->view() );
     auto local_mesh = Cajita::createLocalMesh<TEST_EXECSPACE>(

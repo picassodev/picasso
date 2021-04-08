@@ -89,12 +89,15 @@ class FieldManager
         // The mesh is adaptive so add the physical position of its nodes as a
         // field.
         auto key =
-            createKey( FieldLocation::Node(), Field::PhysicalPosition() );
-        auto handle = std::make_shared<
-            FieldHandle<FieldLocation::Node, Field::PhysicalPosition, Mesh>>();
+            createKey( FieldLocation::Node(),
+                       Field::PhysicalPosition<mesh_type::num_space_dim>() );
+        auto handle = std::make_shared<FieldHandle<
+            FieldLocation::Node,
+            Field::PhysicalPosition<mesh_type::num_space_dim>, Mesh>>();
         handle->array = _mesh->nodes();
         handle->halo =
-            Cajita::createHalo<typename Field::PhysicalPosition::value_type,
+            Cajita::createHalo<typename Field::PhysicalPosition<
+                                   mesh_type::num_space_dim>::value_type,
                                typename Mesh::memory_space>(
                 *( handle->array->layout() ),
                 Cajita::NodeHaloPattern<Mesh::num_space_dim>() );
@@ -102,7 +105,7 @@ class FieldManager
     }
 
     // Get the mesh.
-    const Mesh& mesh() const { return *_mesh; }
+    std::shared_ptr<Mesh> mesh() const { return _mesh; }
 
     // Add a field. The field will be allocated and a halo created if it does
     // not already exist.

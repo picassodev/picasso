@@ -274,8 +274,8 @@ class ParticleList
     {
         return ParticleCommunication::redistribute(
             *( _mesh->localGrid() ), _mesh->minimumHaloWidth(),
-            this->slice( Field::LogicalPosition() ), _aosoa,
-            force_redistribute );
+            this->slice( Field::LogicalPosition<mesh_type::num_space_dim>() ),
+            _aosoa, force_redistribute );
     }
 
   private:
