@@ -78,7 +78,7 @@ struct ScalarValueP2G
         // Node Interpolant
         auto spline = createSpline(
             FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
-            get( particle, Field::LogicalPosition() ), SplineValue() );
+            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
 
         // Interpolate to grid.
         P2G::value( spline, particle_scalar, node_scalar );
@@ -106,7 +106,7 @@ struct VectorValueP2G
         // Node Interpolant
         auto spline = createSpline(
             FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
-            get( particle, Field::LogicalPosition() ), SplineValue() );
+            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
 
         // Interpolate to grid.
         P2G::value( spline, particle_vector, node_vector );
@@ -132,10 +132,10 @@ struct ScalarGradientP2G
         auto particle_scalar = get( particle, ParticleScalar() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         P2G::gradient( spline, particle_scalar, node_vector );
@@ -161,10 +161,10 @@ struct VectorDivergenceP2G
         auto particle_vector = get( particle, ParticleVector() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         P2G::divergence( spline, particle_vector, node_scalar );
@@ -190,10 +190,10 @@ struct TensorDivergenceP2G
         auto particle_tensor = get( particle, ParticleTensor() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         P2G::divergence( spline, particle_tensor, node_vector );
@@ -222,7 +222,7 @@ struct ScalarValueG2P
         // Node Interpolant
         auto spline = createSpline(
             FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
-            get( particle, Field::LogicalPosition() ), SplineValue() );
+            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
 
         // Interpolate to grid.
         G2P::value( spline, node_scalar, particle_scalar );
@@ -251,7 +251,7 @@ struct VectorValueG2P
         // Node Interpolant
         auto spline = createSpline(
             FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
-            get( particle, Field::LogicalPosition() ), SplineValue() );
+            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
 
         // Interpolate to grid.
         G2P::value( spline, node_vector, particle_vector );
@@ -278,10 +278,10 @@ struct ScalarGradientG2P
         auto particle_vector = get( particle, ParticleVector() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         G2P::gradient( spline, node_scalar, particle_vector );
@@ -308,10 +308,10 @@ struct VectorGradientG2P
         auto particle_tensor = get( particle, ParticleTensor() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         G2P::gradient( spline, node_vector, particle_tensor );
@@ -338,10 +338,10 @@ struct VectorDivergenceG2P
         auto& particle_scalar = get( particle, ParticleScalar() );
 
         // Node Interpolant
-        auto spline =
-            createSpline( FieldLocation::Node(), InterpolationOrder<1>(),
-                          local_mesh, get( particle, Field::LogicalPosition() ),
-                          SplineValue(), SplineGradient() );
+        auto spline = createSpline(
+            FieldLocation::Node(), InterpolationOrder<1>(), local_mesh,
+            get( particle, Field::LogicalPosition<3>() ), SplineValue(),
+            SplineGradient() );
 
         // Interpolate to grid.
         G2P::divergence( spline, node_vector, particle_scalar );
@@ -378,7 +378,7 @@ void interpolationTest()
 
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition,
+        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>,
                      ParticleScalar, ParticleVector, ParticleTensor>;
     list_type particles( "test_particles", mesh );
     using particle_type = typename list_type::particle_type;
@@ -388,7 +388,7 @@ void interpolationTest()
         KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition(), d ) = x[d];
+            get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 

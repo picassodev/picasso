@@ -48,8 +48,8 @@ struct LocateFunctor
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )
         {
-            get( p, Field::PhysicalPosition(), d ) = x[d];
-            get( p, Field::LogicalPosition(), d ) = x[d];
+            get( p, Field::PhysicalPosition<3>(), d ) = x[d];
+            get( p, Field::LogicalPosition<3>(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint( xf, geom );
         get( p, Field::Color() ) = volume_id;
@@ -80,7 +80,7 @@ void zalesaksTest( const std::string& filename )
     // Create particles.
     auto particles = createParticleList(
         "particles", mesh,
-        ParticleTraits<Field::PhysicalPosition, Field::LogicalPosition,
+        ParticleTraits<Field::PhysicalPosition<3>, Field::LogicalPosition<3>,
                        Field::Color, Field::CommRank>() );
 
     // Assign particles a color equal to the volume id in which they are
@@ -96,7 +96,7 @@ void zalesaksTest( const std::string& filename )
 #ifdef Picasso_ENABLE_SILO
     SiloParticleWriter::writeTimeStep(
         mesh->localGrid()->globalGrid(), 0, time,
-        particles->slice( Field::PhysicalPosition() ),
+        particles->slice( Field::PhysicalPosition<3>() ),
         particles->slice( Field::Color() ),
         particles->slice( Field::CommRank() ) );
 #endif
@@ -110,7 +110,7 @@ void zalesaksTest( const std::string& filename )
 
     // Compute the initial level set.
     level_set->estimateSignedDistance(
-        TEST_EXECSPACE(), particles->slice( Field::LogicalPosition() ) );
+        TEST_EXECSPACE(), particles->slice( Field::LogicalPosition<3>() ) );
     level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
     // Write the initial level set.
@@ -126,8 +126,8 @@ void zalesaksTest( const std::string& filename )
     for ( int t = 0; t < num_step; ++t )
     {
         // Get slices.
-        auto xp = particles->slice( Field::PhysicalPosition() );
-        auto xl = particles->slice( Field::LogicalPosition() );
+        auto xp = particles->slice( Field::PhysicalPosition<3>() );
+        auto xl = particles->slice( Field::LogicalPosition<3>() );
         auto xr = particles->slice( Field::CommRank() );
 
         // Move the particles around the circle.
@@ -176,14 +176,14 @@ void zalesaksTest( const std::string& filename )
 #ifdef Picasso_ENABLE_SILO
         SiloParticleWriter::writeTimeStep(
             mesh->localGrid()->globalGrid(), t + 1, time,
-            particles->slice( Field::PhysicalPosition() ),
+            particles->slice( Field::PhysicalPosition<3>() ),
             particles->slice( Field::Color() ),
             particles->slice( Field::CommRank() ) );
 #endif
 
         // Compute the level set.
         level_set->estimateSignedDistance(
-            TEST_EXECSPACE(), particles->slice( Field::LogicalPosition() ) );
+            TEST_EXECSPACE(), particles->slice( Field::LogicalPosition<3>() ) );
         level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
         // Write the level set.

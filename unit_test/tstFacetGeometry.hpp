@@ -491,7 +491,7 @@ struct LocateFunctor
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )
         {
-            get( p, Field::PhysicalPosition(), d ) = x[d];
+            get( p, Field::PhysicalPosition<3>(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint( xf, geom );
         get( p, Field::VolumeId() ) = volume_id;
@@ -515,7 +515,7 @@ void initExample()
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition, Field::VolumeId>;
+                                   Field::PhysicalPosition<3>, Field::VolumeId>;
     list_type particles( "particles", mesh );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
@@ -529,7 +529,7 @@ void initExample()
 #ifdef Picasso_ENABLE_SILO
     SiloParticleWriter::writeTimeStep(
         mesh->localGrid()->globalGrid(), 0, 0.0,
-        particles.slice( Field::PhysicalPosition() ),
+        particles.slice( Field::PhysicalPosition<3>() ),
         particles.slice( Field::VolumeId() ) );
 #endif
 }

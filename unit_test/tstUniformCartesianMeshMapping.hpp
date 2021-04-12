@@ -45,7 +45,7 @@ void mappingTest3d()
                                                MPI_COMM_WORLD, ranks_per_dim );
 
     // Check the mapping data.
-    auto mapping = manager->mesh().mapping();
+    auto mapping = manager->mesh()->mapping();
     using mapping_type = decltype( mapping );
     EXPECT_EQ( cell_size, mapping._cell_size );
     EXPECT_EQ( 1.0 / cell_size, mapping._inv_cell_size );
@@ -59,7 +59,7 @@ void mappingTest3d()
     }
 
     // Check grid.
-    const auto& global_grid = manager->mesh().localGrid()->globalGrid();
+    const auto& global_grid = manager->mesh()->localGrid()->globalGrid();
     const auto& global_mesh = global_grid.globalMesh();
 
     EXPECT_EQ( global_mesh.lowCorner( 0 ), 0.0 );
@@ -78,7 +78,7 @@ void mappingTest3d()
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
     EXPECT_TRUE( global_grid.isPeriodic( 2 ) );
 
-    auto local_grid = manager->mesh().localGrid();
+    auto local_grid = manager->mesh()->localGrid();
     EXPECT_EQ( local_grid->haloCellWidth(), 1 );
 
     // Check mapping.
@@ -209,7 +209,7 @@ void mappingTest2d()
                                                MPI_COMM_WORLD, ranks_per_dim );
 
     // Check the mapping data.
-    auto mapping = manager->mesh().mapping();
+    auto mapping = manager->mesh()->mapping();
     using mapping_type = decltype( mapping );
     EXPECT_EQ( cell_size, mapping._cell_size );
     EXPECT_EQ( 1.0 / cell_size, mapping._inv_cell_size );
@@ -222,7 +222,7 @@ void mappingTest2d()
     }
 
     // Check grid.
-    const auto& global_grid = manager->mesh().localGrid()->globalGrid();
+    const auto& global_grid = manager->mesh()->localGrid()->globalGrid();
     const auto& global_mesh = global_grid.globalMesh();
 
     EXPECT_EQ( global_mesh.lowCorner( 0 ), 0.0 );
@@ -237,7 +237,7 @@ void mappingTest2d()
     EXPECT_TRUE( global_grid.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
 
-    auto local_grid = manager->mesh().localGrid();
+    auto local_grid = manager->mesh()->localGrid();
     EXPECT_EQ( local_grid->haloCellWidth(), 1 );
 
     // Check mapping.

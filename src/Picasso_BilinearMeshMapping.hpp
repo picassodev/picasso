@@ -371,16 +371,18 @@ auto createBilinearMesh( MemorySpace, Generator generator, const int halo_width,
     auto manager = createFieldManager( mesh );
 
     // Add a node coordinates field to the manager.
-    manager->add( FieldLocation::Node{}, Field::PhysicalPosition{} );
+    manager->add( FieldLocation::Node{},
+                  Field::PhysicalPosition<NumSpaceDim>{} );
 
     // Assign coordinates to the mapping.
-    mapping->setLocalNodeCoordinates(
-        manager->view( FieldLocation::Node{}, Field::PhysicalPosition{} ) );
+    mapping->setLocalNodeCoordinates( manager->view(
+        FieldLocation::Node{}, Field::PhysicalPosition<NumSpaceDim>{} ) );
 
     // Generate the coordinates.
     BilinearMeshGenerator<Generator>::createLocalNodeCoordinates(
-        generator, *( manager->array( FieldLocation::Node{},
-                                      Field::PhysicalPosition{} ) ) );
+        generator,
+        *( manager->array( FieldLocation::Node{},
+                           Field::PhysicalPosition<NumSpaceDim>{} ) ) );
 
     return manager;
 }

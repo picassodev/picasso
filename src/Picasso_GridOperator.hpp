@@ -186,7 +186,8 @@ struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
     createGatherHalo( const FieldManager_t& fm, MemorySpace )
     {
         return Cajita::createHalo(
-            Cajita::FullHaloPattern(), -1,
+            Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
+            -1,
             ( *fm.array( typename Layouts::location(),
                          typename Layouts::tag() ) )... );
     }
@@ -266,7 +267,8 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
     createScatterHalo( const FieldManager_t& fm, MemorySpace )
     {
         return Cajita::createHalo(
-            Cajita::FullHaloPattern(), -1,
+            Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
+            -1,
             ( *fm.array( typename Layouts::location(),
                          typename Layouts::tag() ) )... );
     }
@@ -647,15 +649,16 @@ class GridOperator
             "operator_apply" );
     }
 
-    // Apply the operator in a loop over the owned entities of the given type.
+    // Apply the operator in a loop over the owned entities of the given
+    // type. 3D specialization.
     template <class WorkTag, class LocalMesh, class GatherFields,
               class ScatterFields, class LocalFields, class ExecutionSpace,
               class Location, class Func>
-    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
-                  const ScatterFields& scatter_deps,
-                  const LocalFields& local_deps,
-                  const ExecutionSpace& exec_space, Location,
-                  const Func& func ) const
+    std::enable_if_t<3 == LocalMesh::num_space_dim, void>
+    applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
+             const ScatterFields& scatter_deps, const LocalFields& local_deps,
+             const ExecutionSpace& exec_space, Location,
+             const Func& func ) const
     {
         // Apply kernel to each entity. The user functor gets a local mesh for
         // geometric operations, gather, scatter, and local dependencies for
@@ -668,6 +671,30 @@ class GridOperator
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
                                              scatter_deps, local_deps, i, j,
                                              k );
+            } );
+    }
+
+    // Apply the operator in a loop over the owned entities of the given
+    // type. 2D specialization.
+    template <class WorkTag, class LocalMesh, class GatherFields,
+              class ScatterFields, class LocalFields, class ExecutionSpace,
+              class Location, class Func>
+    std::enable_if_t<2 == LocalMesh::num_space_dim, void>
+    applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
+             const ScatterFields& scatter_deps, const LocalFields& local_deps,
+             const ExecutionSpace& exec_space, Location,
+             const Func& func ) const
+    {
+        // Apply kernel to each entity. The user functor gets a local mesh for
+        // geometric operations, gather, scatter, and local dependencies for
+        // field operations (all of which may be empty), and the local ijk
+        // index of the entity they are currently working on.
+        Cajita::grid_parallel_for(
+            "operator_apply", exec_space, *( _mesh->localGrid() ),
+            Cajita::Own(), typename Location::entity_type(),
+            KOKKOS_LAMBDA( const int i, const int j ) {
+                functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
+                                             scatter_deps, local_deps, i, j );
             } );
     }
 

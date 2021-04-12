@@ -77,6 +77,24 @@ struct FieldViewTuple
 
     Views _views;
 
+    // Access by layout.
+    template <class Layout>
+    KOKKOS_INLINE_FUNCTION const auto& get( Layout ) const
+    {
+        return Cabana::get<TypeIndexer<
+            FieldLayout<typename Layout::location, typename Layout::tag>,
+            Layouts...>::index>( _views );
+    }
+
+    template <class Layout>
+    KOKKOS_INLINE_FUNCTION auto& get( Layout )
+    {
+        return Cabana::get<TypeIndexer<
+            FieldLayout<typename Layout::location, typename Layout::tag>,
+            Layouts...>::index>( _views );
+    }
+
+    // Access by location and tag.
     template <class Location, class FieldTag>
     KOKKOS_INLINE_FUNCTION const auto& get( Location, FieldTag ) const
     {
@@ -491,12 +509,14 @@ auto createViewWrapper(
 //---------------------------------------------------------------------------//
 // Fields
 //---------------------------------------------------------------------------//
-struct PhysicalPosition : Vector<double, 3>
+template <std::size_t NumSpaceDim>
+struct PhysicalPosition : Vector<double, NumSpaceDim>
 {
     static std::string label() { return "physical_position"; }
 };
 
-struct LogicalPosition : Vector<double, 3>
+template <std::size_t NumSpaceDim>
+struct LogicalPosition : Vector<double, NumSpaceDim>
 {
     static std::string label() { return "logical_position"; }
 };
