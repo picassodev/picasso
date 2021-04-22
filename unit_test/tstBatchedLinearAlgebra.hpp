@@ -30,6 +30,8 @@ void matrixTest()
                                               { 8.6, 2.6, -0.1 } };
     EXPECT_EQ( a.stride_0(), 3 );
     EXPECT_EQ( a.stride_1(), 1 );
+    EXPECT_EQ( a.stride( 0 ), 3 );
+    EXPECT_EQ( a.stride( 1 ), 1 );
     EXPECT_EQ( a.extent( 0 ), 2 );
     EXPECT_EQ( a.extent( 1 ), 3 );
 
@@ -45,6 +47,7 @@ void matrixTest()
     {
         auto row = a.row( i );
         EXPECT_EQ( row.stride_0(), 1 );
+        EXPECT_EQ( row.stride( 0 ), 1 );
         EXPECT_EQ( row.extent( 0 ), 3 );
         for ( int j = 0; j < 3; ++j )
             EXPECT_EQ( row( j ), a( i, j ) );
@@ -55,6 +58,7 @@ void matrixTest()
     {
         auto column = a.column( j );
         EXPECT_EQ( column.stride_0(), 3 );
+        EXPECT_EQ( column.stride( 0 ), 3 );
         EXPECT_EQ( column.extent( 0 ), 2 );
         for ( int i = 0; i < 2; ++i )
             EXPECT_EQ( column( i ), a( i, j ) );
@@ -65,6 +69,8 @@ void matrixTest()
                                                     a.stride_1() );
     EXPECT_EQ( a_view.stride_0(), 3 );
     EXPECT_EQ( a_view.stride_1(), 1 );
+    EXPECT_EQ( a_view.stride( 0 ), 3 );
+    EXPECT_EQ( a_view.stride( 1 ), 1 );
     EXPECT_EQ( a_view.extent( 0 ), 2 );
     EXPECT_EQ( a_view.extent( 1 ), 3 );
 
@@ -97,6 +103,8 @@ void matrixTest()
     auto a_c = a;
     EXPECT_EQ( a_c.stride_0(), 3 );
     EXPECT_EQ( a_c.stride_1(), 1 );
+    EXPECT_EQ( a_c.stride( 0 ), 3 );
+    EXPECT_EQ( a_c.stride( 1 ), 1 );
     EXPECT_EQ( a_c.extent( 0 ), 2 );
     EXPECT_EQ( a_c.extent( 1 ), 3 );
 
@@ -153,6 +161,8 @@ void matrixTest()
     LinearAlgebra::Matrix<double, 3, 2> a_t_c = ~a;
     EXPECT_EQ( a_t_c.stride_0(), 2 );
     EXPECT_EQ( a_t_c.stride_1(), 1 );
+    EXPECT_EQ( a_t_c.stride( 0 ), 2 );
+    EXPECT_EQ( a_t_c.stride( 1 ), 1 );
     EXPECT_EQ( a_t_c.extent( 0 ), 3 );
     EXPECT_EQ( a_t_c.extent( 1 ), 2 );
 
@@ -178,6 +188,8 @@ void matrixTest()
     LinearAlgebra::Matrix<double, 1, 2> b;
     EXPECT_EQ( b.stride_0(), 2 );
     EXPECT_EQ( b.stride_1(), 1 );
+    EXPECT_EQ( b.stride( 0 ), 2 );
+    EXPECT_EQ( b.stride( 1 ), 1 );
     EXPECT_EQ( b.extent( 0 ), 1 );
     EXPECT_EQ( b.extent( 1 ), 2 );
 
@@ -230,6 +242,7 @@ void vectorTest()
     // Make a basic vector.
     LinearAlgebra::Vector<double, 3> x = { 1.2, -3.5, 5.4 };
     EXPECT_EQ( x.stride_0(), 1 );
+    EXPECT_EQ( x.stride( 0 ), 1 );
     EXPECT_EQ( x.extent( 0 ), 3 );
 
     EXPECT_EQ( x( 0 ), 1.2 );
@@ -239,6 +252,7 @@ void vectorTest()
     // Check a vector view.
     LinearAlgebra::VectorView<double, 3> x_view( x.data(), x.stride_0() );
     EXPECT_EQ( x_view.stride_0(), 1 );
+    EXPECT_EQ( x_view.stride( 0 ), 1 );
     EXPECT_EQ( x_view.extent( 0 ), 3 );
 
     EXPECT_EQ( x_view( 0 ), 1.2 );
@@ -248,6 +262,7 @@ void vectorTest()
     // Check a deep copy
     auto x_c = x;
     EXPECT_EQ( x_c.stride_0(), 1 );
+    EXPECT_EQ( x_c.stride( 0 ), 1 );
     EXPECT_EQ( x_c.extent( 0 ), 3 );
 
     EXPECT_EQ( x_c( 0 ), 1.2 );
@@ -267,6 +282,7 @@ void vectorTest()
     // Check default initialization
     LinearAlgebra::Vector<double, 2> y;
     EXPECT_EQ( y.stride_0(), 1 );
+    EXPECT_EQ( y.stride( 0 ), 1 );
     EXPECT_EQ( y.extent( 0 ), 2 );
 
     // Check scalar constructor.
@@ -329,6 +345,8 @@ void viewTest()
     LinearAlgebra::MatrixView<double, 2, 3> a( &m[0][0], 3, 1 );
     EXPECT_EQ( a.stride_0(), 3 );
     EXPECT_EQ( a.stride_1(), 1 );
+    EXPECT_EQ( a.stride( 0 ), 3 );
+    EXPECT_EQ( a.stride( 1 ), 1 );
     EXPECT_EQ( a.extent( 0 ), 2 );
     EXPECT_EQ( a.extent( 1 ), 3 );
 
@@ -343,18 +361,21 @@ void viewTest()
 
     LinearAlgebra::VectorView<double, 6> x1( &v[0], 1 );
     EXPECT_EQ( x1.stride_0(), 1 );
+    EXPECT_EQ( x1.stride( 0 ), 1 );
     EXPECT_EQ( x1.extent( 0 ), 6 );
     for ( int i = 0; i < 6; ++i )
         EXPECT_EQ( x1( i ), 1.0 * i );
 
     LinearAlgebra::VectorView<double, 3> x2( &v[0], 2 );
     EXPECT_EQ( x2.stride_0(), 2 );
+    EXPECT_EQ( x2.stride( 0 ), 2 );
     EXPECT_EQ( x2.extent( 0 ), 3 );
     for ( int i = 0; i < 3; ++i )
         EXPECT_EQ( x2( i ), 2.0 * i );
 
     LinearAlgebra::VectorView<double, 2> x3( &v[1], 3 );
     EXPECT_EQ( x3.stride_0(), 3 );
+    EXPECT_EQ( x2.stride( 0 ), 2 );
     EXPECT_EQ( x3.extent( 0 ), 2 );
     for ( int i = 0; i < 2; ++i )
         EXPECT_EQ( x3( i ), 1.0 + 3.0 * i );
