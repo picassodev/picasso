@@ -466,6 +466,9 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return 1; }
 
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? N : 1; }
+
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
@@ -546,6 +549,9 @@ struct Matrix<T, 1, 1>
 
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return 1; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int ) const { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
@@ -692,6 +698,9 @@ struct MatrixView
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return _stride[1]; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return _stride[d]; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
@@ -862,6 +871,9 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return 0; }
 
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? 1 : 0; }
+
     // Extent
     KOKKOS_INLINE_FUNCTION
     constexpr int extent( const int d ) const
@@ -925,6 +937,9 @@ struct Vector<T, 1>
 
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return 1; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int ) const { return 1; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
@@ -1059,6 +1074,9 @@ struct VectorView
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_1() const { return 0; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? _stride : 0; }
 
     // Extent
     KOKKOS_INLINE_FUNCTION
