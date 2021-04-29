@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v2.2.0
         with:
           repository: kokkos/kokkos-kernels
-          ref: master
+          ref: ${{ matrix.kokkos_ver }}
           path: kokkos-kernels
       - name: Build kokkos-kernels
         working-directory: kokkos-kernels
