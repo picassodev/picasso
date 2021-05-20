@@ -14,8 +14,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_ArithTraits.hpp>
-
 #include <KokkosBatched_Set_Decl.hpp>
 #include <KokkosBatched_Set_Impl.hpp>
 
@@ -1185,14 +1183,11 @@ operator*( const ExpressionA& a, const ExpressionB& b )
     typename ExpressionB::eval_type b_eval = b;
     Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
            ExpressionB::extent_1>
-        c = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemm::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                a_eval, b_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                c );
+        c = static_cast<typename ExpressionA::value_type>( 0.0 );
+    KokkosBatched::SerialGemm<
+        KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Algo::Gemm::Unblocked>::invoke( 1.0, a_eval, b_eval, 1.0,
+                                                       c );
     return c;
 }
 
@@ -1214,13 +1209,11 @@ operator*( const ExpressionA& a, const ExpressionX& x )
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
     Vector<typename ExpressionA::value_type, ExpressionA::extent_0> y =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemv<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemv::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                a_eval, x_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                y );
+        static_cast<typename ExpressionA::value_type>( 0.0 );
+    KokkosBatched::SerialGemv<
+        KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Algo::Gemv::Unblocked>::invoke( 1.0, a_eval, x_eval, 1.0,
+                                                       y );
     return y;
 }
 
@@ -1244,14 +1237,11 @@ operator*( const ExpressionX& x, const ExpressionA& a )
     typename ExpressionX::eval_type x_eval = x;
     Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
            ExpressionA::extent_1>
-        y = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemm::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                x_eval, a_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                y );
+        y = static_cast<typename ExpressionA::value_type>( 0.0 );
+    KokkosBatched::SerialGemm<
+        KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose,
+        KokkosBatched::Algo::Gemm::Unblocked>::invoke( 1.0, x_eval, a_eval, 1.0,
+                                                       y );
     return y;
 }
 
@@ -1410,8 +1400,7 @@ template <class ExpressionA,
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionA& a, const typename ExpressionA::value_type s )
 {
-    auto s_inv =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::one() / s;
+    typename ExpressionA::value_type s_inv = 1.0 / s;
     return s_inv * a;
 }
 
@@ -1422,8 +1411,7 @@ template <class ExpressionX,
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionX& x, const typename ExpressionX::value_type s )
 {
-    auto s_inv =
-        Kokkos::ArithTraits<typename ExpressionX::value_type>::one() / s;
+    typename ExpressionX::value_type s_inv = 1.0 / s;
     return s_inv * x;
 }
 
@@ -1505,13 +1493,12 @@ KOKKOS_INLINE_FUNCTION
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
-    a = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+    a = 0.0;
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
-        a( i, i ) =
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one();
+        a( i, i ) = 1.0;
 }
 
 //---------------------------------------------------------------------------//
@@ -1523,11 +1510,7 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
-        [=]( const int i, const int j ) {
-            return ( i == j ) ? x( i )
-                              : Kokkos::ArithTraits<
-                                    typename ExpressionX::value_type>::zero();
-        } );
+        [=]( const int i, const int j ) { return ( i == j ) ? x( i ) : 0.0; } );
 }
 
 //---------------------------------------------------------------------------//
