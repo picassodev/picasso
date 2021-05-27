@@ -1098,6 +1098,53 @@ struct VectorView
 };
 
 //---------------------------------------------------------------------------//
+// Matrix-matrix deep copy.
+//---------------------------------------------------------------------------//
+template <class ExpressionA, class ExpressionB,
+          typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                        is_matrix<ExpressionB>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionA& a,
+                                      const ExpressionB& b )
+{
+    static_assert( std::is_same<typename ExpressionA::value_type,
+                                typename ExpressionB::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionA::extent_0 == ExpressionB::extent_0,
+                   "extent_0 must match" );
+    static_assert( ExpressionA::extent_1 == ExpressionB::extent_1,
+                   "extent_1 must match" );
+    for ( int i = 0; i < ExpressionA::extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int j = 0; j < ExpressionA::extent_1; ++j )
+            a(i,j) = b(i,j);
+}
+
+//---------------------------------------------------------------------------//
+// Vector-vector deep copy.
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_vector<ExpressionX>::value &&
+                                        is_vector<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionX& x,
+                                      const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent must match" );
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+    for ( int i = 0; i < ExpressionX::extent_0; ++i )
+        x(i) = y(i);
+}
+
+//---------------------------------------------------------------------------//
 // Transpose.
 //---------------------------------------------------------------------------//
 // Matrix operator.
@@ -1707,21 +1754,32 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 //---------------------------------------------------------------------------//
 // Eigendecomposition
 //---------------------------------------------------------------------------//
-template <class ExpressionA>
+template <class ExpressionA, class Eigenvalues, class Eigenvectors>
 KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value,
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                              is_vector<Eigenvalues>::value &&
+                              is_matrix<Eigenvectors>::value,
                               typename ExpressionA::copy_type>
-    eigendecomposition(
-        const ExpressionA& a,
-        Vector<typename ExpressionA::value_type, ExpressionA::extent_0>& e_real,
-        Vector<typename ExpressionA::value_type, ExpressionA::extent_0>& e_imag,
-        Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-               ExpressionA::extent_0>& u_left,
-        Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-               ExpressionA::extent_0>& u_right )
+    eigendecomposition( const ExpressionA& a,
+                        Eigenvalues& e_real,
+                        Eigenvalues& e_imag,
+                        Eigenvectors& u_left,
+                        Eigenvectors& u_right )
 {
     static_assert( ExpressionA::extent_0 == ExpressionA::extent_1,
                    "Matrix must be square" );
+    static_assert( std::is_same_v<typename Eigenvalues::value_type,
+                   typename ExpressionA::value_type>,
+                   "Value type must match" );
+    static_assert( std::is_same_v<typename Eigenvectors::value_type,
+                   typename ExpressionA::value_type>,
+                   "Value type must match" );
+    static_assert( Eigenvalues::extent_0 == ExpressionA::extent_0,
+                   "Dimensions must match" );
+    static_assert( Eigenvectors::extent_0 == ExpressionA::extent_0,
+                   "Dimensions must match" );
+    static_assert( Eigenvectors::extent_1 == ExpressionA::extent_0,
+                   "Dimensions must match" );
 
     const auto extent = ExpressionA::extent_0;
     typename ExpressionA::copy_type a_schur = a;
