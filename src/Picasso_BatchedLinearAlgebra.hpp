@@ -16,28 +16,6 @@
 
 #include <Kokkos_ArithTraits.hpp>
 
-#include <KokkosBatched_Set_Decl.hpp>
-#include <KokkosBatched_Set_Impl.hpp>
-
-#include <KokkosBatched_Scale_Decl.hpp>
-#include <KokkosBatched_Scale_Impl.hpp>
-
-#include <KokkosBatched_Gemm_Decl.hpp>
-#include <KokkosBatched_Gemm_Serial_Impl.hpp>
-
-#include <KokkosBatched_Gemv_Decl.hpp>
-#include <KokkosBatched_Gemv_Serial_Impl.hpp>
-
-#include <KokkosBatched_LU_Decl.hpp>
-#include <KokkosBatched_LU_Serial_Impl.hpp>
-
-#include <KokkosBatched_SolveLU_Decl.hpp>
-
-#include <KokkosBatched_InverseLU_Decl.hpp>
-
-#include <KokkosBatched_Eigendecomposition_Decl.hpp>
-#include <KokkosBatched_Eigendecomposition_Serial_Impl.hpp>
-
 #include <cmath>
 #include <functional>
 #include <type_traits>
@@ -383,7 +361,12 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     Matrix( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+        for ( int i = 0; i < M; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                ( *this )( i, j ) = value;
     }
 
     // Assignment operator. Triggers expression evaluation.
@@ -455,7 +438,12 @@ struct Matrix
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+        for ( int i = 0; i < M; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                ( *this )( i, j ) = value;
         return *this;
     }
 
@@ -524,8 +512,8 @@ struct Matrix<T, 1, 1>
     using eval_type = MatrixView<T, 1, 1>;
     using copy_type = Matrix<T, 1, 1>;
 
-    // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
+    // Default constructor.
     Matrix() = default;
 
     // Scalar constructor.
@@ -559,10 +547,10 @@ struct Matrix<T, 1, 1>
 
     // Access an individual element.
     KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int, const int ) const { return _d; }
+    const_reference operator()( const int, const int ) const { return _d; }
 
     KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int, const int ) { return _d; }
+    reference operator()( const int, const int ) { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -687,7 +675,12 @@ struct MatrixView
     KOKKOS_INLINE_FUNCTION
     MatrixView& operator=( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+        for ( int i = 0; i < M; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < N; ++j )
+                ( *this )( i, j ) = value;
         return *this;
     }
 
@@ -797,7 +790,11 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     Vector( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) = value;
     }
 
     // Deep copy assignment operator. Triggers expression evaluation.
@@ -859,7 +856,11 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     Vector& operator=( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) = value;
         return *this;
     }
 
@@ -1063,7 +1064,11 @@ struct VectorView
     KOKKOS_INLINE_FUNCTION
     VectorView& operator=( const T value )
     {
-        KokkosBatched::SerialSet::invoke( value, *this );
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) = value;
         return *this;
     }
 
@@ -1104,8 +1109,7 @@ template <class ExpressionA, class ExpressionB,
           typename std::enable_if_t<is_matrix<ExpressionA>::value &&
                                         is_matrix<ExpressionB>::value,
                                     int> = 0>
-KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionA& a,
-                                      const ExpressionB& b )
+KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionA& a, const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
                                 typename ExpressionB::value_type>::value,
@@ -1119,7 +1123,7 @@ KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionA& a,
 #pragma unroll
 #endif
         for ( int j = 0; j < ExpressionA::extent_1; ++j )
-            a(i,j) = b(i,j);
+            a( i, j ) = b( i, j );
 }
 
 //---------------------------------------------------------------------------//
@@ -1129,8 +1133,7 @@ template <class ExpressionX, class ExpressionY,
           typename std::enable_if_t<is_vector<ExpressionX>::value &&
                                         is_vector<ExpressionY>::value,
                                     int> = 0>
-KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionX& x,
-                                      const ExpressionY& y )
+KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionX& x, const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
                                 typename ExpressionY::value_type>::value,
@@ -1141,7 +1144,7 @@ KOKKOS_INLINE_FUNCTION void deepCopy( ExpressionX& x,
 #pragma unroll
 #endif
     for ( int i = 0; i < ExpressionX::extent_0; ++i )
-        x(i) = y(i);
+        x( i ) = y( i );
 }
 
 //---------------------------------------------------------------------------//
@@ -1233,13 +1236,15 @@ operator*( const ExpressionA& a, const ExpressionB& b )
     Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
            ExpressionB::extent_1>
         c = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemm::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                a_eval, b_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                c );
+
+    for ( int i = 0; i < ExpressionA::extent_0; ++i )
+        for ( int j = 0; j < ExpressionB::extent_1; ++j )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int k = 0; k < ExpressionA::extent_1; ++k )
+                c( i, j ) += a_eval( i, k ) * b_eval( k, j );
+
     return c;
 }
 
@@ -1262,12 +1267,14 @@ operator*( const ExpressionA& a, const ExpressionX& x )
     typename ExpressionX::eval_type x_eval = x;
     Vector<typename ExpressionA::value_type, ExpressionA::extent_0> y =
         Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemv<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemv::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                a_eval, x_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                y );
+
+    for ( int i = 0; i < ExpressionA::extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int j = 0; j < ExpressionA::extent_1; ++j )
+            y( i ) += a_eval( i, j ) * x_eval( j );
+
     return y;
 }
 
@@ -1284,21 +1291,21 @@ operator*( const ExpressionX& x, const ExpressionA& a )
     static_assert( std::is_same<typename ExpressionA::value_type,
                                 typename ExpressionX::value_type>::value,
                    "value_type must match" );
-    static_assert( ExpressionX::extent_1 == ExpressionA::extent_0,
-                   "inner extent must match" );
+    static_assert( 1 == ExpressionA::extent_0, "inner extent must match" );
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
     Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
            ExpressionA::extent_1>
         y = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
-    KokkosBatched::SerialGemm<KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Trans::NoTranspose,
-                              KokkosBatched::Algo::Gemm::Unblocked>::
-        invoke( Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                x_eval, a_eval,
-                Kokkos::ArithTraits<typename ExpressionA::value_type>::one(),
-                y );
+
+    for ( int i = 0; i < ExpressionX::extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int j = 0; j < ExpressionA::extent_1; ++j )
+            y( i, j ) += x_eval( i ) * a_eval( 0, j );
+
     return y;
 }
 
@@ -1516,8 +1523,42 @@ KOKKOS_INLINE_FUNCTION
                               typename ExpressionA::copy_type>
     LU( const ExpressionA& a )
 {
+    using value_type = typename ExpressionA::value_type;
+    const int m = ExpressionA::extent_0;
+    const int n = ExpressionA::extent_1;
+    const int k = ( m < n ? m : n );
+
     typename ExpressionA::copy_type lu = a;
-    KokkosBatched::SerialLU<KokkosBatched::Algo::LU::Unblocked>::invoke( lu );
+    value_type* __restrict__ lu_ptr = lu.data();
+    auto as0 = lu.stride( 0 );
+    auto as1 = lu.stride( 1 );
+
+    for ( int p = 0; p < k; ++p )
+    {
+        const int iend = m - p - 1;
+        const int jend = n - p - 1;
+
+        const value_type* __restrict__ a12t =
+            lu_ptr + (p)*as0 + ( p + 1 ) * as1;
+
+        value_type* __restrict__ a21 = lu_ptr + ( p + 1 ) * as0 + (p)*as1;
+        value_type* __restrict__ a22 =
+            lu_ptr + ( p + 1 ) * as0 + ( p + 1 ) * as1;
+
+        const value_type alpha11 = lu_ptr[p * as0 + p * as1];
+
+        for ( int i = 0; i < iend; ++i )
+        {
+            a21[i * as0] /= alpha11;
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < jend; ++j )
+                a22[i * as0 + j * as1] -= a21[i * as0] * a12t[j * as1];
+        }
+    }
+
     return lu;
 }
 
@@ -1692,11 +1733,11 @@ KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
     typename ExpressionA::copy_type>
 inverse( const ExpressionA& a )
 {
-    auto a_lu = LU( a );
-    typename ExpressionA::copy_type work;
-    KokkosBatched::SerialInverseLU<
-        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, work );
-    return a_lu;
+    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+           ExpressionA::extent1>
+        ident;
+    identity( ident );
+    return a ^ ident;
 }
 
 //---------------------------------------------------------------------------//
@@ -1743,55 +1784,122 @@ operator^( const ExpressionA& a, const ExpressionB& b )
                    "value_type must be the same" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_0,
                    "Inner extent must match" );
+    static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
+                   "matrix must be square" );
+
+    using value_type = typename ExpressionA::value_type;
+    const int m = ExpressionB::extent_0;
+    const int n = ExpressionB::extent_1;
+
+    // Compute LU decomposition.
     auto a_lu = LU( a );
+
+    // Create RHS/LHS
     typename ExpressionB::copy_type x = b;
-    KokkosBatched::SerialSolveLU<
-        KokkosBatched::Trans::NoTranspose,
-        KokkosBatched::Algo::SolveLU::Unblocked>::invoke( a_lu, x );
+
+    // Strides.
+    const auto as0 = a_lu.stride( 0 );
+    const auto as1 = a_lu.stride( 1 );
+    const auto bs0 = x.stride( 0 );
+    const auto bs1 = x.stride( 1 );
+
+    // Data.
+    value_type* __restrict__ a_ptr = a_lu.data();
+    value_type* __restrict__ x_ptr = x.data();
+
+    // Solve Ly = b for y where y = Ux
+    for ( int p = 0; p < m; ++p )
+    {
+        const int iend = m - p - 1;
+        const int jend = n;
+
+        const value_type* __restrict__ a21 =
+            iend ? a_ptr + ( p + 1 ) * as0 + p * as1 : NULL;
+
+        value_type* __restrict__ b1t = x_ptr + p * bs0;
+        value_type* __restrict__ b2 = iend ? x_ptr + ( p + 1 ) * bs0 : NULL;
+
+        for ( int i = 0; i < iend; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < jend; ++j )
+                b2[i * bs0 + j * bs1] -= a21[i * as0] * b1t[j * bs1];
+    }
+
+    // Solve Ux = y for x.
+    for ( int p = ( m - 1 ); p >= 0; --p )
+    {
+        const int iend = p;
+        const int jend = n;
+
+        const value_type* __restrict__ a01 = a_ptr + p * as1;
+        value_type* __restrict__ b1t = x_ptr + p * bs0;
+
+        const value_type alpha11 = a_ptr[p * as0 + p * as1];
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int j = 0; j < n; ++j )
+            b1t[j * bs1] = b1t[j * bs1] / alpha11;
+
+        if ( p > 0 )
+        {
+            for ( int i = 0; i < iend; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+                for ( int j = 0; j < jend; ++j )
+                    x_ptr[i * bs0 + j * bs1] -= a01[i * as0] * b1t[j * bs1];
+        }
+    }
+
     return x;
 }
 
 //---------------------------------------------------------------------------//
 // Eigendecomposition
 //---------------------------------------------------------------------------//
-template <class ExpressionA, class Eigenvalues, class Eigenvectors>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                              is_vector<Eigenvalues>::value &&
-                              is_matrix<Eigenvectors>::value,
-                              typename ExpressionA::copy_type>
-    eigendecomposition( const ExpressionA& a,
-                        Eigenvalues& e_real,
-                        Eigenvalues& e_imag,
-                        Eigenvectors& u_left,
-                        Eigenvectors& u_right )
-{
-    static_assert( ExpressionA::extent_0 == ExpressionA::extent_1,
-                   "Matrix must be square" );
-    static_assert( std::is_same_v<typename Eigenvalues::value_type,
-                   typename ExpressionA::value_type>,
-                   "Value type must match" );
-    static_assert( std::is_same_v<typename Eigenvectors::value_type,
-                   typename ExpressionA::value_type>,
-                   "Value type must match" );
-    static_assert( Eigenvalues::extent_0 == ExpressionA::extent_0,
-                   "Dimensions must match" );
-    static_assert( Eigenvectors::extent_0 == ExpressionA::extent_0,
-                   "Dimensions must match" );
-    static_assert( Eigenvectors::extent_1 == ExpressionA::extent_0,
-                   "Dimensions must match" );
+// template <class ExpressionA, class Eigenvalues, class Eigenvectors>
+// KOKKOS_INLINE_FUNCTION
+//     typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+//                               is_vector<Eigenvalues>::value &&
+//                               is_matrix<Eigenvectors>::value,
+//                               typename ExpressionA::copy_type>
+//     eigendecomposition( const ExpressionA& a,
+//                         Eigenvalues& e_real,
+//                         Eigenvalues& e_imag,
+//                         Eigenvectors& u_left,
+//                         Eigenvectors& u_right )
+// {
+//     static_assert( ExpressionA::extent_0 == ExpressionA::extent_1,
+//                    "Matrix must be square" );
+//     static_assert( std::is_same_v<typename Eigenvalues::value_type,
+//                    typename ExpressionA::value_type>,
+//                    "Value type must match" );
+//     static_assert( std::is_same_v<typename Eigenvectors::value_type,
+//                    typename ExpressionA::value_type>,
+//                    "Value type must match" );
+//     static_assert( Eigenvalues::extent_0 == ExpressionA::extent_0,
+//                    "Dimensions must match" );
+//     static_assert( Eigenvectors::extent_0 == ExpressionA::extent_0,
+//                    "Dimensions must match" );
+//     static_assert( Eigenvectors::extent_1 == ExpressionA::extent_0,
+//                    "Dimensions must match" );
 
-    const auto extent = ExpressionA::extent_0;
-    typename ExpressionA::copy_type a_schur = a;
-    Vector<typename ExpressionA::value_type, 2 * extent * extent + 5 * extent>
-        work;
-    KokkosBatched::SerialEigendecomposition::invoke( a_schur, e_real, e_imag,
-                                                     u_left, u_right, work );
+//     const auto extent = ExpressionA::extent_0;
+//     typename ExpressionA::copy_type a_schur = a;
+//     Vector<typename ExpressionA::value_type, 2 * extent * extent + 5 *
+//     extent>
+//         work;
+//     KokkosBatched::SerialEigendecomposition::invoke( a_schur, e_real, e_imag,
+//                                                      u_left, u_right, work );
 
-    // Return the matrix transformed to a quasi upper triangular matrix of the
-    // Schur decomposition.
-    return a_schur;
-}
+//     // Return the matrix transformed to a quasi upper triangular matrix of
+//     the
+//     // Schur decomposition.
+//     return a_schur;
+// }
 
 //---------------------------------------------------------------------------//
 
