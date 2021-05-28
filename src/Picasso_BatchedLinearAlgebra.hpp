@@ -14,8 +14,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_ArithTraits.hpp>
-
 #include <cmath>
 #include <functional>
 #include <type_traits>
@@ -1235,7 +1233,7 @@ operator*( const ExpressionA& a, const ExpressionB& b )
     typename ExpressionB::eval_type b_eval = b;
     Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
            ExpressionB::extent_1>
-        c = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+        c = static_cast<typename ExpressionA::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
         for ( int j = 0; j < ExpressionB::extent_1; ++j )
@@ -1266,7 +1264,7 @@ operator*( const ExpressionA& a, const ExpressionX& x )
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
     Vector<typename ExpressionA::value_type, ExpressionA::extent_0> y =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+        static_cast<typename ExpressionA::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
@@ -1297,7 +1295,7 @@ operator*( const ExpressionX& x, const ExpressionA& a )
     typename ExpressionX::eval_type x_eval = x;
     Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
            ExpressionA::extent_1>
-        y = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+        y = static_cast<typename ExpressionA::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionX::extent_0; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
@@ -1464,8 +1462,7 @@ template <class ExpressionA,
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionA& a, const typename ExpressionA::value_type s )
 {
-    auto s_inv =
-        Kokkos::ArithTraits<typename ExpressionA::value_type>::one() / s;
+    auto s_inv = static_cast<typename ExpressionA::value_type>( 1 ) / s;
     return s_inv * a;
 }
 
@@ -1476,8 +1473,7 @@ template <class ExpressionX,
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionX& x, const typename ExpressionX::value_type s )
 {
-    auto s_inv =
-        Kokkos::ArithTraits<typename ExpressionX::value_type>::one() / s;
+    auto s_inv = static_cast<typename ExpressionX::value_type>( 1 ) / s;
     return s_inv * x;
 }
 
@@ -1593,13 +1589,12 @@ KOKKOS_INLINE_FUNCTION
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
-    a = Kokkos::ArithTraits<typename ExpressionA::value_type>::zero();
+    a = static_cast<typename ExpressionA::value_type>( 0 );
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
-        a( i, i ) =
-            Kokkos::ArithTraits<typename ExpressionA::value_type>::one();
+        a( i, i ) = static_cast<typename ExpressionA::value_type>( 1 );
 }
 
 //---------------------------------------------------------------------------//
@@ -1612,9 +1607,9 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
         [=]( const int i, const int j ) {
-            return ( i == j ) ? x( i )
-                              : Kokkos::ArithTraits<
-                                    typename ExpressionX::value_type>::zero();
+            return ( i == j )
+                       ? x( i )
+                       : static_cast<typename ExpressionX::value_type>( 0 );
         } );
 }
 
