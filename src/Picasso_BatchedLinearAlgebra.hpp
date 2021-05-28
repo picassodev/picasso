@@ -296,6 +296,11 @@ struct VectorExpression
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
     value_type operator()( const int i ) const { return _f( i ); }
+
+    // Evaluate the expression at an index. 2D version for vectors treated as
+    // matrices.
+    KOKKOS_INLINE_FUNCTION
+    value_type operator()( const int i, int ) const { return _f( i ); }
 };
 
 //---------------------------------------------------------------------------//
@@ -511,6 +516,7 @@ struct Matrix<T, 1, 1>
     using copy_type = Matrix<T, 1, 1>;
 
     KOKKOS_DEFAULTED_FUNCTION
+
     // Default constructor.
     Matrix() = default;
 
@@ -887,6 +893,13 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i ) { return _d[i]; }
 
+    // Access an individual element. 2D version for vectors treated as matrices.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int ) const { return _d[i]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int ) { return _d[i]; }
+
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const { return const_cast<pointer>( &_d[0] ); }
@@ -950,6 +963,13 @@ struct Vector<T, 1>
 
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int ) { return _d; }
+
+    // Access an individual element. 2D version for vectors treated as matrices.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int, const int ) const { return _d; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int, const int ) { return _d; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -1094,6 +1114,16 @@ struct VectorView
 
     KOKKOS_INLINE_FUNCTION
     reference operator()( const int i ) { return _d[_stride * i]; }
+
+    // Access an individual element. 2D version for vectors treated as matrices.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int ) const
+    {
+        return _d[_stride * i];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int ) { return _d[_stride * i]; }
 
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
@@ -1520,38 +1550,27 @@ KOKKOS_INLINE_FUNCTION
     LU( const ExpressionA& a )
 {
     using value_type = typename ExpressionA::value_type;
-    const int m = ExpressionA::extent_0;
-    const int n = ExpressionA::extent_1;
-    const int k = ( m < n ? m : n );
+    constexpr int m = ExpressionA::extent_0;
+    constexpr int n = ExpressionA::extent_1;
+    constexpr int k = ( m < n ? m : n );
 
     typename ExpressionA::copy_type lu = a;
-    value_type* __restrict__ lu_ptr = lu.data();
-    auto as0 = lu.stride( 0 );
-    auto as1 = lu.stride( 1 );
 
     for ( int p = 0; p < k; ++p )
     {
-        const int iend = m - p - 1;
-        const int jend = n - p - 1;
+        const int iend = m - p;
+        const int jend = n - p;
 
-        const value_type* __restrict__ a12t =
-            lu_ptr + (p)*as0 + ( p + 1 ) * as1;
+        const value_type diag = lu( p, p );
 
-        value_type* __restrict__ a21 = lu_ptr + ( p + 1 ) * as0 + (p)*as1;
-        value_type* __restrict__ a22 =
-            lu_ptr + ( p + 1 ) * as0 + ( p + 1 ) * as1;
-
-        const value_type alpha11 = lu_ptr[p * as0 + p * as1];
-
-        for ( int i = 0; i < iend; ++i )
+        for ( int i = 1; i < iend; ++i )
         {
-            a21[i * as0] /= alpha11;
-
+            lu( i + p, p ) /= diag;
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
-            for ( int j = 0; j < jend; ++j )
-                a22[i * as0 + j * as1] -= a21[i * as0] * a12t[j * as1];
+            for ( int j = 1; j < jend; ++j )
+                lu( i + p, j + p ) -= lu( i + p, p ) * lu( p, j + p );
         }
     }
 
@@ -1783,8 +1802,8 @@ operator^( const ExpressionA& a, const ExpressionB& b )
                    "matrix must be square" );
 
     using value_type = typename ExpressionA::value_type;
-    const int m = ExpressionB::extent_0;
-    const int n = ExpressionB::extent_1;
+    constexpr int m = ExpressionB::extent_0;
+    constexpr int n = ExpressionB::extent_1;
 
     // Compute LU decomposition.
     auto a_lu = LU( a );
@@ -1792,34 +1811,18 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     // Create RHS/LHS
     typename ExpressionB::copy_type x = b;
 
-    // Strides.
-    const auto as0 = a_lu.stride( 0 );
-    const auto as1 = a_lu.stride( 1 );
-    const auto bs0 = x.stride( 0 );
-    const auto bs1 = x.stride( 1 );
-
-    // Data.
-    value_type* __restrict__ a_ptr = a_lu.data();
-    value_type* __restrict__ x_ptr = x.data();
-
     // Solve Ly = b for y where y = Ux
     for ( int p = 0; p < m; ++p )
     {
-        const int iend = m - p - 1;
+        const int iend = m - p;
         const int jend = n;
 
-        const value_type* __restrict__ a21 =
-            iend ? a_ptr + ( p + 1 ) * as0 + p * as1 : NULL;
-
-        value_type* __restrict__ b1t = x_ptr + p * bs0;
-        value_type* __restrict__ b2 = iend ? x_ptr + ( p + 1 ) * bs0 : NULL;
-
-        for ( int i = 0; i < iend; ++i )
+        for ( int i = 1; i < iend; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
             for ( int j = 0; j < jend; ++j )
-                b2[i * bs0 + j * bs1] -= a21[i * as0] * b1t[j * bs1];
+                x( i + p, j ) -= a_lu( i + p, p ) * x( p, j );
     }
 
     // Solve Ux = y for x.
@@ -1828,15 +1831,13 @@ operator^( const ExpressionA& a, const ExpressionB& b )
         const int iend = p;
         const int jend = n;
 
-        const value_type* __restrict__ a01 = a_ptr + p * as1;
-        value_type* __restrict__ b1t = x_ptr + p * bs0;
+        const value_type diag = a_lu( p, p );
 
-        const value_type alpha11 = a_ptr[p * as0 + p * as1];
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
         for ( int j = 0; j < n; ++j )
-            b1t[j * bs1] = b1t[j * bs1] / alpha11;
+            x( p, j ) /= diag;
 
         if ( p > 0 )
         {
@@ -1845,7 +1846,7 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 #pragma unroll
 #endif
                 for ( int j = 0; j < jend; ++j )
-                    x_ptr[i * bs0 + j * bs1] -= a01[i * as0] * b1t[j * bs1];
+                    x( i, j ) -= a_lu( i, p ) * x( p, j );
         }
     }
 
