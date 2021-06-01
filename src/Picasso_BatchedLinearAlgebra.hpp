@@ -515,9 +515,8 @@ struct Matrix<T, 1, 1>
     using eval_type = MatrixView<T, 1, 1>;
     using copy_type = Matrix<T, 1, 1>;
 
-    KOKKOS_DEFAULTED_FUNCTION
-
     // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
     Matrix() = default;
 
     // Scalar constructor.
@@ -1307,7 +1306,7 @@ operator*( const ExpressionA& a, const ExpressionX& x )
 }
 
 //---------------------------------------------------------------------------//
-// Vector-matrix multiplication
+// Vector-matrix multiplication. (i.e. vector-vector transpose multiplication)
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionX>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
@@ -1325,14 +1324,14 @@ operator*( const ExpressionX& x, const ExpressionA& a )
     typename ExpressionX::eval_type x_eval = x;
     Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
            ExpressionA::extent_1>
-        y = static_cast<typename ExpressionA::value_type>( 0 );
+        y;
 
     for ( int i = 0; i < ExpressionX::extent_0; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
         for ( int j = 0; j < ExpressionA::extent_1; ++j )
-            y( i, j ) += x_eval( i ) * a_eval( 0, j );
+            y( i, j ) = x_eval( i ) * a_eval( 0, j );
 
     return y;
 }
