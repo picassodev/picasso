@@ -27,8 +27,8 @@ namespace LinearAlgebra
 //---------------------------------------------------------------------------//
 /*
   This file implements kernel-level dense linear algebra operations using a
-  combination of expression templates for lazy evaluation and KokkosKernels
-  for eager evaluations when necessary.
+  combination of expression templates for lazy evaluation and data structures
+  to hold intermediates for eager evaluations when necessary.
 
   The general concept in the implementation for lazy vs. eager evalations is
   this: if an operation will evaluate the same expression multiple times
@@ -303,7 +303,7 @@ struct VectorExpression
 //---------------------------------------------------------------------------//
 // Matrix
 //---------------------------------------------------------------------------//
-// Dense matrix with a KokkosKernels compatible data interface.
+// Dense matrix.
 template <class T, int M, int N>
 struct Matrix
 {
@@ -562,8 +562,7 @@ struct Matrix<T, 1, 1>
 };
 
 //---------------------------------------------------------------------------//
-// View for wrapping matrix data with a Kokkos-kernels compatible data
-// interface.
+// View for wrapping matrix data.
 //
 // NOTE: Data in this view may be non-contiguous.
 template <class T, int M, int N>
@@ -739,7 +738,7 @@ struct MatrixView
 //---------------------------------------------------------------------------//
 // Vector
 //---------------------------------------------------------------------------//
-// Dense vector with a KokkosKernels compatible data interface.
+// Dense vector.
 template <class T, int N>
 struct Vector
 {
@@ -977,8 +976,7 @@ struct Vector<T, 1>
 };
 
 //---------------------------------------------------------------------------//
-// View for wrapping vector data with matrix/vector objects. Kokkos-kernels
-// compatible data interface.
+// View for wrapping vector data.
 //
 // NOTE: Data in this view may be non-contiguous.
 template <class T, int N>
@@ -1878,19 +1876,6 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 //                    "Dimensions must match" );
 //     static_assert( Eigenvectors::extent_1 == ExpressionA::extent_0,
 //                    "Dimensions must match" );
-
-//     const auto extent = ExpressionA::extent_0;
-//     typename ExpressionA::copy_type a_schur = a;
-//     Vector<typename ExpressionA::value_type, 2 * extent * extent + 5 *
-//     extent>
-//         work;
-//     KokkosBatched::SerialEigendecomposition::invoke( a_schur, e_real, e_imag,
-//                                                      u_left, u_right, work );
-
-//     // Return the matrix transformed to a quasi upper triangular matrix of
-//     the
-//     // Schur decomposition.
-//     return a_schur;
 // }
 
 //---------------------------------------------------------------------------//
