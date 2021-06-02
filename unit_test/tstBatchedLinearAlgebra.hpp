@@ -234,6 +234,13 @@ void matrixTest()
     // Check trace.
     auto tr_I = LinearAlgebra::trace( I );
     EXPECT_DOUBLE_EQ( 3.0, tr_I );
+
+    // Check deep copy.
+    LinearAlgebra::Matrix<double, 2, 3> g;
+    LinearAlgebra::deepCopy( g, f );
+    for ( int i = 0; i < 2; ++i )
+        for ( int j = 0; j < 3; ++j )
+            EXPECT_DOUBLE_EQ( g( i, j ), 32.3 );
 }
 
 //---------------------------------------------------------------------------//
@@ -336,6 +343,12 @@ void vectorTest()
     for ( int i = 0; i < 3; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_DOUBLE_EQ( q_diag( i, j ), ( i == j ) ? q( i ) : 0.0 );
+
+    // Check deep copy.
+    LinearAlgebra::Vector<double, 3> w;
+    LinearAlgebra::deepCopy( w, q );
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_DOUBLE_EQ( w( i ), 32.3 );
 }
 
 //---------------------------------------------------------------------------//

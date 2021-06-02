@@ -41,7 +41,6 @@ add_library(picasso ${SOURCES})
 
 target_link_libraries(picasso
   Kokkos::kokkos
-  Kokkos::kokkoskernels
   MPI::MPI_CXX
   Cabana::cabanacore
   Cabana::Cajita
