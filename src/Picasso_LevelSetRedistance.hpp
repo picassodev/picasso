@@ -40,12 +40,15 @@ double distance( const double x[3], const double y[3], double z[3] )
 // Clamp a point into the local domain.
 template <class LocalMeshType>
 KOKKOS_INLINE_FUNCTION void
-clampPointToLocalDomain( const LocalMeshType& local_mesh, double x[3] )
+clampPointToLocalDomain( const LocalMeshType& local_mesh, const double dx,
+                         double x[3] )
 {
     for ( int d = 0; d < 3; ++d )
     {
-        x[d] = fmin( local_mesh.highCorner( Cajita::Ghost(), d ),
-                     fmax( local_mesh.lowCorner( Cajita::Ghost(), d ), x[d] ) );
+        x[d] =
+            fmin( local_mesh.highCorner( Cajita::Ghost(), d ) - 0.001 * dx,
+                  fmax( local_mesh.lowCorner( Cajita::Ghost(), d ) + 0.001 * dx,
+                        x[d] ) );
     }
 }
 
@@ -88,7 +91,7 @@ evaluate( const SignedDistanceView& phi_0, const double sign,
     for ( int i = 0; i < max_iter; ++i )
     {
         // Move the point back into the local domain if necessary.
-        clampPointToLocalDomain( local_mesh, y_old );
+        clampPointToLocalDomain( local_mesh, sd.dx[0], y_old );
 
         // Do a gradient projection.
         Cajita::evaluateSpline( local_mesh, y_old, sd );
@@ -115,7 +118,7 @@ evaluate( const SignedDistanceView& phi_0, const double sign,
     }
 
     // Evaluate the signed distance function at the minimum argument.
-    clampPointToLocalDomain( local_mesh, y );
+    clampPointToLocalDomain( local_mesh, sd.dx[0], y );
     double phi_argmin_eval;
     Cajita::evaluateSpline( local_mesh, y, sd );
     Cajita::G2P::value( phi_0, sd, phi_argmin_eval );
