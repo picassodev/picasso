@@ -240,7 +240,10 @@ struct MatrixExpression
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
-    auto operator()( const int i, const int j ) const { return _f( i, j ); }
+    value_type operator()( const int i, const int j ) const
+    {
+        return _f( i, j );
+    }
 
     // Get a row as a vector expression.
     KOKKOS_INLINE_FUNCTION
@@ -292,12 +295,12 @@ struct VectorExpression
 
     // Evaluate the expression at an index.
     KOKKOS_INLINE_FUNCTION
-    auto operator()( const int i ) const { return _f( i ); }
+    value_type operator()( const int i ) const { return _f( i ); }
 
     // Evaluate the expression at an index. 2D version for vectors treated as
     // matrices.
     KOKKOS_INLINE_FUNCTION
-    auto operator()( const int i, int ) const { return _f( i ); }
+    value_type operator()( const int i, int ) const { return _f( i ); }
 };
 
 //---------------------------------------------------------------------------//
