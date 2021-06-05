@@ -45,12 +45,16 @@ jobs:
           cmake --build build --parallel 2
           cmake --install build
       - name: Checkout kokkos-kernels
+        # FIXME: remove when dependency re-added
+        if: false
         uses: actions/checkout@v2.2.0
         with:
           repository: kokkos/kokkos-kernels
           ref: 3.2.01
           path: kokkos-kernels
       - name: Build kokkos-kernels
+        # FIXME: remove when dependency re-added
+        if: false
         working-directory: kokkos-kernels
         run: |
           cmake -B build \
