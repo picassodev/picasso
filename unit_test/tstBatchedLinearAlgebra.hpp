@@ -241,6 +241,17 @@ void matrixTest()
     for ( int i = 0; i < 2; ++i )
         for ( int j = 0; j < 3; ++j )
             EXPECT_DOUBLE_EQ( g( i, j ), 32.3 );
+
+    // 1x1 matrix test.
+    LinearAlgebra::Matrix<double, 1, 1> obo = 3.2;
+    obo += ~obo * obo;
+    EXPECT_DOUBLE_EQ( 13.44, obo( 0, 0 ) );
+    obo -= ~obo * obo;
+    EXPECT_DOUBLE_EQ( -167.1936, obo( 0, 0 ) );
+    obo = 12.0;
+    EXPECT_DOUBLE_EQ( 12.0, obo( 0, 0 ) );
+    LinearAlgebra::Matrix<double, 1, 1> obo2 = ~obo * obo;
+    EXPECT_DOUBLE_EQ( 144.0, obo2( 0, 0 ) );
 }
 
 //---------------------------------------------------------------------------//
@@ -349,6 +360,17 @@ void vectorTest()
     LinearAlgebra::deepCopy( w, q );
     for ( int i = 0; i < 3; ++i )
         EXPECT_DOUBLE_EQ( w( i ), 32.3 );
+
+    // Size 1 vector test.
+    LinearAlgebra::Vector<double, 1> sov = 3.2;
+    sov += ~sov * sov;
+    EXPECT_DOUBLE_EQ( 13.44, sov( 0 ) );
+    sov -= ~sov * sov;
+    EXPECT_DOUBLE_EQ( -167.1936, sov( 0 ) );
+    sov = 12.0;
+    EXPECT_DOUBLE_EQ( 12.0, sov( 0 ) );
+    LinearAlgebra::Vector<double, 1> sov2 = ~sov * sov;
+    EXPECT_DOUBLE_EQ( 144.0, sov2( 0 ) );
 }
 
 //---------------------------------------------------------------------------//

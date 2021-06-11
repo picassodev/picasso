@@ -526,6 +526,45 @@ struct Matrix<T, 1, 1>
     {
     }
 
+    // Deep copy constructor. Triggers expression evaluation.
+    template <
+        class Expression,
+        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
+    {
+        _d = e( 0, 0 );
+    }
+
+    // Assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator=( const Expression& e )
+    {
+        _d = e( 0, 0 );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator+=( const Expression& e )
+    {
+        _d += e( 0, 0 );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator-=( const Expression& e )
+    {
+        _d -= e( 0, 0 );
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
@@ -931,6 +970,45 @@ struct Vector<T, 1>
     Vector( const T value )
         : _d( value )
     {
+    }
+
+    // Deep copy constructor. Triggers expression evaluation.
+    template <
+        class Expression,
+        typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
+    {
+        _d = e( 0 );
+    }
+
+    // Deep copy assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator=( const Expression& e )
+    {
+        _d = e( 0 );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator+=( const Expression& e )
+    {
+        _d += e( 0 );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator-=( const Expression& e )
+    {
+        _d -= e( 0 );
+        return *this;
     }
 
     // Scalar value assignment.
