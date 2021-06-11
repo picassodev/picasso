@@ -119,6 +119,13 @@ class FieldManager
         }
     }
 
+    // Add a field by layout.
+    template <class Layout>
+    void add( const Layout& )
+    {
+        add( typename Layout::location{}, typename Layout::tag{} );
+    }
+
     // Get a shared pointer to a field array.
     template <class Location, class FieldTag>
     auto array( const Location& location, const FieldTag& tag ) const
@@ -126,11 +133,25 @@ class FieldManager
         return getFieldHandle( location, tag )->array;
     }
 
+    // Get a shared pointer to a field array by layout.
+    template <class Layout>
+    auto array( const Layout& ) const
+    {
+        return array( typename Layout::location{}, typename Layout::tag{} );
+    }
+
     // Get a view of a field.
     template <class Location, class FieldTag>
     auto view( const Location& location, const FieldTag& tag ) const
     {
         return array( location, tag )->view();
+    }
+
+    // Get a view of a field by layout.
+    template <class Layout>
+    auto view( const Layout& ) const
+    {
+        return view( typename Layout::location{}, typename Layout::tag{} );
     }
 
     // Scatter a field.
@@ -143,6 +164,13 @@ class FieldManager
             Cajita::ScatterReduce::Sum(), *( handle->array ) );
     }
 
+    // Scatter a field by layout.
+    template <class Layout>
+    void scatter( const Layout& ) const
+    {
+        scatter( typename Layout::location{}, typename Layout::tag{} );
+    }
+
     // Gather a field.
     template <class Location, class FieldTag>
     void gather( const Location& location, const FieldTag& tag ) const
@@ -151,6 +179,13 @@ class FieldManager
         handle->halo->gather(
             typename mesh_type::memory_space::execution_space(),
             *( handle->array ) );
+    }
+
+    // Gather a field by layout.
+    template <class Layout>
+    void gather( const Layout& ) const
+    {
+        gather( typename Layout::location{}, typename Layout::tag{} );
     }
 
   private:
