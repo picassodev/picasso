@@ -352,6 +352,9 @@ struct Matrix
         typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
     KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -378,6 +381,9 @@ struct Matrix
         typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
         operator=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -393,6 +399,9 @@ struct Matrix
         typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
         operator+=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -408,6 +417,9 @@ struct Matrix
         typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
         operator-=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -526,6 +538,57 @@ struct Matrix<T, 1, 1>
     {
     }
 
+    // Deep copy constructor. Triggers expression evaluation.
+    template <
+        class Expression,
+        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d = e( 0, 0 );
+    }
+
+    // Assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d = e( 0, 0 );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator+=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d += e( 0, 0 );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator-=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d -= e( 0, 0 );
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Matrix& operator=( const T value )
@@ -614,6 +677,9 @@ struct MatrixView
         typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
         operator=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -629,6 +695,9 @@ struct MatrixView
         typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
         operator+=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -644,6 +713,9 @@ struct MatrixView
         typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
         operator-=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
         for ( int i = 0; i < M; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -781,6 +853,9 @@ struct Vector
         typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
     KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -805,6 +880,9 @@ struct Vector
         typename std::enable_if<is_vector<Expression>::value, Vector&>::type
         operator=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -819,6 +897,9 @@ struct Vector
         typename std::enable_if<is_vector<Expression>::value, Vector&>::type
         operator+=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -833,6 +914,9 @@ struct Vector
         typename std::enable_if<is_vector<Expression>::value, Vector&>::type
         operator-=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -933,6 +1017,57 @@ struct Vector<T, 1>
     {
     }
 
+    // Deep copy constructor. Triggers expression evaluation.
+    template <
+        class Expression,
+        typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d = e( 0 );
+    }
+
+    // Deep copy assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d = e( 0 );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator+=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d += e( 0 );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
+        operator-=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        _d -= e( 0 );
+        return *this;
+    }
+
     // Scalar value assignment.
     KOKKOS_INLINE_FUNCTION
     Vector& operator=( const T value )
@@ -1026,6 +1161,9 @@ struct VectorView
         typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
         operator=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -1040,6 +1178,9 @@ struct VectorView
         typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
         operator+=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -1054,6 +1195,9 @@ struct VectorView
         typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
         operator-=( const Expression& e )
     {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
