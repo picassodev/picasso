@@ -161,9 +161,8 @@ struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
     template <class FieldManager_t>
     static void addGatherFields( FieldManager_t& fm )
     {
-        std::ignore = std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
-              0 )... };
+        std::ignore =
+            std::initializer_list<int>{ ( fm.add( Layouts{} ), 0 )... };
     }
 
     // Add scatter fields to the field manager.
@@ -187,9 +186,7 @@ struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
     {
         return Cajita::createHalo(
             Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
-            -1,
-            ( *fm.array( typename Layouts::location(),
-                         typename Layouts::tag() ) )... );
+            -1, ( *fm.array( Layouts{} ) )... );
     }
 
     // Create a halo for the scatter fields.
@@ -206,8 +203,7 @@ struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
     static void gather( const Halo& halo, const FieldManager_t& fm,
                         const ExecutionSpace& space )
     {
-        halo->gather( space, *( fm.array( typename Layouts::location(),
-                                          typename Layouts::tag() ) )... );
+        halo->gather( space, *( fm.array( Layouts{} ) )... );
     }
 
     // Scatter the scatter fields.
@@ -241,9 +237,8 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
     template <class FieldManager_t>
     static void addScatterFields( FieldManager_t& fm )
     {
-        std::ignore = std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
-              0 )... };
+        std::ignore =
+            std::initializer_list<int>{ ( fm.add( Layouts{} ), 0 )... };
     }
 
     // Add local fields to the field manager.
@@ -268,9 +263,7 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
     {
         return Cajita::createHalo(
             Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
-            -1,
-            ( *fm.array( typename Layouts::location(),
-                         typename Layouts::tag() ) )... );
+            -1, ( *fm.array( Layouts{} ) )... );
     }
 
     // Gather the gather fields.
@@ -286,8 +279,7 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
                          const ExecutionSpace& space )
     {
         halo->scatter( space, Cajita::ScatterReduce::Sum(),
-                       *( fm.array( typename Layouts::location(),
-                                    typename Layouts::tag() ) )... );
+                       *( fm.array( Layouts{} ) )... );
     }
 };
 
@@ -317,9 +309,8 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
     template <class FieldManager_t>
     static void addLocalFields( FieldManager_t& fm )
     {
-        std::ignore = std::initializer_list<int>{
-            ( fm.add( typename Layouts::location(), typename Layouts::tag() ),
-              0 )... };
+        std::ignore =
+            std::initializer_list<int>{ ( fm.add( Layouts{} ), 0 )... };
     }
 
     // Create a halo for the gather fields.
@@ -507,9 +498,8 @@ class GridOperator
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cabana::makeParameterPack( Field::createViewWrapper(
-            Layouts(), fm.view( typename Layouts::location(),
-                                typename Layouts::tag() ) )... );
+        auto views = Cabana::makeParameterPack(
+            Field::createViewWrapper( Layouts{}, fm.view( Layouts{} ) )... );
 
         // Assign the parameter pack to the dependency fields.
         return createFieldViewTuple<Layouts...>( views );
@@ -531,17 +521,14 @@ class GridOperator
         // while it expands the rest of the Layouts parameter pack. With C++17
         // we would just use fold expressions.
         std::ignore = std::initializer_list<int>{
-            ( Kokkos::deep_copy( fm.view( typename Layouts::location(),
-                                          typename Layouts::tag() ),
-                                 0.0 ),
-              0 )... };
+            ( Kokkos::deep_copy( fm.view( Layouts{} ), 0.0 ), 0 )... };
 
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list and expands it as a parameter
         // pack.
         auto scatter_views = Cabana::makeParameterPack(
-            Kokkos::Experimental::create_scatter_view( fm.view(
-                typename Layouts::location(), typename Layouts::tag() ) )... );
+            Kokkos::Experimental::create_scatter_view(
+                fm.view( Layouts{} ) )... );
 
         // Assign the parameter pack to the dependency fields.
         return createFieldViewTuple<Layouts...>( scatter_views );
@@ -559,9 +546,8 @@ class GridOperator
         // Create a parameter pack of views. The use of (...) here gets a view
         // of each field in the layout list, wraps it for linear algebra
         // operations, and expands it as a parameter pack.
-        auto views = Cabana::makeParameterPack( Field::createViewWrapper(
-            Layouts(), fm.view( typename Layouts::location(),
-                                typename Layouts::tag() ) )... );
+        auto views = Cabana::makeParameterPack(
+            Field::createViewWrapper( Layouts{}, fm.view( Layouts{} ) )... );
 
         // Assign the parameter pack to the dependency fields.
         return createFieldViewTuple<Layouts...>( views );
@@ -581,8 +567,7 @@ class GridOperator
         // non-const reference to a temporary. Create a parameter pack of
         // views. The use of (...) here gets a view of each field in the
         // layout list and expands it as a parameter pack.
-        auto view_pack = Cabana::makeParameterPack( fm.view(
-            typename Layouts::location(), typename Layouts::tag() )... );
+        auto view_pack = Cabana::makeParameterPack( fm.view( Layouts{} )... );
 
         // Assign the parameter pack to the dependency fields.
         auto views = createFieldViewTuple<Layouts...>( view_pack );
@@ -591,11 +576,8 @@ class GridOperator
         // C++14. Contributes each scatter view into its original view in the
         // field manager
         std::ignore = std::initializer_list<int>{
-            ( Kokkos::Experimental::contribute(
-                  views.get( typename Layouts::location(),
-                             typename Layouts::tag() ),
-                  scatter_deps.get( typename Layouts::location(),
-                                    typename Layouts::tag() ) ),
+            ( Kokkos::Experimental::contribute( views.get( Layouts{} ),
+                                                scatter_deps.get( Layouts{} ) ),
               0 )... };
     }
 
