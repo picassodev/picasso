@@ -311,6 +311,8 @@ struct ScalarViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type&>
     operator()( const int i0, const int i1, const int i2 ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2, 0 );
     }
 
@@ -318,7 +320,28 @@ struct ScalarViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type&>
     operator()( const int i0, const int i1 ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, 0 );
+    }
+
+    // Access data through point-wise array-based index arguments.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type&>
+    operator()( const int i[3] ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i[0], i[1], i[2], 0 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type&>
+    operator()( const int i[2] ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i[0], i[1], 0 );
     }
 
     // Access the view data through full index arguments.
@@ -326,6 +349,8 @@ struct ScalarViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
     operator()( const int i0, const int i1, const int i2, const int ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2, 0 );
     }
 
@@ -333,6 +358,8 @@ struct ScalarViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
     operator()( const int i0, const int i1, const int ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, 0 );
     }
 };
@@ -377,6 +404,8 @@ struct VectorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
     operator()( const int i0, const int i1, const int i2 ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return linear_algebra_type( &_v( i0, i1, i2, 0 ), _v.stride( 3 ) );
     }
 
@@ -384,7 +413,30 @@ struct VectorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
     operator()( const int i0, const int i1 ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return linear_algebra_type( &_v( i0, i1, 0 ), _v.stride( 2 ) );
+    }
+
+    // Access the view data as a vector through point-wise array-based index
+    // arguments.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i[3] ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], i[2], 0 ),
+                                    _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i[2] ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], 0 ), _v.stride( 2 ) );
     }
 
     // Access the view data through full index arguments.
@@ -392,6 +444,8 @@ struct VectorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
     operator()( const int i0, const int i1, const int i2, const int i3 ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2, i3 );
     }
 
@@ -399,6 +453,8 @@ struct VectorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
     operator()( const int i0, const int i1, const int i2 ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2 );
     }
 };
@@ -451,6 +507,8 @@ struct TensorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
     operator()( const int i0, const int i1, const int i2 ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return linear_algebra_type( &_v( i0, i1, i2, 0 ), dim1 * _v.stride( 3 ),
                                     _v.stride( 3 ) );
     }
@@ -459,7 +517,31 @@ struct TensorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
     operator()( const int i0, const int i1 ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return linear_algebra_type( &_v( i0, i1, 0 ), dim1 * _v.stride( 2 ),
+                                    _v.stride( 2 ) );
+    }
+
+    // Access the view data as a tensor through array-based point-wise index
+    // arguments. The data layout is the same as above.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i[3] ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], i[2], 0 ),
+                                    dim1 * _v.stride( 3 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i[2] ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], 0 ), dim1 * _v.stride( 2 ),
                                     _v.stride( 2 ) );
     }
 
@@ -468,6 +550,8 @@ struct TensorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
     operator()( const int i0, const int i1, const int i2, const int i3 ) const
     {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2, i3 );
     }
 
@@ -475,6 +559,8 @@ struct TensorViewWrapper
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
     operator()( const int i0, const int i1, const int i2 ) const
     {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
         return _v( i0, i1, i2 );
     }
 };

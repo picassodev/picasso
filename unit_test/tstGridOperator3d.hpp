@@ -143,9 +143,11 @@ struct GridFunc
         baz( i, j,
              k ) = { { 1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 } };
 
-        // Assign foo_out - build a point-wise expression to do this.
+        // Assign foo_out - build a point-wise expression to do this. Test out
+        // both separate index and array-based indices.
+        const int index[3] = { i, j, k };
         auto baz_t_foo_in_t_2 =
-            baz( i, j, k ) * ( foo_in( i, j, k ) + foo_in( i, j, k ) );
+            baz( index ) * ( foo_in( index ) + foo_in( i, j, k ) );
         for ( int d = 0; d < 3; ++d )
             foo_out_access( i, j, k, d ) += baz_t_foo_in_t_2( d ) + i + j + k;
 
