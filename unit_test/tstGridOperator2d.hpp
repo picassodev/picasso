@@ -101,9 +101,11 @@ struct GridFunc
         // Set up the local dependency to be the identity.
         baz( i, j ) = { { 1.0, 0.0 }, { 0.0, 1.0 } };
 
-        // Assign foo_out - build a point-wise expression to do this.
+        // Assign foo_out - build a point-wise expression to do this. Test out
+        // both separate index and array-based indices.
+        const int index[2] = { i, j };
         auto baz_t_foo_in_t_2 =
-            baz( i, j ) * ( foo_in( i, j ) + foo_in( i, j ) );
+            baz( index ) * ( foo_in( index ) + foo_in( i, j ) );
         for ( int d = 0; d < 2; ++d )
             foo_out_access( i, j, d ) += baz_t_foo_in_t_2( d ) + i + j;
 
