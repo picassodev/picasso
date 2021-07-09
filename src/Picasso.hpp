@@ -24,7 +24,6 @@
 #include <Picasso_InputParser.hpp>
 #include <Picasso_LevelSet.hpp>
 #include <Picasso_LevelSetRedistance.hpp>
-#include <Picasso_ParticleCommunication.hpp>
 #include <Picasso_ParticleInit.hpp>
 #include <Picasso_ParticleInterpolation.hpp>
 #include <Picasso_ParticleLevelSet.hpp>
