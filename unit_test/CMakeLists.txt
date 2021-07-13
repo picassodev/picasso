@@ -114,7 +114,7 @@ add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##
-set(PICASSO_SUPPORTED_DEVICES SERIAL OPENMP CUDA)
+set(PICASSO_SUPPORTED_DEVICES SERIAL OPENMP CUDA HIP)
 
 macro(Picasso_add_tests)
   cmake_parse_arguments(PICASSO_UNIT_TEST "MPI" "" "NAMES" ${ARGN})
@@ -146,7 +146,7 @@ macro(Picasso_add_tests)
         if(PICASSO_UNIT_TEST_MPI)
           foreach(_np ${PICASSO_UNIT_TEST_MPIEXEC_NUMPROCS})
             add_test(NAME ${_target}_${_np} COMMAND
-              ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
+              ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${_np} ${MPIEXEC_PREFLAGS}
               ${_target} ${MPIEXEC_PREFLAGS} ${gtest_args})
           endforeach()
         else()
