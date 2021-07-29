@@ -18,7 +18,7 @@ jobs:
         cxx: ['g++', 'clang++']
         openmp: ['ON', 'OFF']
         cmake_build_type: ['Debug', 'Release']
-        kokkos_ver: ['3.2.01', 'master', 'develop']
+        kokkos_ver: ['3.4.01', 'master', 'develop']
     runs-on: ubuntu-20.04
     container: ghcr.io/ecp-copa/ci-containers/${{ matrix.distro }}
     steps:
@@ -44,26 +44,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
           cmake --install build
-      - name: Checkout kokkos-kernels
-        # FIXME: remove when dependency re-added
-        if: false
-        uses: actions/checkout@v2.2.0
-        with:
-          repository: kokkos/kokkos-kernels
-          ref: 3.2.01
-          path: kokkos-kernels
-      - name: Build kokkos-kernels
-        # FIXME: remove when dependency re-added
-        if: false
-        working-directory: kokkos-kernels
-        run: |
-          cmake -B build \
-            -DCMAKE_PREFIX_PATH=${HOME}/kokkos \
-            -DCMAKE_INSTALL_PREFIX=$HOME/kokkos-kernels \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
-          cmake --build build --parallel 2
-          cmake --install build
       - name: Checkout arborx
         uses: actions/checkout@v2.2.0
         with:
@@ -80,6 +60,23 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
           cmake --install build
+      - name: Checkout hypre
+        uses: actions/checkout@v2.2.0
+        with:
+          repository: hypre-space/hypre
+          ref: v2.22.0
+          path: hypre
+      - name: Build hypre
+        working-directory: hypre/src
+        run: |
+          cmake -B build \
+            -DHYPRE_INSTALL_PREFIX=$HOME/hypre \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DHYPRE_WITH_MPI=ON
+          cmake --build build --parallel 2
+          cmake --install build
       - name: Checkout Cabana
         uses: actions/checkout@v2.2.0
         with:
@@ -91,7 +88,7 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/cabana \
-            -DCMAKE_PREFIX_PATH=$HOME/kokkos \
+            -DCMAKE_PREFIX_PATH="$HOME/kokkos;$HOME/hypre" \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
@@ -139,7 +136,7 @@ jobs:
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/picasso \
             -DMPIEXEC_MAX_NUMPROCS=2 -DMPIEXEC_PREFLAGS="--oversubscribe" \
-            -DCMAKE_PREFIX_PATH="$HOME/kokkos;$HOME/kokkos-kernels;$HOME/arborx;$HOME/cabana;$HOME/boost;$HOME/silo" \
+            -DCMAKE_PREFIX_PATH="$HOME/kokkos;$HOME/arborx;$HOME/cabana;$HOME/boost;$HOME/silo;$HOME/hypre" \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_CXX_FLAGS="-Wall -pedantic --coverage" \
             -DPicasso_ENABLE_TESTING=ON \

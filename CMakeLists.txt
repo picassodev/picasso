@@ -28,6 +28,7 @@ find_package(CLANG_FORMAT 10)
 find_package(MPI REQUIRED)
 find_package(Kokkos REQUIRED)
 find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
+find_package(HYPRE REQUIRED)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 
