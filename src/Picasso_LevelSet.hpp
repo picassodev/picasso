@@ -105,6 +105,13 @@ class LevelSet
         // Redistance on the coarse grid.
         auto own_entities = _mesh->localGrid()->indexSpace(
             Cajita::Own(), entity_type(), Cajita::Local() );
+
+        double secant_tol = _redistance_secant_tol;
+        int max_secant_iter = _redistance_max_secant_iter;
+        int num_random_guess = _redistance_num_random_guess;
+        double projection_tol = _redistance_projection_tol;
+        int max_projection_iter = _redistance_max_projection_iter;
+
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceCoarse",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
@@ -122,11 +129,9 @@ class LevelSet
                     distance_view( i, j, k, 0 ) =
                         LevelSetRedistance::redistanceEntity(
                             entity_type(), estimate_view, local_mesh,
-                            entity_index, _redistance_secant_tol,
-                            _redistance_max_secant_iter,
-                            _redistance_num_random_guess,
-                            _redistance_projection_tol,
-                            _redistance_max_projection_iter );
+                            entity_index, secant_tol, max_secant_iter,
+                            num_random_guess, projection_tol,
+                            max_projection_iter );
                 }
             } );
 
@@ -237,11 +242,9 @@ class LevelSet
                     distance_view( i, j, k, 0 ) =
                         LevelSetRedistance::redistanceEntity(
                             entity_type(), estimate_view, local_mesh,
-                            entity_index, _redistance_secant_tol,
-                            _redistance_max_secant_iter,
-                            _redistance_num_random_guess,
-                            _redistance_projection_tol,
-                            _redistance_max_projection_iter );
+                            entity_index, secant_tol, max_secant_iter,
+                            num_random_guess, projection_tol,
+                            max_projection_iter );
                 }
 
                 // Otherwise just assign the distance to be our estimate.
