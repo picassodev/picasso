@@ -64,7 +64,8 @@ jobs:
         uses: actions/checkout@v2.2.0
         with:
           repository: hypre-space/hypre
-          ref: v2.22.0
+          # FIXME: use tag when https://github.com/hypre-space/hypre/pull/423 is included in a release
+          ref: ae8bbf619ce243e9dab095a8e115717463d3db83
           path: hypre
       - name: Build hypre
         working-directory: hypre/src
