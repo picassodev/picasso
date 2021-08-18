@@ -138,8 +138,7 @@ void sphere_redistance()
         return r - 0.25;
     };
 
-    // Test. Use a smaller tolerance as we can resolve the smooth values
-    // relatively well.
+    // Test.
     runTest( phi_r, "spehere_mc_mesh.stl" );
 }
 
@@ -160,8 +159,7 @@ void scaled_sphere_redistance()
         return 2.8 * ( exp( r - 0.25 ) - 1.0 );
     };
 
-    // Test. Use a smaller tolerance as we can resolve the smooth values
-    // relatively well.
+    // Test.
     runTest( phi_0, "scaled_spehere_mc_mesh.stl" );
 }
 

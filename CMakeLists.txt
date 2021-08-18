@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.12)
 
 project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
-enable_language(C)
-
 include(GNUInstallDirs)
 
 # find dependencies (MPI, Kokkos, and HYPRE found through Cabana)
@@ -13,6 +11,8 @@ find_package(CLANG_FORMAT 10)
 find_package(Cabana REQUIRED 0.4 COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
+find_package(ArborX REQUIRED)
+find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 
 if( NOT Cabana_ENABLE_CAJITA )
   message( FATAL_ERROR "Cabana must be compiled with Cajita enabled" )

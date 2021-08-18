@@ -32,6 +32,7 @@ endif()
 
 set(SOURCES
   Picasso_InputParser.cpp
+  Picasso_MarchingCubes.cpp
   Picasso_UniformMesh.cpp
   Picasso_Version.cpp
   )
