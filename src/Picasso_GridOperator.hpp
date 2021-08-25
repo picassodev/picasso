@@ -586,18 +586,18 @@ class GridOperator
 
     // Call a functor without a work tag.
     template <class WorkTag, class Functor, class... Args>
-    KOKKOS_FORCEINLINE_FUNCTION
+    KOKKOS_FORCEINLINE_FUNCTION static
         typename std::enable_if_t<std::is_same<WorkTag, void>::value>
-        functorTagDispatch( const Functor& functor, Args&&... args ) const
+        functorTagDispatch( const Functor& functor, Args&&... args )
     {
         functor( std::forward<Args>( args )... );
     }
 
     // Call a functor with a work tag
     template <class WorkTag, class Functor, class... Args>
-    KOKKOS_FORCEINLINE_FUNCTION
+    KOKKOS_FORCEINLINE_FUNCTION static
         typename std::enable_if_t<!std::is_same<WorkTag, void>::value>
-        functorTagDispatch( const Functor& functor, Args&&... args ) const
+        functorTagDispatch( const Functor& functor, Args&&... args )
     {
         functor( WorkTag{}, std::forward<Args>( args )... );
     }
