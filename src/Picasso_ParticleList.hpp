@@ -14,10 +14,10 @@
 
 #include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_FieldTypes.hpp>
-#include <Picasso_ParticleCommunication.hpp>
 #include <Picasso_UniformMesh.hpp>
 
 #include <Cabana_Core.hpp>
+#include <Cajita.hpp>
 
 #include <memory>
 #include <string>
@@ -272,10 +272,10 @@ class ParticleList
     // particles were actually redistributed.
     bool redistribute( const bool force_redistribute = false )
     {
-        return ParticleCommunication::redistribute(
-            *( _mesh->localGrid() ), _mesh->minimumHaloWidth(),
+        return Cajita::particleGridMigrate(
+            *( _mesh->localGrid() ),
             this->slice( Field::LogicalPosition<mesh_type::num_space_dim>() ),
-            _aosoa, force_redistribute );
+            _aosoa, _mesh->minimumHaloWidth(), force_redistribute );
     }
 
   private:
