@@ -1586,40 +1586,52 @@ KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
 // Scalar multiplication.
 //---------------------------------------------------------------------------//
 // Matrix.
-template <class ExpressionA,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto
-operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
+template <class ExpressionA, class Scalar,
+          typename std::enable_if_t<
+              is_matrix<ExpressionA>::value && !is_matrix<Scalar>::value &&
+                  !is_vector<Scalar>::value &&
+                  std::is_same<Scalar, typename ExpressionA::value_type>::value,
+              int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const Scalar& s, const ExpressionA& a )
 {
     return createMatrixExpression<typename ExpressionA::value_type,
                                   ExpressionA::extent_0, ExpressionA::extent_1>(
         [=]( const int i, const int j ) { return s * a( i, j ); } );
 }
 
-template <class ExpressionA,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto
-operator*( const ExpressionA& a, const typename ExpressionA::value_type& s )
+template <class ExpressionA, class Scalar,
+          typename std::enable_if_t<
+              is_matrix<ExpressionA>::value && !is_matrix<Scalar>::value &&
+                  !is_vector<Scalar>::value &&
+                  std::is_same<Scalar, typename ExpressionA::value_type>::value,
+              int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const ExpressionA& a, const Scalar& s )
 {
     return s * a;
 }
 
 //---------------------------------------------------------------------------//
 // Vector.
-template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto
-operator*( const typename ExpressionX::value_type& s, const ExpressionX& x )
+template <class ExpressionX, class Scalar,
+          typename std::enable_if_t<
+              is_vector<ExpressionX>::value && !is_matrix<Scalar>::value &&
+                  !is_vector<Scalar>::value &&
+                  std::is_same<Scalar, typename ExpressionX::value_type>::value,
+              int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const Scalar& s, const ExpressionX& x )
 {
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
         [=]( const int i ) { return s * x( i ); } );
 }
 
-template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto
-operator*( const ExpressionX& x, const typename ExpressionX::value_type& s )
+template <class ExpressionX, class Scalar,
+          typename std::enable_if_t<
+              is_vector<ExpressionX>::value && !is_matrix<Scalar>::value &&
+                  !is_vector<Scalar>::value &&
+                  std::is_same<Scalar, typename ExpressionX::value_type>::value,
+              int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator*( const ExpressionX& x, const Scalar& s )
 {
     return s * x;
 }
