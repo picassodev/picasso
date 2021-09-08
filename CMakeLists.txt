@@ -25,12 +25,12 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 # find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
+find_package(Boost 1.66.0 REQUIRED)
+find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(MPI REQUIRED)
 find_package(Kokkos REQUIRED)
-find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(HYPRE REQUIRED)
 find_package(ArborX REQUIRED)
-find_package(Boost 1.66.0 REQUIRED)
 
 # find dependencies (from Cabana CMakeLists.txt)
 macro(Picasso_add_dependency)
