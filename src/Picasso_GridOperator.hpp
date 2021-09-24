@@ -398,14 +398,14 @@ class GridOperator
     //
     // The functor is given a ParticleView allowing the kernel to read and
     // write particle data.
-    template <class ExecutionSpace, class ParticleList_t, class WorkTag,
+    template <class ExecutionSpace, class... ParticleFields, class WorkTag,
               class Func>
-    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
-                const WorkTag&, const Func& func ) const
+    void apply( const FieldLocation::Particle& location,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const ParticleList<Mesh, ParticleFields...>& pl, const WorkTag&,
+                const Func& func ) const
     {
-        applyImpl<WorkTag>( fm, exec_space, FieldLocation::Particle(), pl,
-                            func );
+        applyImpl<WorkTag>( fm, exec_space, location, pl, func );
     }
 
     // Apply the operator in a loop over particles. Functor does not have a
@@ -416,12 +416,13 @@ class GridOperator
     //
     // The functor is given a ParticleView allowing the kernel to read and
     // write particle data.
-    template <class ExecutionSpace, class ParticleList_t, class Func>
-    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
+    template <class ExecutionSpace, class... ParticleFields, class Func>
+    void apply( const FieldLocation::Particle& location,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const ParticleList<Mesh, ParticleFields...>& pl,
                 const Func& func ) const
     {
-        applyImpl<void>( fm, exec_space, FieldLocation::Particle(), pl, func );
+        applyImpl<void>( fm, exec_space, location, pl, func );
     }
 
     // Apply the operator in a loop over the owned entities of the given
@@ -440,6 +441,7 @@ class GridOperator
 
     // Apply the operator in a loop over the owned entities of the given
     // type. Functor does not have a work tag.
+    //
     // Functor signature:
     // func( local_mesh, gather_deps, scatter_deps, local_deps, i, j, k )
     template <class ExecutionSpace, class Location, class Func>
@@ -447,6 +449,35 @@ class GridOperator
                 const FieldManager<Mesh>& fm, const Func& func ) const
     {
         applyImpl<void>( fm, exec_space, location, func );
+    }
+
+    // Apply the operator in a fused loop over a list of provided index
+    // spaces. A work tag specifies the functor instance to use.
+    //
+    // Functor signature:
+    // func( local_mesh, gather_deps, scatter_deps, local_deps, s, i, j, k )
+    template <std::size_t NumSpace, class ExecutionSpace, class WorkTag,
+              class Func>
+    void apply( const Kokkos::Array<Cajita::IndexSpace<Mesh::num_space_dim>,
+                                    NumSpace>& spaces,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const WorkTag&, const Func& func ) const
+    {
+        applyImpl<WorkTag>( fm, exec_space, spaces, func );
+    }
+
+    // Apply the operator in a fused loop over a list of provided index
+    // spaces. Functor does not have a work tag.
+    //
+    // Functor signature:
+    // func( local_mesh, gather_deps, scatter_deps, local_deps, s, i, j, k )
+    template <std::size_t NumSpace, class ExecutionSpace, class Func>
+    void apply( const Kokkos::Array<Cajita::IndexSpace<Mesh::num_space_dim>,
+                                    NumSpace>& spaces,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const Func& func ) const
+    {
+        applyImpl<void>( fm, exec_space, spaces, func );
     }
 
   public:
@@ -669,7 +700,7 @@ class GridOperator
     {
         // Apply kernel to each entity. The user functor gets a local mesh for
         // geometric operations, gather, scatter, and local dependencies for
-        // field operations (all of which may be empty), and the local ijk
+        // field operations (all of which may be empty), and the local ij
         // index of the entity they are currently working on.
         Cajita::grid_parallel_for(
             "operator_apply", exec_space, *( _mesh->localGrid() ),
@@ -677,6 +708,59 @@ class GridOperator
             KOKKOS_LAMBDA( const int i, const int j ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
                                              scatter_deps, local_deps, i, j );
+            } );
+    }
+
+    // Apply the operator in a loop over an array of the given index space. 3D
+    // specialization.
+    template <class WorkTag, class LocalMesh, class GatherFields,
+              class ScatterFields, class LocalFields, class ExecutionSpace,
+              std::size_t NumSpace, class Func>
+    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
+                  const ScatterFields& scatter_deps,
+                  const LocalFields& local_deps,
+                  const ExecutionSpace& exec_space,
+                  const Kokkos::Array<Cajita::IndexSpace<3>, NumSpace>& spaces,
+                  const Func& func ) const
+    {
+        // Apply kernel to each entity. The user functor gets a local mesh for
+        // geometric operations, gather, scatter, and local dependencies for
+        // field operations (all of which may be empty), the local id, s, of
+        // the space currently being operated on, and the local ijk
+        // index of the entity they are currently working on.
+        Cajita::grid_parallel_for(
+            "operator_apply", exec_space, spaces,
+            KOKKOS_LAMBDA( const int s, const int i, const int j,
+                           const int k ) {
+                functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
+                                             scatter_deps, local_deps, s, i, j,
+                                             k );
+            } );
+    }
+
+    // Apply the operator in a loop over an array of the given index space. 2D
+    // specialization.
+    template <class WorkTag, class LocalMesh, class GatherFields,
+              class ScatterFields, class LocalFields, class ExecutionSpace,
+              std::size_t NumSpace, class Func>
+    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
+                  const ScatterFields& scatter_deps,
+                  const LocalFields& local_deps,
+                  const ExecutionSpace& exec_space,
+                  const Kokkos::Array<Cajita::IndexSpace<2>, NumSpace>& spaces,
+                  const Func& func ) const
+    {
+        // Apply kernel to each entity. The user functor gets a local mesh for
+        // geometric operations, gather, scatter, and local dependencies for
+        // field operations (all of which may be empty), the local id, s, of
+        // the space currently being operated on, and the local ij
+        // index of the entity they are currently working on.
+        Cajita::grid_parallel_for(
+            "operator_apply", exec_space, spaces,
+            KOKKOS_LAMBDA( const int s, const int i, const int j ) {
+                functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
+                                             scatter_deps, local_deps, s, i,
+                                             j );
             } );
     }
 

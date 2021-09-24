@@ -159,6 +159,25 @@ struct GridFunc
 };
 
 //---------------------------------------------------------------------------//
+// Grid operation.
+struct FusedFunc
+{
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( const LocalMeshType& local_mesh,
+                const GatherDependencies& gather_deps,
+                const ScatterDependencies& scatter_deps,
+                const LocalDependencies& local_deps, const int, const int i,
+                const int j, const int k ) const
+    {
+        GridFunc gf;
+        gf( GridFunc::Tag{}, local_mesh, gather_deps, scatter_deps, local_deps,
+            i, j, k );
+    }
+};
+
+//---------------------------------------------------------------------------//
 void gatherScatterTest()
 {
     // Global bounding box.
@@ -263,6 +282,27 @@ void gatherScatterTest()
     GridFunc grid_func;
     grid_op->apply( FieldLocation::Cell(), TEST_EXECSPACE(), *fm,
                     GridFunc::Tag(), grid_func );
+
+    // Check the grid results.
+    Kokkos::deep_copy( foo_out_host,
+                       fm->view( FieldLocation::Cell(), FooOut() ) );
+    Kokkos::deep_copy( bar_out_host,
+                       fm->view( FieldLocation::Cell(), BarOut() ) );
+    Cajita::grid_parallel_for(
+        "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+            for ( int d = 0; d < 3; ++d )
+                EXPECT_EQ( foo_out_host( i, j, k, d ), 4.0 + i + j + k );
+            EXPECT_EQ( bar_out_host( i, j, k, 0 ), 6.0 + i + j + k );
+        } );
+
+    // Apply the fused operator.
+    FusedFunc fused_func;
+    Kokkos::Array<Cajita::IndexSpace<3>, 1> spaces = {
+        fm->mesh()->localGrid()->indexSpace( Cajita::Own{}, Cajita::Cell{},
+                                             Cajita::Local{} ) };
+    grid_op->apply( spaces, TEST_EXECSPACE(), *fm, fused_func );
 
     // Check the grid results.
     Kokkos::deep_copy( foo_out_host,

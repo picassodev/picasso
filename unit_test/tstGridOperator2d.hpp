@@ -116,6 +116,25 @@ struct GridFunc
 };
 
 //---------------------------------------------------------------------------//
+// Grid operation.
+struct FusedFunc
+{
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( const LocalMeshType& local_mesh,
+                const GatherDependencies& gather_deps,
+                const ScatterDependencies& scatter_deps,
+                const LocalDependencies& local_deps, const int, const int i,
+                const int j ) const
+    {
+        GridFunc gf;
+        gf( GridFunc::Tag{}, local_mesh, gather_deps, scatter_deps, local_deps,
+            i, j );
+    }
+};
+
+//---------------------------------------------------------------------------//
 void gatherScatterTest()
 {
     // Global bounding box.
@@ -173,6 +192,31 @@ void gatherScatterTest()
     auto foo_out_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), FooOut() ) );
     auto bar_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), BarOut() ) );
+    Kokkos::deep_copy( foo_out_host,
+                       fm->view( FieldLocation::Cell(), FooOut() ) );
+    Kokkos::deep_copy( bar_out_host,
+                       fm->view( FieldLocation::Cell(), BarOut() ) );
+    Cajita::grid_parallel_for(
+        "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
+        *( fm->mesh()->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j ) {
+            for ( int d = 0; d < 2; ++d )
+                EXPECT_EQ( foo_out_host( i, j, d ), 4.0 + i + j );
+            EXPECT_EQ( bar_out_host( i, j, 0 ), 6.0 + i + j );
+        } );
+
+    // Apply the fused operator.
+    FusedFunc fused_func;
+    Kokkos::Array<Cajita::IndexSpace<2>, 1> spaces = {
+        fm->mesh()->localGrid()->indexSpace( Cajita::Own{}, Cajita::Cell{},
+                                             Cajita::Local{} ) };
+    grid_op->apply( spaces, TEST_EXECSPACE(), *fm, fused_func );
+
+    // Check the grid results.
+    foo_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), FooOut() ) );
+    bar_out_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), BarOut() ) );
     Kokkos::deep_copy( foo_out_host,
                        fm->view( FieldLocation::Cell(), FooOut() ) );
