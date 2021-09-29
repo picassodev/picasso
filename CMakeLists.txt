@@ -22,15 +22,19 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
                  "${CMAKE_BINARY_DIR}/googletest-build")
 
-# find dependencies
+# find dependencies (MPI, Kokkos, and HYPRE found through Cabana)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
-find_package(MPI REQUIRED)
-find_package(Kokkos REQUIRED)
 find_package(Cabana REQUIRED COMPONENTS Cabana::Cajita Cabana::cabanacore)
-find_package(HYPRE REQUIRED)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
+
+if( NOT Cabana_ENABLE_CAJITA )
+  message( FATAL_ERROR "Cabana must be compiled with Cajita enabled" )
+endif()
+if( NOT Cabana_ENABLE_HYPRE )
+  message( FATAL_ERROR "Cabana must be compiled with HYPRE" )
+endif()
 
 # find dependencies (from Cabana CMakeLists.txt)
 macro(Picasso_add_dependency)
