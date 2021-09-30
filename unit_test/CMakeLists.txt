@@ -1,11 +1,26 @@
-# setup gtest
-if(NOT Picasso_ENABLE_TESTING)
-  return()
+##---------------------------------------------------------------------------##
+# Download and unpack googletest
+##---------------------------------------------------------------------------##
+set(GTEST_URL "https://github.com/google/googletest/archive/release-1.10.0.tar.gz"
+  CACHE STRING "URL for GTest tarball")
+mark_as_advanced(GTEST_URL)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL ${GTEST_URL}
+  URL_MD5         ecd1fa65e7de707cd5c00bdac56022cd
+  )
+
+FetchContent_GetProperties(googletest)
+if(NOT googletest_POPULATED)
+  FetchContent_Populate(googletest)
+  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 endif()
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_PROJECT_BINARY_DIR}/googletest-src/googletest/include)
+# Prevent GoogleTest from overriding our compiler/linker options
+# when building with Visual Studio
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 set(gtest_args --gtest_color=yes)
 
@@ -89,16 +104,14 @@ configure_file(
 ## General tests.
 ##--------------------------------------------------------------------------##
 add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
+target_include_directories(Version_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(Version_test picasso gtest)
-add_test(
-  NAME Version_test
-  COMMAND Version_test --gtest_color=yes)
+add_test(NAME Version_test COMMAND Version_test ${gtest_args})
 
 add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
+target_include_directories(InputParser_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(InputParser_test picasso gtest)
-add_test(
-  NAME InputParser_test
-  COMMAND InputParser_test --gtest_color=yes)
+add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
 
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
@@ -130,7 +143,7 @@ macro(Picasso_add_tests)
         file(APPEND ${_file} "#include <tst${_test}.hpp>\n")
         set(_target ${_test}_test_${_device})
         add_executable(${_target} ${_file} ${PICASSO_UNIT_TEST_MAIN})
-        target_include_directories(${_target} PUBLIC ${_dir})
+        target_include_directories(${_target} PUBLIC ${_dir} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
         target_link_libraries(${_target} picasso gtest)
         if(PICASSO_UNIT_TEST_MPI)
           foreach(_np ${PICASSO_UNIT_TEST_MPIEXEC_NUMPROCS})
