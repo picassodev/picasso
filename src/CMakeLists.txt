@@ -39,8 +39,6 @@ set(SOURCES
 add_library(picasso ${SOURCES})
 
 target_link_libraries(picasso
-  Kokkos::kokkos
-  MPI::MPI_CXX
   Cabana::cabanacore
   Cabana::Cajita
   ArborX::ArborX
