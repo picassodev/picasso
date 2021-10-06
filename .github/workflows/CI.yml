@@ -12,6 +12,9 @@ on:
 jobs:
   CI:
     continue-on-error: ${{ matrix.kokkos_ver == 'develop' }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         distro: ['ubuntu:latest']
