@@ -104,12 +104,10 @@ configure_file(
 ## General tests.
 ##--------------------------------------------------------------------------##
 add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
-target_include_directories(Version_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(Version_test picasso gtest)
 add_test(NAME Version_test COMMAND Version_test ${gtest_args})
 
 add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
-target_include_directories(InputParser_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(InputParser_test picasso gtest)
 add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
 
@@ -143,7 +141,7 @@ macro(Picasso_add_tests)
         file(APPEND ${_file} "#include <tst${_test}.hpp>\n")
         set(_target ${_test}_test_${_device})
         add_executable(${_target} ${_file} ${PICASSO_UNIT_TEST_MAIN})
-        target_include_directories(${_target} PUBLIC ${_dir} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+        target_include_directories(${_target} PUBLIC ${_dir} ${CMAKE_CURRENT_SOURCE_DIR})
         target_link_libraries(${_target} picasso gtest)
         if(PICASSO_UNIT_TEST_MPI)
           foreach(_np ${PICASSO_UNIT_TEST_MPIEXEC_NUMPROCS})
