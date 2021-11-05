@@ -483,8 +483,8 @@ void interpolationTest()
 
     // Interpolate a scalar point value to the grid.
     Kokkos::deep_copy( scalar_n, 0.0 );
-    p2gsv_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, ScalarValueP2G() );
+    p2gsv_op->apply( "p2g_scalar_val", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, ScalarValueP2G() );
     Kokkos::deep_copy( scalar_n_host, scalar_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
@@ -495,8 +495,8 @@ void interpolationTest()
 
     // Interpolate a vector point value to the grid.
     Kokkos::deep_copy( vector_n, 0.0 );
-    p2gvv_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, VectorValueP2G() );
+    p2gvv_op->apply( "p2g_vector_val", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, VectorValueP2G() );
     Kokkos::deep_copy( vector_n_host, vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
@@ -508,8 +508,8 @@ void interpolationTest()
 
     // Interpolate a scalar point gradient value to the grid.
     Kokkos::deep_copy( vector_n, 0.0 );
-    p2gsg_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, ScalarGradientP2G() );
+    p2gsg_op->apply( "p2g_scalar_grad", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, ScalarGradientP2G() );
     Kokkos::deep_copy( vector_n_host, vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
@@ -521,8 +521,8 @@ void interpolationTest()
 
     // Interpolate a vector point divergence value to the grid.
     Kokkos::deep_copy( scalar_n, 0.0 );
-    p2gvd_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, VectorDivergenceP2G() );
+    p2gvd_op->apply( "p2g_vector_div", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, VectorDivergenceP2G() );
     Kokkos::deep_copy( scalar_n_host, scalar_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
@@ -533,8 +533,8 @@ void interpolationTest()
 
     // Interpolate a tensor point divergence value to the grid.
     Kokkos::deep_copy( vector_n, 0.0 );
-    p2gtd_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, TensorDivergenceP2G() );
+    p2gtd_op->apply( "p2g_tensor_div", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, TensorDivergenceP2G() );
     Kokkos::deep_copy( vector_n_host, vector_n );
     for ( int i = node_space.min( Dim::I ); i < node_space.max( Dim::I ); ++i )
         for ( int j = node_space.min( Dim::J ); j < node_space.max( Dim::J );
@@ -552,16 +552,16 @@ void interpolationTest()
 
     // Interpolate a scalar grid value to the points.
     Cabana::deep_copy( scalar_p, 0.0 );
-    g2psv_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, ScalarValueG2P() );
+    g2psv_op->apply( "g2p_scalar_val", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, ScalarValueG2P() );
     Cabana::deep_copy( scalar_p_host, scalar_p );
     for ( int p = 0; p < num_particle; ++p )
         EXPECT_FLOAT_EQ( scalar_p_host( p ), 3.5 );
 
     // Interpolate a vector grid value to the points.
     Cabana::deep_copy( vector_p, 0.0 );
-    g2pvv_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, VectorValueG2P() );
+    g2pvv_op->apply( "g2p_vector_val", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, VectorValueG2P() );
     Cabana::deep_copy( vector_p_host, vector_p );
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
@@ -569,8 +569,8 @@ void interpolationTest()
 
     // Interpolate a scalar grid gradient to the points.
     Cabana::deep_copy( vector_p, 0.0 );
-    g2psg_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, ScalarGradientG2P() );
+    g2psg_op->apply( "g2p_scalar_grad", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, ScalarGradientG2P() );
     Cabana::deep_copy( vector_p_host, vector_p );
     for ( int p = 0; p < num_particle; ++p )
         for ( int d = 0; d < 3; ++d )
@@ -578,8 +578,8 @@ void interpolationTest()
 
     // Interpolate a vector grid gradient to the points.
     Cabana::deep_copy( tensor_p, 0.0 );
-    g2pvg_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, VectorGradientG2P() );
+    g2pvg_op->apply( "g2p_vector_grad", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, VectorGradientG2P() );
     Cabana::deep_copy( tensor_p_host, tensor_p );
     for ( int p = 0; p < num_particle; ++p )
         for ( int i = 0; i < 3; ++i )
@@ -588,8 +588,8 @@ void interpolationTest()
 
     // Interpolate a vector grid divergence to the points.
     Cabana::deep_copy( scalar_p, 0.0 );
-    g2pvd_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm,
-                     particles, VectorDivergenceG2P() );
+    g2pvd_op->apply( "g2p_tensor_div", FieldLocation::Particle(),
+                     TEST_EXECSPACE(), *fm, particles, VectorDivergenceG2P() );
     Cabana::deep_copy( scalar_p_host, scalar_p );
     for ( int p = 0; p < num_particle; ++p )
         EXPECT_FLOAT_EQ( scalar_p_host( p ) + 1.0, 1.0 );

@@ -230,8 +230,8 @@ void gatherScatterTest()
 
     // Apply the particle operator.
     ParticleFunc particle_func;
-    grid_op->apply( FieldLocation::Particle(), TEST_EXECSPACE(), *fm, particles,
-                    particle_func );
+    grid_op->apply( "particle_op", FieldLocation::Particle(), TEST_EXECSPACE(),
+                    *fm, particles, particle_func );
 
     // Check the particle results.
     auto host_aosoa = Cabana::create_mirror_view_and_copy( Kokkos::HostSpace(),
@@ -261,7 +261,7 @@ void gatherScatterTest()
 
     // Apply the grid operator. Use a tag.
     GridFunc grid_func;
-    grid_op->apply( FieldLocation::Cell(), TEST_EXECSPACE(), *fm,
+    grid_op->apply( "grid_op", FieldLocation::Cell(), TEST_EXECSPACE(), *fm,
                     GridFunc::Tag(), grid_func );
 
     // Check the grid results.

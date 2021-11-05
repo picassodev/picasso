@@ -400,12 +400,13 @@ class GridOperator
     // write particle data.
     template <class ExecutionSpace, class ParticleList_t, class WorkTag,
               class Func>
-    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
-                const WorkTag&, const Func& func ) const
+    void apply( const std::string label, FieldLocation::Particle,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const ParticleList_t& pl, const WorkTag&,
+                const Func& func ) const
     {
-        applyImpl<WorkTag>( fm, exec_space, FieldLocation::Particle(), pl,
-                            func );
+        applyImpl<WorkTag>( label, fm, exec_space, FieldLocation::Particle(),
+                            pl, func );
     }
 
     // Apply the operator in a loop over particles. Functor does not have a
@@ -417,11 +418,12 @@ class GridOperator
     // The functor is given a ParticleView allowing the kernel to read and
     // write particle data.
     template <class ExecutionSpace, class ParticleList_t, class Func>
-    void apply( FieldLocation::Particle, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const ParticleList_t& pl,
-                const Func& func ) const
+    void apply( const std::string label, FieldLocation::Particle,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const ParticleList_t& pl, const Func& func ) const
     {
-        applyImpl<void>( fm, exec_space, FieldLocation::Particle(), pl, func );
+        applyImpl<void>( label, fm, exec_space, FieldLocation::Particle(), pl,
+                         func );
     }
 
     // Apply the operator in a loop over the owned entities of the given
@@ -431,11 +433,11 @@ class GridOperator
     // func( work_tag, local_mesh,
     //       gather_deps, scatter_deps, local_deps, i, j, k )
     template <class ExecutionSpace, class Location, class WorkTag, class Func>
-    void apply( const Location& location, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const WorkTag&,
-                const Func& func ) const
+    void apply( const std::string label, const Location& location,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const WorkTag&, const Func& func ) const
     {
-        applyImpl<WorkTag>( fm, exec_space, location, func );
+        applyImpl<WorkTag>( label, fm, exec_space, location, func );
     }
 
     // Apply the operator in a loop over the owned entities of the given
@@ -443,16 +445,17 @@ class GridOperator
     // Functor signature:
     // func( local_mesh, gather_deps, scatter_deps, local_deps, i, j, k )
     template <class ExecutionSpace, class Location, class Func>
-    void apply( const Location& location, const ExecutionSpace& exec_space,
-                const FieldManager<Mesh>& fm, const Func& func ) const
+    void apply( const std::string label, const Location& location,
+                const ExecutionSpace& exec_space, const FieldManager<Mesh>& fm,
+                const Func& func ) const
     {
-        applyImpl<void>( fm, exec_space, location, func );
+        applyImpl<void>( label, fm, exec_space, location, func );
     }
 
   public:
     // Manage field dependencies and apply the operator.
     template <class WorkTag, class ExecutionSpace, class... Args>
-    void applyImpl( const FieldManager<Mesh>& fm,
+    void applyImpl( const std::string label, const FieldManager<Mesh>& fm,
                     const ExecutionSpace& exec_space,
                     const Args&... args ) const
     {
@@ -476,8 +479,8 @@ class GridOperator
             Cajita::createLocalMesh<ExecutionSpace>( *( _mesh->localGrid() ) );
 
         // Apply the operator.
-        applyOp<WorkTag>( local_mesh, gather_deps, scatter_deps, local_deps,
-                          exec_space, args... );
+        applyOp<WorkTag>( label, local_mesh, gather_deps, scatter_deps,
+                          local_deps, exec_space, args... );
 
         // Contribute local scatter view results.
         contributeScatterDependencies( fm, scatter_deps );
@@ -603,7 +606,8 @@ class GridOperator
     template <class WorkTag, class LocalMesh, class GatherFields,
               class ScatterFields, class LocalFields, class ExecutionSpace,
               class ParticleList_t, class Func>
-    void applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
+    void applyOp( const std::string label, const LocalMesh& local_mesh,
+                  const GatherFields& gather_deps,
                   const ScatterFields& scatter_deps,
                   const LocalFields& local_deps, const ExecutionSpace&,
                   FieldLocation::Particle, const ParticleList_t& pl,
@@ -628,7 +632,7 @@ class GridOperator
                                              scatter_deps, local_deps,
                                              particle );
             },
-            "operator_apply" );
+            label );
     }
 
     // Apply the operator in a loop over the owned entities of the given
@@ -637,18 +641,18 @@ class GridOperator
               class ScatterFields, class LocalFields, class ExecutionSpace,
               class Location, class Func>
     std::enable_if_t<3 == LocalMesh::num_space_dim, void>
-    applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
-             const ScatterFields& scatter_deps, const LocalFields& local_deps,
-             const ExecutionSpace& exec_space, Location,
-             const Func& func ) const
+    applyOp( const std::string label, const LocalMesh& local_mesh,
+             const GatherFields& gather_deps, const ScatterFields& scatter_deps,
+             const LocalFields& local_deps, const ExecutionSpace& exec_space,
+             Location, const Func& func ) const
     {
         // Apply kernel to each entity. The user functor gets a local mesh for
         // geometric operations, gather, scatter, and local dependencies for
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
         Cajita::grid_parallel_for(
-            "operator_apply", exec_space, *( _mesh->localGrid() ),
-            Cajita::Own(), typename Location::entity_type(),
+            label, exec_space, *( _mesh->localGrid() ), Cajita::Own(),
+            typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
                                              scatter_deps, local_deps, i, j,
@@ -662,18 +666,18 @@ class GridOperator
               class ScatterFields, class LocalFields, class ExecutionSpace,
               class Location, class Func>
     std::enable_if_t<2 == LocalMesh::num_space_dim, void>
-    applyOp( const LocalMesh& local_mesh, const GatherFields& gather_deps,
-             const ScatterFields& scatter_deps, const LocalFields& local_deps,
-             const ExecutionSpace& exec_space, Location,
-             const Func& func ) const
+    applyOp( const std::string label, const LocalMesh& local_mesh,
+             const GatherFields& gather_deps, const ScatterFields& scatter_deps,
+             const LocalFields& local_deps, const ExecutionSpace& exec_space,
+             Location, const Func& func ) const
     {
         // Apply kernel to each entity. The user functor gets a local mesh for
         // geometric operations, gather, scatter, and local dependencies for
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
         Cajita::grid_parallel_for(
-            "operator_apply", exec_space, *( _mesh->localGrid() ),
-            Cajita::Own(), typename Location::entity_type(),
+            label, exec_space, *( _mesh->localGrid() ), Cajita::Own(),
+            typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
                                              scatter_deps, local_deps, i, j );
