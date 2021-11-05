@@ -345,7 +345,7 @@ class FacetGeometry
                                        _data.volume_offsets, v );
             float box[6];
             Kokkos::parallel_reduce(
-                "volume_bounding_box",
+                "Picasso::FacetGeometry::VolumeBoundingBox",
                 Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0,
                                                      _volume_facet_count[v] ),
                 reducer, box );

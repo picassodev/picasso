@@ -47,6 +47,7 @@ void filterEmpties( const ExecutionSpace& exec_space,
         Kokkos::ViewAllocateWithoutInitializing( "empties" ),
         std::min( num_particles - local_num_create, local_num_create ) );
     Kokkos::parallel_scan(
+        "Picasso::ParticleInit::FindEmpty",
         Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, local_num_create ),
         KOKKOS_LAMBDA( const int i, int& count, const bool final_pass ) {
             if ( !particle_created( i ) )
@@ -61,6 +62,7 @@ void filterEmpties( const ExecutionSpace& exec_space,
 
     // Compact the list so the it only has real particles.
     Kokkos::parallel_scan(
+        "Picasso::ParticleInit::RemoveEmpty",
         Kokkos::RangePolicy<ExecutionSpace>( exec_space, local_num_create,
                                              num_particles ),
         KOKKOS_LAMBDA( const int i, int& count, const bool final_pass ) {
@@ -148,7 +150,7 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     // Initialize particles.
     int local_num_create = 0;
     Kokkos::parallel_reduce(
-        "init_particles_random",
+        "Picasso::ParticleInit::Random",
         Cajita::createExecutionPolicy( owned_cells, exec_space ),
         KOKKOS_LAMBDA( const int i, const int j, const int k,
                        int& create_count ) {
@@ -284,7 +286,7 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     // Initialize particles.
     int local_num_create = 0;
     Kokkos::parallel_reduce(
-        "init_particles_uniform",
+        "Picasso::ParticleInit::Uniform",
         Cajita::createExecutionPolicy( owned_cells, exec_space ),
         KOKKOS_LAMBDA( const int i, const int j, const int k,
                        int& create_count ) {

@@ -77,7 +77,7 @@ void writeFieldsImpl(
                  typename SliceType::device_type>
         view( "field", slice.size() );
     Kokkos::parallel_for(
-        "SiloParticleWriter::writeFieldRank0",
+        "Picasso::SiloParticleWriter::writeFieldRank0",
         Kokkos::RangePolicy<typename SliceType::execution_space>(
             0, slice.size() ),
         KOKKOS_LAMBDA( const int i ) { view( i ) = slice( i ); } );
@@ -105,7 +105,7 @@ void writeFieldsImpl(
                  typename SliceType::device_type>
         view( "field", slice.size(), slice.extent( 2 ) );
     Kokkos::parallel_for(
-        "SiloParticleWriter::writeFieldRank1",
+        "Picasso::SiloParticleWriter::writeFieldRank1",
         Kokkos::RangePolicy<typename SliceType::execution_space>(
             0, slice.size() ),
         KOKKOS_LAMBDA( const int i ) {
@@ -141,7 +141,7 @@ void writeFieldsImpl(
                  typename SliceType::device_type>
         view( "field", slice.size(), slice.extent( 2 ), slice.extent( 3 ) );
     Kokkos::parallel_for(
-        "SiloParticleWriter::writeFieldRank2",
+        "Picasso::SiloParticleWriter::writeFieldRank2",
         Kokkos::RangePolicy<typename SliceType::execution_space>(
             0, slice.size() ),
         KOKKOS_LAMBDA( const int i ) {
@@ -402,7 +402,7 @@ void writeTimeStep( const GlobalGridType& global_grid,
                  typename CoordSliceType::device_type>
         view( "coords", coords.size(), coords.extent( 2 ) );
     Kokkos::parallel_for(
-        "SiloParticleWriter::writeCoords",
+        "Picasso::SiloParticleWriter::writeCoords",
         Kokkos::RangePolicy<typename CoordSliceType::execution_space>(
             0, coords.size() ),
         KOKKOS_LAMBDA( const int i ) {

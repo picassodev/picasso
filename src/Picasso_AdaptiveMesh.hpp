@@ -199,7 +199,7 @@ class AdaptiveMesh
         auto local_space = _local_grid->indexSpace(
             Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
         Kokkos::parallel_for(
-            "create_nodes",
+            "Picasso::AdaptiveMesh::CreateNodes",
             Cajita::createExecutionPolicy( local_space, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 node_view( i, j, k, 0 ) =
