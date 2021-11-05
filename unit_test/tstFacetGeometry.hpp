@@ -512,7 +512,8 @@ void initExample()
         global_high_corner[0], global_high_corner[1], global_high_corner[2] };
     int minimum_halo_size = 0;
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
                                    Field::PhysicalPosition<3>, Field::VolumeId>;

@@ -239,6 +239,18 @@ struct is_adaptive_mesh
 };
 
 //---------------------------------------------------------------------------//
+// Creation function.
+template <class MemorySpace, class ExecSpace>
+auto createAdaptiveMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+                         const Kokkos::Array<double, 6>& global_bounding_box,
+                         const int minimum_halo_cell_width, MPI_Comm comm,
+                         ExecSpace exec_space )
+{
+    return std::make_shared<AdaptiveMesh<MemorySpace>>(
+        ptree, global_bounding_box, minimum_halo_cell_width, comm, exec_space );
+}
+
+//---------------------------------------------------------------------------//
 
 } // end namespace Picasso
 

@@ -368,9 +368,9 @@ void interpolationTest()
     int minimum_halo_size = 0;
 
     // Make mesh.
-    auto mesh =
-        createUniformMesh( TEST_MEMSPACE(), parser.propertyTree(), global_box,
-                           minimum_halo_size, MPI_COMM_WORLD );
+    auto mesh = createUniformMesh( TEST_MEMSPACE(), parser.propertyTree(),
+                                   global_box, minimum_halo_size,
+                                   MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Get a set of locall-owned node indices for testing.
     auto node_space = mesh->localGrid()->indexSpace(

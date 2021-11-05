@@ -47,7 +47,8 @@ void particleTest()
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     // Make a particle list.
     using list_type =
@@ -148,7 +149,8 @@ void particleViewTest()
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     // Make a particle list.
     using list_type =
@@ -252,7 +254,8 @@ void linearAlgebraTest()
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     // Make a particle list.
     using list_type =

@@ -48,7 +48,8 @@ void uniformTest()
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     // Make a field Manager
     FieldManager<UniformMesh<TEST_MEMSPACE>> fm( mesh );

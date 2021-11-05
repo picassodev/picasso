@@ -39,7 +39,7 @@ void constructionTest()
 
     // Make mesh 1.
     UniformMesh<TEST_MEMSPACE> mesh_1( pt1, global_box, minimum_halo_size,
-                                       MPI_COMM_WORLD );
+                                       MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check cell sizes.
     EXPECT_EQ( mesh_1.cellSize(), cell_size );
@@ -73,7 +73,7 @@ void constructionTest()
 
     // Make mesh 2.
     UniformMesh<TEST_MEMSPACE> mesh_2( pt2, global_box, minimum_halo_size,
-                                       MPI_COMM_WORLD );
+                                       MPI_COMM_WORLD, TEST_EXECSPACE() );
 
     // Check cell sizes.
     EXPECT_EQ( mesh_2.cellSize(), cell_size );
@@ -101,6 +101,30 @@ void constructionTest()
     EXPECT_FALSE( global_grid_2.isPeriodic( 2 ) );
 
     EXPECT_EQ( mesh_2.localGrid()->haloCellWidth(), 1 );
+
+    // Check grid 2 nodes.
+    const auto& nodes_2 = mesh_2.nodes();
+    auto host_coords_2 = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), nodes_2->view() );
+    auto local_space_2 = nodes_2->layout()->localGrid()->indexSpace(
+        Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+    auto local_mesh_2 = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        *( nodes_2->layout()->localGrid() ) );
+    for ( int i = local_space_2.min( 0 ); i < local_space_2.max( 0 ); ++i )
+        for ( int j = local_space_2.min( 1 ); j < local_space_2.max( 1 ); ++j )
+            for ( int k = local_space_2.min( 2 ); k < local_space_2.max( 2 );
+                  ++k )
+            {
+                EXPECT_EQ( host_coords_2( i, j, k, 0 ),
+                           local_mesh_2.lowCorner( Cajita::Ghost(), 0 ) +
+                               i * cell_size );
+                EXPECT_EQ( host_coords_2( i, j, k, 1 ),
+                           local_mesh_2.lowCorner( Cajita::Ghost(), 1 ) +
+                               j * cell_size );
+                EXPECT_EQ( host_coords_2( i, j, k, 2 ),
+                           local_mesh_2.lowCorner( Cajita::Ghost(), 2 ) +
+                               k * cell_size );
+            }
 }
 
 //---------------------------------------------------------------------------//

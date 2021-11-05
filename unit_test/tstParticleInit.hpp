@@ -66,7 +66,8 @@ void InitTest( InitType init_type, int ppc )
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        TEST_EXECSPACE() );
 
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;
