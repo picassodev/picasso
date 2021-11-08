@@ -106,7 +106,7 @@ class LevelSet
         auto own_entities = _mesh->localGrid()->indexSpace(
             Cajita::Own(), entity_type(), Cajita::Local() );
         Kokkos::parallel_for(
-            "redistance_coarse",
+            "Picasso::LevelSet::RedistanceCoarse",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
@@ -135,7 +135,7 @@ class LevelSet
 
         // Interpolate from coarse grid to fine grid.
         Kokkos::parallel_for(
-            "redistance_interpolate",
+            "Picasso::LevelSet::RedistanceInterpolate",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
@@ -226,7 +226,7 @@ class LevelSet
         // than the width of the halo.
         auto threshold = _dx * _mesh->localGrid()->haloCellWidth();
         Kokkos::parallel_for(
-            "redistance_fine",
+            "Picasso::LevelSet::RedistanceFine",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Only redistance on the fine grid if the estimate is less

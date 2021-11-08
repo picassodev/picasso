@@ -166,7 +166,7 @@ void gatherScatterTest()
 
     // Apply the grid operator. Use a tag.
     GridFunc grid_func;
-    grid_op->apply( FieldLocation::Cell(), TEST_EXECSPACE(), *fm,
+    grid_op->apply( "grid_op", FieldLocation::Cell(), TEST_EXECSPACE(), *fm,
                     GridFunc::Tag(), grid_func );
 
     // Check the grid results.

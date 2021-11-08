@@ -264,7 +264,7 @@ class ParticleLevelSet
         {
             _color_count = 0;
             Kokkos::parallel_for(
-                "count_color",
+                "Picasso::ParticleLevelSet::CountColor",
                 Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0,
                                                      c_p.size() ),
                 KOKKOS_LAMBDA( const int p ) {
@@ -282,7 +282,7 @@ class ParticleLevelSet
         {
             _color_count = c_p.size();
             Kokkos::parallel_for(
-                "fill_color_indices",
+                "Picasso::ParticleLevelSet::FillColorIndices",
                 Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0,
                                                      c_p.size() ),
                 KOKKOS_LAMBDA( const int p ) { _color_indices( p ) = p; } );
