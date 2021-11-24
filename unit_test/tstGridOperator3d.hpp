@@ -42,6 +42,11 @@ struct FooIn : Field::Vector<double, 3>
     static std::string label() { return "foo_in"; }
 };
 
+struct FezIn : Field::Vector<double, 3>
+{
+    static std::string label() { return "fez_in"; }
+};
+
 struct FooOut : Field::Vector<double, 3>
 {
     static std::string label() { return "foo_out"; }
@@ -65,6 +70,31 @@ struct BarOut : Field::Scalar<double>
 struct Baz : Field::Matrix<double, 3, 3>
 {
     static std::string label() { return "baz"; }
+};
+
+struct MatI : Field::Matrix<double, 3, 3>
+{
+    static std::string label() { return "mat_I"; }
+};
+
+struct MatJ : Field::Matrix<double, 3, 3>
+{
+    static std::string label() { return "mat_J"; }
+};
+
+struct MatK : Field::Matrix<double, 3, 3>
+{
+    static std::string label() { return "mat_K"; }
+};
+
+struct Boo : Field::Tensor3<double, 3, 3, 3>
+{
+    static std::string label() { return "boo"; }
+};
+
+struct Cam : Field::Tensor4<double, 3, 3, 3, 3>
+{
+    static std::string label() { return "cam"; }
 };
 
 //---------------------------------------------------------------------------//
@@ -159,6 +189,130 @@ struct GridFunc
 };
 
 //---------------------------------------------------------------------------//
+// Grid operation using a Tensor3
+struct GridTensor3Func
+{
+    struct Tag
+    {
+    };
+
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( Tag, const LocalMeshType&,
+                const GatherDependencies& gather_deps,
+                const ScatterDependencies& scatter_deps,
+                const LocalDependencies& local_deps, const int i, const int j,
+                const int k ) const
+    {
+        // Get input dependencies
+        auto foo_in = gather_deps.get( FieldLocation::Cell(), FooIn() );
+        auto fez_in = gather_deps.get( FieldLocation::Cell(), FezIn() );
+
+        // Get output dependencies
+        auto foo_out = scatter_deps.get( FieldLocation::Cell(), FooOut() );
+        auto foo_out_access = foo_out.access();
+
+        // Get local dependencies
+        auto boo = local_deps.get( FieldLocation::Cell(), Boo() );
+        auto mat_i_out = local_deps.get( FieldLocation::Cell(), MatI() );
+        auto mat_j_out = local_deps.get( FieldLocation::Cell(), MatJ() );
+        auto mat_k_out = local_deps.get( FieldLocation::Cell(), MatK() );
+
+        // Set up the local dependency to be the Levi-Civita tensor.
+        boo( i, j, k ) = {
+            { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, -1.0 }, { 0.0, 1.0, 0.0 } },
+            { { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 } },
+            { { 0.0, -1.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } } };
+
+        const int index[3] = { i, j, k };
+        auto boo_t_foo_in = LinearAlgebra::contract(
+            boo( index ), foo_in( index ), SpaceDim<2>{} );
+
+        auto boo_t_foo_in_t_fez_in = boo_t_foo_in * fez_in( index );
+        for ( int d = 0; d < 3; ++d )
+        {
+            foo_out_access( i, j, k, d ) += boo_t_foo_in_t_fez_in( d );
+        }
+
+        // Now test contraction along the other dimensions of a Tensor3
+        Picasso::LinearAlgebra::Tensor3<double, 3, 3, 3> tensor = {
+            { { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 } },
+            { { 9, 10, 11 }, { 12, 13, 14 }, { 15, 16, 17 } },
+            { { 18, 19, 20 }, { 21, 22, 23 }, { 24, 25, 26 } } };
+
+        mat_i_out( index ) =
+            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<0>() );
+        mat_j_out( index ) =
+            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<1>() );
+        mat_k_out( index ) =
+            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<2>() );
+    }
+};
+
+// Grid operation using a Tensor4
+struct GridTensor4Func
+{
+    struct Tag
+    {
+    };
+
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( Tag, const LocalMeshType&,
+                const GatherDependencies& gather_deps,
+                const ScatterDependencies& scatter_deps,
+                const LocalDependencies& local_deps, const int i, const int j,
+                const int k ) const
+    {
+        // Get input dependencies
+        auto foo_in = gather_deps.get( FieldLocation::Cell(), FooIn() );
+        auto fez_in = gather_deps.get( FieldLocation::Cell(), FezIn() );
+
+        // Get output dependencies
+        auto foo_out = scatter_deps.get( FieldLocation::Cell(), FooOut() );
+        auto foo_out_access = foo_out.access();
+
+        // Get local dependencies
+        auto cam = local_deps.get( FieldLocation::Cell(), Cam() );
+        auto baz_out = local_deps.get( FieldLocation::Cell(), Baz() );
+
+        // Set up the local dependency to be the linear elasticity tensor
+        // (3x3x3x3)
+        double mu = 1;
+        double lam = 0.5;
+        cam( i, j, k ) = {
+            { { { lam + 2 * mu, 0.0, 0.0 },
+                { 0.0, lam, 0.0 },
+                { 0.0, 0.0, lam } },
+              { { 0.0, mu, 0.0 }, { mu, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } },
+              { { 0.0, 0.0, mu }, { 0.0, 0.0, 0.0 }, { mu, 0.0, 0.0 } } },
+            { { { 0.0, mu, 0.0 }, { mu, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } },
+              { { lam, 0.0, 0.0 },
+                { 0.0, lam + 2 * mu, 0.0 },
+                { 0.0, 0.0, lam } },
+              { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, mu }, { 0.0, mu, 0.0 } } },
+            { { { 0.0, 0.0, mu }, { 0.0, 0.0, 0.0 }, { mu, 0.0, 0.0 } },
+              { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, mu }, { 0.0, mu, 0.0 } },
+              { { lam, 0.0, 0.0 },
+                { 0.0, lam, 0.0 },
+                { 0.0, 0.0, lam + 2 * mu } } } };
+
+        Picasso::Mat3<double> strain = {
+            { 0.5, 1.0, 0 }, { 1.0, 0, 0 }, { 0, 0, 0 } };
+
+        const int index[3] = { i, j, k };
+
+        // This operation represents a stress tensor evaluation from the
+        // "generalized" Hook's law, which is just a double contraction of a
+        // fourth-order stiffness tensor with a strain tensor. baz_out is the
+        // stress tensor in this example
+        baz_out( index ) = LinearAlgebra::contract( cam( index ), strain );
+    }
+};
+
+//---------------------------------------------------------------------------//
 void gatherScatterTest()
 {
     // Global bounding box.
@@ -205,11 +359,19 @@ void gatherScatterTest()
     // Make an operator.
     using gather_deps =
         GatherDependencies<FieldLayout<FieldLocation::Cell, FooIn>,
+                           FieldLayout<FieldLocation::Cell, FezIn>,
                            FieldLayout<FieldLocation::Cell, BarIn>>;
     using scatter_deps =
         ScatterDependencies<FieldLayout<FieldLocation::Cell, FooOut>,
                             FieldLayout<FieldLocation::Cell, BarOut>>;
-    using local_deps = LocalDependencies<FieldLayout<FieldLocation::Cell, Baz>>;
+
+    using local_deps =
+        LocalDependencies<FieldLayout<FieldLocation::Cell, Baz>,
+                          FieldLayout<FieldLocation::Cell, Boo>,
+                          FieldLayout<FieldLocation::Cell, Cam>,
+                          FieldLayout<FieldLocation::Cell, MatI>,
+                          FieldLayout<FieldLocation::Cell, MatJ>,
+                          FieldLayout<FieldLocation::Cell, MatK>>;
     auto grid_op =
         createGridOperator( mesh, gather_deps(), scatter_deps(), local_deps() );
 
@@ -223,7 +385,7 @@ void gatherScatterTest()
     Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FooIn() ), 2.0 );
     Kokkos::deep_copy( fm->view( FieldLocation::Cell(), BarIn() ), 3.0 );
 
-    // Initialiize scatter fields to wrong data to make sure they get reset to
+    // Initialize scatter fields to wrong data to make sure they get reset to
     // zero and then overwritten with the data we assign in the operator.
     Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FooOut() ), -1.1 );
     Kokkos::deep_copy( fm->view( FieldLocation::Cell(), BarOut() ), -2.2 );
@@ -276,6 +438,113 @@ void gatherScatterTest()
             for ( int d = 0; d < 3; ++d )
                 EXPECT_EQ( foo_out_host( i, j, k, d ), 4.0 + i + j + k );
             EXPECT_EQ( bar_out_host( i, j, k, 0 ), 6.0 + i + j + k );
+        } );
+
+    // Re-initialize gather fields
+
+    auto foo_view = fm->view( FieldLocation::Cell(), FooIn() );
+    auto fez_view = fm->view( FieldLocation::Cell(), FezIn() );
+
+    LinearAlgebra::Vector<float, 3> vec1 = { 1.0, 2.0, 3.0 };
+    LinearAlgebra::Vector<float, 3> vec2 = { 3.0, 4.0, 3.0 };
+
+    Cajita::grid_parallel_for(
+        "initialize_grid_vectors", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+            foo_view( i, j, k, 0 ) = 1.0;
+            foo_view( i, j, k, 1 ) = 2.0;
+            foo_view( i, j, k, 2 ) = 3.0;
+            fez_view( i, j, k, 0 ) = 3.0;
+            fez_view( i, j, k, 1 ) = 4.0;
+            fez_view( i, j, k, 2 ) = 3.0;
+        } );
+
+    Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FooOut() ), -1.1 );
+
+    // Apply the tensor3 grid operator. Use a tag.
+    GridTensor3Func grid_tensor3_func;
+    grid_op->apply( "grid_tensor3_op", FieldLocation::Cell(), TEST_EXECSPACE(),
+                    *fm, GridTensor3Func::Tag(), grid_tensor3_func );
+
+    // Check the grid results.
+    Kokkos::deep_copy( foo_out_host,
+                       fm->view( FieldLocation::Cell(), FooOut() ) );
+
+    auto mi_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), MatI() ) );
+    auto mj_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), MatJ() ) );
+    auto mk_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), MatK() ) );
+
+    // Expect the correct cross-product for the given vector fields
+    Cajita::grid_parallel_for(
+        "check_tensor3_cross_product", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+            EXPECT_EQ( foo_out_host( i, j, k, 0 ), -6.0 );
+            EXPECT_EQ( foo_out_host( i, j, k, 1 ), 6.0 );
+            EXPECT_EQ( foo_out_host( i, j, k, 2 ), -2.0 );
+        } );
+
+    // Expect the correct matrices from the various Tensor3 contractions
+    Cajita::grid_parallel_for(
+        "check_tensor3_vector_contract", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+            EXPECT_EQ( mi_out_host( i, j, k, 0 ), 72 );
+            EXPECT_EQ( mi_out_host( i, j, k, 1 ), 78 );
+            EXPECT_EQ( mi_out_host( i, j, k, 2 ), 84 );
+            EXPECT_EQ( mi_out_host( i, j, k, 3 ), 90 );
+            EXPECT_EQ( mi_out_host( i, j, k, 4 ), 96 );
+            EXPECT_EQ( mi_out_host( i, j, k, 5 ), 102 );
+            EXPECT_EQ( mi_out_host( i, j, k, 6 ), 108 );
+            EXPECT_EQ( mi_out_host( i, j, k, 7 ), 114 );
+            EXPECT_EQ( mi_out_host( i, j, k, 8 ), 120 );
+
+            EXPECT_EQ( mj_out_host( i, j, k, 0 ), 24 );
+            EXPECT_EQ( mj_out_host( i, j, k, 1 ), 30 );
+            EXPECT_EQ( mj_out_host( i, j, k, 2 ), 36 );
+            EXPECT_EQ( mj_out_host( i, j, k, 3 ), 78 );
+            EXPECT_EQ( mj_out_host( i, j, k, 4 ), 84 );
+            EXPECT_EQ( mj_out_host( i, j, k, 5 ), 90 );
+            EXPECT_EQ( mj_out_host( i, j, k, 6 ), 132 );
+            EXPECT_EQ( mj_out_host( i, j, k, 7 ), 138 );
+            EXPECT_EQ( mj_out_host( i, j, k, 8 ), 144 );
+
+            EXPECT_EQ( mk_out_host( i, j, k, 0 ), 8 );
+            EXPECT_EQ( mk_out_host( i, j, k, 1 ), 26 );
+            EXPECT_EQ( mk_out_host( i, j, k, 2 ), 44 );
+            EXPECT_EQ( mk_out_host( i, j, k, 3 ), 62 );
+            EXPECT_EQ( mk_out_host( i, j, k, 4 ), 80 );
+            EXPECT_EQ( mk_out_host( i, j, k, 5 ), 98 );
+            EXPECT_EQ( mk_out_host( i, j, k, 6 ), 116 );
+            EXPECT_EQ( mk_out_host( i, j, k, 7 ), 134 );
+            EXPECT_EQ( mk_out_host( i, j, k, 8 ), 152 );
+        } );
+
+    GridTensor4Func grid_tensor4_func;
+    grid_op->apply( "grid_tensor4_op", FieldLocation::Cell(), TEST_EXECSPACE(),
+                    *fm, GridTensor4Func::Tag(), grid_tensor4_func );
+
+    auto baz_out_host = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), Baz() ) );
+
+    // Expect the correct matrices from the various tensor contractions
+    Cajita::grid_parallel_for(
+        "check_tensor4_matrix_contract", Kokkos::DefaultHostExecutionSpace(),
+        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+            EXPECT_EQ( baz_out_host( i, j, k, 0 ), 1.25 );
+            EXPECT_EQ( baz_out_host( i, j, k, 1 ), 2 );
+            EXPECT_EQ( baz_out_host( i, j, k, 2 ), 0 );
+            EXPECT_EQ( baz_out_host( i, j, k, 3 ), 2 );
+            EXPECT_EQ( baz_out_host( i, j, k, 4 ), 0.25 );
+            EXPECT_EQ( baz_out_host( i, j, k, 5 ), 0 );
+            EXPECT_EQ( baz_out_host( i, j, k, 6 ), 0 );
+            EXPECT_EQ( baz_out_host( i, j, k, 7 ), 0 );
+            EXPECT_EQ( baz_out_host( i, j, k, 8 ), 0.25 );
         } );
 }
 
