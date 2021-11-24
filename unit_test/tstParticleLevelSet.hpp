@@ -75,7 +75,7 @@ void zalesaksTest( const std::string& filename )
     int minimum_halo_size = 4;
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
         parser.propertyTree(), geometry.globalBoundingBox(), minimum_halo_size,
-        MPI_COMM_WORLD, TEST_EXECSPACE() );
+        MPI_COMM_WORLD );
 
     // Create particles.
     auto particles = createParticleList(

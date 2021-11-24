@@ -206,7 +206,7 @@ void collocatedTest()
     // Make mesh.
     int minimum_halo_size = 0;
     UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
-                                     MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                     MPI_COMM_WORLD );
     auto local_mesh =
         Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
 
@@ -375,7 +375,7 @@ void staggeredTest()
     // Make mesh.
     int minimum_halo_size = 0;
     UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
-                                     MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                     MPI_COMM_WORLD );
     auto local_mesh =
         Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
 

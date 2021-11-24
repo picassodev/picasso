@@ -45,9 +45,8 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
 
     // Make mesh.
     int minimum_halo_size = 4;
-    auto mesh =
-        createUniformMesh( TEST_MEMSPACE(), pt, global_box, minimum_halo_size,
-                           MPI_COMM_WORLD, TEST_EXECSPACE() );
+    auto mesh = createUniformMesh( TEST_MEMSPACE(), pt, global_box,
+                                   minimum_halo_size, MPI_COMM_WORLD );
     auto dx = mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
     auto halo_width = dx * minimum_halo_size;
 

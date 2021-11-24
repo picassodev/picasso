@@ -178,9 +178,9 @@ void gatherScatterTest()
     int minimum_halo_size = 0;
 
     // Make mesh.
-    auto mesh = createUniformMesh( TEST_MEMSPACE(), parser.propertyTree(),
-                                   global_box, minimum_halo_size,
-                                   MPI_COMM_WORLD, TEST_EXECSPACE() );
+    auto mesh =
+        createUniformMesh( TEST_MEMSPACE(), parser.propertyTree(), global_box,
+                           minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,

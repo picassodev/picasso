@@ -39,7 +39,7 @@ void constructionTest()
 
     // Make mesh 1.
     UniformMesh<TEST_MEMSPACE> mesh_1( pt1, global_box, minimum_halo_size,
-                                       MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                       MPI_COMM_WORLD );
 
     // Check cell sizes.
     EXPECT_EQ( mesh_1.cellSize(), cell_size );
@@ -73,7 +73,7 @@ void constructionTest()
 
     // Make mesh 2.
     UniformMesh<TEST_MEMSPACE> mesh_2( pt2, global_box, minimum_halo_size,
-                                       MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                       MPI_COMM_WORLD );
 
     // Check cell sizes.
     EXPECT_EQ( mesh_2.cellSize(), cell_size );

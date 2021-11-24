@@ -41,7 +41,7 @@ void constructionTest()
 
     // Make mesh 1.
     AdaptiveMesh<TEST_MEMSPACE> mesh_1( pt1, global_box, minimum_halo_size,
-                                        MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                        MPI_COMM_WORLD );
 
     // Check grid 1.
     const auto& global_grid_1 = mesh_1.localGrid()->globalGrid();
@@ -96,7 +96,7 @@ void constructionTest()
 
     // Make mesh 2.
     AdaptiveMesh<TEST_MEMSPACE> mesh_2( pt2, global_box, minimum_halo_size,
-                                        MPI_COMM_WORLD, TEST_EXECSPACE() );
+                                        MPI_COMM_WORLD );
 
     // Check grid 2.
     const auto& global_grid_2 = mesh_2.localGrid()->globalGrid();
