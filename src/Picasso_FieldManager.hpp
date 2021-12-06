@@ -70,11 +70,12 @@ class FieldManager
     using mesh_type = Mesh;
 
   public:
-    // Non-adaptive mesh constructor.
+    // Non-adaptive/uniform mesh constructor.
     template <class M = Mesh>
     FieldManager(
         const std::shared_ptr<M>& mesh,
-        typename std::enable_if<!is_adaptive_mesh<M>::value>::type* = 0 )
+        typename std::enable_if<!is_adaptive_mesh<M>::value &&
+                                !is_uniform_mesh<M>::value>::type* = 0 )
         : _mesh( mesh )
     {
     }
@@ -83,7 +84,8 @@ class FieldManager
     template <class M = Mesh>
     FieldManager(
         const std::shared_ptr<M>& mesh,
-        typename std::enable_if<is_adaptive_mesh<M>::value>::type* = 0 )
+        typename std::enable_if<is_adaptive_mesh<M>::value ||
+                                is_uniform_mesh<M>::value>::type* = 0 )
         : _mesh( mesh )
     {
         // The mesh is adaptive so add the physical position of its nodes as a

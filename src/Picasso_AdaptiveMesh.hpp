@@ -51,8 +51,31 @@ class AdaptiveMesh
                   const Kokkos::Array<double, 6>& global_bounding_box,
                   const int minimum_halo_cell_width, MPI_Comm comm,
                   const ExecutionSpace& exec_space )
-        : _minimum_halo_width( minimum_halo_cell_width )
     {
+        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+               exec_space );
+    }
+
+    // Constructor that uses the default ExecutionSpace for this MemorySpace.
+    AdaptiveMesh( const boost::property_tree::ptree& ptree,
+                  const Kokkos::Array<double, 6>& global_bounding_box,
+                  const int minimum_halo_cell_width, MPI_Comm comm )
+    {
+        using exec_space = typename memory_space::execution_space;
+
+        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+               exec_space{} );
+    }
+
+  private:
+    template <class ExecutionSpace>
+    void build( const boost::property_tree::ptree& ptree,
+                const Kokkos::Array<double, 6>& global_bounding_box,
+                const int minimum_halo_cell_width, MPI_Comm comm,
+                const ExecutionSpace& exec_space )
+    {
+        _minimum_halo_width = minimum_halo_cell_width;
+
         // Get the mesh parameters.
         const auto& mesh_params = ptree.get_child( "mesh" );
 
@@ -172,6 +195,7 @@ class AdaptiveMesh
         buildNodes( cell_size, exec_space );
     }
 
+  public:
     // Get the minimum required numober of cells in the halo.
     int minimumHaloWidth() const { return _minimum_halo_width; }
 
@@ -181,7 +205,6 @@ class AdaptiveMesh
     // Get the mesh node coordinates.
     std::shared_ptr<node_array> nodes() const { return _nodes; }
 
-  public:
     // Build the mesh nodes.
     template <class ExecutionSpace>
     void buildNodes( const Kokkos::Array<double, 3>& cell_size,
@@ -237,6 +260,27 @@ struct is_adaptive_mesh
     : public is_adaptive_mesh_impl<typename std::remove_cv<T>::type>::type
 {
 };
+
+//---------------------------------------------------------------------------//
+// Creation functions.
+template <class MemorySpace, class ExecSpace>
+auto createAdaptiveMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+                         const Kokkos::Array<double, 6>& global_bounding_box,
+                         const int minimum_halo_cell_width, MPI_Comm comm,
+                         ExecSpace exec_space )
+{
+    return std::make_shared<AdaptiveMesh<MemorySpace>>(
+        ptree, global_bounding_box, minimum_halo_cell_width, comm, exec_space );
+}
+
+template <class MemorySpace>
+auto createAdaptiveMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+                         const Kokkos::Array<double, 6>& global_bounding_box,
+                         const int minimum_halo_cell_width, MPI_Comm comm )
+{
+    return std::make_shared<AdaptiveMesh<MemorySpace>>(
+        ptree, global_bounding_box, minimum_halo_cell_width, comm );
+}
 
 //---------------------------------------------------------------------------//
 

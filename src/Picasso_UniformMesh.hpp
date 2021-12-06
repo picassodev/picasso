@@ -40,15 +40,43 @@ class UniformMesh
 
     using local_grid = Cajita::LocalGrid<cajita_mesh>;
 
+    using node_array = Cajita::Array<double, Cajita::Node,
+                                     Cajita::UniformMesh<double>, MemorySpace>;
+
     static constexpr std::size_t num_space_dim = 3;
 
     // Construct a mesh manager from the problem bounding box and a property
     // tree.
+    template <class ExecutionSpace>
+    UniformMesh( const boost::property_tree::ptree& ptree,
+                 const Kokkos::Array<double, 6>& global_bounding_box,
+                 const int minimum_halo_cell_width, MPI_Comm comm,
+                 const ExecutionSpace& exec_space )
+    {
+        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+               exec_space );
+    }
+
+    // Constructor that uses the default ExecutionSpace for this MemorySpace.
     UniformMesh( const boost::property_tree::ptree& ptree,
                  const Kokkos::Array<double, 6>& global_bounding_box,
                  const int minimum_halo_cell_width, MPI_Comm comm )
-        : _minimum_halo_width( minimum_halo_cell_width )
     {
+        using exec_space = typename memory_space::execution_space;
+
+        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+               exec_space{} );
+    }
+
+  private:
+    template <class ExecutionSpace>
+    void build( const boost::property_tree::ptree& ptree,
+                const Kokkos::Array<double, 6>& global_bounding_box,
+                const int minimum_halo_cell_width, MPI_Comm comm,
+                const ExecutionSpace& exec_space )
+    {
+        _minimum_halo_width = minimum_halo_cell_width;
+
         // Get the mesh parameters.
         const auto& mesh_params = ptree.get_child( "mesh" );
 
@@ -175,13 +203,20 @@ class UniformMesh
 
         // Build the local grid.
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
+
+        // Create the nodes.
+        buildNodes( cell_size, exec_space );
     }
 
+  public:
     // Get the minimum required number of cells in the halo.
     int minimumHaloWidth() const { return _minimum_halo_width; }
 
     // Get the local grid.
     std::shared_ptr<local_grid> localGrid() const { return _local_grid; }
+
+    // Get the mesh node coordinates.
+    std::shared_ptr<node_array> nodes() const { return _nodes; }
 
     // Get the cell size.
     double cellSize() const
@@ -189,9 +224,38 @@ class UniformMesh
         return _local_grid->globalGrid().globalMesh().cellSize( 0 );
     }
 
+    // Build the mesh nodes.
+    template <class ExecutionSpace>
+    void buildNodes( const double cell_size, const ExecutionSpace& exec_space )
+    {
+        // Create both owned and ghosted nodes so we don't have to gather
+        // initially.
+        auto node_layout =
+            Cajita::createArrayLayout( _local_grid, 3, Cajita::Node() );
+        _nodes = Cajita::createArray<double, MemorySpace>( "mesh_nodes",
+                                                           node_layout );
+        auto node_view = _nodes->view();
+        auto local_mesh =
+            Cajita::createLocalMesh<ExecutionSpace>( *_local_grid );
+        auto local_space = _local_grid->indexSpace(
+            Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+        Kokkos::parallel_for(
+            "create_nodes",
+            Cajita::createExecutionPolicy( local_space, exec_space ),
+            KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+                node_view( i, j, k, 0 ) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 0 ) + i * cell_size;
+                node_view( i, j, k, 1 ) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 1 ) + j * cell_size;
+                node_view( i, j, k, 2 ) =
+                    local_mesh.lowCorner( Cajita::Ghost(), 2 ) + k * cell_size;
+            } );
+    }
+
   public:
     int _minimum_halo_width;
     std::shared_ptr<local_grid> _local_grid;
+    std::shared_ptr<node_array> _nodes;
 };
 
 //---------------------------------------------------------------------------//
@@ -214,6 +278,16 @@ struct is_uniform_mesh
 
 //---------------------------------------------------------------------------//
 // Creation function.
+template <class MemorySpace, class ExecSpace>
+auto createUniformMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+                        const Kokkos::Array<double, 6>& global_bounding_box,
+                        const int minimum_halo_cell_width, MPI_Comm comm,
+                        ExecSpace exec_space )
+{
+    return std::make_shared<UniformMesh<MemorySpace>>(
+        ptree, global_bounding_box, minimum_halo_cell_width, comm, exec_space );
+}
+
 template <class MemorySpace>
 auto createUniformMesh( MemorySpace, const boost::property_tree::ptree& ptree,
                         const Kokkos::Array<double, 6>& global_bounding_box,
