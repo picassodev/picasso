@@ -71,7 +71,8 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
     Kokkos::parallel_for(
         "estimate",
         Cajita::createExecutionPolicy( own_entities, TEST_EXECSPACE{} ),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
+        KOKKOS_LAMBDA( const int i, const int j, const int k )
+        {
             // Get the entity index.
             int entity_index[3] = { i, j, k };
 
