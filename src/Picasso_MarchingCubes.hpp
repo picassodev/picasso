@@ -1043,8 +1043,7 @@ void computeEdges( const Kokkos::Array<double, 8>& vertex_data,
                    Kokkos::Array<Kokkos::Array<double, 3>, 12>& edges )
 {
     // Calculate edge weights via linear interpolation.
-    auto compute_weight = [&]( const int v1, const int v2 )
-    {
+    auto compute_weight = [&]( const int v1, const int v2 ) {
         return ( vertex_signs[v1] != vertex_signs[v2] )
                    ? vertex_data[v1] / ( vertex_data[v1] - vertex_data[v2] )
                    : -1.0;
@@ -1143,8 +1142,7 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
     data.num_facet = 0;
     Cajita::grid_parallel_reduce(
         "marching_cubes_facet_count", exec_space, cell_space,
-        KOKKOS_LAMBDA( const int i, const int j, const int k, int& result )
-        {
+        KOKKOS_LAMBDA( const int i, const int j, const int k, int& result ) {
             Kokkos::Array<double, 8> vertex_data;
             Impl::vertexData( distance_view, i, j, k, vertex_data );
             Kokkos::Array<int, 8> vertex_signs;
@@ -1168,8 +1166,7 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
     Kokkos::parallel_scan(
         "marching_cubes_facet_offset",
         Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, cell_space.size() ),
-        KOKKOS_LAMBDA( const int c, int& update, const bool final_pass )
-        {
+        KOKKOS_LAMBDA( const int c, int& update, const bool final_pass ) {
             int ek = cell_space.extent( Dim::K );
             int ej = cell_space.extent( Dim::J );
             int ejk = ej * ek;
@@ -1192,8 +1189,7 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
         Cajita::createLocalMesh<MemorySpace>( *( mesh.localGrid() ) );
     Cajita::grid_parallel_for(
         "marching_cubes_fill_facets", exec_space, cell_space,
-        KOKKOS_LAMBDA( const int i, const int j, const int k )
-        {
+        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             int case_id = data.cell_case_ids_and_offsets( i, j, k, 0 );
             int face_offset = data.cell_case_ids_and_offsets( i, j, k, 1 );
             int num_facet = data.lookup_counts[case_id];

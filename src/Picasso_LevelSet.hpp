@@ -108,8 +108,7 @@ class LevelSet
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceCoarse",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
-            KOKKOS_LAMBDA( const int i, const int j, const int k )
-            {
+            KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
                 int gi, gj, gk;
                 l2g( i, j, k, gi, gj, gk );
@@ -138,8 +137,7 @@ class LevelSet
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceInterpolate",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
-            KOKKOS_LAMBDA( const int i, const int j, const int k )
-            {
+            KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
                 int gi, gj, gk;
                 l2g( i, j, k, gi, gj, gk );
@@ -230,8 +228,7 @@ class LevelSet
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceFine",
             Cajita::createExecutionPolicy( own_entities, exec_space ),
-            KOKKOS_LAMBDA( const int i, const int j, const int k )
-            {
+            KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Only redistance on the fine grid if the estimate is less
                 // than the threshold distance.
                 if ( fabs( estimate_view( i, j, k, 0 ) ) < threshold )
