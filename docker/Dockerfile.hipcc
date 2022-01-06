@@ -1,9 +1,10 @@
-ARG BASE=rocm/dev-ubuntu-20.04:4.2-complete
+ARG BASE=rocm/dev-ubuntu-20.04:4.2
 FROM $BASE
 
 ARG NPROCS=4
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
         build-essential \
         bc \
         curl \
