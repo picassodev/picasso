@@ -180,7 +180,7 @@ struct Scalar;
 template <class T, int D>
 struct Vector;
 template <class T, int D0, int D1>
-struct Tensor;
+struct Matrix;
 
 //---------------------------------------------------------------------------//
 // Scalar field.
@@ -230,7 +230,7 @@ struct Vector : VectorBase
     template <class U>
     using field_type = Vector<U, D>;
     template <int NumSpaceDim>
-    using gradient_type = Tensor<T, D, NumSpaceDim>;
+    using gradient_type = Matrix<T, D, NumSpaceDim>;
 };
 
 template <class T>
@@ -244,13 +244,13 @@ struct is_vector : is_vector_impl<typename std::remove_cv<T>::type>::type
 };
 
 //---------------------------------------------------------------------------//
-// Tensor Field.
-struct TensorBase
+// Matrix Field.
+struct MatrixBase
 {
 };
 
 template <class T, int D0, int D1>
-struct Tensor : TensorBase
+struct Matrix : MatrixBase
 {
     using value_type = T;
     static constexpr int rank = 2;
@@ -260,16 +260,16 @@ struct Tensor : TensorBase
     using data_type = value_type[D0][D1];
     using linear_algebra_type = LinearAlgebra::MatrixView<T, D0, D1>;
     template <class U>
-    using field_type = Tensor<U, D0, D1>;
+    using field_type = Matrix<U, D0, D1>;
 };
 
 template <class T>
-struct is_tensor_impl : std::is_base_of<TensorBase, T>
+struct is_matrix_impl : std::is_base_of<MatrixBase, T>
 {
 };
 
 template <class T>
-struct is_tensor : is_tensor_impl<typename std::remove_cv<T>::type>::type
+struct is_matrix : is_matrix_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
@@ -460,13 +460,13 @@ struct VectorViewWrapper
 };
 
 //---------------------------------------------------------------------------//
-// Tensor Field View Wrapper
+// Matrix Field View Wrapper
 //---------------------------------------------------------------------------//
-// Wraps a Kokkos view of a structured grid tensor field at the given index
-// allowing for it to be treated as a tensor in a point-wise manner in kernel
+// Wraps a Kokkos view of a structured grid matrix field at the given index
+// allowing for it to be treated as a matrix in a point-wise manner in kernel
 // operations without needing explicit dimension indices in the syntax.
 template <class View, class Layout>
-struct TensorViewWrapper
+struct MatrixViewWrapper
 {
     using layout_type = Layout;
     using field_tag = typename layout_type::tag;
@@ -479,25 +479,25 @@ struct TensorViewWrapper
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
 
-    static_assert( Field::is_tensor<typename layout_type::tag>::value,
-                   "TensorViewWrappers may only be applied to tensor fields" );
+    static_assert( Field::is_matrix<typename layout_type::tag>::value,
+                   "MatrixViewWrappers may only be applied to Matrix fields" );
 
     View _v;
 
     // Default constructor.
     KOKKOS_DEFAULTED_FUNCTION
-    TensorViewWrapper() = default;
+    MatrixViewWrapper() = default;
 
     // Create a wrapper from an index and a view.
     KOKKOS_INLINE_FUNCTION
-    TensorViewWrapper( const View& v )
+    MatrixViewWrapper( const View& v )
         : _v( v )
     {
     }
 
-    // Access the view data as a tensor through point-wise index
+    // Access the view data as a matrix through point-wise index
     // arguments. Note here that because fields are stored as 4D objects the
-    // tensor components are unrolled in the last dimension. We unpack the
+    // matrix components are unrolled in the last dimension. We unpack the
     // field dimension index to add the extra matrix dimension in a similar
     // way as if we had made a 5D kokkos view such that the matrix data is
     // ordered as [i][j][k][dim0][dim1] if layout-right and
@@ -523,7 +523,7 @@ struct TensorViewWrapper
                                     _v.stride( 2 ) );
     }
 
-    // Access the view data as a tensor through array-based point-wise index
+    // Access the view data as a matrix through array-based point-wise index
     // arguments. The data layout is the same as above.
     template <int VR = view_rank>
     KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
@@ -587,9 +587,9 @@ auto createViewWrapper(
 template <class View, class Layout>
 auto createViewWrapper(
     Layout, const View& view,
-    std::enable_if_t<Field::is_tensor<typename Layout::tag>::value, int*> = 0 )
+    std::enable_if_t<Field::is_matrix<typename Layout::tag>::value, int*> = 0 )
 {
-    return TensorViewWrapper<View, Layout>( view );
+    return MatrixViewWrapper<View, Layout>( view );
 }
 
 //---------------------------------------------------------------------------//

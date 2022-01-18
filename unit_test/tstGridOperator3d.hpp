@@ -62,7 +62,7 @@ struct BarOut : Field::Scalar<double>
     static std::string label() { return "bar_out"; }
 };
 
-struct Baz : Field::Tensor<double, 3, 3>
+struct Baz : Field::Matrix<double, 3, 3>
 {
     static std::string label() { return "baz"; }
 };
