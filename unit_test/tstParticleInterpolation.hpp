@@ -42,7 +42,7 @@ struct ParticleVector : Field::Vector<double, 3>
     static std::string label() { return "particle_vector"; }
 };
 
-struct ParticleTensor : Field::Tensor<double, 3, 3>
+struct ParticleTensor : Field::Matrix<double, 3, 3>
 {
     static std::string label() { return "particle_tensor"; }
 };
