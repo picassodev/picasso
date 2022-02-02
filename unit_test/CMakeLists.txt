@@ -183,9 +183,5 @@ Picasso_add_tests(MPI NAMES
   GridOperator2d
   ParticleInterpolation
   LevelSetRedistance
-  ParticleLevelSet)
-
-if(Picasso_ENABLE_SILO)
-  Picasso_add_tests(MPI NAMES
-    SiloParticleWriter)
-endif()
+  ParticleLevelSet
+  )

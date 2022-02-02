@@ -34,8 +34,4 @@
 #include <Picasso_UniformMesh.hpp>
 #include <Picasso_Version.hpp>
 
-#ifdef Picasso_ENABLE_SILO
-#include <Picasso_SiloParticleWriter.hpp>
-#endif
-
 #endif // end PICASSO_HPP
