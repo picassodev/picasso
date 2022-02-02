@@ -71,23 +71,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
           cmake --install build
-      - name: Checkout hypre
-        uses: actions/checkout@v2.2.0
-        with:
-          repository: hypre-space/hypre
-          ref: v2.22.1
-          path: hypre
-      - name: Build hypre
-        working-directory: hypre/src
-        run: |
-          cmake -B build \
-            -DCMAKE_INSTALL_PREFIX=$HOME/hypre \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
-            -DHYPRE_WITH_MPI=ON
-          cmake --build build --parallel 2
-          cmake --install build
       - name: Checkout Cabana
         uses: actions/checkout@v2.2.0
         with:
@@ -99,10 +82,9 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/cabana \
-            -DCMAKE_PREFIX_PATH="$HOME/kokkos;$HOME/hypre" \
+            -DCMAKE_PREFIX_PATH="$HOME/kokkos" \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
-            -DCabana_REQUIRE_HYPRE=ON
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
           cmake --install build
       - name: Cache boost

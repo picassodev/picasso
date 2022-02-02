@@ -5,7 +5,7 @@ project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
 include(GNUInstallDirs)
 
-# find dependencies (MPI, Kokkos, and HYPRE found through Cabana)
+# find dependencies (MPI and Kokkos found through Cabana)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
 find_package(Cabana REQUIRED 0.4 COMPONENTS Cabana::Cajita Cabana::cabanacore)
@@ -14,9 +14,6 @@ find_package(Boost 1.66.0 REQUIRED)
 
 if( NOT Cabana_ENABLE_CAJITA )
   message( FATAL_ERROR "Cabana must be compiled with Cajita enabled" )
-endif()
-if( NOT Cabana_ENABLE_HYPRE )
-  message( FATAL_ERROR "Cabana must be compiled with HYPRE" )
 endif()
 
 # find dependencies (from Cabana CMakeLists.txt)
