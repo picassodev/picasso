@@ -163,9 +163,9 @@ RUN HYPRE_VERSION=v2.22.1 && \
     make -j${NPROCS} install && \
     cd ../.. && rm -r hypre
 
-# Install Cabana (this version is August 2021)
+# Install Cabana (this version is Feb 2022)
 ENV CABANA_DIR=/opt/cabana
-RUN CABANA_VERSION=e6b5c5b5b28d7eb13ef8cbaee5d68e9cd541f37e && \
+RUN CABANA_VERSION=1b3bdc789e990e676438690e8516fb6c02cd6816 && \
     CABANA_URL=https://github.com/ECP-copa/Cabana/archive/${CABANA_VERSION}.tar.gz && \
     CABANA_ARCHIVE=cabana.tar.gz && \
     wget --quiet ${CABANA_URL} --output-document=${CABANA_ARCHIVE} && \
