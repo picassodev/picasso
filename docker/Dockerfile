@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
         openssh-client \
         jq \
         git \
+        zlib1g-dev \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -91,7 +92,7 @@ RUN BOOST_VERSION=1.75.0 && \
 # Install Silo
 ENV SILO_DIR=/opt/silo
 RUN SILO_VERSION=4.10.2 && \
-    SILO_URL=https://wci.llnl.gov/sites/wci/files/2021-01/silo-${SILO_VERSION}-bsd-smalltest.tgz && \
+    SILO_URL=https://github.com/LLNL/Silo/archive/${SILO_VERSION}.tar.gz && \
     SILO_ARCHIVE=silo.tar.gz && \
     wget --quiet ${SILO_URL} --output-document=${SILO_ARCHIVE} && \
     mkdir silo && \
@@ -158,7 +159,7 @@ RUN CABANA_VERSION=1b3bdc789e990e676438690e8516fb6c02cd6816 && \
       -D CMAKE_INSTALL_PREFIX=${CABANA_DIR} \
       -D CMAKE_BUILD_TYPE=Debug \
       -D CMAKE_CXX_COMPILER=$KOKKOS_DIR/bin/nvcc_wrapper \
-      -D CMAKE_PREFIX_PATH="$KOKKOS_DIR;$ARBORX_DIR" \
+      -D CMAKE_PREFIX_PATH="$KOKKOS_DIR;$ARBORX_DIR;$SILO_DIR" \
       -D MPIEXEC_MAX_NUMPROCS=1 \
       .. && \
     make -j${NPROCS} install && \
