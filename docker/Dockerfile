@@ -144,25 +144,6 @@ RUN ARBORX_VERSION=v1.0 && \
     make -j${NPROCS} install && \
     cd ../.. && rm -r arborx
 
-# Install HYPRE
-ENV HYPRE_DIR=/opt/hypre
-RUN HYPRE_VERSION=v2.22.1 && \
-    HYPRE_URL=https://github.com/hypre-space/hypre/archive/${HYPRE_VERSION}.tar.gz && \
-    HYPRE_ARCHIVE=hypre.tar.gz && \
-    wget --quiet ${HYPRE_URL} --output-document=${HYPRE_ARCHIVE} && \
-    mkdir hypre && \
-    tar -xf ${HYPRE_ARCHIVE} -C hypre --strip-components=1 && \
-    cd hypre && \
-    mkdir -p build && cd build && \
-    cmake \
-      -D CMAKE_INSTALL_PREFIX=${HYPRE_DIR} \
-      -D CMAKE_BUILD_TYPE=Debug \
-      -D HYPRE_WITH_CUDA=ON \
-      -D HYPRE_WITH_MPI=ON \
-    ../src && \
-    make -j${NPROCS} install && \
-    cd ../.. && rm -r hypre
-
 # Install Cabana (this version is Feb 2022)
 ENV CABANA_DIR=/opt/cabana
 RUN CABANA_VERSION=1b3bdc789e990e676438690e8516fb6c02cd6816 && \
@@ -177,7 +158,7 @@ RUN CABANA_VERSION=1b3bdc789e990e676438690e8516fb6c02cd6816 && \
       -D CMAKE_INSTALL_PREFIX=${CABANA_DIR} \
       -D CMAKE_BUILD_TYPE=Debug \
       -D CMAKE_CXX_COMPILER=$KOKKOS_DIR/bin/nvcc_wrapper \
-      -D CMAKE_PREFIX_PATH="$KOKKOS_DIR;$ARBORX_DIR;$HYPRE_DIR" \
+      -D CMAKE_PREFIX_PATH="$KOKKOS_DIR;$ARBORX_DIR" \
       -D MPIEXEC_MAX_NUMPROCS=1 \
       .. && \
     make -j${NPROCS} install && \
