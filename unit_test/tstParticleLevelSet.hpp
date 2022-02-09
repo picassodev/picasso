@@ -19,10 +19,6 @@
 
 #include <Picasso_ParticleInit.hpp>
 
-#ifdef Picasso_ENABLE_SILO
-#include <Picasso_SiloParticleWriter.hpp>
-#endif
-
 #include <Cajita.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -93,8 +89,8 @@ void zalesaksTest( const std::string& filename )
 
     // Write the initial particle state.
     double time = 0.0;
-#ifdef Picasso_ENABLE_SILO
-    SiloParticleWriter::writeTimeStep(
+#ifdef Cabana_ENABLE_SILO
+    Cajita::Experimental::SiloParticleOutput::writeTimeStep(
         mesh->localGrid()->globalGrid(), 0, time,
         particles->slice( Field::PhysicalPosition<3>() ),
         particles->slice( Field::Color() ),
@@ -173,8 +169,8 @@ void zalesaksTest( const std::string& filename )
 
         // Write the particle state.
         time += 1.0;
-#ifdef Picasso_ENABLE_SILO
-        SiloParticleWriter::writeTimeStep(
+#ifdef Cabana_ENABLE_SILO
+        Cajita::Experimental::SiloParticleOutput::writeTimeStep(
             mesh->localGrid()->globalGrid(), t + 1, time,
             particles->slice( Field::PhysicalPosition<3>() ),
             particles->slice( Field::Color() ),

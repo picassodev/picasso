@@ -16,6 +16,4 @@
 
 #define Picasso_GIT_COMMIT_HASH "@Picasso_GIT_COMMIT_HASH@"
 
-#cmakedefine Picasso_ENABLE_SILO
-
 #endif // PICASSO_CONFIG_HPP

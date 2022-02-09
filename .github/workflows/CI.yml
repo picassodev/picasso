@@ -110,19 +110,6 @@ jobs:
              hardcode-dll-paths=true dll-path=$HOME/boost/lib \
              link=shared variant=release cxxflags=-w \
              install
-      - name: Get Silo
-        if: ${{ matrix.distro == 'ubuntu:latest' }}
-        run: |
-             wget --quiet https://wci.llnl.gov/sites/wci/files/2021-01/silo-4.10.2-bsd-smalltest.tgz \
-                  --output-document=silo.tgz
-             mkdir silo
-             tar -xf silo.tgz -C silo --strip-components=1
-      - name: Build Silo
-        if: ${{ matrix.distro == 'ubuntu:latest' }}
-        working-directory: silo
-        run: |
-             ./configure CC=mpicc CXX=mpicxx --enable-fortran=no --prefix=$HOME/silo
-             make install
       - name: Checkout Picasso
         uses: actions/checkout@v2.2.0
       - name: Build Picasso
@@ -134,11 +121,12 @@ jobs:
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/picasso \
             -DMPIEXEC_MAX_NUMPROCS=2 -DMPIEXEC_PREFLAGS="--oversubscribe" \
-            -DCMAKE_PREFIX_PATH="$HOME/arborx;$HOME/cabana;$HOME/boost;$HOME/silo" \
+            -DCMAKE_PREFIX_PATH="$HOME/arborx;$HOME/cabana;$HOME/boost" \
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_CXX_FLAGS="-Wall -pedantic ${cmake_cxx_flags}" \
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
             -DPicasso_ENABLE_TESTING=ON \
+            -DPicasso_REQUIRE_SILO=ON \
             ${cmake_opts}
           cmake --build build --parallel 2
           cmake --install build
