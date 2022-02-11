@@ -384,8 +384,8 @@ void interpolationTest()
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
-    auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
+    auto particle_init_func = KOKKOS_LAMBDA( const double x[3], const double,
+                                             const int, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
             get( p, Field::LogicalPosition<3>(), d ) = x[d];

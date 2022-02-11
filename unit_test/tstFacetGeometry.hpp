@@ -482,7 +482,7 @@ struct LocateFunctor
 
     template <class ParticleType>
     KOKKOS_INLINE_FUNCTION bool operator()( const double x[3], const double,
-                                            ParticleType& p ) const
+                                            const int, ParticleType& p ) const
     {
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )

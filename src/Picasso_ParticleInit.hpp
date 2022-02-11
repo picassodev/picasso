@@ -204,7 +204,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
                 }
 
                 // Create a new particle with the given logical coordinates.
-                particle_created( pid ) = create_functor( px, pv, particle );
+                particle_created( pid ) =
+                    create_functor( px, pv, pid, particle );
 
                 // If we created a new particle insert it into the list.
                 if ( particle_created( pid ) )
@@ -352,7 +353,7 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
                         // Create a new particle with the given logical
                         // coordinates.
                         particle_created( pid ) =
-                            create_functor( px, pv, particle );
+                            create_functor( px, pv, pid, particle );
 
                         // If we created a new particle insert it into the list.
                         if ( particle_created( pid ) )
