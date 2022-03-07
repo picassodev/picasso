@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2021 by the Picasso authors                                *
+ * Copyright (c) 2018-2021 by the Picasso authors                           *
  * All rights reserved.                                                     *
  *                                                                          *
  * This file is part of the Picasso library. Picasso is distributed under a *
@@ -9,11 +9,13 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
-#ifndef PICASSO_CONFIG_HPP
-#define PICASSO_CONFIG_HPP
+#ifndef CABANA_TEST_HIP_CATEGORY_HPP
+#define CABANA_TEST_HIP_CATEGORY_HPP
 
-#define Picasso_VERSION_STRING "@PROJECT_VERSION@"
+#define TEST_CATEGORY hip
+#define TEST_EXECSPACE Kokkos::Experimental::HIP
+#define TEST_MEMSPACE Kokkos::Experimental::HIPSpace
+#define TEST_DEVICE                                                            \
+    Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>
 
-#define Picasso_GIT_COMMIT_HASH "@Picasso_GIT_COMMIT_HASH@"
-
-#endif // PICASSO_CONFIG_HPP
+#endif

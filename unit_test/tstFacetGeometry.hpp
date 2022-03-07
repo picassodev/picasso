@@ -16,10 +16,6 @@
 
 #include <Picasso_ParticleInit.hpp>
 
-#ifdef Picasso_ENABLE_SILO
-#include <Picasso_SiloParticleWriter.hpp>
-#endif
-
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
@@ -526,8 +522,8 @@ void initExample()
     initializeParticles( InitUniform(), TEST_EXECSPACE(), 1, init_func,
                          particles );
 
-#ifdef Picasso_ENABLE_SILO
-    SiloParticleWriter::writeTimeStep(
+#ifdef Cabana_ENABLE_SILO
+    Cajita::Experimental::SiloParticleOutput::writeTimeStep(
         mesh->localGrid()->globalGrid(), 0, 0.0,
         particles.slice( Field::PhysicalPosition<3>() ),
         particles.slice( Field::VolumeId() ) );

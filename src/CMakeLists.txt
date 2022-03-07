@@ -26,10 +26,6 @@ set(HEADERS
   Picasso_Version.hpp
   )
 
-if(Picasso_ENABLE_SILO)
-  list(APPEND HEADERS Picasso_SiloParticleWriter.hpp)
-endif()
-
 set(SOURCES
   Picasso_InputParser.cpp
   Picasso_UniformMesh.cpp
@@ -43,10 +39,6 @@ target_link_libraries(picasso
   Cabana::Cajita
   ArborX::ArborX
   Boost::boost )
-
-if(Picasso_ENABLE_SILO)
-  target_link_libraries(picasso SILO::silo)
-endif()
 
 target_include_directories(picasso
   PUBLIC

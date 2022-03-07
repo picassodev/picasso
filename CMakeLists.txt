@@ -5,7 +5,7 @@ project(Picasso LANGUAGES CXX VERSION 0.1.0)
 
 include(GNUInstallDirs)
 
-# find dependencies (MPI, Kokkos, and HYPRE found through Cabana)
+# find dependencies (MPI and Kokkos found through Cabana)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
 find_package(Cabana REQUIRED 0.4 COMPONENTS Cabana::Cajita Cabana::cabanacore)
@@ -15,8 +15,9 @@ find_package(Boost 1.66.0 REQUIRED)
 if( NOT Cabana_ENABLE_CAJITA )
   message( FATAL_ERROR "Cabana must be compiled with Cajita enabled" )
 endif()
-if( NOT Cabana_ENABLE_HYPRE )
-  message( FATAL_ERROR "Cabana must be compiled with HYPRE" )
+option( Picasso_REQUIRE_SILO "Require Picasso to build with Cabana Silo support" OFF )
+if( Picasso_REQUIRE_SILO AND NOT Cabana_ENABLE_SILO )
+    message( FATAL_ERROR "Cabana was not compiled with SILO" )
 endif()
 
 # find dependencies (from Cabana CMakeLists.txt)
@@ -32,14 +33,6 @@ macro(Picasso_add_dependency)
   endif()
   set(Picasso_ENABLE_${PICASSO_DEPENDENCY_OPTION} ${${PICASSO_DEPENDENCY_PACKAGE}_FOUND})
 endmacro()
-
-# find Silo
-Picasso_add_dependency(PACKAGE SILO)
-if(SILO_FOUND)
-  install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSILO.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso )
-endif()
 
 # Print the revision number to stdout
 find_package(Git)

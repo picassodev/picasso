@@ -586,18 +586,18 @@ class GridOperator
 
     // Call a functor without a work tag.
     template <class WorkTag, class Functor, class... Args>
-    KOKKOS_FORCEINLINE_FUNCTION
-        typename std::enable_if_t<std::is_same<WorkTag, void>::value>
-        functorTagDispatch( const Functor& functor, Args&&... args ) const
+    KOKKOS_FORCEINLINE_FUNCTION static std::enable_if_t<
+        std::is_same<WorkTag, void>::value>
+    functorTagDispatch( const Functor& functor, Args&&... args )
     {
         functor( std::forward<Args>( args )... );
     }
 
     // Call a functor with a work tag
     template <class WorkTag, class Functor, class... Args>
-    KOKKOS_FORCEINLINE_FUNCTION
-        typename std::enable_if_t<!std::is_same<WorkTag, void>::value>
-        functorTagDispatch( const Functor& functor, Args&&... args ) const
+    KOKKOS_FORCEINLINE_FUNCTION static std::enable_if_t<
+        !std::is_same<WorkTag, void>::value>
+    functorTagDispatch( const Functor& functor, Args&&... args )
     {
         functor( WorkTag{}, std::forward<Args>( args )... );
     }
@@ -675,8 +675,9 @@ class GridOperator
         // geometric operations, gather, scatter, and local dependencies for
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
+        auto grid = *( _mesh->localGrid() );
         Cajita::grid_parallel_for(
-            label, exec_space, *( _mesh->localGrid() ), Cajita::Own(),
+            label, exec_space, grid, Cajita::Own(),
             typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,

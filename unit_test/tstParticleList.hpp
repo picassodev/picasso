@@ -31,7 +31,7 @@ struct Foo : Field::Scalar<double>
     static std::string label() { return "foo"; }
 };
 
-struct Bar : Field::Tensor<double, 3, 3>
+struct Bar : Field::Matrix<double, 3, 3>
 {
     static std::string label() { return "bar"; }
 };

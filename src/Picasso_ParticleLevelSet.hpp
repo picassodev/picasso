@@ -262,30 +262,38 @@ class ParticleLevelSet
         // color we want and compute the indices.
         else if ( _color >= 0 )
         {
-            _color_count = 0;
+            Kokkos::View<int, memory_space> color_count( "color_count" );
+            int color = _color;
+            auto color_ind = _color_indices;
             Kokkos::parallel_for(
                 "Picasso::ParticleLevelSet::CountColor",
                 Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0,
                                                      c_p.size() ),
                 KOKKOS_LAMBDA( const int p ) {
-                    if ( _color == c_p( p ) )
+                    if ( color == c_p( p ) )
                     {
-                        _color_indices(
-                            Kokkos::atomic_fetch_add( &_color_count, 1 ) ) = p;
+                        color_ind(
+                            Kokkos::atomic_fetch_add( &color_count(), 1 ) ) = p;
                     }
                 } );
+            Kokkos::deep_copy( _color_count, color_count );
+            _color_indices = color_ind;
         }
 
         // Otherwise a negative color means all particles are included in the
         // level set so we can more efficiently generate the array.
         else
         {
-            _color_count = c_p.size();
+            int color_count = c_p.size();
+            auto color_ind = _color_indices;
             Kokkos::parallel_for(
                 "Picasso::ParticleLevelSet::FillColorIndices",
                 Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0,
                                                      c_p.size() ),
-                KOKKOS_LAMBDA( const int p ) { _color_indices( p ) = p; } );
+                KOKKOS_LAMBDA( const int p ) { color_ind( p ) = p; } );
+
+            _color_count = color_count;
+            _color_indices = color_ind;
         }
     }
 
