@@ -15,6 +15,7 @@ set(HEADERS
   Picasso_InputParser.hpp
   Picasso_LevelSet.hpp
   Picasso_LevelSetRedistance.hpp
+  Picasso_MarchingCubes.hpp
   Picasso_ParticleInit.hpp
   Picasso_ParticleInterpolation.hpp
   Picasso_ParticleLevelSet.hpp

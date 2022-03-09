@@ -98,17 +98,18 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
 
     double area = 16.0 * std::atan( 1.0 ) * 0.25 * 0.25;
     double facet_area = 0.0;
-    for ( int f = 0; f < mc_data.num_facet; ++f )
-    {
-        Vec3<double> ab = {
-            mc_data.facets( f, 1, 0 ) - mc_data.facets( f, 0, 0 ),
-            mc_data.facets( f, 1, 1 ) - mc_data.facets( f, 0, 1 ),
-            mc_data.facets( f, 1, 2 ) - mc_data.facets( f, 0, 2 ) };
 
-        Vec3<double> ac = {
-            mc_data.facets( f, 2, 0 ) - mc_data.facets( f, 0, 0 ),
-            mc_data.facets( f, 2, 1 ) - mc_data.facets( f, 0, 1 ),
-            mc_data.facets( f, 2, 2 ) - mc_data.facets( f, 0, 2 ) };
+    auto facets = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace{},
+                                                       mc_data.facets );
+    for ( int f = 0; f < facets.extent( 0 ); ++f )
+    {
+        Vec3<double> ab = { facets( f, 1, 0 ) - facets( f, 0, 0 ),
+                            facets( f, 1, 1 ) - facets( f, 0, 1 ),
+                            facets( f, 1, 2 ) - facets( f, 0, 2 ) };
+
+        Vec3<double> ac = { facets( f, 2, 0 ) - facets( f, 0, 0 ),
+                            facets( f, 2, 1 ) - facets( f, 0, 1 ),
+                            facets( f, 2, 2 ) - facets( f, 0, 2 ) };
 
         auto cross = ab % ac;
 
