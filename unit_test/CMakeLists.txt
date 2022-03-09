@@ -191,4 +191,5 @@ Picasso_add_tests(MPI NAMES
   ParticleInterpolation
   LevelSetRedistance
   ParticleLevelSet
+  MarchingCubes
   )
