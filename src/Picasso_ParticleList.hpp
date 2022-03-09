@@ -246,6 +246,7 @@ class ParticleList
     ParticleList( const std::string& label, const std::shared_ptr<Mesh>& mesh )
         : _aosoa( label )
         , _mesh( mesh )
+        , _label( label )
     {
     }
 
@@ -258,6 +259,9 @@ class ParticleList
 
     // Get the mesh.
     const Mesh& mesh() { return *_mesh; }
+
+    // Get the label
+    const std::string& label() { return _label; }
 
     // Get a slice of a given field.
     template <class FieldTag>
@@ -281,6 +285,7 @@ class ParticleList
   private:
     aosoa_type _aosoa;
     std::shared_ptr<Mesh> _mesh;
+    std::string _label;
 };
 
 //---------------------------------------------------------------------------//

@@ -91,7 +91,7 @@ void zalesaksTest( const std::string& filename )
     double time = 0.0;
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(
-        mesh->localGrid()->globalGrid(), 0, time,
+        "particles", mesh->localGrid()->globalGrid(), 0, time,
         particles->slice( Field::PhysicalPosition<3>() ),
         particles->slice( Field::Color() ),
         particles->slice( Field::CommRank() ) );
@@ -171,7 +171,7 @@ void zalesaksTest( const std::string& filename )
         time += 1.0;
 #ifdef Cabana_ENABLE_SILO
         Cajita::Experimental::SiloParticleOutput::writeTimeStep(
-            mesh->localGrid()->globalGrid(), t + 1, time,
+            "particles", mesh->localGrid()->globalGrid(), t + 1, time,
             particles->slice( Field::PhysicalPosition<3>() ),
             particles->slice( Field::Color() ),
             particles->slice( Field::CommRank() ) );
