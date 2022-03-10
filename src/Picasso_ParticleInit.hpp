@@ -12,6 +12,7 @@
 #ifndef PICASSO_PARTICLEINIT_HPP
 #define PICASSO_PARTICLEINIT_HPP
 
+#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
 #include <Cabana_Core.hpp>
@@ -445,8 +446,6 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     pool.init( seed, num_facets );
 
     // // Initialize particles.
-    int local_num_create = 0;
-
     Kokkos::parallel_for(
         "Picasso::ParticleInit::Uniform",
         Kokkos::RangePolicy<ExecutionSpace>( 0, num_facets ),
@@ -455,14 +454,6 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
 
             // Particle coordinate.
             Vec3<double> px;
-
-            // Particle surface area.
-            // FIXME: this is incorrect for an adaptive mesh. We will need an
-            // overload which gets the nodes and computes the volume. We will
-            // still place particles uniformly in the logical space but we
-            // will then need to map them back to the reference space
-            // later.
-            double pa = 1.0;
 
             // Particle.
             particle_type particle;
@@ -480,6 +471,14 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
                 surface.facets( f, 2, 0 ) - surface.facets( f, 0, 0 ),
                 surface.facets( f, 2, 1 ) - surface.facets( f, 0, 1 ),
                 surface.facets( f, 2, 2 ) - surface.facets( f, 0, 2 ) };
+
+            auto cross = ab % ac;
+
+            double c2 = ~cross * cross;
+            double facet_area = 0.5 * sqrt( c2 );
+
+            // Particle surface area.
+            double pa = facet_area / particles_per_facet;
 
             for ( int ip = 0; ip < particles_per_facet; ++ip )
             {
