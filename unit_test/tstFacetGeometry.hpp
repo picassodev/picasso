@@ -524,7 +524,7 @@ void initExample()
 
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(
-        mesh->localGrid()->globalGrid(), 0, 0.0,
+        "particles", mesh->localGrid()->globalGrid(), 0, 0.0,
         particles.slice( Field::PhysicalPosition<3>() ),
         particles.slice( Field::VolumeId() ) );
 #endif
