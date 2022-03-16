@@ -376,11 +376,11 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
 
   \tparam ParticleListType The type of particle list to initialize.
 
+  \tparam InitFunc Initialization functor type. See the documentation below
+  for the create_functor parameter on the signature of this functor.
+
   \tparam FacetGeometry The type of the facet geometry representing the
   surface to initialize with particles
-
-  \tparam InitFunctor Initialization functor type. See the documentation below
-  for the create_functor parameter on the signature of this functor.
 
   \param Initialization type tag.
 
@@ -390,15 +390,20 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
   \param surface A FacetGeometry type (FacetGeoemtry or MarchingCubes data)
   containing the list of surface facets to seed the particle list
 
-  \param create_functor A functor which populates a particle given the logical
-  position of a particle. This functor returns true if a particle was created
-  and false if it was not giving the signature:
+  \param create_functor A functor which populates a particle on a facet given
+  the logical position of a particle. This functor returns true if a particle
+  was created and false if it was not giving the signature:
 
-      bool createFunctor( const double px[3],
+      bool createFunctor( const double px[3], const double pan[3], double area,
                           typename ParticleAoSoA::tuple_type& particle );
 
-  \param particle_list The list of particles to populate. This will be filled
-  with particles and resized to a size equal to the number of particles
+    px[3] : particle logical coordinates
+    pan[3] : facet area normal vector
+    area : the discretized surface area
+    particle& : the surface particle to create
+
+  \param surface_particle_list The list of particles to populate. This will be
+  filled with particles and resized to a size equal to the number of particles
   created.
 */
 template <class ParticleListType, class InitFunc, class FacetGeometry,
@@ -407,7 +412,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
                                  const int particles_per_facet,
                                  const FacetGeometry& surface,
                                  const InitFunc& create_functor,
-                                 ParticleListType& particle_list )
+                                 ParticleListType& surface_particle_list )
 {
     // Memory space.
     using memory_space = typename ParticleListType::memory_space;
@@ -416,7 +421,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     using particle_type = typename ParticleListType::particle_type;
 
     // Get the local grid.
-    const auto& local_grid = *( particle_list.mesh().localGrid() );
+    const auto& local_grid = *( surface_particle_list.mesh().localGrid() );
 
     // Create a local mesh.
     auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
@@ -425,7 +430,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     const auto& global_grid = local_grid.globalGrid();
 
     // Get the particles.
-    auto& particles = particle_list.aosoa();
+    auto& particles = surface_particle_list.aosoa();
 
     // Allocate enough space for the case the particles consume the entire
     // local grid.
@@ -433,11 +438,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     int num_particles = particles_per_facet * num_facets;
     particles.resize( num_particles );
 
-    // Creation status.
-    auto particle_created = Kokkos::View<bool*, memory_space>(
-        Kokkos::ViewAllocateWithoutInitializing( "particle_created" ),
-        num_particles );
-
+    // TODO: Move random number generation to a util function.
     // Create a random number generator.
     uint64_t seed =
         global_grid.blockId() + ( 19383747 % ( global_grid.blockId() + 1 ) );
@@ -445,9 +446,10 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     rnd_type pool;
     pool.init( seed, num_facets );
 
-    // // Initialize particles.
+    // Fixme: Re-thread over particles instead of facets.
+    // Initialize particles.
     Kokkos::parallel_for(
-        "Picasso::ParticleInit::Uniform",
+        "Picasso::ParticleInit::RandomSurface",
         Kokkos::RangePolicy<ExecutionSpace>( 0, num_facets ),
         KOKKOS_LAMBDA( const int f ) {
             auto rand = pool.get_state( f );
@@ -462,20 +464,24 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
                                surface.facets( f, 0, 1 ),
                                surface.facets( f, 0, 2 ) };
 
-            Vec3<double> ab = {
-                surface.facets( f, 1, 0 ) - surface.facets( f, 0, 0 ),
-                surface.facets( f, 1, 1 ) - surface.facets( f, 0, 1 ),
-                surface.facets( f, 1, 2 ) - surface.facets( f, 0, 2 ) };
+            Vec3<double> b = { surface.facets( f, 1, 0 ),
+                               surface.facets( f, 1, 1 ),
+                               surface.facets( f, 1, 2 ) };
 
-            Vec3<double> ac = {
-                surface.facets( f, 2, 0 ) - surface.facets( f, 0, 0 ),
-                surface.facets( f, 2, 1 ) - surface.facets( f, 0, 1 ),
-                surface.facets( f, 2, 2 ) - surface.facets( f, 0, 2 ) };
+            Vec3<double> c = { surface.facets( f, 2, 0 ),
+                               surface.facets( f, 2, 1 ),
+                               surface.facets( f, 2, 2 ) };
+
+            Vec3<double> ab = b - a;
+            Vec3<double> ac = c - a;
 
             auto cross = ab % ac;
-
             double c2 = ~cross * cross;
-            double facet_area = 0.5 * sqrt( c2 );
+            double sqc2 = sqrt( c2 );
+            double facet_area = 0.5 * sqc2;
+
+            Vec3<double> pan =
+                cross / sqc2; // Create unit normal vector for the facet area
 
             // Particle surface area.
             double pa = facet_area / particles_per_facet;
@@ -498,7 +504,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
 
                 // Create a new particle with the given logical
                 // coordinates.
-                create_functor( px.data(), pa, particle );
+                create_functor( px.data(), pan.data(), pa, particle );
 
                 particles.setTuple( pid, particle.tuple() );
             }
