@@ -432,8 +432,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     // Get the particles.
     auto& particles = surface_particle_list.aosoa();
 
-    // Allocate enough space for the case the particles consume the entire
-    // local grid.
+    // Allocate the particles.
     int num_facets = surface.facets.extent( 0 );
     int num_particles = particles_per_facet * num_facets;
     particles.resize( num_particles );
@@ -446,7 +445,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
     rnd_type pool;
     pool.init( seed, num_facets );
 
-    // Fixme: Re-thread over particles instead of facets.
+    // FIXME: Re-thread over particles instead of facets.
     // Initialize particles.
     Kokkos::parallel_for(
         "Picasso::ParticleInit::RandomSurface",
