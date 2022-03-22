@@ -262,6 +262,7 @@ class ParticleList
 
     // Get the label
     const std::string& label() { return _label; }
+    const std::string& label() const { return _label; }
 
     // Get a slice of a given field.
     template <class FieldTag>
