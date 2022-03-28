@@ -1897,6 +1897,57 @@ inverse( const ExpressionA& a )
 }
 
 //---------------------------------------------------------------------------//
+// Matrix exponential
+// Adapted from D. Gebremedhin and C. Weatherford
+// https://arxiv.org/abs/1606.08395
+//---------------------------------------------------------------------------//
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if_t<is_matrix<ExpressionA>::value,
+                              typename ExpressionA::copy_type>
+    exponential( const ExpressionA& a )
+{
+    static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
+                   "matrix must be square" );
+    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
+           ExpressionA::extent_1>
+        ident;
+    identity( ident );
+
+    auto a2 = a * a;
+    auto a3 = a2 * a;
+    auto a4 = a3 * a;
+
+    double alpha = 4.955887515892002289e-14;
+    Kokkos::Array<Kokkos::Array<double, 5>, 4> c;
+    c = {
+        Kokkos::Array<double, 5>{ 3599.994262347704951, 862.0738730089864644,
+                                  -14.86233950714664427, -4.881331340410683266,
+                                  1.0 },
+        Kokkos::Array<double, 5>{ 1693.461215815646064, 430.8068649851425321,
+                                  77.58934041908401266, 7.763092503482958289,
+                                  1.0 },
+        Kokkos::Array<double, 5>{ 1478.920917621023984, 387.7896702475912482,
+                                  98.78409444643527097, 9.794888991082968084,
+                                  1.0 },
+        Kokkos::Array<double, 5>{ 2237.981769593417334, 545.9089563171489062,
+                                  37.31797993128430013, 3.323349845844756893,
+                                  1.0 },
+    };
+
+    auto ai1 = c[0][0] * ident + c[0][1] * a + c[0][2] * a2 + c[0][3] * a3 +
+               c[0][4] * a4;
+    auto ai2 = c[1][0] * ident + c[1][1] * a + c[1][2] * a2 + c[1][3] * a3 +
+               c[1][4] * a4;
+    auto ai3 = c[2][0] * ident + c[2][1] * a + c[2][2] * a2 + c[2][3] * a3 +
+               c[2][4] * a4;
+    auto ai4 = c[3][0] * ident + c[3][1] * a + c[3][2] * a2 + c[3][3] * a3 +
+               c[3][4] * a4;
+
+    return alpha * ( ai1 * ai2 * ai3 * ai4 );
+}
+
+//---------------------------------------------------------------------------//
 // Linear solve.
 //---------------------------------------------------------------------------//
 // 2x2 specialization. Single and multiple RHS supported.
