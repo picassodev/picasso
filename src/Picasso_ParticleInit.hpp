@@ -408,15 +408,12 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
 */
 template <class ParticleListType, class InitFunc, class FacetGeometry,
           class ExecutionSpace>
-void initializeParticlesSurface( InitRandom, const ExecutionSpace& exec_space,
+void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                                  const int particles_per_facet,
                                  const FacetGeometry& surface,
                                  const InitFunc& create_functor,
                                  ParticleListType& surface_particle_list )
 {
-    // Memory space.
-    using memory_space = typename ParticleListType::memory_space;
-
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
 
