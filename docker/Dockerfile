@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
         jq \
         git \
         zlib1g-dev \
+        libgtest-dev \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
