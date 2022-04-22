@@ -52,12 +52,13 @@ typename SplineDataType::scalar_type KOKKOS_INLINE_FUNCTION inertialScaling(
 // Interpolate particle momentum and mass to a collocated momentum
 // grid. (Second and Third order splines). Requires SplineValue,
 // SplineDistance, and SplinePhysicalCellSize when constructing the spline
-// data.
+// data. ParticleField matrix c_p (4*N matrix) is composed of particle field u_p
+// (1*N matrix) and particle  affine matrix B_p ( 3*N matrix ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+          class GridMass, class GridField>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+     const GridField& mu_i, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
              Cajita::isCell<typename SplineDataType::entity_type>::value ) &&
@@ -83,7 +84,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
-    static_assert( 4 == ParticleField::extent_0, "APIC 4 modes" );
+    static_assert( 4 == ParticleField::extent_0,
+                   "APIC requires a 4xN matrix, where N matches the dimension "
+                   "of the input field" );
 
     // Number of field components.
     static constexpr int ncomp = ParticleField::extent_1;
@@ -92,7 +95,7 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
     LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // B_p is sliced from c_p and is transposed.
         B_p( d, 0 ) = c_p( 1, d );
         B_p( d, 1 ) = c_p( 2, d );
         B_p( d, 2 ) = c_p( 3, d );
@@ -141,12 +144,13 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 // Interpolate particle momentum and mass to a staggered momentum
 // grid. (Second and Third order splines). Requires SplineValue,
 // SplineDistance, and SplinePhysicalCellSize when constructing the spline
-// data.
+// data.ParticleField matrix c_p (4*N matrix) is composed of particle field u_p
+// (1*N matrix) and particle  affine matrix B_p ( 3*N matrix ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+          class GridMass, class GridField>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+     const GridField& mu_i, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
              Cajita::isFace<typename SplineDataType::entity_type>::value ) &&
@@ -172,7 +176,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
-    static_assert( 4 == ParticleField::extent_0, "APIC 4 modes" );
+    static_assert( 4 == ParticleField::extent_0,
+                   "APIC requires a 4xN matrix, where N matches the dimension "
+                   "of the input field" );
 
     static_assert( 3 == ParticleField::extent_1,
                    "APIC requires 3 space dimensions" );
@@ -184,7 +190,7 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
     LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // B_p is sliced from c_p and is transposed.
         B_p( d, 0 ) = c_p( 1, d );
         B_p( d, 1 ) = c_p( 2, d );
         B_p( d, 2 ) = c_p( 3, d );
@@ -228,12 +234,14 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum and mass to a collocated momentum
 // grid. (First order splines). Requires SplineValue and SplineGradient when
-// constructing the spline data.
+// constructing the spline data. ParticleField matrix c_p (4*N matrix) is
+// composed of particle field u_p (1*N matrix) and particle  affine matrix B_p (
+// 3*N matrix ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+          class GridMass, class GridField>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+     const GridField& mu_i, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
              Cajita::isCell<typename SplineDataType::entity_type>::value ) &&
@@ -256,7 +264,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
-    static_assert( 4 == ParticleField::extent_0, "APIC 4 modes" );
+    static_assert( 4 == ParticleField::extent_0,
+                   "APIC requires a 4xN matrix, where N matches the dimension "
+                   "of the input field" );
 
     // Number of field components.
     static constexpr int ncomp = ParticleField::extent_1;
@@ -265,7 +275,7 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
     LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // B_p is sliced from c_p and is transposed.
         B_p( d, 0 ) = c_p( 1, d );
         B_p( d, 1 ) = c_p( 2, d );
         B_p( d, 2 ) = c_p( 3, d );
@@ -310,12 +320,14 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 //---------------------------------------------------------------------------//
 // Interpolate particle momentum and mass to a staggered momentum grid. (First
 // order splines). Requires SplineValue and SplineGradient when constructing
-// the spline data.
+// the spline data. ParticleField matrix c_p (4*N matrix) is composed of
+// particle field u_p (1*N matrix) and particle  affine matrix B_p ( 3*N matrix
+// ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
-          class GridField, class GridMass>
+          class GridMass, class GridField>
 KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
-     const GridMass& m_i, const SplineDataType& sd,
+p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+     const GridField& mu_i, const SplineDataType& sd,
      typename std::enable_if<
          ( ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
              Cajita::isFace<typename SplineDataType::entity_type>::value ) &&
@@ -338,7 +350,9 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 
     using value_type = typename GridField::original_value_type;
 
-    static_assert( 4 == ParticleField::extent_0, "APIC 4 modes" );
+    static_assert( 4 == ParticleField::extent_0,
+                   "APIC requires a 4xN matrix, where N matches the dimension "
+                   "of the input field" );
 
     static_assert( 3 == ParticleField::extent_1,
                    "APIC requires 3 space dimensions" );
@@ -350,7 +364,7 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
     LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // B_p is sliced from c_p and is transposed.
         B_p( d, 0 ) = c_p( 1, d );
         B_p( d, 1 ) = c_p( 2, d );
         B_p( d, 2 ) = c_p( 3, d );
@@ -389,17 +403,17 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridField& mu_i,
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate collocated grid velocity to the particle. Requires SplineValue
+// Interpolate collocated grid field to the particle. Requires SplineValue
 // and SplineDistance when constructing the spline data.
-template <class GridVelocity, class SplineDataType, class ParticleField>
+template <class GridField, class SplineDataType, class ParticleField>
 KOKKOS_INLINE_FUNCTION void
-g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
+g2p( const GridField& u_i, ParticleField& c_p, const SplineDataType& sd,
      typename std::enable_if<
          ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
            Cajita::isCell<typename SplineDataType::entity_type>::value ),
          void*>::type = 0 )
 {
-    using value_type = typename GridVelocity::value_type;
+    using value_type = typename GridField::value_type;
 
     static_assert( SplineDataType::has_weight_values,
                    "APIC::g2p requires spline weight values" );
@@ -430,12 +444,13 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
                 // Projection weight.
                 w_ip = sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
-                // Entity velocity
+                // Entity field
                 auto u_e =
                     u_i( sd.s[Dim::I][i], sd.s[Dim::J][j], sd.s[Dim::K][k] );
 
-                // Update velocity.
-                u_p += w_ip * u_e;
+                // Update field.
+                // FIXME: += operator does not work for scalar field
+                u_p = u_p + w_ip * u_e;
 
                 // Physical distance to entity.
                 distance( Dim::I ) = sd.d[Dim::I][i];
@@ -449,7 +464,7 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
     // update ParticleField
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // c_p is reconstructed from particle velocity and B_p^{T}
         c_p( 0, d ) = u_p( d );
         c_p( 1, d ) = B_p( d, 0 );
         c_p( 2, d ) = B_p( d, 1 );
@@ -458,11 +473,11 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate staggered grid velocity to the particle. Requires SplineValue
+// Interpolate staggered grid field to the particle. Requires SplineValue
 // and SplineDistance when constructing the spline data.
-template <class GridVelocity, class SplineDataType, class ParticleField>
+template <class GridField, class SplineDataType, class ParticleField>
 KOKKOS_INLINE_FUNCTION void
-g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
+g2p( const GridField& u_i, ParticleField& c_p, const SplineDataType& sd,
      typename std::enable_if<
          ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
            Cajita::isFace<typename SplineDataType::entity_type>::value ),
@@ -474,7 +489,7 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
     static_assert( SplineDataType::has_physical_distance,
                    "APIC::g2p requires spline distance" );
 
-    using value_type = typename GridVelocity::value_type;
+    using value_type = typename GridField::value_type;
 
     static_assert( 4 == ParticleField::extent_0, "APIC 4 modes" );
 
@@ -488,7 +503,7 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
     LinearAlgebra::Vector<value_type, ncomp> u_p;
     LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
 
-    // Get the velocity dimension we are working on.
+    // Get the field dimension we are working on.
     const int dim = SplineDataType::entity_type::dim;
 
     // Reset the particle values.
@@ -505,7 +520,7 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
                 // Projection weight.
                 w_ip = sd.w[Dim::I][i] * sd.w[Dim::J][j] * sd.w[Dim::K][k];
 
-                // Update velocity.
+                // Update field.
                 u_p( dim ) += w_ip * u_i( sd.s[Dim::I][i], sd.s[Dim::J][j],
                                           sd.s[Dim::K][k] );
 
@@ -524,7 +539,7 @@ g2p( const GridVelocity& u_i, ParticleField& c_p, const SplineDataType& sd,
     // update ParticleField
     for ( int d = 0; d < ncomp; ++d )
     {
-        // transpose of c_p is already taken accounted in B_p
+        // c_p is reconstructed from particle velocity and B_p^{T}
         c_p( 0, d ) = u_p( d );
         c_p( 1, d ) = B_p( d, 0 );
         c_p( 2, d ) = B_p( d, 1 );

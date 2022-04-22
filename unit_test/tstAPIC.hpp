@@ -660,7 +660,7 @@ void collocatedTest()
                 for ( int j = 0; j < 3; ++j )
                     aff( i + 1, j ) = pb( i + 1, j );
 
-            APIC::p2g( pm, aff, gv_sv, gm_sv, sd );
+            APIC::p2g( pm, aff, gm_sv, gv_sv, sd );
         } );
     Kokkos::Experimental::contribute( gv_view, gv_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
@@ -824,7 +824,7 @@ void staggeredTest()
                 for ( int j = 0; j < 3; ++j )
                     aff( i + 1, j ) = pb( i + 1, j );
 
-            APIC::p2g( pm, aff, gs_sv, gm_sv, sd );
+            APIC::p2g( pm, aff, gm_sv, gs_sv, sd );
         } );
     Kokkos::Experimental::contribute( gs_view, gs_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
