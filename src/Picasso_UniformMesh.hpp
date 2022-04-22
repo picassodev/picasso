@@ -172,7 +172,7 @@ class UniformMesh
         if ( part_params.get<std::string>( "type" ).compare( "uniform_dim" ) ==
              0 )
         {
-            partitioner = std::make_shared<Cajita::UniformDimPartitioner>();
+            partitioner = std::make_shared<Cajita::DimBlockPartitioner<3>>();
         }
         else if ( part_params.get<std::string>( "type" ).compare( "manual" ) ==
                   0 )
@@ -188,8 +188,8 @@ class UniformMesh
                 ranks_per_dim[d] = element.second.get_value<int>();
                 ++d;
             }
-            partitioner =
-                std::make_shared<Cajita::ManualPartitioner>( ranks_per_dim );
+            partitioner = std::make_shared<Cajita::ManualBlockPartitioner<3>>(
+                ranks_per_dim );
         }
 
         // Build the global grid.

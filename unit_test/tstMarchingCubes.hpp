@@ -101,7 +101,7 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
 
     auto facets = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace{},
                                                        mc_data.facets );
-    for ( int f = 0; f < facets.extent( 0 ); ++f )
+    for ( std::size_t f = 0; f < facets.extent( 0 ); ++f )
     {
         Vec3<double> ab = { facets( f, 1, 0 ) - facets( f, 0, 0 ),
                             facets( f, 1, 1 ) - facets( f, 0, 1 ),
