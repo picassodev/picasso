@@ -231,6 +231,12 @@ class ParticleLevelSet
         _radius = _dx * params.get<double>( "particle_radius", 0.5 );
     }
 
+    Kokkos::View<int*, memory_space> colorIndex() const
+    {
+        return _color_indices;
+    }
+    int colorCount() const { return _color_count; }
+
     /*!
       \brief Update the set of particle indices for the color we are building
       the set for. This operation is needed any time the particle population
