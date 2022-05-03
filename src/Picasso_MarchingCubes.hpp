@@ -1043,7 +1043,8 @@ void computeEdges( const Kokkos::Array<double, 8>& vertex_data,
                    Kokkos::Array<Kokkos::Array<double, 3>, 12>& edges )
 {
     // Calculate edge weights via linear interpolation.
-    auto compute_weight = [&]( const int v1, const int v2 ) {
+    auto compute_weight = [&]( const int v1, const int v2 )
+    {
         return ( vertex_signs[v1] != vertex_signs[v2] )
                    ? vertex_data[v1] / ( vertex_data[v1] - vertex_data[v2] )
                    : -1.0;
