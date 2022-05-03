@@ -81,8 +81,8 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT
 
 # Clang Format
 if(CLANG_FORMAT_FOUND)
-  file(GLOB_RECURSE FORMAT_SOURCES src/*.cpp src/*.hpp unit_test/*.cpp unit_test/*.hpp)
-  add_custom_target(format
+  file(GLOB_RECURSE FORMAT_SOURCES src/*.[c,h]pp unit_test/*.[c,h]pp)
+  add_custom_target(picasso-format
     COMMAND ${CLANG_FORMAT_EXECUTABLE} -i -style=file ${FORMAT_SOURCES}
     DEPENDS ${FORMAT_SOURCES})
 endif()

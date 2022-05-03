@@ -137,7 +137,7 @@ jobs:
         if: ${{ matrix.distro == 'ubuntu:latest' }}
         working-directory: build
         run: |
-             make format
+             make picasso-format
              git diff --exit-code
       - name: Upload Report to codecov.io
         uses: codecov/codecov-action@v1
