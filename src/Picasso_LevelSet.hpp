@@ -56,8 +56,9 @@ class LevelSet
             createArray( *_mesh, location_type(), Field::DistanceEstimate() );
         _signed_distance =
             createArray( *_mesh, location_type(), Field::SignedDistance() );
-        _halo = Cajita::createHalo<double, memory_space>(
-            *( _signed_distance->layout() ), Cajita::NodeHaloPattern<3>() );
+        _halo = Cajita::createHalo( Cajita::NodeHaloPattern<3>(),
+                                    _mesh->minimumHaloWidth(),
+                                    *( _signed_distance ) );
 
         // Cell size.
         _dx = _mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );

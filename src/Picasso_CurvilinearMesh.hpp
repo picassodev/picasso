@@ -231,10 +231,14 @@ class CurvilinearMesh
     // Get the mesh mapping.
     const mesh_mapping& mapping() const { return *_mapping; }
 
+    // Get the minimum required number of cells in the halo.
+    int minimumHaloWidth() const { return _minimum_halo_width; }
+
     // Get the local grid.
     std::shared_ptr<local_grid> localGrid() const { return _local_grid; }
 
   public:
+    int _minimum_halo_width;
     std::shared_ptr<mesh_mapping> _mapping;
     std::shared_ptr<local_grid> _local_grid;
 };
