@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
         jq \
         git \
         zlib1g-dev \
+        python-dev \
         libgtest-dev \
     && \
     apt-get clean && \
