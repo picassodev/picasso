@@ -1,7 +1,10 @@
-ARG BASE=nvidia/cuda:10.2-devel
+ARG BASE=nvidia/cuda:11.0-devel-ubuntu20.04
 FROM $BASE
 
 ARG NPROCS=4
+
+RUN DISTRO=ubuntu2004 && \
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/$DISTRO/x86_64/3bf863cc.pub
 
 RUN apt-get update && apt-get install -y \
         bc \
@@ -10,6 +13,8 @@ RUN apt-get update && apt-get install -y \
         jq \
         git \
         zlib1g-dev \
+        python-dev \
+        libgtest-dev \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

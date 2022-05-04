@@ -1,29 +1,3 @@
-##---------------------------------------------------------------------------##
-# Download and unpack googletest
-##---------------------------------------------------------------------------##
-set(GTEST_URL "https://github.com/google/googletest/archive/release-1.10.0.tar.gz"
-  CACHE STRING "URL for GTest tarball")
-mark_as_advanced(GTEST_URL)
-
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL ${GTEST_URL}
-  URL_MD5         ecd1fa65e7de707cd5c00bdac56022cd
-  )
-
-FetchContent_GetProperties(googletest)
-if(NOT googletest_POPULATED)
-  FetchContent_Populate(googletest)
-  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-endif()
-
-# Prevent GoogleTest from overriding our compiler/linker options
-# when building with Visual Studio
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-set(gtest_args --gtest_color=yes)
-
 ##--------------------------------------------------------------------------##
 ## Input files.
 ##--------------------------------------------------------------------------##
@@ -104,11 +78,11 @@ configure_file(
 ## General tests.
 ##--------------------------------------------------------------------------##
 add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
-target_link_libraries(Version_test picasso gtest)
+target_link_libraries(Version_test picasso ${gtest_target})
 add_test(NAME Version_test COMMAND Version_test ${gtest_args})
 
 add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
-target_link_libraries(InputParser_test picasso gtest)
+target_link_libraries(InputParser_test picasso ${gtest_target})
 add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
 
 ##--------------------------------------------------------------------------##
@@ -149,7 +123,7 @@ macro(Picasso_add_tests)
         set(_target ${_test}_test_${_device})
         add_executable(${_target} ${_file} ${PICASSO_UNIT_TEST_MAIN})
         target_include_directories(${_target} PUBLIC ${_dir} ${CMAKE_CURRENT_SOURCE_DIR})
-        target_link_libraries(${_target} picasso gtest)
+        target_link_libraries(${_target} picasso ${gtest_target})
         if(PICASSO_UNIT_TEST_MPI)
           foreach(_np ${PICASSO_UNIT_TEST_MPIEXEC_NUMPROCS})
             add_test(NAME ${_target}_${_np} COMMAND

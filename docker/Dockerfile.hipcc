@@ -21,6 +21,7 @@ RUN apt-get update && \
         autotools-dev \
         rocthrust \
         zlib1g-dev \
+        libgtest-dev \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

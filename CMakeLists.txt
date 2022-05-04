@@ -53,6 +53,15 @@ add_subdirectory(src)
 # enable testing
 option(Picasso_ENABLE_TESTING "Build tests" OFF)
 if(Picasso_ENABLE_TESTING)
+  find_package(GTest 1.10 REQUIRED)
+  # Workaround for FindGTest module in CMake older than 3.20
+  if(TARGET GTest::gtest)
+    set(gtest_target GTest::gtest)
+  elseif(TARGET GTest::GTest)
+    set(gtest_target GTest::GTest)
+  else()
+    message(FATAL_ERROR "bug in GTest find module workaround")
+  endif()
   enable_testing()
   add_subdirectory(unit_test)
 endif()
@@ -72,8 +81,8 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT
 
 # Clang Format
 if(CLANG_FORMAT_FOUND)
-  file(GLOB_RECURSE FORMAT_SOURCES src/*.cpp src/*.hpp unit_test/*.cpp unit_test/*.hpp)
-  add_custom_target(format
+  file(GLOB_RECURSE FORMAT_SOURCES src/*.[c,h]pp unit_test/*.[c,h]pp)
+  add_custom_target(picasso-format
     COMMAND ${CLANG_FORMAT_EXECUTABLE} -i -style=file ${FORMAT_SOURCES}
     DEPENDS ${FORMAT_SOURCES})
 endif()

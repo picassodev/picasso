@@ -101,7 +101,8 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
         "test",
         Cajita::createExecutionPolicy( own_entities,
                                        Kokkos::DefaultHostExecutionSpace() ),
-        [=]( const int i, const int j, const int k ) {
+        [=]( const int i, const int j, const int k )
+        {
             // Get the entity index.
             int entity_index[3] = { i, j, k };
 

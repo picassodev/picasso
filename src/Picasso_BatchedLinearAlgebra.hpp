@@ -249,16 +249,16 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
     {
-        return createVectorExpression<T, N>(
-            [=]( const int i ) { return ( *this )( n, i ); } );
+        return createVectorExpression<T, N>( [=]( const int i )
+                                             { return ( *this )( n, i ); } );
     }
 
     // Get a column as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto column( const int n ) const
     {
-        return createVectorExpression<T, M>(
-            [=]( const int i ) { return ( *this )( i, n ); } );
+        return createVectorExpression<T, M>( [=]( const int i )
+                                             { return ( *this )( i, n ); } );
     }
 };
 
@@ -1766,7 +1766,8 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
-        [=]( const int i, const int j ) {
+        [=]( const int i, const int j )
+        {
             return ( i == j )
                        ? x( i )
                        : static_cast<typename ExpressionX::value_type>( 0 );
