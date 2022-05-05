@@ -708,6 +708,41 @@ void linearSolveTest()
 }
 
 //---------------------------------------------------------------------------//
+void matrixExponentialTest()
+{
+    // Test a random 3x3 matrix exponentiation
+    LinearAlgebra::Matrix<double, 3, 3> A;
+    A = { { 0.261653840929, 0.276910681439, 0.374636284772 },
+          { 0.024295417821, 0.570296571637, 0.431548657634 },
+          { 0.535801487928, 0.192472912864, 0.948361671535 } };
+
+    auto A_exp = LinearAlgebra::exponential( A );
+
+    double eps = 1.0e-12;
+
+    EXPECT_NEAR( A_exp( 0, 0 ), 1.493420196372, eps );
+    EXPECT_NEAR( A_exp( 0, 1 ), 0.513684901522, eps );
+    EXPECT_NEAR( A_exp( 0, 2 ), 0.848390478207, eps );
+    EXPECT_NEAR( A_exp( 1, 0 ), 0.255994538136, eps );
+    EXPECT_NEAR( A_exp( 1, 1 ), 1.880234291898, eps );
+    EXPECT_NEAR( A_exp( 1, 2 ), 0.981626296936, eps );
+    EXPECT_NEAR( A_exp( 2, 0 ), 1.057456162099, eps );
+    EXPECT_NEAR( A_exp( 2, 1 ), 0.57315415314, eps );
+    EXPECT_NEAR( A_exp( 2, 2 ), 2.914674968894, eps );
+
+    // Test the exp(0) = 1 identity (for matrices)
+    LinearAlgebra::Matrix<double, 2, 2> B_zeros;
+    B_zeros = 0.0;
+
+    auto B_exp = LinearAlgebra::exponential( B_zeros );
+
+    EXPECT_NEAR( B_exp( 0, 0 ), 1.0, eps );
+    EXPECT_NEAR( B_exp( 0, 1 ), 0.0, eps );
+    EXPECT_NEAR( B_exp( 1, 0 ), 0.0, eps );
+    EXPECT_NEAR( B_exp( 1, 1 ), 1.0, eps );
+}
+
+//---------------------------------------------------------------------------//
 template <int N>
 void kernelTest()
 {
@@ -931,6 +966,8 @@ TEST( TEST_CATEGORY, kernelTest )
     kernelTest<10>();
     kernelTest<20>();
 }
+
+TEST( TEST_CATEGORY, matrixExponential_test ) { matrixExponentialTest(); }
 
 // FIXME_KOKKOSKERNELS
 // TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }
