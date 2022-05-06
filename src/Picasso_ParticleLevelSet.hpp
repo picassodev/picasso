@@ -231,10 +231,11 @@ class ParticleLevelSet
         _radius = _dx * params.get<double>( "particle_radius", 0.5 );
     }
 
-    Kokkos::View<int*, memory_space> colorIndex() const
+    Kokkos::View<const int*, memory_space> colorIndex() const
     {
         return _color_indices;
     }
+
     int colorCount() const { return _color_count; }
 
     /*!
