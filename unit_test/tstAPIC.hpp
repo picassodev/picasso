@@ -77,9 +77,8 @@ void checkGridVelocity( std::integral_constant<int, 1>, const int cx,
 
 //---------------------------------------------------------------------------//
 // Check particle velocity and affine velocity. Computed in Mathematica.
-template <class ParticleVelocity, class AffineVelocity>
+template <class AffineVelocity>
 void checkParticleVelocity( std::integral_constant<int, 1>,
-                            const ParticleVelocity& pu_host,
                             const AffineVelocity& pb_host,
                             const double near_eps, const int array_dim )
 {
@@ -91,13 +90,13 @@ void checkParticleVelocity( std::integral_constant<int, 1>,
         { -3.2687262820030547, -4.911593173052676, 0.1993230728031179 },
         { -3.257811639242931, -4.91263564023696, 0.1993230728031392 } };
 
-    EXPECT_NEAR( pu_host( array_dim ), mathematica_u[array_dim], near_eps );
+    EXPECT_NEAR( pb_host( 0, array_dim ), mathematica_u[array_dim], near_eps );
 
-    EXPECT_NEAR( pb_host( array_dim, 0 ), mathematica_b[array_dim][0],
+    EXPECT_NEAR( pb_host( 1, array_dim ), mathematica_b[array_dim][0],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 1 ), mathematica_b[array_dim][1],
+    EXPECT_NEAR( pb_host( 2, array_dim ), mathematica_b[array_dim][1],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 2 ), mathematica_b[array_dim][2],
+    EXPECT_NEAR( pb_host( 3, array_dim ), mathematica_b[array_dim][2],
                  near_eps );
 }
 
@@ -195,9 +194,8 @@ void checkGridVelocity( std::integral_constant<int, 2>, const int cx,
 
 //---------------------------------------------------------------------------//
 // Check particle velocity and affine velocity. Computed in Mathematica.
-template <class ParticleVelocity, class AffineVelocity>
+template <class AffineVelocity>
 void checkParticleVelocity( std::integral_constant<int, 2>,
-                            const ParticleVelocity& pu_host,
                             const AffineVelocity& pb_host,
                             const double near_eps, const int array_dim )
 {
@@ -209,13 +207,13 @@ void checkParticleVelocity( std::integral_constant<int, 2>,
         { -3.388082785485041, -4.8514415741128385, 0.22254272203841385 },
         { -3.3766230251516975, -4.852482973202919, 0.22254272203843906 } };
 
-    EXPECT_NEAR( pu_host( array_dim ), mathematica_u[array_dim], near_eps );
+    EXPECT_NEAR( pb_host( 0, array_dim ), mathematica_u[array_dim], near_eps );
 
-    EXPECT_NEAR( pb_host( array_dim, 0 ), mathematica_b[array_dim][0],
+    EXPECT_NEAR( pb_host( 1, array_dim ), mathematica_b[array_dim][0],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 1 ), mathematica_b[array_dim][1],
+    EXPECT_NEAR( pb_host( 2, array_dim ), mathematica_b[array_dim][1],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 2 ), mathematica_b[array_dim][2],
+    EXPECT_NEAR( pb_host( 3, array_dim ), mathematica_b[array_dim][2],
                  near_eps );
 }
 
@@ -375,9 +373,8 @@ void checkGridVelocity( std::integral_constant<int, 3>, const int cx,
 
 //---------------------------------------------------------------------------//
 // Check particle velocity and affine velocity. Computed in Mathematica.
-template <class ParticleVelocity, class AffineVelocity>
+template <class AffineVelocity>
 void checkParticleVelocity( std::integral_constant<int, 3>,
-                            const ParticleVelocity& pu_host,
                             const AffineVelocity& pb_host,
                             const double near_eps, const int array_dim )
 {
@@ -389,13 +386,13 @@ void checkParticleVelocity( std::integral_constant<int, 3>,
         { -4.634471032846672, -6.635011231192498, 0.3047536994385796 },
         { -4.618961679400126, -6.636420491918657, 0.304753699438543 } };
 
-    EXPECT_NEAR( pu_host( array_dim ), mathematica_u[array_dim], near_eps );
+    EXPECT_NEAR( pb_host( 0, array_dim ), mathematica_u[array_dim], near_eps );
 
-    EXPECT_NEAR( pb_host( array_dim, 0 ), mathematica_b[array_dim][0],
+    EXPECT_NEAR( pb_host( 1, array_dim ), mathematica_b[array_dim][0],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 1 ), mathematica_b[array_dim][1],
+    EXPECT_NEAR( pb_host( 2, array_dim ), mathematica_b[array_dim][1],
                  near_eps );
-    EXPECT_NEAR( pb_host( array_dim, 2 ), mathematica_b[array_dim][2],
+    EXPECT_NEAR( pb_host( 3, array_dim ), mathematica_b[array_dim][2],
                  near_eps );
 }
 
@@ -571,8 +568,7 @@ void collocatedTest()
     int cz = 95;
 
     // Particle velocity.
-    Kokkos::View<double[3], TEST_MEMSPACE> pu( "pu" );
-    Kokkos::View<double[3][3], TEST_MEMSPACE> pb( "pb" );
+    Kokkos::View<double[4][3], TEST_MEMSPACE> pb( "pb" );
 
     // Create a grid vector on the entities.
     auto grid_vector = createArray( mesh, Location(), Foo() );
@@ -613,30 +609,27 @@ void collocatedTest()
                 createSpline( Location(), InterpolationOrder<Order>(),
                               local_mesh, x, SplineValue(), SplineDistance() );
 
-            LinearAlgebra::Vector<double, 3> vel;
-            LinearAlgebra::Matrix<double, 3, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff;
 
-            APIC::g2p( gv_wrapper, vel, aff, sd );
+            APIC::g2p( gv_wrapper, aff, sd );
 
             for ( int d = 0; d < 3; ++d )
-                pu( d ) = vel( d );
+                pb( 0, d ) = aff( 0, d );
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    pb( i, j ) = aff( i, j );
+                    pb( i + 1, j ) = aff( i + 1, j );
         } );
 
     // Check particle velocity. Computed in Mathematica.
-    auto pu_host =
-        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), pu );
     auto pb_host =
         Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), pb );
-    checkParticleVelocity( std::integral_constant<int, Order>(), pu_host,
-                           pb_host, near_eps, 0 );
-    checkParticleVelocity( std::integral_constant<int, Order>(), pu_host,
-                           pb_host, near_eps, 1 );
-    checkParticleVelocity( std::integral_constant<int, Order>(), pu_host,
-                           pb_host, near_eps, 2 );
+    checkParticleVelocity( std::integral_constant<int, Order>(), pb_host,
+                           near_eps, 0 );
+    checkParticleVelocity( std::integral_constant<int, Order>(), pb_host,
+                           near_eps, 1 );
+    checkParticleVelocity( std::integral_constant<int, Order>(), pb_host,
+                           near_eps, 2 );
 
     // Reset the grid view.
     Kokkos::deep_copy( gv_view, 0.0 );
@@ -658,17 +651,16 @@ void collocatedTest()
                               local_mesh, x, SplineValue(), SplineGradient(),
                               SplineDistance(), SplineCellSize() );
 
-            LinearAlgebra::Vector<double, 3> vel;
-            LinearAlgebra::Matrix<double, 3, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff;
 
             for ( int d = 0; d < 3; ++d )
-                vel( d ) = pu( d );
+                aff( 0, d ) = pb( 0, d );
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    aff( i, j ) = pb( i, j );
+                    aff( i + 1, j ) = pb( i + 1, j );
 
-            APIC::p2g( pm, vel, aff, gv_sv, gm_sv, sd );
+            APIC::p2g( pm, aff, gm_sv, gv_sv, sd );
         } );
     Kokkos::Experimental::contribute( gv_view, gv_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
@@ -748,8 +740,7 @@ void staggeredTest()
     int cz = 95;
 
     // Particle velocity.
-    Kokkos::View<double[3], TEST_MEMSPACE> pu( "pu" );
-    Kokkos::View<double[3][3], TEST_MEMSPACE> pb( "pb" );
+    Kokkos::View<double[4][3], TEST_MEMSPACE> pb( "pb" );
 
     // Create a grid scalar on the faces in the test dimension.
     auto grid_scalar = createArray( mesh, FieldLocation::Face<Dim>(), Bar() );
@@ -786,26 +777,23 @@ void staggeredTest()
                                     InterpolationOrder<Order>(), local_mesh, x,
                                     SplineValue(), SplineDistance() );
 
-            LinearAlgebra::Vector<double, 3> vel;
-            LinearAlgebra::Matrix<double, 3, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff;
 
-            APIC::g2p( gs_wrapper, vel, aff, sd );
+            APIC::g2p( gs_wrapper, aff, sd );
 
             for ( int d = 0; d < 3; ++d )
-                pu( d ) = vel( d );
+                pb( 0, d ) = aff( 0, d );
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    pb( i, j ) = aff( i, j );
+                    pb( i + 1, j ) = aff( i + 1, j );
         } );
 
     // Check particle velocity. Computed in Mathematica.
-    auto pu_host =
-        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), pu );
     auto pb_host =
         Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), pb );
-    checkParticleVelocity( std::integral_constant<int, Order>(), pu_host,
-                           pb_host, near_eps, Dim );
+    checkParticleVelocity( std::integral_constant<int, Order>(), pb_host,
+                           near_eps, Dim );
 
     // Reset the grid view.
     Kokkos::deep_copy( gs_view, 0.0 );
@@ -827,17 +815,16 @@ void staggeredTest()
                                     SplineValue(), SplineGradient(),
                                     SplineDistance(), SplineCellSize() );
 
-            LinearAlgebra::Vector<double, 3> vel;
-            LinearAlgebra::Matrix<double, 3, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff;
 
             for ( int d = 0; d < 3; ++d )
-                vel( d ) = pu( d );
+                aff( 0, d ) = pb( 0, d );
 
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
-                    aff( i, j ) = pb( i, j );
+                    aff( i + 1, j ) = pb( i + 1, j );
 
-            APIC::p2g( pm, vel, aff, gs_sv, gm_sv, sd );
+            APIC::p2g( pm, aff, gm_sv, gs_sv, sd );
         } );
     Kokkos::Experimental::contribute( gs_view, gs_sv );
     Kokkos::Experimental::contribute( gm_view, gm_sv );
