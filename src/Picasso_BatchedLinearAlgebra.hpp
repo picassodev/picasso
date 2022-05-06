@@ -605,16 +605,16 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
     {
-        return createVectorExpression<T, N>( [=]( const int i )
-                                             { return ( *this )( n, i ); } );
+        return createVectorExpression<T, N>(
+            [=]( const int i ) { return ( *this )( n, i ); } );
     }
 
     // Get a column as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto column( const int n ) const
     {
-        return createVectorExpression<T, M>( [=]( const int i )
-                                             { return ( *this )( i, n ); } );
+        return createVectorExpression<T, M>(
+            [=]( const int i ) { return ( *this )( i, n ); } );
     }
 };
 
@@ -3530,6 +3530,24 @@ KOKKOS_INLINE_FUNCTION
 }
 
 //---------------------------------------------------------------------------//
+// Levi-Civita permutation tensor
+//---------------------------------------------------------------------------//
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if_t<is_tensor3<ExpressionA>::value, void>
+    permutation( ExpressionA& a )
+{
+    static_assert( ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3 &&
+                       ExpressionA::extent_2 == 3,
+                   "tensor3 must be 3x3x3" );
+    a = static_cast<typename ExpressionA::value_type>( 0 );
+
+    a = { { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, -1.0 }, { 0.0, 1.0, 0.0 } },
+          { { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 } },
+          { { 0.0, -1.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } } };
+}
+
+//---------------------------------------------------------------------------//
 // Diagonal matrix.
 //---------------------------------------------------------------------------//
 template <class ExpressionX,
@@ -3538,8 +3556,7 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
-        [=]( const int i, const int j )
-        {
+        [=]( const int i, const int j ) {
             return ( i == j )
                        ? x( i )
                        : static_cast<typename ExpressionX::value_type>( 0 );
