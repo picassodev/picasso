@@ -357,12 +357,9 @@ p2g( const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
     static_assert( 3 == ParticleVelocity::extent_1,
                    "APIC requires 3 space dimensions" );
 
-    // Number of field components.
-    constexpr int ncomp = ParticleVelocity::extent_1;
-
     // Affine Matrix
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
-    for ( int d = 0; d < ncomp; ++d )
+    LinearAlgebra::Matrix<value_type, 3, 3> B_p;
+    for ( int d = 0; d < 3; ++d )
     {
         // B_p is sliced from c_p and is transposed.
         B_p( d, 0 ) = c_p( 1, d );
@@ -473,7 +470,7 @@ g2p( const GridField& u_i, ParticleField& c_p, const SplineDataType& sd,
 }
 
 //---------------------------------------------------------------------------//
-// Interpolate staggered grid field to the particle. Requires SplineValue
+// Interpolate staggered grid velocity to the particle. Requires SplineValue
 // and SplineDistance when constructing the spline data.
 template <class GridMomentum, class SplineDataType, class ParticleVelocity>
 KOKKOS_INLINE_FUNCTION void
@@ -496,12 +493,9 @@ g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
     static_assert( 3 == ParticleVelocity::extent_1,
                    "APIC requires 3 space dimensions" );
 
-    // Number of field components.
-    constexpr int ncomp = ParticleVelocity::extent_1;
-
     // Affine Matrix
-    LinearAlgebra::Vector<value_type, ncomp> u_p;
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
+    LinearAlgebra::Vector<value_type, 3> u_p;
+    LinearAlgebra::Matrix<value_type, 3, 3> B_p;
 
     // Get the field dimension we are working on.
     const int dim = SplineDataType::entity_type::dim;
@@ -537,7 +531,7 @@ g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
             }
 
     // update ParticleVelocity
-    for ( int d = 0; d < ncomp; ++d )
+    for ( int d = 0; d < 3; ++d )
     {
         // c_p is reconstructed from particle velocity and B_p^{T}
         c_p( 0, d ) = u_p( d );
