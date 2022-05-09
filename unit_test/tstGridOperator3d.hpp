@@ -219,11 +219,17 @@ struct GridTensor3Func
         auto mat_j_out = local_deps.get( FieldLocation::Cell(), MatJ() );
         auto mat_k_out = local_deps.get( FieldLocation::Cell(), MatK() );
 
+        foo_in( i, j, k, 0 ) = 1.0;
+        foo_in( i, j, k, 1 ) = 2.0;
+        foo_in( i, j, k, 2 ) = 3.0;
+        fez_in( i, j, k, 0 ) = 3.0;
+        fez_in( i, j, k, 1 ) = 4.0;
+        fez_in( i, j, k, 2 ) = 3.0;
+
         // Set up the local dependency to be the Levi-Civita tensor.
-        boo( i, j, k ) = {
-            { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, -1.0 }, { 0.0, 1.0, 0.0 } },
-            { { 0.0, 0.0, 1.0 }, { 0.0, 0.0, 0.0 }, { -1.0, 0.0, 0.0 } },
-            { { 0.0, -1.0, 0.0 }, { 1.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } } };
+        Picasso::LinearAlgebra::Tensor3<double, 3, 3, 3> levi_civita;
+        Picasso::LinearAlgebra::permutation( levi_civita );
+        boo( i, j, k ) = levi_civita;
 
         const int index[3] = { i, j, k };
         auto boo_t_foo_in = LinearAlgebra::contract(
@@ -266,7 +272,7 @@ struct GridTensor4Func
                 const LocalDependencies& local_deps, const int i, const int j,
                 const int k ) const
     {
-        // Get input dependencies
+        // // Get input dependencies
         auto foo_in = gather_deps.get( FieldLocation::Cell(), FooIn() );
         auto fez_in = gather_deps.get( FieldLocation::Cell(), FezIn() );
 
@@ -441,25 +447,10 @@ void gatherScatterTest()
         } );
 
     // Re-initialize gather fields
+    Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FooIn() ), 0.0 );
+    Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FezIn() ), 0.0 );
 
-    auto foo_view = fm->view( FieldLocation::Cell(), FooIn() );
-    auto fez_view = fm->view( FieldLocation::Cell(), FezIn() );
-
-    LinearAlgebra::Vector<float, 3> vec1 = { 1.0, 2.0, 3.0 };
-    LinearAlgebra::Vector<float, 3> vec2 = { 3.0, 4.0, 3.0 };
-
-    Cajita::grid_parallel_for(
-        "initialize_grid_vectors", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
-        KOKKOS_LAMBDA( const int i, const int j, const int k ) {
-            foo_view( i, j, k, 0 ) = 1.0;
-            foo_view( i, j, k, 1 ) = 2.0;
-            foo_view( i, j, k, 2 ) = 3.0;
-            fez_view( i, j, k, 0 ) = 3.0;
-            fez_view( i, j, k, 1 ) = 4.0;
-            fez_view( i, j, k, 2 ) = 3.0;
-        } );
-
+    // Re-initialize scatter field to wrong value.
     Kokkos::deep_copy( fm->view( FieldLocation::Cell(), FooOut() ), -1.1 );
 
     // Apply the tensor3 grid operator. Use a tag.

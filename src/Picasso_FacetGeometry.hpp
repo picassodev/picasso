@@ -38,8 +38,7 @@ struct FacetGeometryData
     // Given a local volume id get the facets associated with the volume.
     KOKKOS_FUNCTION
     Kokkos::View<float* [4][3], MemorySpace>
-    volumeFacets( const int volume_id ) const
-    {
+    volumeFacets( const int volume_id ) const {
         Kokkos::pair<int, int> facet_bounds(
             ( 0 == volume_id ) ? 0 : volume_offsets( volume_id - 1 ),
             volume_offsets( volume_id ) );
@@ -56,8 +55,7 @@ struct FacetGeometryData
     // Given a local surface id get the facets associated with the surface.
     KOKKOS_FUNCTION
     Kokkos::View<float* [4][3], MemorySpace>
-    surfaceFacets( const int surface_id ) const
-    {
+    surfaceFacets( const int surface_id ) const {
         Kokkos::pair<int, int> facet_bounds(
             ( 0 == surface_id ) ? 0 : surface_offsets( surface_id - 1 ),
             surface_offsets( surface_id ) );

@@ -377,9 +377,8 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, M, N>(
-            [=]( const int i, const int j ) {
-                return ( *this )( i, j, p, q );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( i, j, p, q ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
@@ -387,9 +386,8 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, M, P>(
-            [=]( const int i, const int j ) {
-                return ( *this )( i, n, j, q );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( i, n, j, q ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
@@ -397,9 +395,8 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, N, P>(
-            [=]( const int i, const int j ) {
-                return ( *this )( m, i, j, q );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( m, i, j, q ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
@@ -407,9 +404,8 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, M, Q>(
-            [=]( const int i, const int j ) {
-                return ( *this )( i, n, p, j );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( i, n, p, j ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
@@ -417,9 +413,8 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, N, Q>(
-            [=]( const int i, const int j ) {
-                return ( *this )( m, i, p, j );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( m, i, p, j ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
@@ -427,9 +422,8 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, P, Q>(
-            [=]( const int i, const int j ) {
-                return ( *this )( m, n, i, j );
-            } );
+            [=]( const int i, const int j )
+            { return ( *this )( m, n, i, j ); } );
     }
 
     // Get a tensor3 as a Tensor3 view.
@@ -438,9 +432,8 @@ struct Tensor4Expression
                   const int b )
     {
         return createTensor3Expression<T, M, N, P>(
-            [=]( const int i, const int j, const int k ) {
-                return ( *this )( i, j, k, b );
-            } );
+            [=]( const int i, const int j, const int k )
+            { return ( *this )( i, j, k, b ); } );
     }
     // Get a tensor3 as a Tensor3 view.
     KOKKOS_INLINE_FUNCTION
@@ -448,9 +441,8 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, M, N, Q>(
-            [=]( const int i, const int j, const int k ) {
-                return ( *this )( i, j, b, k );
-            } );
+            [=]( const int i, const int j, const int k )
+            { return ( *this )( i, j, b, k ); } );
     }
     // Get a tensor3 as a Tensor3 view.
     KOKKOS_INLINE_FUNCTION
@@ -458,9 +450,8 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, M, P, Q>(
-            [=]( const int i, const int j, const int k ) {
-                return ( *this )( i, b, j, k );
-            } );
+            [=]( const int i, const int j, const int k )
+            { return ( *this )( i, b, j, k ); } );
     }
     // Get a tensor3 as a Tensor3 view.
     KOKKOS_INLINE_FUNCTION
@@ -468,9 +459,8 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, N, P, Q>(
-            [=]( const int i, const int j, const int k ) {
-                return ( *this )( b, i, j, k );
-            } );
+            [=]( const int i, const int j, const int k )
+            { return ( *this )( b, i, j, k ); } );
     }
 };
 
@@ -520,22 +510,22 @@ struct Tensor3Expression
     KOKKOS_INLINE_FUNCTION
     auto vector( const ALL_INDEX_t, const int n, const int p ) const
     {
-        return createVectorExpression<T, M>(
-            [=]( const int i ) { return ( *this )( i, n, p ); } );
+        return createVectorExpression<T, M>( [=]( const int i )
+                                             { return ( *this )( i, n, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const ALL_INDEX_t, const int p ) const
     {
-        return createVectorExpression<T, N>(
-            [=]( const int i ) { return ( *this )( m, i, p ); } );
+        return createVectorExpression<T, N>( [=]( const int i )
+                                             { return ( *this )( m, i, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const int n, const ALL_INDEX_t ) const
     {
-        return createVectorExpression<T, P>(
-            [=]( const int i ) { return ( *this )( m, n, i ); } );
+        return createVectorExpression<T, P>( [=]( const int i )
+                                             { return ( *this )( m, n, i ); } );
     }
 
     // Get a matrix as a matrix view.
@@ -605,16 +595,16 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
     {
-        return createVectorExpression<T, N>(
-            [=]( const int i ) { return ( *this )( n, i ); } );
+        return createVectorExpression<T, N>( [=]( const int i )
+                                             { return ( *this )( n, i ); } );
     }
 
     // Get a column as a vector expression.
     KOKKOS_INLINE_FUNCTION
     auto column( const int n ) const
     {
-        return createVectorExpression<T, M>(
-            [=]( const int i ) { return ( *this )( i, n ); } );
+        return createVectorExpression<T, M>( [=]( const int i )
+                                             { return ( *this )( i, n ); } );
     }
 };
 
@@ -3302,9 +3292,8 @@ operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
     return createTensor4Expression<
         typename ExpressionA::value_type, ExpressionA::extent_0,
         ExpressionA::extent_1, ExpressionA::extent_2, ExpressionA::extent_3>(
-        [=]( const int i, const int j, const int k, const int l ) {
-            return s * a( i, j, k, l );
-        } );
+        [=]( const int i, const int j, const int k, const int l )
+        { return s * a( i, j, k, l ); } );
 }
 
 template <class ExpressionA,
@@ -3324,9 +3313,8 @@ operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
     return createTensor3Expression<typename ExpressionA::value_type,
                                    ExpressionA::extent_0, ExpressionA::extent_1,
                                    ExpressionA::extent_2>(
-        [=]( const int i, const int j, const int k ) {
-            return s * a( i, j, k );
-        } );
+        [=]( const int i, const int j, const int k )
+        { return s * a( i, j, k ); } );
 }
 
 template <class ExpressionA,
@@ -3556,7 +3544,8 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
-        [=]( const int i, const int j ) {
+        [=]( const int i, const int j )
+        {
             return ( i == j )
                        ? x( i )
                        : static_cast<typename ExpressionX::value_type>( 0 );
