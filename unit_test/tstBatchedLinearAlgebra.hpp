@@ -264,10 +264,10 @@ void tensor3Test()
         { { 7.2, 4.5 }, { -2.5, -2.8 }, { 3.1, 4.0 }, { -7.7, 6.4 } },
         { { -9.0, 8.2 }, { 0.3, -1.9 }, { -3.5, 6.6 }, { 4.0, 1.4 } } };
 
-    EXPECT_EQ( t.stride( 0 ), 4 );
+    EXPECT_EQ( t.stride( 0 ), 8 );
     EXPECT_EQ( t.stride( 1 ), 2 );
     EXPECT_EQ( t.stride( 2 ), 1 );
-    EXPECT_EQ( t.stride_0(), 4 );
+    EXPECT_EQ( t.stride_0(), 8 );
     EXPECT_EQ( t.stride_1(), 2 );
     EXPECT_EQ( t.stride_2(), 1 );
     EXPECT_EQ( t.extent( 0 ), 3 );
@@ -365,10 +365,10 @@ void tensor3Test()
     LinearAlgebra::Tensor3View<double, 3, 4, 2> t_view(
         t.data(), t.stride_0(), t.stride_1(), t.stride_2() );
 
-    EXPECT_EQ( t_view.stride( 0 ), 4 );
+    EXPECT_EQ( t_view.stride( 0 ), 8 );
     EXPECT_EQ( t_view.stride( 1 ), 2 );
     EXPECT_EQ( t_view.stride( 2 ), 1 );
-    EXPECT_EQ( t_view.stride_0(), 4 );
+    EXPECT_EQ( t_view.stride_0(), 8 );
     EXPECT_EQ( t_view.stride_1(), 2 );
     EXPECT_EQ( t_view.stride_2(), 1 );
     EXPECT_EQ( t_view.extent( 0 ), 3 );
@@ -418,10 +418,10 @@ void tensor3Test()
 
     // Check default initialization
     LinearAlgebra::Tensor3<double, 3, 4, 2> s;
-    EXPECT_EQ( s.stride( 0 ), 4 );
+    EXPECT_EQ( s.stride( 0 ), 8 );
     EXPECT_EQ( s.stride( 1 ), 2 );
     EXPECT_EQ( s.stride( 2 ), 1 );
-    EXPECT_EQ( s.stride_0(), 4 );
+    EXPECT_EQ( s.stride_0(), 8 );
     EXPECT_EQ( s.stride_1(), 2 );
     EXPECT_EQ( s.stride_2(), 1 );
     EXPECT_EQ( s.extent( 0 ), 3 );
@@ -514,12 +514,12 @@ void tensor4Test()
           { { -3.5, 6.6 }, { 3.9, 2.9 } },
           { { 4.0, 1.4 }, { -6.5, -8.2 } } } };
 
-    EXPECT_EQ( t.stride( 0 ), 4 );
-    EXPECT_EQ( t.stride( 1 ), 2 );
+    EXPECT_EQ( t.stride( 0 ), 16 );
+    EXPECT_EQ( t.stride( 1 ), 4 );
     EXPECT_EQ( t.stride( 2 ), 2 );
     EXPECT_EQ( t.stride( 3 ), 1 );
-    EXPECT_EQ( t.stride_0(), 4 );
-    EXPECT_EQ( t.stride_1(), 2 );
+    EXPECT_EQ( t.stride_0(), 16 );
+    EXPECT_EQ( t.stride_1(), 4 );
     EXPECT_EQ( t.stride_2(), 2 );
     EXPECT_EQ( t.stride_3(), 1 );
     EXPECT_EQ( t.extent( 0 ), 3 );
@@ -591,12 +591,12 @@ void tensor4Test()
     LinearAlgebra::Tensor4View<double, 3, 4, 2, 2> t_view(
         t.data(), t.stride_0(), t.stride_1(), t.stride_2(), t.stride_3() );
 
-    EXPECT_EQ( t_view.stride( 0 ), 4 );
-    EXPECT_EQ( t_view.stride( 1 ), 2 );
+    EXPECT_EQ( t_view.stride( 0 ), 16 );
+    EXPECT_EQ( t_view.stride( 1 ), 4 );
     EXPECT_EQ( t_view.stride( 2 ), 2 );
     EXPECT_EQ( t_view.stride( 3 ), 1 );
-    EXPECT_EQ( t_view.stride_0(), 4 );
-    EXPECT_EQ( t_view.stride_1(), 2 );
+    EXPECT_EQ( t_view.stride_0(), 16 );
+    EXPECT_EQ( t_view.stride_1(), 4 );
     EXPECT_EQ( t_view.stride_2(), 2 );
     EXPECT_EQ( t_view.stride_3(), 1 );
     EXPECT_EQ( t_view.extent( 0 ), 3 );
@@ -917,12 +917,12 @@ void tensor4Test()
 
     // Check default initialization
     LinearAlgebra::Tensor4<double, 3, 4, 2, 2> s;
-    EXPECT_EQ( s.stride( 0 ), 4 );
-    EXPECT_EQ( s.stride( 1 ), 2 );
+    EXPECT_EQ( s.stride( 0 ), 16 );
+    EXPECT_EQ( s.stride( 1 ), 4 );
     EXPECT_EQ( s.stride( 2 ), 2 );
     EXPECT_EQ( s.stride( 3 ), 1 );
-    EXPECT_EQ( s.stride_0(), 4 );
-    EXPECT_EQ( s.stride_1(), 2 );
+    EXPECT_EQ( s.stride_0(), 16 );
+    EXPECT_EQ( s.stride_1(), 4 );
     EXPECT_EQ( s.stride_2(), 2 );
     EXPECT_EQ( s.stride_3(), 1 );
     EXPECT_EQ( s.extent( 0 ), 3 );
