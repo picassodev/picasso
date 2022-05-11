@@ -13,6 +13,7 @@
 #define PICASSO_TYPES_HPP
 
 #include <Cajita.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <type_traits>
 
@@ -28,6 +29,8 @@ template <std::size_t N>
 struct SpaceDim : public std::integral_constant<std::size_t, N>
 {
 };
+
+using ALL_INDEX_t = decltype( Kokkos::ALL );
 
 //---------------------------------------------------------------------------//
 

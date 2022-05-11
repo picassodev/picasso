@@ -181,6 +181,10 @@ template <class T, int D>
 struct Vector;
 template <class T, int D0, int D1>
 struct Matrix;
+template <class T, int D0, int D1, int D2>
+struct Tensor3;
+template <class T, int D0, int D1, int D2, int D3>
+struct Tensor4;
 
 //---------------------------------------------------------------------------//
 // Scalar field.
@@ -270,6 +274,69 @@ struct is_matrix_impl : std::is_base_of<MatrixBase, T>
 
 template <class T>
 struct is_matrix : is_matrix_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+//---------------------------------------------------------------------------//
+// Tensor3 Field.
+struct Tensor3Base
+{
+};
+
+template <class T, int D0, int D1, int D2>
+struct Tensor3 : Tensor3Base
+{
+    using value_type = T;
+    static constexpr int rank = 3;
+    static constexpr int size = D0 * D1 * D2;
+    static constexpr int dim0 = D0;
+    static constexpr int dim1 = D1;
+    static constexpr int dim2 = D2;
+    using data_type = value_type[D0][D1][D2];
+    using linear_algebra_type = LinearAlgebra::Tensor3View<T, D0, D1, D2>;
+    template <class U>
+    using field_type = Tensor3<U, D0, D1, D2>;
+};
+
+template <class T>
+struct is_tensor3_impl : std::is_base_of<Tensor3Base, T>
+{
+};
+
+template <class T>
+struct is_tensor3 : is_tensor3_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+//---------------------------------------------------------------------------//
+// Tensor4 Field.
+struct Tensor4Base
+{
+};
+
+template <class T, int D0, int D1, int D2, int D3>
+struct Tensor4 : Tensor4Base
+{
+    using value_type = T;
+    static constexpr int rank = 4;
+    static constexpr int size = D0 * D1 * D2 * D3;
+    static constexpr int dim0 = D0;
+    static constexpr int dim1 = D1;
+    static constexpr int dim2 = D2;
+    static constexpr int dim3 = D3;
+    using data_type = value_type[D0][D1][D2][D3];
+    using linear_algebra_type = LinearAlgebra::Tensor4View<T, D0, D1, D2, D3>;
+    template <class U>
+    using field_type = Tensor4<U, D0, D1, D2, D3>;
+};
+
+template <class T>
+struct is_tensor4_impl : std::is_base_of<Tensor4Base, T>
+{
+};
+
+template <class T>
+struct is_tensor4 : is_tensor4_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
@@ -566,6 +633,235 @@ struct MatrixViewWrapper
 };
 
 //---------------------------------------------------------------------------//
+// Tensor3 Field View Wrapper
+//---------------------------------------------------------------------------//
+// Wraps a Kokkos view of a structured grid tensor3 field at the given index
+// allowing for it to be treated as a tensor in a point-wise manner in kernel
+// operations without needing explicit dimension indices in the syntax.
+template <class View, class Layout>
+struct Tensor3ViewWrapper
+{
+    using layout_type = Layout;
+    using field_tag = typename layout_type::tag;
+    using field_location = typename layout_type::location;
+    using value_type = typename layout_type::tag::value_type;
+    using linear_algebra_type = typename field_tag::linear_algebra_type;
+
+    static constexpr int view_rank = View::Rank;
+
+    static constexpr int dim0 = layout_type::tag::dim0;
+    static constexpr int dim1 = layout_type::tag::dim1;
+    static constexpr int dim2 = layout_type::tag::dim2;
+
+    static_assert(
+        Field::is_tensor3<typename layout_type::tag>::value,
+        "Tensor3ViewWrappers may only be applied to tensor3 fields" );
+
+    View _v;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Tensor3ViewWrapper() = default;
+
+    // Create a wrapper from an index and a view.
+    KOKKOS_INLINE_FUNCTION
+    Tensor3ViewWrapper( const View& v )
+        : _v( v )
+    {
+    }
+
+    // Access the view data as a tensor through point-wise index
+    // arguments. Note here that because fields are stored as 4D objects the
+    // tensor components are unrolled in the last dimension. We unpack the
+    // field dimension index to add the extra matrix dimension in a similar
+    // way as if we had made a 5D kokkos view such that the matrix data is
+    // ordered as [i][j][k][dim0][dim1] if layout-right and
+    // [dim0][dim1][k][j][i] if layout-left. Note the difference in
+    // layout-left where the dim0 and dim1 dimensions are switched.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i0, i1, i2, 0 ),
+                                    dim1 * dim2 * _v.stride( 3 ),
+                                    dim1 * _v.stride( 3 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1 ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i0, i1, 0 ),
+                                    dim1 * dim2 * _v.stride( 2 ),
+                                    dim1 * _v.stride( 2 ), _v.stride( 2 ) );
+    }
+
+    // Access the view data as a tensor through array-based point-wise index
+    // arguments. The data layout is the same as above.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i[3] ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], i[2], 0 ),
+                                    dim1 * dim2 * _v.stride( 3 ),
+                                    dim1 * _v.stride( 3 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i[2] ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], 0 ),
+                                    dim1 * dim2 * _v.stride( 2 ),
+                                    dim1 * _v.stride( 2 ), _v.stride( 2 ) );
+    }
+
+    // Access the view data through full index arguments.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i0, i1, i2, i3 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i0, i1, i2 );
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Tensor4 Field View Wrapper
+//---------------------------------------------------------------------------//
+// Wraps a Kokkos view of a structured grid tensor4 field at the given index
+// allowing for it to be treated as a tensor in a point-wise manner in kernel
+// operations without needing explicit dimension indices in the syntax.
+template <class View, class Layout>
+struct Tensor4ViewWrapper
+{
+    using layout_type = Layout;
+    using field_tag = typename layout_type::tag;
+    using field_location = typename layout_type::location;
+    using value_type = typename layout_type::tag::value_type;
+    using linear_algebra_type = typename field_tag::linear_algebra_type;
+
+    static constexpr int view_rank = View::Rank;
+
+    static constexpr int dim0 = layout_type::tag::dim0;
+    static constexpr int dim1 = layout_type::tag::dim1;
+    static constexpr int dim2 = layout_type::tag::dim2;
+    static constexpr int dim3 = layout_type::tag::dim3;
+
+    static_assert(
+        Field::is_tensor4<typename layout_type::tag>::value,
+        "Tensor4ViewWrappers may only be applied to tensor4 fields" );
+
+    View _v;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Tensor4ViewWrapper() = default;
+
+    // Create a wrapper from an index and a view.
+    KOKKOS_INLINE_FUNCTION
+    Tensor4ViewWrapper( const View& v )
+        : _v( v )
+    {
+    }
+
+    // Access the view data as a tensor through point-wise index
+    // arguments. Note here that because fields are stored as 4D objects the
+    // tensor components are unrolled in the last dimension. We unpack the
+    // field dimension index to add the extra matrix dimension in a similar
+    // way as if we had made a 5D kokkos view such that the matrix data is
+    // ordered as [i][j][k][dim0][dim1] if layout-right and
+    // [dim0][dim1][k][j][i] if layout-left. Note the difference in
+    // layout-left where the dim0 and dim1 dimensions are switched.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i0, i1, i2, 0 ),
+                                    dim1 * dim2 * dim3 * _v.stride( 3 ),
+                                    dim2 * dim3 * _v.stride( 3 ),
+                                    dim3 * _v.stride( 3 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i0, const int i1 ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i0, i1, 0 ),
+                                    dim1 * dim2 * dim3 * _v.stride( 2 ),
+                                    dim2 * dim3 * _v.stride( 2 ),
+                                    dim3 * _v.stride( 2 ), _v.stride( 2 ) );
+    }
+
+    // Access the view data as a tensor through array-based point-wise index
+    // arguments. The data layout is the same as above.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, linear_algebra_type>
+    operator()( const int i[3] ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], i[2], 0 ),
+                                    dim1 * dim2 * dim3 * _v.stride( 3 ),
+                                    dim2 * dim3 * _v.stride( 3 ),
+                                    dim3 * _v.stride( 3 ), _v.stride( 3 ) );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, linear_algebra_type>
+    operator()( const int i[2] ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return linear_algebra_type( &_v( i[0], i[1], 0 ),
+                                    dim1 * dim2 * dim3 * _v.stride( 2 ),
+                                    dim2 * dim3 * _v.stride( 2 ),
+                                    dim3 * _v.stride( 2 ), _v.stride( 2 ) );
+    }
+
+    // Access the view data through full index arguments.
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<4 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2, const int i3 ) const
+    {
+        static_assert( 4 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i0, i1, i2, i3 );
+    }
+
+    template <int VR = view_rank>
+    KOKKOS_FORCEINLINE_FUNCTION std::enable_if_t<3 == VR, value_type&>
+    operator()( const int i0, const int i1, const int i2 ) const
+    {
+        static_assert( 3 == VR, "This template parameter is for SFINAE only "
+                                "and should not be given explicitly" );
+        return _v( i0, i1, i2 );
+    }
+};
+
+//---------------------------------------------------------------------------//
 // Field View Wrapper Creation
 //---------------------------------------------------------------------------//
 template <class View, class Layout>
@@ -590,6 +886,22 @@ auto createViewWrapper(
     std::enable_if_t<Field::is_matrix<typename Layout::tag>::value, int*> = 0 )
 {
     return MatrixViewWrapper<View, Layout>( view );
+}
+
+template <class View, class Layout>
+auto createViewWrapper(
+    Layout, const View& view,
+    std::enable_if_t<Field::is_tensor3<typename Layout::tag>::value, int*> = 0 )
+{
+    return Tensor3ViewWrapper<View, Layout>( view );
+}
+
+template <class View, class Layout>
+auto createViewWrapper(
+    Layout, const View& view,
+    std::enable_if_t<Field::is_tensor4<typename Layout::tag>::value, int*> = 0 )
+{
+    return Tensor4ViewWrapper<View, Layout>( view );
 }
 
 //---------------------------------------------------------------------------//
