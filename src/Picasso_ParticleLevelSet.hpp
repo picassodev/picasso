@@ -32,13 +32,13 @@
 // the level set for.
 namespace Picasso
 {
-template <class CoordinateSlice>
+template <class CoordinateSlice, class ViewType>
 struct ParticleLevelSetPrimitiveData
 {
     using memory_space = typename CoordinateSlice::memory_space;
     using size_type = typename CoordinateSlice::size_type;
     CoordinateSlice x;
-    Kokkos::View<int*, memory_space> c;
+    ViewType c;
     int num_color;
 };
 
@@ -99,7 +99,10 @@ struct ParticleLevelSetPredicateData
 template <class CoordinateSlice, class DistanceEstimateView>
 struct ParticleLevelSetCallback
 {
-    ParticleLevelSetPrimitiveData<CoordinateSlice> primitive_data;
+    ParticleLevelSetPrimitiveData<
+        CoordinateSlice,
+        Kokkos::View<int*, typename CoordinateSlice::memory_space>>
+        primitive_data;
     DistanceEstimateView distance_estimate;
     float radius;
 
@@ -131,12 +134,13 @@ namespace ArborX
 
 // Create the primitives we build the tree from. These are the particle
 // coordinates of the color we build the level set for.
-template <class CoordinateSlice>
-struct AccessTraits<Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>,
-                    PrimitivesTag>
+template <class CoordinateSlice, class ViewType>
+struct AccessTraits<
+    Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice, ViewType>,
+    PrimitivesTag>
 {
     using primitive_data =
-        Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice>;
+        Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice, ViewType>;
     using memory_space = typename primitive_data::memory_space;
     using size_type = typename primitive_data::size_type;
     static size_type size( const primitive_data& data )
@@ -345,7 +349,9 @@ class ParticleLevelSet
         else
         {
             // Build the tree
-            ParticleLevelSetPrimitiveData<ParticlePositions> primitive_data;
+            ParticleLevelSetPrimitiveData<ParticlePositions,
+                                          Kokkos::View<int*, memory_space>>
+                primitive_data;
             primitive_data.x = x_p;
             primitive_data.c = _color_indices;
             primitive_data.num_color = _color_count;
