@@ -104,7 +104,7 @@ void mappingTest3d()
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Map to physical frame.
-            LinearAlgebra::Vector<double, 3> cell_coords;
+            LinearAlgebra::Vector<double, 3> cell_coords = 0.0;
             int ijk[3] = { i, j, k };
             local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
             LinearAlgebra::VectorView<double, 3> phys_coords(
@@ -263,7 +263,7 @@ void mappingTest2d()
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j ) {
             // Map to physical frame.
-            LinearAlgebra::Vector<double, 2> cell_coords;
+            LinearAlgebra::Vector<double, 2> cell_coords = 0.0;
             int ijk[2] = { i, j };
             local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
             LinearAlgebra::VectorView<double, 2> phys_coords(

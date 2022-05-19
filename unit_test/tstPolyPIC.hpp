@@ -436,7 +436,7 @@ void staggeredTest()
                 createSpline( Location(), InterpolationOrder<Order>(),
                               local_mesh, x, SplineValue(), SplineGradient() );
 
-            LinearAlgebra::Matrix<double, num_mode, 3> modes;
+            LinearAlgebra::Matrix<double, num_mode, 3> modes = 0.0;
             PolyPIC::g2p( gs_wrapper, modes, sd );
 
             for ( int r = 0; r < num_mode; ++r )

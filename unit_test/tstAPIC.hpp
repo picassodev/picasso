@@ -609,7 +609,7 @@ void collocatedTest()
                 createSpline( Location(), InterpolationOrder<Order>(),
                               local_mesh, x, SplineValue(), SplineDistance() );
 
-            LinearAlgebra::Matrix<double, 4, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff = 0.0;
 
             APIC::g2p( gv_wrapper, aff, sd );
 
@@ -651,7 +651,7 @@ void collocatedTest()
                               local_mesh, x, SplineValue(), SplineGradient(),
                               SplineDistance(), SplineCellSize() );
 
-            LinearAlgebra::Matrix<double, 4, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff = 0.0;
 
             for ( int d = 0; d < 3; ++d )
                 aff( 0, d ) = pb( 0, d );
@@ -777,7 +777,7 @@ void staggeredTest()
                                     InterpolationOrder<Order>(), local_mesh, x,
                                     SplineValue(), SplineDistance() );
 
-            LinearAlgebra::Matrix<double, 4, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff = 0.0;
 
             APIC::g2p( gs_wrapper, aff, sd );
 
@@ -815,7 +815,7 @@ void staggeredTest()
                                     SplineValue(), SplineGradient(),
                                     SplineDistance(), SplineCellSize() );
 
-            LinearAlgebra::Matrix<double, 4, 3> aff;
+            LinearAlgebra::Matrix<double, 4, 3> aff = 0.0;
 
             for ( int d = 0; d < 3; ++d )
                 aff( 0, d ) = pb( 0, d );

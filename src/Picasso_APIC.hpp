@@ -501,8 +501,8 @@ g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
     const int dim = SplineDataType::entity_type::dim;
 
     // Reset the particle values.
-    u_p( dim ) = 0.0;
-    B_p.row( dim ) = 0.0;
+    u_p = 0.0;
+    B_p = 0.0;
 
     // Update particle.
     Vec3<value_type> distance;

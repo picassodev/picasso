@@ -98,11 +98,8 @@ class FieldManager
             Field::PhysicalPosition<mesh_type::num_space_dim>, Mesh>>();
         handle->array = _mesh->nodes();
         handle->halo =
-            Cajita::createHalo<typename Field::PhysicalPosition<
-                                   mesh_type::num_space_dim>::value_type,
-                               typename Mesh::memory_space>(
-                *( handle->array->layout() ),
-                Cajita::NodeHaloPattern<Mesh::num_space_dim>() );
+            Cajita::createHalo( Cajita::NodeHaloPattern<Mesh::num_space_dim>(),
+                                -1, *( handle->array ) );
         _fields.emplace( key, handle );
     }
 
@@ -205,10 +202,9 @@ class FieldManager
     {
         auto handle = std::make_shared<FieldHandle<Location, FieldTag, Mesh>>();
         handle->array = createArray( *_mesh, location, tag );
-        handle->halo = Cajita::createHalo<typename FieldTag::value_type,
-                                          typename Mesh::memory_space>(
-            *( handle->array->layout() ),
-            Cajita::NodeHaloPattern<Mesh::num_space_dim>() );
+        handle->halo =
+            Cajita::createHalo( Cajita::NodeHaloPattern<Mesh::num_space_dim>(),
+                                -1, *( handle->array ) );
         return handle;
     }
 
