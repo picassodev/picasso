@@ -150,9 +150,9 @@ RUN ARBORX_VERSION=v1.0 && \
     make -j${NPROCS} install && \
     cd ../.. && rm -r arborx
 
-# Install Cabana (this version is Mar 2022)
+# Install Cabana
 ENV CABANA_DIR=/opt/cabana
-RUN CABANA_VERSION=d9f508aa039e16fd029a49b70edbe67ac37f48f4 && \
+RUN CABANA_VERSION=0.5.0 && \
     CABANA_URL=https://github.com/ECP-copa/Cabana/archive/${CABANA_VERSION}.tar.gz && \
     CABANA_ARCHIVE=cabana.tar.gz && \
     wget --quiet ${CABANA_URL} --output-document=${CABANA_ARCHIVE} && \
