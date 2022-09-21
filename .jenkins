@@ -16,7 +16,7 @@ pipeline {
                         dockerfile {
                             filename 'Dockerfile'
                             dir 'docker'
-                            additionalBuildArgs '--build-arg BASE=nvidia/cuda:11.0-devel-ubuntu20.04'
+                            additionalBuildArgs '--build-arg BASE=nvidia/cuda:11.0.3-devel-ubuntu20.04'
                             label 'nvidia-docker && volta'
                             args '--env NVIDIA_VISIBLE_DEVICES=$NVIDIA_VISIBLE_DEVICES'
                         }
