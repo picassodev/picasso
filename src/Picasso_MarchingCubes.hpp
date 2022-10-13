@@ -946,9 +946,10 @@ struct Data
 //---------------------------------------------------------------------------//
 // Data creation function.
 template <class Mesh>
-Data<typename Mesh::memory_space> createData( const Mesh& mesh )
+std::shared_ptr<Data<typename Mesh::memory_space>>
+createData( const Mesh& mesh )
 {
-    return Data<typename Mesh::memory_space>( mesh );
+    return std::make_shared<Data<typename Mesh::memory_space>>( mesh );
 }
 
 //---------------------------------------------------------------------------//
