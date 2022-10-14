@@ -88,10 +88,10 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
 
     // Create the marching cubes mesh.
     auto mc_data = MarchingCubes::createData( *mesh );
-    MarchingCubes::build( TEST_EXECSPACE{}, *mesh, *distance, mc_data );
+    MarchingCubes::build( TEST_EXECSPACE{}, *mesh, *distance, *mc_data );
 
     // Output an stl file with the marching cubes mesh.
-    MarchingCubes::writeDataToSTL( mc_data, MPI_COMM_WORLD, stl_filename );
+    MarchingCubes::writeDataToSTL( *mc_data, MPI_COMM_WORLD, stl_filename );
 
     // Output a bov file with the level set.
     Cajita::Experimental::BovWriter::writeTimeStep( 0, 0.0, *distance );
@@ -100,7 +100,7 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
     double facet_area = 0.0;
 
     auto facets = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace{},
-                                                       mc_data.facets );
+                                                       mc_data->facets );
     for ( std::size_t f = 0; f < facets.extent( 0 ); ++f )
     {
         Vec3<double> ab = { facets( f, 1, 0 ) - facets( f, 0, 0 ),
