@@ -257,6 +257,9 @@ class ParticleLevelSet
     void updateParticleColors( const ExecutionSpace& exec_space,
                                const ParticleColors& c_p )
     {
+        Kokkos::Profiling::pushRegion(
+            "Picasso::ParticleLevelSet::updateParticleColors" );
+
         // Initialize color indices.
         _color_indices = Kokkos::View<int*, memory_space>(
             Kokkos::ViewAllocateWithoutInitializing( "color_indices" ),
@@ -306,6 +309,8 @@ class ParticleLevelSet
             _color_count = color_count;
             _color_indices = color_ind;
         }
+
+        Kokkos::Profiling::popRegion();
     }
 
     /*!
@@ -322,6 +327,9 @@ class ParticleLevelSet
     void estimateSignedDistance( const ExecutionSpace& exec_space,
                                  const ParticlePositions& x_p )
     {
+        Kokkos::Profiling::pushRegion(
+            "Picasso::ParticleLevelSet::estimateSignedDistance" );
+
         // Distance estimate.
         auto distance_estimate = _ls->getDistanceEstimate();
 
@@ -380,6 +388,8 @@ class ParticleLevelSet
         // width.
         _ls->getHalo()->scatter( exec_space, Cajita::ScatterReduce::Min(),
                                  *distance_estimate );
+
+        Kokkos::Profiling::popRegion();
     }
 
     // Get the particle radius.

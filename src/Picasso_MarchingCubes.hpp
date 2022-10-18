@@ -1125,6 +1125,8 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
             const SignedDistanceArray& signed_distance, Data<MemorySpace>& data,
             bool reset_data_memory = false )
 {
+    Kokkos::Profiling::pushRegion( "Picasso::MarchingCubes::build" );
+
     static_assert( std::is_same<typename SignedDistanceArray::entity_type,
                                 Cajita::Node>::value,
                    "Marching cubes facets may only be constructed from nodal "
@@ -1224,6 +1226,8 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
                 }
             }
         } );
+
+    Kokkos::Profiling::popRegion();
 }
 
 //---------------------------------------------------------------------------//

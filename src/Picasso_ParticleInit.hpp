@@ -112,6 +112,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
                           const InitFunctor& create_functor,
                           ParticleListType& particle_list )
 {
+    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Random" );
+
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
 
@@ -219,6 +221,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
 
     // Filter empties.
     filterEmpties( exec_space, local_num_create, particle_created, particles );
+
+    Kokkos::Profiling::popRegion();
 }
 
 //---------------------------------------------------------------------------//
@@ -253,6 +257,8 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
                           const InitFunctor& create_functor,
                           ParticleListType& particle_list )
 {
+    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Uniform" );
+
     // Memory space.
     using memory_space = typename ParticleListType::memory_space;
 
@@ -367,6 +373,8 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
 
     // Filter empties.
     filterEmpties( exec_space, local_num_create, particle_created, particles );
+
+    Kokkos::Profiling::popRegion();
 }
 
 //---------------------------------------------------------------------------//
@@ -414,6 +422,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                                  const InitFunc& create_functor,
                                  ParticleListType& surface_particle_list )
 {
+    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
+
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
 
@@ -505,6 +515,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                 particles.setTuple( pid, particle.tuple() );
             }
         } );
+
+    Kokkos::Profiling::popRegion();
 }
 
 //---------------------------------------------------------------------------//

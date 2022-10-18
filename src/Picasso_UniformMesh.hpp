@@ -75,6 +75,8 @@ class UniformMesh
                 const int minimum_halo_cell_width, MPI_Comm comm,
                 const ExecutionSpace& exec_space )
     {
+        Kokkos::Profiling::pushRegion( "Picasso::UniformMesh::build" );
+
         _minimum_halo_width = minimum_halo_cell_width;
 
         // Get the mesh parameters.
@@ -206,6 +208,8 @@ class UniformMesh
 
         // Create the nodes.
         buildNodes( cell_size, exec_space );
+
+        Kokkos::Profiling::popRegion();
     }
 
   public:

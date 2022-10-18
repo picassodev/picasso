@@ -459,6 +459,8 @@ class GridOperator
                     const ExecutionSpace& exec_space,
                     const Args&... args ) const
     {
+        Kokkos::Profiling::pushRegion( "Picasso::GridOperator::apply" );
+
         // Gather distributed dependencies.
         field_deps::gather( _gather_halo, fm, exec_space );
 
@@ -487,6 +489,8 @@ class GridOperator
 
         // Scatter distributed dependencies.
         field_deps::scatter( _scatter_halo, fm, exec_space );
+
+        Kokkos::Profiling::popRegion();
     }
 
     // Create parameter pack of gather dependency views. Gather dependencies
