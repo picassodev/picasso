@@ -1236,12 +1236,12 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
 //---------------------------------------------------------------------------//
 // Write facet data to an STL ASCII file for visualization.
 template <class MemorySpace>
-void writeDataToSTL( const Data<MemorySpace>& data, MPI_Comm comm,
-                     const std::string& stl_filename )
+void writeDataToSTL( const std::shared_ptr<Data<MemorySpace>> data,
+                     MPI_Comm comm, const std::string& stl_filename )
 {
     // Move facets to the host.
-    auto facets =
-        Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace{}, data.facets );
+    auto facets = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace{},
+                                                       data->facets );
 
     // Create the STL header.
     std::ofstream file( stl_filename );

@@ -91,7 +91,7 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
     MarchingCubes::build( TEST_EXECSPACE{}, *mesh, *distance, *mc_data );
 
     // Output an stl file with the marching cubes mesh.
-    MarchingCubes::writeDataToSTL( *mc_data, MPI_COMM_WORLD, stl_filename );
+    MarchingCubes::writeDataToSTL( mc_data, MPI_COMM_WORLD, stl_filename );
 
     // Output a bov file with the level set.
     Cajita::Experimental::BovWriter::writeTimeStep( 0, 0.0, *distance );
