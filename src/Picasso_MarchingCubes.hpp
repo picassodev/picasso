@@ -31,8 +31,11 @@ namespace MarchingCubes
 template <class MemorySpace>
 struct Data
 {
-    // Cell facet case ids and offsets. First value is the case id, second is
-    // the offset.
+    // Memory space.
+    using memory_space = MemorySpace;
+
+    // Cell facet case ids and offsets. First value is the case id, second
+    // is the offset.
     Kokkos::View<int*** [2], MemorySpace> cell_case_ids_and_offsets;
 
     // Number of facets.
