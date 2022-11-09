@@ -195,6 +195,8 @@ class FacetGeometry
     FacetGeometry( const boost::property_tree::ptree& ptree,
                    const ExecutionSpace& exec_space )
     {
+        Kokkos::Profiling::pushRegion( "Picasso::FacetGeoemtry::create" );
+
         // Get the geometry parameters.
         const auto& params = ptree.get_child( "geometry" );
 
@@ -372,6 +374,8 @@ class FacetGeometry
             host_boxes, _data.global_bounding_volume_id, Kokkos::ALL() );
         for ( int i = 0; i < 6; ++i )
             _global_bounding_box[i] = global_box( i );
+
+        Kokkos::Profiling::popRegion();
     }
 
     // Given a global volume id get the local volume id.

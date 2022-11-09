@@ -87,6 +87,8 @@ class LevelSet
     template <class ExecutionSpace>
     void redistance( const ExecutionSpace& exec_space )
     {
+        Kokkos::Profiling::pushRegion( "Picasso::LevelSet::redistance" );
+
         // Local mesh.
         auto local_mesh =
             Cajita::createLocalMesh<memory_space>( *( _mesh->localGrid() ) );
@@ -259,6 +261,8 @@ class LevelSet
         // will do with this level set function will required the gathered
         // values.
         _halo->gather( exec_space, *_signed_distance );
+
+        Kokkos::Profiling::popRegion();
     }
 
     // Get the signed distance estimate.
