@@ -37,8 +37,9 @@ struct InitRandom
 template <class CreationView, class ParticleAoSoA, class ExecutionSpace>
 void filterEmpties( const ExecutionSpace& exec_space,
                     const int local_num_create,
+                    const int previous_num_particles,
                     const CreationView& particle_created,
-                    ParticleAoSoA& particles )
+                    ParticleAoSoA& particles, const bool shrink_to_fit = true )
 {
     using memory_space = typename CreationView::memory_space;
 
@@ -46,7 +47,9 @@ void filterEmpties( const ExecutionSpace& exec_space,
     int num_particles = particles.size();
     Kokkos::View<int*, memory_space> empties(
         Kokkos::ViewAllocateWithoutInitializing( "empties" ),
-        std::min( num_particles - local_num_create, local_num_create ) );
+        std::min( num_particles - previous_num_particles - local_num_create,
+                  local_num_create ) );
+
     Kokkos::parallel_scan(
         "Picasso::ParticleInit::FindEmpty",
         Kokkos::RangePolicy<ExecutionSpace>( exec_space, 0, local_num_create ),
@@ -55,19 +58,20 @@ void filterEmpties( const ExecutionSpace& exec_space,
             {
                 if ( final_pass )
                 {
-                    empties( count ) = i;
+                    empties( count ) = i + previous_num_particles;
                 }
                 ++count;
             }
         } );
 
     // Compact the list so the it only has real particles.
+    int new_num_particles = previous_num_particles + local_num_create;
     Kokkos::parallel_scan(
         "Picasso::ParticleInit::RemoveEmpty",
-        Kokkos::RangePolicy<ExecutionSpace>( exec_space, local_num_create,
+        Kokkos::RangePolicy<ExecutionSpace>( exec_space, new_num_particles,
                                              num_particles ),
         KOKKOS_LAMBDA( const int i, int& count, const bool final_pass ) {
-            if ( particle_created( i ) )
+            if ( particle_created( i - previous_num_particles ) )
             {
                 if ( final_pass )
                 {
@@ -77,8 +81,9 @@ void filterEmpties( const ExecutionSpace& exec_space,
                 ++count;
             }
         } );
-    particles.resize( local_num_create );
-    particles.shrinkToFit();
+    particles.resize( new_num_particles );
+    if ( shrink_to_fit )
+        particles.shrinkToFit();
 }
 
 //---------------------------------------------------------------------------//
@@ -110,7 +115,8 @@ template <class ParticleListType, class InitFunctor, class ExecutionSpace>
 void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
                           const int particles_per_cell,
                           const InitFunctor& create_functor,
-                          ParticleListType& particle_list )
+                          ParticleListType& particle_list,
+                          const bool shrink_to_fit = true )
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Random" );
 
@@ -143,7 +149,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     // Allocate enough space for the case the particles consume the entire
     // local grid.
     int num_particles = particles_per_cell * owned_cells.size();
-    particles.resize( num_particles );
+    int previous_num_particles = particles.size();
+    particles.resize( previous_num_particles + num_particles );
 
     // Creation status.
     auto particle_created = Kokkos::View<bool*, ExecutionSpace>(
@@ -212,7 +219,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
                 // If we created a new particle insert it into the list.
                 if ( particle_created( pid ) )
                 {
-                    particles.setTuple( pid, particle.tuple() );
+                    int new_pid = previous_num_particles + pid;
+                    particles.setTuple( new_pid, particle.tuple() );
                     ++create_count;
                 }
             }
@@ -220,7 +228,8 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
         local_num_create );
 
     // Filter empties.
-    filterEmpties( exec_space, local_num_create, particle_created, particles );
+    filterEmpties( exec_space, local_num_create, previous_num_particles,
+                   particle_created, particles, shrink_to_fit );
 
     Kokkos::Profiling::popRegion();
 }
@@ -255,7 +264,8 @@ template <class ParticleListType, class InitFunctor, class ExecutionSpace>
 void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
                           const int particles_per_cell_dim,
                           const InitFunctor& create_functor,
-                          ParticleListType& particle_list )
+                          ParticleListType& particle_list,
+                          const bool shrink_to_fit = true )
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Uniform" );
 
@@ -283,7 +293,8 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     int particles_per_cell = particles_per_cell_dim * particles_per_cell_dim *
                              particles_per_cell_dim;
     int num_particles = particles_per_cell * owned_cells.size();
-    particles.resize( num_particles );
+    int previous_num_particles = particles.size();
+    particles.resize( previous_num_particles + num_particles );
 
     // Creation status.
     auto particle_created = Kokkos::View<bool*, memory_space>(
@@ -364,7 +375,8 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
                         // If we created a new particle insert it into the list.
                         if ( particle_created( pid ) )
                         {
-                            particles.setTuple( pid, particle.tuple() );
+                            int new_pid = previous_num_particles + pid;
+                            particles.setTuple( new_pid, particle.tuple() );
                             ++create_count;
                         }
                     }
@@ -372,7 +384,8 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
         local_num_create );
 
     // Filter empties.
-    filterEmpties( exec_space, local_num_create, particle_created, particles );
+    filterEmpties( exec_space, local_num_create, previous_num_particles,
+                   particle_created, particles, shrink_to_fit );
 
     Kokkos::Profiling::popRegion();
 }

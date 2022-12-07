@@ -46,11 +46,11 @@ struct Bar : public Field::Scalar<double>
 
 //---------------------------------------------------------------------------//
 template <class InitType>
-void InitTest( InitType init_type, int ppc )
+void InitTest( InitType init_type, const int ppc, const int multiplier = 1 )
 {
     // Global bounding box.
     double cell_size = 0.23;
-    std::array<int, 3> global_num_cell = { 43, 32, 39 };
+    std::array<int, 3> global_num_cell = { 7, 8, 9 };
     std::array<double, 3> global_low_corner = { 1.2, 3.3, -2.8 };
     std::array<double, 3> global_high_corner = {
         global_low_corner[0] + cell_size * global_num_cell[0],
@@ -102,9 +102,10 @@ void InitTest( InitType init_type, int ppc )
         }
     };
 
-    // Initialize particles.
-    initializeParticles( init_type, TEST_EXECSPACE(), ppc, particle_init_func,
-                         particles );
+    // Initialize particles (potentially multiple times).
+    for ( int m = 0; m < multiplier; ++m )
+        initializeParticles( init_type, TEST_EXECSPACE(), ppc,
+                             particle_init_func, particles );
 
     // Check that we made particles.
     int num_p = particles.size();
@@ -116,7 +117,7 @@ void InitTest( InitType init_type, int ppc )
     MPI_Allreduce( MPI_IN_PLACE, &global_num_particle, 1, MPI_INT, MPI_SUM,
                    MPI_COMM_WORLD );
     int expect_num_particle =
-        totalParticlesPerCell( init_type, ppc ) *
+        multiplier * totalParticlesPerCell( init_type, ppc ) *
         ( global_grid.globalNumEntity( Cajita::Cell(), Dim::I ) - 2 ) *
         ( global_grid.globalNumEntity( Cajita::Cell(), Dim::J ) - 2 ) *
         ( global_grid.globalNumEntity( Cajita::Cell(), Dim::K ) - 2 );
@@ -150,6 +151,16 @@ void InitTest( InitType init_type, int ppc )
 TEST( TEST_CATEGORY, random_init_test ) { InitTest( InitRandom(), 17 ); }
 
 TEST( TEST_CATEGORY, uniform_init_test ) { InitTest( InitUniform(), 3 ); }
+
+TEST( TEST_CATEGORY, multiple_uniform_init_test )
+{
+    InitTest( InitUniform(), 3, 3 );
+}
+
+TEST( TEST_CATEGORY, multiple_random_init_test )
+{
+    InitTest( InitRandom(), 3, 3 );
+}
 
 //---------------------------------------------------------------------------//
 
