@@ -81,10 +81,6 @@ add_executable(Version_test tstVersion.cpp unit_test_main.cpp)
 target_link_libraries(Version_test picasso ${gtest_target})
 add_test(NAME Version_test COMMAND Version_test ${gtest_args})
 
-add_executable(InputParser_test tstInputParser.cpp unit_test_main.cpp)
-target_link_libraries(InputParser_test picasso ${gtest_target})
-add_test(NAME InputParser_test COMMAND InputParser_test ${gtest_args})
-
 ##--------------------------------------------------------------------------##
 ## On-node tests with and without MPI.
 ##--------------------------------------------------------------------------##

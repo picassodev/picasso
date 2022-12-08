@@ -14,7 +14,7 @@ option(Picasso_REQUIRE_ARBORX "Build with ArborX support" OFF)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
 find_package(Cabana REQUIRED 0.6.1 COMPONENTS Cabana::Grid Cabana::Core)
-find_package(Boost 1.66.0 REQUIRED)
+find_package(nlohmann_json 3.10 REQUIRED)
 
 # Build with ArborX if available or if requested.
 find_package(ArborX QUIET)

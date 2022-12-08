@@ -37,11 +37,10 @@ void constructionTest()
     int minimum_halo_size = 1;
 
     // Get inputs for mesh.
-    InputParser parser_1( "adaptive_mesh_test_1.json", "json" );
-    auto pt1 = parser_1.propertyTree();
+    auto inputs_1 = Picasso::parse( "adaptive_mesh_test_1.json" );
 
     // Make mesh 1.
-    AdaptiveMesh<TEST_MEMSPACE> mesh_1( pt1, global_box, minimum_halo_size,
+    AdaptiveMesh<TEST_MEMSPACE> mesh_1( inputs_1, global_box, minimum_halo_size,
                                         MPI_COMM_WORLD );
 
     // Check grid 1.
@@ -94,11 +93,10 @@ void constructionTest()
             }
 
     // Get inputs for mesh 2.
-    InputParser parser_2( "adaptive_mesh_test_2.json", "json" );
-    auto pt2 = parser_2.propertyTree();
+    auto inputs_2 = Picasso::parse( "adaptive_mesh_test_2.json" );
 
     // Make mesh 2.
-    AdaptiveMesh<TEST_MEMSPACE> mesh_2( pt2, global_box, minimum_halo_size,
+    AdaptiveMesh<TEST_MEMSPACE> mesh_2( inputs_2, global_box, minimum_halo_size,
                                         MPI_COMM_WORLD );
 
     // Check grid 2.
