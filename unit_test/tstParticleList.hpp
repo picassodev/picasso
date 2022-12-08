@@ -40,14 +40,15 @@ struct Bar : Field::Matrix<double, 3, 3>
 void particleTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "uniform_mesh_test_1.json", "json" );
+    std::ifstream stream( "uniform_mesh_test_1.json" );
+    nlohmann::json inputs = nlohmann::json::parse( stream );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 0;
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     using list_type =
@@ -141,14 +142,15 @@ void particleTest()
 void particleViewTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "uniform_mesh_test_1.json", "json" );
+    std::ifstream stream( "uniform_mesh_test_1.json" );
+    nlohmann::json inputs = nlohmann::json::parse( stream );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 0;
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     using list_type =
@@ -245,14 +247,15 @@ void particleViewTest()
 void linearAlgebraTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "uniform_mesh_test_1.json", "json" );
+    std::ifstream stream( "uniform_mesh_test_1.json" );
+    nlohmann::json inputs = nlohmann::json::parse( stream );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 0;
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     using list_type =

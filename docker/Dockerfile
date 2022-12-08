@@ -63,36 +63,23 @@ RUN OPENMPI_VERSION=4.0.2 && \
     rm -rf ${SCRATCH_DIR}
 ENV PATH=${OPENMPI_DIR}/bin:$PATH
 
-# Install Boost
-ENV BOOST_DIR=/opt/boost
-RUN BOOST_VERSION=1.75.0 && \
-    BOOST_VERSION_UNDERSCORE=$(echo "$BOOST_VERSION" | sed -e "s/\./_/g") && \
-    BOOST_KEY=379CE192D401AB61 && \
-    BOOST_URL=https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION}/source && \
-    BOOST_ARCHIVE=boost_${BOOST_VERSION_UNDERSCORE}.tar.bz2 && \
-    SCRATCH_DIR=/scratch && mkdir -p ${SCRATCH_DIR} && cd ${SCRATCH_DIR} && \
-    wget --quiet ${BOOST_URL}/${BOOST_ARCHIVE} && \
-    wget --quiet ${BOOST_URL}/${BOOST_ARCHIVE}.asc && \
-    wget --quiet ${BOOST_URL}/${BOOST_ARCHIVE}.json && \
-    wget --quiet ${BOOST_URL}/${BOOST_ARCHIVE}.json.asc && \
-    gpg --verify ${BOOST_ARCHIVE}.json.asc ${BOOST_ARCHIVE}.json && \
-    gpg --verify ${BOOST_ARCHIVE}.asc ${BOOST_ARCHIVE} && \
-    cat ${BOOST_ARCHIVE}.json | jq -r '. | .sha256 + "  " + .file' | sha256sum --check && \
-    mkdir -p boost && \
-    tar -xf ${BOOST_ARCHIVE} -C boost --strip-components=1 && \
-    cd boost && \
-    ./bootstrap.sh \
-        --prefix=${BOOST_DIR} \
-        && \
-    echo "using mpi ;" >> project-config.jam && \
-    ./b2 -j${NPROCS} \
-        hardcode-dll-paths=true dll-path=${BOOST_DIR}/lib \
-        link=shared \
-        variant=release \
-        cxxflags=-w \
-        install \
-        && \
-    rm -rf ${SCRATCH_DIR}
+# Install json
+ENV JSON_DIR=/opt/json
+RUN JSON_VERSION=v3.10.0 && \
+    JSON_URL=https://github.com/nlohmann/json/archive/${JSON_VERSION}.tar.gz && \
+    JSON_ARCHIVE=json.tar.gz && \
+    wget --quiet ${JSON_URL} --output-document=${JSON_ARCHIVE} && \
+    mkdir json && \
+    tar -xf ${JSON_ARCHIVE} -C json --strip-components=1 && \
+    cd json && \
+    mkdir -p build && cd build && \
+    cmake \
+      -D CMAKE_INSTALL_PREFIX=${JSON_DIR} \
+      -D CMAKE_BUILD_TYPE=Debug \
+      -D JSON_BuildTests=OFF \
+    .. && \
+    make -j${NPROCS} install && \
+    cd ../../ && rm -r json
 
 # Install Silo
 ENV SILO_DIR=/opt/silo

@@ -16,7 +16,7 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
 
 #include <memory>
 
@@ -47,29 +47,29 @@ class AdaptiveMesh
     // Construct an adaptive mesh from the problem bounding box and a property
     // tree.
     template <class ExecutionSpace>
-    AdaptiveMesh( const boost::property_tree::ptree& ptree,
+    AdaptiveMesh( const nlohmann::json inputs,
                   const Kokkos::Array<double, 6>& global_bounding_box,
                   const int minimum_halo_cell_width, MPI_Comm comm,
                   const ExecutionSpace& exec_space )
     {
-        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+        build( inputs, global_bounding_box, minimum_halo_cell_width, comm,
                exec_space );
     }
 
     // Constructor that uses the default ExecutionSpace for this MemorySpace.
-    AdaptiveMesh( const boost::property_tree::ptree& ptree,
+    AdaptiveMesh( const nlohmann::json inputs,
                   const Kokkos::Array<double, 6>& global_bounding_box,
                   const int minimum_halo_cell_width, MPI_Comm comm )
     {
         using exec_space = typename memory_space::execution_space;
 
-        build( ptree, global_bounding_box, minimum_halo_cell_width, comm,
+        build( inputs, global_bounding_box, minimum_halo_cell_width, comm,
                exec_space{} );
     }
 
   private:
     template <class ExecutionSpace>
-    void build( const boost::property_tree::ptree& ptree,
+    void build( const nlohmann::json inputs,
                 const Kokkos::Array<double, 6>& global_bounding_box,
                 const int minimum_halo_cell_width, MPI_Comm comm,
                 const ExecutionSpace& exec_space )
@@ -79,41 +79,38 @@ class AdaptiveMesh
         _minimum_halo_width = minimum_halo_cell_width;
 
         // Get the mesh parameters.
-        const auto& mesh_params = ptree.get_child( "mesh" );
+        auto mesh_params = inputs["mesh"];
 
         // Get the global number of cells and cell sizes in each direction.
         std::array<int, 3> global_num_cell;
         Kokkos::Array<double, 3> cell_size;
         if ( mesh_params.count( "cell_size" ) )
         {
-            if ( mesh_params.get_child( "cell_size" ).size() != 3 )
+            std::array<double, 3> std_cell_size = mesh_params["cell_size"];
+            if ( std_cell_size.size() != 3 )
                 throw std::runtime_error(
                     "3 entries required for mesh.cell_size" );
 
-            int d = 0;
-            for ( auto& element : mesh_params.get_child( "cell_size" ) )
+            for ( int d = 0; d < 3; ++d )
             {
-                cell_size[d] = element.second.get_value<double>();
+                cell_size[d] = std_cell_size[d];
                 global_num_cell[d] = std::rint(
                     ( global_bounding_box[d + 3] - global_bounding_box[d] ) /
                     cell_size[d] );
-                ++d;
             }
         }
         else if ( mesh_params.count( "global_num_cell" ) )
         {
-            if ( mesh_params.get_child( "global_num_cell" ).size() != 3 )
+            global_num_cell = mesh_params["global_num_cell"];
+            if ( global_num_cell.size() != 3 )
                 throw std::runtime_error(
                     "3 entries required for mesh.global_num_cell" );
 
-            int d = 0;
-            for ( auto& element : mesh_params.get_child( "global_num_cell" ) )
+            for ( int d = 0; d < 3; ++d )
             {
-                global_num_cell[d] = element.second.get_value<int>();
                 cell_size[d] =
                     ( global_bounding_box[d + 3] - global_bounding_box[d] ) /
                     global_num_cell[d];
-                ++d;
             }
         }
 
@@ -125,19 +122,9 @@ class AdaptiveMesh
             static_cast<double>( global_num_cell[2] ) };
 
         // Get the periodicity.
-        std::array<bool, 3> periodic;
-        {
-            if ( mesh_params.get_child( "periodic" ).size() != 3 )
-                throw std::runtime_error(
-                    "3 entries required for mesh.periodic" );
-
-            int d = 0;
-            for ( auto& element : mesh_params.get_child( "periodic" ) )
-            {
-                periodic[d] = element.second.get_value<bool>();
-                ++d;
-            }
-        }
+        std::array<bool, 3> periodic = mesh_params["periodic"];
+        if ( periodic.size() != 3 )
+            throw std::runtime_error( "3 entries required for mesh.periodic" );
 
         // For dimensions that are not periodic we pad by the minimum halo
         // cell width to allow for projections outside of the domain.
@@ -156,27 +143,20 @@ class AdaptiveMesh
             global_low_corner, global_high_corner, global_num_cell );
 
         // Create the partitioner.
-        const auto& part_params = mesh_params.get_child( "partitioner" );
+        const auto& part_params = mesh_params["partitioner"];
         std::shared_ptr<Cajita::BlockPartitioner<3>> partitioner;
-        if ( part_params.get<std::string>( "type" ).compare( "uniform_dim" ) ==
-             0 )
+        std::string type = part_params["type"];
+        if ( type.compare( "uniform_dim" ) == 0 )
         {
             partitioner = std::make_shared<Cajita::DimBlockPartitioner<3>>();
         }
-        else if ( part_params.get<std::string>( "type" ).compare( "manual" ) ==
-                  0 )
+        else if ( type.compare( "manual" ) == 0 )
         {
-            if ( part_params.get_child( "ranks_per_dim" ).size() != 3 )
+            std::array<int, 3> ranks_per_dim = part_params["ranks_per_dim"];
+            if ( ranks_per_dim.size() != 3 )
                 throw std::runtime_error(
                     "3 entries required for mesh.partitioner.ranks_per_dim " );
 
-            std::array<int, 3> ranks_per_dim;
-            int d = 0;
-            for ( auto& element : part_params.get_child( "ranks_per_dim" ) )
-            {
-                ranks_per_dim[d] = element.second.get_value<int>();
-                ++d;
-            }
             partitioner = std::make_shared<Cajita::ManualBlockPartitioner<3>>(
                 ranks_per_dim );
         }
@@ -187,8 +167,10 @@ class AdaptiveMesh
 
         // Get the halo cell width. If the user does not assign one then it is
         // assumed the minimum halo cell width will be used.
-        auto halo_cell_width = std::max(
-            _minimum_halo_width, mesh_params.get<int>( "halo_cell_width", 0 ) );
+        int read_halo_width = 0;
+        if ( mesh_params.count( "halo_cell_width" ) )
+            read_halo_width = mesh_params["halo_cell_width"];
+        auto halo_cell_width = std::max( _minimum_halo_width, read_halo_width );
 
         // Build the local grid.
         _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
@@ -268,22 +250,23 @@ struct is_adaptive_mesh
 //---------------------------------------------------------------------------//
 // Creation functions.
 template <class MemorySpace, class ExecSpace>
-auto createAdaptiveMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+auto createAdaptiveMesh( MemorySpace, const nlohmann::json inputs,
                          const Kokkos::Array<double, 6>& global_bounding_box,
                          const int minimum_halo_cell_width, MPI_Comm comm,
                          ExecSpace exec_space )
 {
     return std::make_shared<AdaptiveMesh<MemorySpace>>(
-        ptree, global_bounding_box, minimum_halo_cell_width, comm, exec_space );
+        inputs, global_bounding_box, minimum_halo_cell_width, comm,
+        exec_space );
 }
 
 template <class MemorySpace>
-auto createAdaptiveMesh( MemorySpace, const boost::property_tree::ptree& ptree,
+auto createAdaptiveMesh( MemorySpace, const nlohmann::json inputs,
                          const Kokkos::Array<double, 6>& global_bounding_box,
                          const int minimum_halo_cell_width, MPI_Comm comm )
 {
     return std::make_shared<AdaptiveMesh<MemorySpace>>(
-        ptree, global_bounding_box, minimum_halo_cell_width, comm );
+        inputs, global_bounding_box, minimum_halo_cell_width, comm );
 }
 
 //---------------------------------------------------------------------------//
