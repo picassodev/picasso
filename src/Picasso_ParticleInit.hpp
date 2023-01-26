@@ -646,11 +646,11 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
 
             // centroid of triangle facet
             Vec3<double> centroid = ( a + b + c ) / 3.0;
-	    Vec3<double> a_centroid = ( a + centroid ) / 2.0;
-	    Vec3<double> b_centroid = ( b + centroid ) / 2.0;
-	    Vec3<double> c_centroid = ( c + centroid ) / 2.0;
-	    Kokkos::Array<Vec3<double>, 4> abc_centroid 
-	                             = { centroid, a_centroid, b_centroid, c_centroid };
+            Vec3<double> a_centroid = ( a + centroid ) / 2.0;
+            Vec3<double> b_centroid = ( b + centroid ) / 2.0;
+            Vec3<double> c_centroid = ( c + centroid ) / 2.0;
+            Kokkos::Array<Vec3<double>, 4> abc_centroid = {
+                centroid, a_centroid, b_centroid, c_centroid };
 
             for ( int ip = 0; ip < particles_per_facet; ++ip )
             {
@@ -658,11 +658,11 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
                 int pid = f * particles_per_facet + ip;
 
                 // ppf = 3
-		if( particles_per_facet == 3 )
-		   px = abc_centroid[ip+1];
-		// ppf = 1 or 4
-		else
-		   px = abc_centroid[ip];
+                if ( particles_per_facet == 3 )
+                    px = abc_centroid[ip + 1];
+                // ppf = 1 or 4
+                else
+                    px = abc_centroid[ip];
 
                 // Create a new particle with the given logical
                 // coordinates.
