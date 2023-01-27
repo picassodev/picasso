@@ -550,12 +550,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
 
   \param Initialization type tag.
 
-  \param particles_per_facet The number of particles to populate each cell
-  dimension with.
-      particles_per_facet = 1 : on the centroid
-      particles_per_facet = 3 : on the centers between centroid and vertex
-      particles_per_facet = 4 : on the centroid +
-                                on the centers between centroid and vertex
+  \param particles_per_facet_median The number of particles to populate each
+  facet median with (+1 on the centroid for 3n+1 total per facet).
 
   \param surface A FacetGeometry type (FacetGeoemtry or MarchingCubes data)
   containing the list of surface facets to seed the particle list
@@ -579,7 +575,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
 template <class ParticleListType, class InitFunc, class FacetGeometry,
           class ExecutionSpace>
 void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
-                                 const int particles_per_facet,
+                                 const int particles_per_facet_median,
                                  const FacetGeometry& surface,
                                  const InitFunc& create_functor,
                                  ParticleListType& surface_particle_list )
@@ -603,6 +599,7 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
 
     // Allocate the particles.
     int num_facets = surface.facets.extent( 0 );
+    int particles_per_facet = particles_per_facet_median * 3 + 1;
     int num_particles = particles_per_facet * num_facets;
     particles.resize( num_particles );
 
@@ -638,38 +635,39 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
             double sqc2 = sqrt( c2 );
             double facet_area = 0.5 * sqc2;
 
-            Vec3<double> pan =
-                cross / sqc2; // Create unit normal vector for the facet area
-
+            // Create unit normal vector for the facet area
+            Vec3<double> pan = cross / sqc2;
             // Particle surface area.
             double pa = facet_area / particles_per_facet;
 
             // centroid of triangle facet
             Vec3<double> centroid = ( a + b + c ) / 3.0;
-            Vec3<double> a_centroid = ( a + centroid ) / 2.0;
-            Vec3<double> b_centroid = ( b + centroid ) / 2.0;
-            Vec3<double> c_centroid = ( c + centroid ) / 2.0;
-            Kokkos::Array<Vec3<double>, 4> abc_centroid = {
-                centroid, a_centroid, b_centroid, c_centroid };
+            int median_div = particles_per_facet_median + 2;
+            Vec3<double> a_median = ( a + centroid ) / median_div;
+            Vec3<double> b_median = ( b + centroid ) / median_div;
+            Vec3<double> c_median = ( c + centroid ) / median_div;
+            Kokkos::Array<Vec3<double>, 3> abc_median = { a_median, b_median,
+                                                          c_median };
 
-            for ( int ip = 0; ip < particles_per_facet; ++ip )
-            {
-                // Local particle id.
-                int pid = f * particles_per_facet + ip;
+            // Create one particle at the centroid.
+            create_functor( centroid.data(), pan.data(), pa, particle );
+            particles.setTuple( f * particles_per_facet, particle.tuple() );
 
-                // ppf = 3
-                if ( particles_per_facet == 3 )
-                    px = abc_centroid[ip + 1];
-                // ppf = 1 or 4
-                else
-                    px = abc_centroid[ip];
+            int ppf_count = 1;
+            for ( int it = 0; it < 3; ++it )
+                for ( int ip = 0; ip < particles_per_facet_median; ++ip )
+                {
+                    // Local particle id.
+                    int pid = f * particles_per_facet + ppf_count;
 
-                // Create a new particle with the given logical
-                // coordinates.
-                create_functor( px.data(), pan.data(), pa, particle );
+                    px = abc_median[it];
+                    // abc_median[it] = ip * abc_median[it];
 
-                particles.setTuple( pid, particle.tuple() );
-            }
+                    // Create a new particle with the given logical coordinates.
+                    create_functor( px.data(), pan.data(), pa, particle );
+                    particles.setTuple( pid, particle.tuple() );
+                    ppf_count++;
+                }
         } );
 
     Kokkos::Profiling::popRegion();
