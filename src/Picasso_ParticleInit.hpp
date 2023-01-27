@@ -438,7 +438,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                                  const InitFunc& create_functor,
                                  ParticleListType& surface_particle_list )
 {
-    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
+    Kokkos::Profiling::pushRegion(
+        "Picasso::initializeParticles::RandomSurface" );
 
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
@@ -580,7 +581,8 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
                                  const InitFunc& create_functor,
                                  ParticleListType& surface_particle_list )
 {
-    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
+    Kokkos::Profiling::pushRegion(
+        "Picasso::initializeParticles::UniformSurface" );
 
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
@@ -606,7 +608,7 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
     // FIXME: Re-thread over particles instead of facets.
     // Initialize particles.
     Kokkos::parallel_for(
-        "Picasso::ParticleInit::RandomSurface",
+        "Picasso::ParticleInit::UniformSurface",
         Kokkos::RangePolicy<ExecutionSpace>( 0, num_facets ),
         KOKKOS_LAMBDA( const int f ) {
             // Particle coordinate.
