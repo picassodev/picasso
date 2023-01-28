@@ -644,21 +644,24 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
 
             // centroid of triangle facet
             Vec3<double> centroid = ( a + b + c ) / 3.0;
-            int median_div = particles_per_facet_median + 2;
-            Vec3<double> a_median = ( a + centroid ) / median_div;
-            Vec3<double> b_median = ( b + centroid ) / median_div;
-            Vec3<double> c_median = ( c + centroid ) / median_div;
-            Kokkos::Array<Vec3<double>, 3> abc_median = { a_median, b_median,
-                                                          c_median };
+            int median_div = particles_per_facet_median + 1;
 
             // Create one particle at the centroid.
             create_functor( centroid.data(), pan.data(), pa, particle );
             particles.setTuple( f * particles_per_facet, particle.tuple() );
 
             int ppf_count = 1;
-            for ( int it = 0; it < 3; ++it )
-                for ( int ip = 0; ip < particles_per_facet_median; ++ip )
+            for ( int ip = 1; ip <= particles_per_facet_median; ++ip )
+	    {
+                for ( int it = 0; it < 3; ++it )
                 {
+                    // internal division points
+                    Vec3<double> a_median = ( a*(median_div-ip) + centroid*ip ) / median_div;
+                    Vec3<double> b_median = ( b*(median_div-ip) + centroid*ip ) / median_div;
+                    Vec3<double> c_median = ( c*(median_div-ip) + centroid*ip ) / median_div;
+                    Kokkos::Array<Vec3<double>, 3> abc_median = { a_median, b_median,
+                                                          c_median };
+
                     // Local particle id.
                     int pid = f * particles_per_facet + ppf_count;
 
@@ -670,6 +673,7 @@ void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
                     particles.setTuple( pid, particle.tuple() );
                     ppf_count++;
                 }
+	    }
         } );
 
     Kokkos::Profiling::popRegion();
