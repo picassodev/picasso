@@ -60,13 +60,11 @@ struct Data
         auto cell_space = mesh.localGrid()->indexSpace(
             Cajita::Ghost{}, Cajita::Cell{}, Cajita::Local{} );
 
+        // Purposely initializing to zero here.
         cell_case_ids_and_offsets =
             Kokkos::View<int*** [2], typename Mesh::memory_space>(
-                Kokkos::ViewAllocateWithoutInitializing(
-                    "cell_case_ids_and_offset" ),
-                cell_space.extent( 0 ), cell_space.extent( 1 ),
-                cell_space.extent( 2 ) );
-        Kokkos::deep_copy( cell_case_ids_and_offsets, 0 );
+                "cell_case_ids_and_offset", cell_space.extent( 0 ),
+                cell_space.extent( 1 ), cell_space.extent( 2 ) );
         num_facet = 0;
         facets = Kokkos::View<double* [3][3], typename Mesh::memory_space>(
             Kokkos::ViewAllocateWithoutInitializing( "facets" ), 0 );
