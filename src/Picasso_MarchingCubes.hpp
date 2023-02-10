@@ -1145,6 +1145,15 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
     auto cell_space = signed_distance.layout()->localGrid()->indexSpace(
         Cajita::Own{}, Cajita::Cell{}, Cajita::Local{} );
 
+    // Resize the IDs and offsets if needed (without copying).
+    if ( data.cell_case_ids_and_offsets.extent( 0 ) < cell_space.extent( 0 ) ||
+         data.cell_case_ids_and_offsets.extent( 1 ) < cell_space.extent( 1 ) ||
+         data.cell_case_ids_and_offsets.extent( 2 ) < cell_space.extent( 2 ) )
+        Kokkos::realloc( data.cell_case_ids_and_offsets, cell_space.extent( 0 ),
+                         cell_space.extent( 1 ), cell_space.extent( 2 ) );
+    // Reset IDs and offsets.
+    Kokkos::deep_copy( data.cell_case_ids_and_offsets, 0 );
+
     // Get the case id and number of facets for each cell.
     data.num_facet = 0;
     Cajita::grid_parallel_reduce(
