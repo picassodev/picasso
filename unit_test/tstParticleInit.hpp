@@ -46,11 +46,12 @@ struct Bar : public Field::Scalar<double>
 
 //---------------------------------------------------------------------------//
 template <class InitType>
-void InitTest( InitType init_type, int ppc )
+void InitTest( InitType init_type, const int ppc, const int boundary = 1,
+               const int multiplier = 1 )
 {
     // Global bounding box.
     double cell_size = 0.23;
-    std::array<int, 3> global_num_cell = { 43, 32, 39 };
+    std::array<int, 3> global_num_cell = { 14, 17, 19 };
     std::array<double, 3> global_low_corner = { 1.2, 3.3, -2.8 };
     std::array<double, 3> global_high_corner = {
         global_low_corner[0] + cell_size * global_num_cell[0],
@@ -75,12 +76,12 @@ void InitTest( InitType init_type, int ppc )
 
     // Particle initialization functor.
     const Kokkos::Array<double, 6> box = {
-        global_low_corner[Dim::I] + cell_size,
-        global_high_corner[Dim::I] - cell_size,
-        global_low_corner[Dim::J] + cell_size,
-        global_high_corner[Dim::J] - cell_size,
-        global_low_corner[Dim::K] + cell_size,
-        global_high_corner[Dim::K] - cell_size };
+        global_low_corner[Dim::I] + cell_size * boundary,
+        global_high_corner[Dim::I] - cell_size * boundary,
+        global_low_corner[Dim::J] + cell_size * boundary,
+        global_high_corner[Dim::J] - cell_size * boundary,
+        global_low_corner[Dim::K] + cell_size * boundary,
+        global_high_corner[Dim::K] - cell_size * boundary };
     auto particle_init_func =
         KOKKOS_LAMBDA( const double x[3], const double v, particle_type& p )
     {
@@ -102,9 +103,10 @@ void InitTest( InitType init_type, int ppc )
         }
     };
 
-    // Initialize particles.
-    initializeParticles( init_type, TEST_EXECSPACE(), ppc, particle_init_func,
-                         particles );
+    // Initialize particles (potentially multiple times).
+    for ( int m = 0; m < multiplier; ++m )
+        initializeParticles( init_type, TEST_EXECSPACE(), ppc,
+                             particle_init_func, particles );
 
     // Check that we made particles.
     int num_p = particles.size();
@@ -116,10 +118,13 @@ void InitTest( InitType init_type, int ppc )
     MPI_Allreduce( MPI_IN_PLACE, &global_num_particle, 1, MPI_INT, MPI_SUM,
                    MPI_COMM_WORLD );
     int expect_num_particle =
-        totalParticlesPerCell( init_type, ppc ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::I ) - 2 ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::J ) - 2 ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::K ) - 2 );
+        multiplier * totalParticlesPerCell( init_type, ppc ) *
+        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::I ) -
+          2 * boundary ) *
+        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::J ) -
+          2 * boundary ) *
+        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::K ) -
+          2 * boundary );
     EXPECT_EQ( global_num_particle, expect_num_particle );
 
     // Particle volume.
@@ -140,16 +145,38 @@ void InitTest( InitType init_type, int ppc )
         EXPECT_TRUE( px( p, Dim::K ) > box[4] );
         EXPECT_TRUE( px( p, Dim::K ) < box[5] );
 
-        EXPECT_EQ( pv( p ), volume );
+        EXPECT_DOUBLE_EQ( pv( p ), volume );
     }
 }
 
 //---------------------------------------------------------------------------//
 // RUN TESTS
 //---------------------------------------------------------------------------//
-TEST( TEST_CATEGORY, random_init_test ) { InitTest( InitRandom(), 17 ); }
+TEST( TEST_CATEGORY, random_init_test )
+{
+    // Boundary layers (last input) chosen to test when creating more particles
+    // than empty and vice versa.
+    InitTest( InitRandom(), 17 );
+    InitTest( InitRandom(), 9, 3 );
+}
 
-TEST( TEST_CATEGORY, uniform_init_test ) { InitTest( InitUniform(), 3 ); }
+TEST( TEST_CATEGORY, uniform_init_test )
+{
+    InitTest( InitUniform(), 3 );
+    InitTest( InitUniform(), 2, 2 );
+}
+
+TEST( TEST_CATEGORY, multiple_uniform_init_test )
+{
+    InitTest( InitUniform(), 3, 1, 3 );
+    InitTest( InitUniform(), 2, 3, 3 );
+}
+
+TEST( TEST_CATEGORY, multiple_random_init_test )
+{
+    InitTest( InitRandom(), 11, 1, 4 );
+    InitTest( InitRandom(), 4, 4, 3 );
+}
 
 //---------------------------------------------------------------------------//
 
