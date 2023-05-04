@@ -355,7 +355,7 @@ struct ScalarViewWrapper
     using value_type = typename field_tag::value_type;
     using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int view_rank = View::Rank;
+    static constexpr int view_rank = View::rank;
 
     static_assert( Field::is_scalar<typename layout_type::tag>::value,
                    "ScalarViewWrappers may only be applied to scalar fields" );
@@ -446,7 +446,7 @@ struct VectorViewWrapper
     using value_type = typename layout_type::tag::value_type;
     using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int view_rank = View::Rank;
+    static constexpr int view_rank = View::rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
 
@@ -541,7 +541,7 @@ struct MatrixViewWrapper
     using value_type = typename layout_type::tag::value_type;
     using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int view_rank = View::Rank;
+    static constexpr int view_rank = View::rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
@@ -647,7 +647,7 @@ struct Tensor3ViewWrapper
     using value_type = typename layout_type::tag::value_type;
     using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int view_rank = View::Rank;
+    static constexpr int view_rank = View::rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
@@ -759,7 +759,7 @@ struct Tensor4ViewWrapper
     using value_type = typename layout_type::tag::value_type;
     using linear_algebra_type = typename field_tag::linear_algebra_type;
 
-    static constexpr int view_rank = View::Rank;
+    static constexpr int view_rank = View::rank;
 
     static constexpr int dim0 = layout_type::tag::dim0;
     static constexpr int dim1 = layout_type::tag::dim1;
