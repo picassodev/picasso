@@ -1135,6 +1135,152 @@ void vectorTest()
 }
 
 //---------------------------------------------------------------------------//
+void quaternionTest()
+{
+    // Make a basic quaternion.
+    LinearAlgebra::Quaternion<double> x = { 1.2, -3.5, 5.4, -2.4 };
+    EXPECT_EQ( x.stride_0(), 1 );
+    EXPECT_EQ( x.stride( 0 ), 1 );
+    EXPECT_EQ( x.extent( 0 ), 4 );
+
+    EXPECT_EQ( x( 0 ), 1.2 );
+    EXPECT_EQ( x( 1 ), -3.5 );
+    EXPECT_EQ( x( 2 ), 5.4 );
+    EXPECT_EQ( x( 3 ), -2.4 );
+
+    // Check a quaternion view.
+    LinearAlgebra::QuaternionView<double> x_view( x.data(), x.stride_0() );
+    EXPECT_EQ( x_view.stride_0(), 1 );
+    EXPECT_EQ( x_view.stride( 0 ), 1 );
+    EXPECT_EQ( x_view.extent( 0 ), 4 );
+
+    EXPECT_EQ( x_view( 0 ), 1.2 );
+    EXPECT_EQ( x_view( 1 ), -3.5 );
+    EXPECT_EQ( x_view( 2 ), 5.4 );
+    EXPECT_EQ( x_view( 3 ), -2.4 );
+
+    // Check a deep copy
+    auto x_c = x;
+    EXPECT_EQ( x_c.stride_0(), 1 );
+    EXPECT_EQ( x_c.stride( 0 ), 1 );
+    EXPECT_EQ( x_c.extent( 0 ), 4 );
+
+    EXPECT_EQ( x_c( 0 ), 1.2 );
+    EXPECT_EQ( x_c( 1 ), -3.5 );
+    EXPECT_EQ( x_c( 2 ), 5.4 );
+    EXPECT_EQ( x_c( 3 ), -2.4 );
+
+    // Check scalar assignment and operator()
+    x = 43.3;
+    for ( int i = 0; i < 4; ++i )
+    {
+        EXPECT_EQ( x( i ), 43.3 );
+
+        x( i ) = -10.2;
+        EXPECT_EQ( x( i ), -10.2 );
+    }
+
+    // Check default initialization
+    LinearAlgebra::Quaternion<double> y;
+    EXPECT_EQ( y.stride_0(), 1 );
+    EXPECT_EQ( y.stride( 0 ), 1 );
+    EXPECT_EQ( y.extent( 0 ), 4 );
+
+    // Check scalar constructor.
+    LinearAlgebra::Quaternion<double> c = 32.3;
+    for ( int i = 0; i < 4; ++i )
+        EXPECT_EQ( c( i ), 32.3 );
+
+    // Check scalar multiplication.
+    auto d = 2.0 * c;
+    for ( int i = 0; i < 4; ++i )
+        EXPECT_EQ( d( i ), 64.6 );
+
+    // Check scalar division.
+    auto z = d / 2.0;
+    for ( int i = 0; i < 4; ++i )
+        EXPECT_EQ( z( i ), 32.3 );
+
+    // Check quaternion-quaternion product.
+    LinearAlgebra::Quaternion<double> f = { 1.0, 3.0, 2.0, 4.0 };
+    LinearAlgebra::Quaternion<double> g = { 2.0, 3.0, 4.0, 5.0 };
+    auto h = f & g;
+    EXPECT_EQ( h( 0 ), -35.0 );
+    EXPECT_EQ( h( 1 ), 3.0 );
+    EXPECT_EQ( h( 2 ), 5.0 );
+    EXPECT_EQ( h( 3 ), 19.0 );
+
+    // Check quaternion-quaternion division.
+    double eps = 1e-12;
+    auto j = f | g;
+    EXPECT_NEAR( j( 0 ), 13.0 / 18.0, eps );
+    EXPECT_NEAR( j( 1 ), 1.0 / 6.0, eps );
+    EXPECT_NEAR( j( 2 ), 1.0 / 18.0, eps );
+    EXPECT_NEAR( j( 3 ), -1.0 / 18.0, eps );
+
+    // Check addition assignment.
+    LinearAlgebra::Quaternion<double> q = z;
+    q += d;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_DOUBLE_EQ( q( i ), 96.9 );
+
+    // Check subtraction assignment.
+    q -= d;
+    for ( int i = 0; i < 3; ++i )
+        EXPECT_DOUBLE_EQ( q( i ), 32.3 );
+
+    // Check deep copy.
+    LinearAlgebra::Quaternion<double> w;
+    LinearAlgebra::deepCopy( w, q );
+    for ( int i = 0; i < 4; ++i )
+        EXPECT_DOUBLE_EQ( w( i ), 32.3 );
+}
+
+void quaMatRotTest()
+{
+    double pi = 4.0 * atan( 1.0 );
+    double phi = pi / 2.0;
+
+    using Kokkos::Experimental::cos;
+    using Kokkos::Experimental::sin;
+
+    LinearAlgebra::Quaternion<double> q = { cos( phi / 2.0 ), 0.0, 0.0,
+                                            sin( phi / 2.0 ) };
+
+    // Convert the quaternion to its equivalent rotation matrix
+    auto rot_mat = static_cast<Mat3<double>>( q );
+
+    // Unit basis vector along x-axis
+    Vec3<double> e1 = { 1.0, 0.0, 0.0 };
+
+    // Apply the quaternion rotation matrix and check the result
+    auto e1_rotated = rot_mat * e1;
+
+    double eps = 1e-15;
+
+    EXPECT_NEAR( e1_rotated( 0 ), 0.0, eps );
+    EXPECT_NEAR( e1_rotated( 1 ), 1.0, eps );
+    EXPECT_NEAR( e1_rotated( 2 ), 0.0, eps );
+
+    auto e2 = rot_mat * e1_rotated;
+
+    // Now test a composition of rotations
+    auto q2 = q & q;
+
+    auto pi_rot_mat = static_cast<Mat3<double>>( q2 );
+
+    auto e2_q = pi_rot_mat * e1;
+
+    EXPECT_NEAR( e2_q( 0 ), -1.0, eps );
+    EXPECT_NEAR( e2_q( 1 ), 0.0, eps );
+    EXPECT_NEAR( e2_q( 2 ), 0.0, eps );
+
+    EXPECT_NEAR( e2_q( 0 ), e2( 0 ), eps );
+    EXPECT_NEAR( e2_q( 1 ), e2( 1 ), eps );
+    EXPECT_NEAR( e2_q( 2 ), e2( 2 ), eps );
+}
+
+//---------------------------------------------------------------------------//
 void viewTest()
 {
     double m[2][3] = { { 1.2, -3.5, 5.4 }, { 8.6, 2.6, -0.1 } };
@@ -1688,6 +1834,10 @@ void eigendecompositionTest()
 TEST( TEST_CATEGORY, matrix_test ) { matrixTest(); }
 
 TEST( TEST_CATEGORY, vector_test ) { vectorTest(); }
+
+TEST( TEST_CATEGORY, quaternion_test ) { quaternionTest(); }
+
+TEST( TEST_CATEGORY, quaMatRot_test ) { quaMatRotTest(); }
 
 TEST( TEST_CATEGORY, tensor3_test ) { tensor3Test(); }
 
