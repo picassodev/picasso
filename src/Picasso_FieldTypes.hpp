@@ -203,7 +203,7 @@ struct Scalar : ScalarBase
     template <class U>
     using field_type = Scalar<U>;
     template <int NumSpaceDim>
-    using gradient_type = Vector<T, NumSpaceDim>;
+    using gradient_type = LinearAlgebra::Vector<T, NumSpaceDim>;
 };
 
 template <class T>
@@ -234,7 +234,7 @@ struct Vector : VectorBase
     template <class U>
     using field_type = Vector<U, D>;
     template <int NumSpaceDim>
-    using gradient_type = Matrix<T, D, NumSpaceDim>;
+    using gradient_type = LinearAlgebra::Matrix<T, D, NumSpaceDim>;
 };
 
 template <class T>
