@@ -1035,7 +1035,7 @@ void vectorTest()
     EXPECT_EQ( x_view( 1 ), -3.5 );
     EXPECT_EQ( x_view( 2 ), 5.4 );
 
-    // Check a deep copy
+    // Check a shallow copy
     auto x_c = x;
     EXPECT_EQ( x_c.stride_0(), 1 );
     EXPECT_EQ( x_c.stride( 0 ), 1 );
@@ -1159,7 +1159,7 @@ void quaternionTest()
     EXPECT_EQ( x_view( 2 ), 5.4 );
     EXPECT_EQ( x_view( 3 ), -2.4 );
 
-    // Check a deep copy
+    // Check a shallow copy
     auto x_c = x;
     EXPECT_EQ( x_c.stride_0(), 1 );
     EXPECT_EQ( x_c.stride( 0 ), 1 );
@@ -1278,6 +1278,17 @@ void quaMatRotTest()
     EXPECT_NEAR( e2_q( 0 ), e2( 0 ), eps );
     EXPECT_NEAR( e2_q( 1 ), e2( 1 ), eps );
     EXPECT_NEAR( e2_q( 2 ), e2( 2 ), eps );
+
+    // Now test vector rotation via direct quaternion conjugation
+    LinearAlgebra::Quaternion<double> p = { 0.0, e1( 0 ), e1( 1 ), e1( 2 ) };
+
+    // Perform the conjugation
+    auto p_rot = ( q & p ) & ~q;
+
+    // The vector part of the p quaternion corresponds to the rotated vector
+    EXPECT_NEAR( p_rot( 1 ), e1_rotated( 0 ), eps );
+    EXPECT_NEAR( p_rot( 2 ), e1_rotated( 1 ), eps );
+    EXPECT_NEAR( p_rot( 3 ), e1_rotated( 2 ), eps );
 }
 
 //---------------------------------------------------------------------------//
