@@ -1148,6 +1148,35 @@ void quaternionTest()
     EXPECT_EQ( x( 2 ), 5.4 );
     EXPECT_EQ( x( 3 ), -2.4 );
 
+    // Check scalar and vector parts
+    auto x_vec = x.vector();
+    EXPECT_EQ( x.scalar(), 1.2 );
+    EXPECT_EQ( x_vec( 0 ), -3.5 );
+    EXPECT_EQ( x_vec( 1 ), 5.4 );
+    EXPECT_EQ( x_vec( 2 ), -2.4 );
+
+    // Check scalar + vector constructor
+    LinearAlgebra::Quaternion<double> xz = {
+        3.4, LinearAlgebra::Vector<double, 3>{ 0.6, -3.7, 9.2 } };
+    EXPECT_EQ( xz( 0 ), 3.4 );
+    EXPECT_EQ( xz( 1 ), 0.6 );
+    EXPECT_EQ( xz( 2 ), -3.7 );
+    EXPECT_EQ( xz( 3 ), 9.2 );
+
+    // Change the vector part
+    // TODO: xz.vector() = x.vector() doesn't work.
+    auto xz_vec = xz.vector();
+    for ( int d = 0; d < 3; ++d )
+        xz_vec( d ) = x_vec( d );
+
+    // static_assert(std::is_same<decltype(x_vec), double>::value, "Types do not
+    // match");
+
+    EXPECT_EQ( xz( 0 ), 3.4 );
+    EXPECT_EQ( xz( 1 ), -3.5 );
+    EXPECT_EQ( xz( 2 ), 5.4 );
+    EXPECT_EQ( xz( 3 ), -2.4 );
+
     // Check a quaternion view.
     LinearAlgebra::QuaternionView<double> x_view( x.data(), x.stride_0() );
     EXPECT_EQ( x_view.stride_0(), 1 );

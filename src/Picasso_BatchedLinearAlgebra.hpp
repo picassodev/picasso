@@ -3264,6 +3264,18 @@ struct Quaternion
             ( *this )( i ) = value;
     }
 
+    // Scalar + vector constructor.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion( const T value, const VectorView<T, 3> vec )
+    {
+        ( *this )( 0 ) = value;
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 1; i < extent_0; ++i )
+            ( *this )( i ) = vec( i - 1 );
+    }
+
     // Deep copy assignment operator. Triggers expression evaluation.
     template <class Expression>
     KOKKOS_INLINE_FUNCTION
@@ -3378,6 +3390,27 @@ struct Quaternion
     // Get the raw data.
     KOKKOS_INLINE_FUNCTION
     pointer data() const { return const_cast<pointer>( &_d[0] ); }
+
+    // Get the scalar part
+    KOKKOS_INLINE_FUNCTION
+    const_reference scalar() const { return _d[0]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference scalar() { return _d[0]; }
+
+    // Get the vector part
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> vector() const
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+    }
+
+    // Get the vector part
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> vector()
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -3937,6 +3970,7 @@ KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
     typename ExpressionX::eval_type x_eval = x;
     typename ExpressionY::eval_type y_eval = y;
 
+    // Hamilton product of two quaternions
     return Quaternion<typename ExpressionX::value_type>{
         x_eval( 0 ) * y_eval( 0 ) - x_eval( 1 ) * y_eval( 1 ) -
             x_eval( 2 ) * y_eval( 2 ) - x_eval( 3 ) * y_eval( 3 ),
