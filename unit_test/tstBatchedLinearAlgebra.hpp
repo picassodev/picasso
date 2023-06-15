@@ -1308,16 +1308,45 @@ void quaMatRotTest()
     EXPECT_NEAR( e2_q( 1 ), e2( 1 ), eps );
     EXPECT_NEAR( e2_q( 2 ), e2( 2 ), eps );
 
-    // Now test vector rotation via direct quaternion conjugation
+    // Now test vector rotation via direct quaternion-vector conjugation
     LinearAlgebra::Quaternion<double> p = { 0.0, e1( 0 ), e1( 1 ), e1( 2 ) };
 
     // Perform the conjugation
     auto p_rot = ( q & p ) & ~q;
 
-    // The vector part of the p quaternion corresponds to the rotated vector
+    // The vector part of the p_rot quaternion corresponds to the rotated vector
     EXPECT_NEAR( p_rot( 1 ), e1_rotated( 0 ), eps );
     EXPECT_NEAR( p_rot( 2 ), e1_rotated( 1 ), eps );
     EXPECT_NEAR( p_rot( 3 ), e1_rotated( 2 ), eps );
+
+    // Perform a quaternion-matrix conjugation
+    Mat3<double> I;
+    LinearAlgebra::identity( I );
+
+    auto I_rot = I & q;
+
+    EXPECT_NEAR( I_rot( 0, 0 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 0, 1 ), 1.0, eps );
+    EXPECT_NEAR( I_rot( 0, 2 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 1, 0 ), -1.0, eps );
+    EXPECT_NEAR( I_rot( 1, 1 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 1, 2 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 0 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 1 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 2 ), 1.0, eps );
+
+    // Test if the matrix-representation of q times I is the same result
+    I_rot = ~rot_mat * I;
+
+    EXPECT_NEAR( I_rot( 0, 0 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 0, 1 ), 1.0, eps );
+    EXPECT_NEAR( I_rot( 0, 2 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 1, 0 ), -1.0, eps );
+    EXPECT_NEAR( I_rot( 1, 1 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 1, 2 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 0 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 1 ), 0.0, eps );
+    EXPECT_NEAR( I_rot( 2, 2 ), 1.0, eps );
 }
 
 //---------------------------------------------------------------------------//

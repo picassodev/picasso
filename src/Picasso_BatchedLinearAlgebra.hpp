@@ -3982,6 +3982,41 @@ KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
             x_eval( 2 ) * y_eval( 1 ) + x_eval( 3 ) * y_eval( 0 ) };
 }
 
+//---------------------------------------------------------------------------//
+// Quaternion-matrix conjugation
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_matrix<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& X,
+                                       const ExpressionY& q )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == 3 && ExpressionX::extent_1 == 3,
+                   "matrix must be 3x3" );
+
+    typename ExpressionX::eval_type X_eval = X;
+    typename ExpressionY::eval_type q_eval = q;
+
+    ExpressionX X_res;
+
+    for ( int n = 0; n < 3; n++ )
+    {
+        LinearAlgebra::Quaternion<double> p = { 0.0, X_eval.row( n ) };
+        auto p_rot = ( q_eval & p ) & ~q_eval;
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int d = 0; d < 3; d++ )
+            X_res.row( n )( d ) = p_rot.vector()( d );
+    }
+
+    return X_res;
+}
+
 template <class ExpressionX, class ExpressionY,
           typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
                                         is_quaternion<ExpressionY>::value,
