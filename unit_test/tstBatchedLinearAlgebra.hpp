@@ -1780,6 +1780,28 @@ void kernelTest()
         }
 }
 
+void matrixSVDTest()
+{
+    LinearAlgebra::Matrix<double, 3, 3> A = {
+        { 9.0, 8.0, -2.0 }, { -5.0, -3.0, -4.0 }, { 6.0, 0.0, 9.0 } };
+
+    LinearAlgebra::Matrix<double, 3, 3> U = 0.0;
+    LinearAlgebra::Matrix<double, 3, 3> D = 0.0;
+    LinearAlgebra::Matrix<double, 3, 3> V = 0.0;
+
+    LinearAlgebra::svd( A, U, D, V );
+
+    EXPECT_FLOAT_EQ( U( 0, 0 ), 0.693615379790 );
+    EXPECT_FLOAT_EQ( U( 0, 1 ), -0.672565530742 );
+    EXPECT_FLOAT_EQ( U( 0, 2 ), 0.257979285557 );
+    EXPECT_FLOAT_EQ( U( 1, 0 ), -0.466193654656 );
+    EXPECT_FLOAT_EQ( U( 1, 1 ), -0.146101858820 );
+    EXPECT_FLOAT_EQ( U( 1, 2 ), 0.872535227488 );
+    EXPECT_FLOAT_EQ( U( 2, 0 ), 0.549145865210 );
+    EXPECT_FLOAT_EQ( U( 2, 1 ), 0.725472159154 );
+    EXPECT_FLOAT_EQ( U( 2, 2 ), 0.414884279066 );
+}
+
 //---------------------------------------------------------------------------//
 /*
 void eigendecompositionTest()
@@ -1946,6 +1968,8 @@ TEST( TEST_CATEGORY, kernelTest )
 }
 
 TEST( TEST_CATEGORY, matrixExponential_test ) { matrixExponentialTest(); }
+
+TEST( TEST_CATEGORY, matrixSVD_test ) { matrixSVDTest(); }
 
 // FIXME_KOKKOSKERNELS
 // TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }
