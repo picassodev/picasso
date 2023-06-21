@@ -1782,6 +1782,8 @@ void kernelTest()
 
 void matrixSVDTest()
 {
+    const double tol = 1e-14;
+
     LinearAlgebra::Matrix<double, 3, 3> A = {
         { 9.0, 8.0, -2.0 }, { -5.0, -3.0, -4.0 }, { 6.0, 0.0, 9.0 } };
 
@@ -1800,6 +1802,30 @@ void matrixSVDTest()
     EXPECT_FLOAT_EQ( U( 2, 0 ), 0.549145865210 );
     EXPECT_FLOAT_EQ( U( 2, 1 ), 0.725472159154 );
     EXPECT_FLOAT_EQ( U( 2, 2 ), 0.414884279066 );
+
+    EXPECT_FLOAT_EQ( D( 0, 0 ), 14.7817842778 );
+    EXPECT_NEAR( D( 0, 1 ), 0.0, tol );
+    EXPECT_NEAR( D( 0, 2 ), 0.0, tol );
+    EXPECT_NEAR( D( 1, 0 ), 0.0, tol );
+    EXPECT_FLOAT_EQ( D( 1, 1 ), 9.84464467996 );
+    EXPECT_NEAR( D( 1, 2 ), 0.0, tol );
+    EXPECT_NEAR( D( 2, 0 ), 0.0, tol );
+    EXPECT_NEAR( D( 2, 1 ), 0.0, tol );
+    EXPECT_FLOAT_EQ( D( 2, 2 ), 0.762774336685 );
+
+    EXPECT_FLOAT_EQ( V( 0, 0 ), 0.802905904968 );
+    EXPECT_FLOAT_EQ( V( 0, 1 ), -0.0985050816132 );
+    EXPECT_FLOAT_EQ( V( 0, 2 ), 0.587910585602 );
+    EXPECT_FLOAT_EQ( V( 1, 0 ), 0.470004423803 );
+    EXPECT_FLOAT_EQ( V( 1, 1 ), -0.502021030737 );
+    EXPECT_FLOAT_EQ( V( 1, 2 ), -0.725996367968 );
+    EXPECT_FLOAT_EQ( V( 2, 0 ), 0.366657809643 );
+    EXPECT_FLOAT_EQ( V( 2, 1 ), 0.859227346861 );
+    EXPECT_FLOAT_EQ( V( 2, 2 ), -0.356777825872 );
+
+    // Check the determinants of U and V to ensure they are orthogonal
+    EXPECT_FLOAT_EQ( !U, -1.0 );
+    EXPECT_FLOAT_EQ( !V, 1.0 );
 }
 
 //---------------------------------------------------------------------------//

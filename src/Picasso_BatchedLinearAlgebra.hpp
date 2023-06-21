@@ -4835,9 +4835,37 @@ double approx_rsqrt( double x )
 template <typename ValueType>
 KOKKOS_INLINE_FUNCTION void cond_swap( bool b, ValueType& lv, ValueType& rv )
 {
-    ValueType tmpv = lv;
+    auto tmpv = lv;
     lv = b ? rv : lv;
     rv = b ? tmpv : rv;
+}
+
+template <typename ValueType>
+KOKKOS_INLINE_FUNCTION void cond_neg_swap( bool b, ValueType& lv,
+                                           ValueType& rv )
+{
+    auto tmpv = -1.0 * lv;
+    lv = b ? rv : lv;
+    rv = b ? tmpv : rv;
+}
+
+template <>
+KOKKOS_INLINE_FUNCTION void
+cond_neg_swap<VectorView<double, 3>>( bool b, VectorView<double, 3>& lv,
+                                      VectorView<double, 3>& rv )
+{
+    using vector_type = typename VectorView<double, 3>::copy_type;
+    vector_type tmpv;
+
+    if ( b )
+    {
+        for ( int d = 0; d < 3; d++ )
+        {
+            tmpv( d ) = -1.0 * lv( d );
+            lv( d ) = rv( d );
+            rv( d ) = tmpv( d );
+        }
+    }
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -4852,9 +4880,10 @@ Quaternion<double> givens_quaternion( double a11, double a12, double a22,
 
     double ch = 2.0 * ( a11 - a22 );
     double sh = a12;
-    auto b = ( gamma * sh * sh ) < ( ch * ch );
 
-    double ome = approx_rsqrt( ch * ch + sh * sh );
+    bool b = ( gamma * sh * sh ) < ( ch * ch );
+
+    double ome = 1.0 / std::sqrt( ch * ch + sh * sh );
     ch = b ? ome * ch : cs;
     sh = b ? ome * sh : ss;
 
@@ -4868,7 +4897,7 @@ Quaternion<double> givens_quaternion( double a11, double a12, double a22,
     }
     else if ( ij[0] == 0 && ij[1] == 2 )
     {
-        q = { ch, 0.0, sh, 0.0 };
+        q = { ch, 0.0, -sh, 0.0 };
     }
     else if ( ij[0] == 1 && ij[1] == 2 )
     {
@@ -4879,23 +4908,39 @@ Quaternion<double> givens_quaternion( double a11, double a12, double a22,
 }
 
 KOKKOS_INLINE_FUNCTION
-Quaternion<double> givens_qr( double a1, double a2, double tol )
+Quaternion<double> givens_qr( double a1, double a2, double tol,
+                              Kokkos::Array<std::size_t, 2> ij )
 {
     double rho = std::sqrt( a1 * a1 + a2 * a2 );
 
     double sh = rho > tol ? a2 : 0.0;
     double ch = std::abs( a1 ) + std::max( rho, tol );
 
-    bool b = a1 < 0;
+    cond_swap( a1 < 0, sh, ch );
 
-    cond_swap( b, sh, ch );
-
-    double ome = approx_rsqrt( ch * ch + sh * sh );
+    double ome = 1.0 / std::sqrt( ch * ch + sh * sh );
 
     ch = ome * ch;
     sh = ome * sh;
 
-    return Quaternion<double>{ ch, 0.0, 0.0, sh };
+    Quaternion<double> q = 0.0;
+
+    // The ordering of the quaternion is different
+    // according to the element indices
+    if ( ij[0] == 2 && ij[1] == 0 )
+    {
+        q = { ch, sh, 0.0, 0.0 };
+    }
+    else if ( ij[0] == 1 && ij[1] == 0 )
+    {
+        q = { ch, 0.0, 0.0, sh };
+    }
+    else if ( ij[0] == 2 && ij[1] == 1 )
+    {
+        q = { ch, sh, 0.0, 0.0 };
+    }
+
+    return q;
 }
 
 template <class ExpressionA>
@@ -4925,8 +4970,8 @@ KOKKOS_INLINE_FUNCTION
 
     Quaternion<double> q_total = givens_quaternion( s_pp, s_pq, s_qq, pq );
 
-    Matrix<double, 3, 3> Q_1{
-        q_total }; // Convert to rotation matrix for conjugation
+    // Convert to rotation matrix for conjugation
+    Matrix<double, 3, 3> Q_1{ q_total };
 
     S = ~Q_1 * S * Q_1;
 
@@ -4943,21 +4988,50 @@ KOKKOS_INLINE_FUNCTION
         // Compute the approximate Given's quaternion
         auto q = givens_quaternion( s_pp, s_pq, s_qq, pq );
 
-        Matrix<double, 3, 3> Q{
-            q }; // Convert to rotation matrix for conjugation
-
-        // std::cout << Q(0, 0) << " " << Q(0, 1) << " " << Q(0, 2) <<
-        // "\n" << Q(1, 0) << " " <<Q(1, 1) << " " << Q(1, 2) <<
-        // "\n" << Q(2, 0) << " " << Q(2, 1) << " " << Q(2, 2) << std::endl;
+        // Convert to rotation matrix for conjugation
+        Matrix<double, 3, 3> Q{ q };
 
         S = ~Q * S * Q; // Update to (k+1)
         q_total = q_total & q;
-
-        std::cout << q_total( 0 ) << " " << q_total( 1 ) << " " << q_total( 2 )
-                  << " " << q_total( 3 ) << std::endl;
     }
 
     return q_total;
+}
+
+template <class MatrixType>
+KOKKOS_INLINE_FUNCTION void sortSingularValues( MatrixType& B, MatrixType& V )
+{
+    // Array of singular values
+    Kokkos::Array<double, 3> rho = { 0.0 };
+
+    for ( int d = 0; d < 3; d++ )
+    {
+        auto b = B.column( d );
+        rho[d] =
+            std::sqrt( b( 0 ) * b( 0 ) + b( 1 ) * b( 1 ) + b( 2 ) * b( 2 ) );
+    }
+
+    auto b0 = B.column( 0 );
+    auto b1 = B.column( 1 );
+    auto b2 = B.column( 2 );
+
+    auto v0 = V.column( 0 );
+    auto v1 = V.column( 1 );
+    auto v2 = V.column( 2 );
+
+    // Perform column swaps based on the ordering of the singular values
+    cond_neg_swap( rho[0] < rho[1], b0, b1 );
+    cond_neg_swap( rho[0] < rho[1], v0, v1 );
+
+    cond_swap( rho[0] < rho[1], rho[0], rho[1] );
+
+    cond_neg_swap( rho[0] < rho[2], b0, b2 );
+    cond_neg_swap( rho[0] < rho[2], v0, v2 );
+
+    cond_swap( rho[0] < rho[2], rho[0], rho[2] );
+
+    cond_neg_swap( rho[1] < rho[2], b1, b2 );
+    cond_neg_swap( rho[1] < rho[2], v1, v2 );
 }
 
 //---------------------------------------------------------------------------//
@@ -4981,27 +5055,17 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
     // static_assert();
     // static_assert();
 
-    constexpr int num_iter = 12;
+    constexpr int num_iter = 15;
     constexpr double tol = 1e-14;
 
     // Perform modified cyclic Jacobi iterations to calculate V
     auto q = cyclic_jacobi( A, num_iter );
-
-    std::cout << q( 0 ) << " " << q( 1 ) << " " << q( 2 ) << " " << q( 3 )
-              << std::endl;
 
     // Normalize the quaternion and convert to the orthogonal matrix V
     double q_mag = std::sqrt( q( 0 ) * q( 0 ) + q( 1 ) * q( 1 ) +
                               q( 2 ) * q( 2 ) + q( 3 ) * q( 3 ) );
 
     Matrix<double, 3, 3> V_rot{ q / q_mag };
-
-    std::cout << V_rot( 0, 0 ) << " " << V_rot( 0, 1 ) << " " << V_rot( 0, 2 )
-              << "\n"
-              << V_rot( 1, 0 ) << " " << V_rot( 1, 1 ) << " " << V_rot( 1, 2 )
-              << "\n"
-              << V_rot( 2, 0 ) << " " << V_rot( 2, 1 ) << " " << V_rot( 2, 2 )
-              << std::endl;
 
     // Perform a QR factorization of the matrix B = AV
 
@@ -5010,26 +5074,28 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
 
     auto B = A * V_rot;
 
-    deepCopy( U, B );
+    sortSingularValues( B, V_rot );
 
-    std::cout << U( 0, 0 ) << " " << U( 0, 1 ) << " " << U( 0, 2 ) << "\n"
-              << U( 1, 0 ) << " " << U( 1, 1 ) << " " << U( 1, 2 ) << "\n"
-              << U( 2, 0 ) << " " << U( 2, 1 ) << " " << U( 2, 2 ) << std::endl;
+    auto q31 = givens_qr( B( 1, 0 ), B( 2, 0 ), tol, { 2, 0 } );
+    auto Q1 = static_cast<Matrix<double, 3, 3>>( q31 );
 
-    auto q21 = givens_qr( B( 0, 0 ), B( 1, 0 ), tol );
-    std::cout << q21( 0 ) << " " << q21( 1 ) << " " << q21( 2 ) << " "
-              << q21( 3 ) << std::endl;
-    B = B & ~q21;
-    auto q31 = givens_qr( B( 0, 0 ), B( 2, 0 ), tol );
-    B = B & ~q31;
-    auto q32 = givens_qr( B( 1, 1 ), B( 2, 1 ), tol );
-    B = B & ~q32;
+    auto B1 = ~Q1 * B;
 
-    Q = static_cast<Matrix<double, 3, 3>>( q32 & q31 & q21 );
+    auto q21 = givens_qr( B1( 0, 0 ), B1( 1, 0 ), tol, { 1, 0 } );
+    auto Q2 = static_cast<Matrix<double, 3, 3>>( q21 );
 
-    // U = Q;
-    D = B;
-    V = ~V;
+    auto B2 = ~Q2 * B1;
+
+    auto q32 = givens_qr( B2( 1, 1 ), B2( 2, 1 ), tol, { 2, 1 } );
+    auto Q3 = static_cast<Matrix<double, 3, 3>>( q32 );
+
+    auto B3 = ~Q3 * B2;
+
+    Q = static_cast<Matrix<double, 3, 3>>( q32 & q21 & q31 );
+
+    U = ~Q;
+    D = B3;
+    V = V_rot;
 }
 
 //---------------------------------------------------------------------------//
