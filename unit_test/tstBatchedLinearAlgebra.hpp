@@ -1794,14 +1794,14 @@ void matrixSVDTest()
     LinearAlgebra::svd( A, U, D, V );
 
     EXPECT_FLOAT_EQ( U( 0, 0 ), 0.693615379790 );
-    EXPECT_FLOAT_EQ( U( 0, 1 ), -0.672565530742 );
-    EXPECT_FLOAT_EQ( U( 0, 2 ), 0.257979285557 );
-    EXPECT_FLOAT_EQ( U( 1, 0 ), -0.466193654656 );
+    EXPECT_FLOAT_EQ( U( 0, 1 ), 0.672565530742 );
+    EXPECT_FLOAT_EQ( U( 0, 2 ), -0.257979285557 );
+    EXPECT_FLOAT_EQ( U( 1, 0 ), 0.466193654656 );
     EXPECT_FLOAT_EQ( U( 1, 1 ), -0.146101858820 );
     EXPECT_FLOAT_EQ( U( 1, 2 ), 0.872535227488 );
     EXPECT_FLOAT_EQ( U( 2, 0 ), 0.549145865210 );
-    EXPECT_FLOAT_EQ( U( 2, 1 ), 0.725472159154 );
-    EXPECT_FLOAT_EQ( U( 2, 2 ), 0.414884279066 );
+    EXPECT_FLOAT_EQ( U( 2, 1 ), -0.725472159154 );
+    EXPECT_FLOAT_EQ( U( 2, 2 ), -0.414884279066 );
 
     EXPECT_FLOAT_EQ( D( 0, 0 ), 14.7817842778 );
     EXPECT_NEAR( D( 0, 1 ), 0.0, tol );
@@ -1811,7 +1811,7 @@ void matrixSVDTest()
     EXPECT_NEAR( D( 1, 2 ), 0.0, tol );
     EXPECT_NEAR( D( 2, 0 ), 0.0, tol );
     EXPECT_NEAR( D( 2, 1 ), 0.0, tol );
-    EXPECT_FLOAT_EQ( D( 2, 2 ), 0.762774336685 );
+    EXPECT_FLOAT_EQ( D( 2, 2 ), -0.762774336685 );
 
     EXPECT_FLOAT_EQ( V( 0, 0 ), 0.802905904968 );
     EXPECT_FLOAT_EQ( V( 0, 1 ), -0.0985050816132 );
@@ -1823,8 +1823,15 @@ void matrixSVDTest()
     EXPECT_FLOAT_EQ( V( 2, 1 ), 0.859227346861 );
     EXPECT_FLOAT_EQ( V( 2, 2 ), -0.356777825872 );
 
+    // The two largest singular values should be non-negative
+    EXPECT_TRUE( D( 0, 0 ) >= 0.0 );
+    EXPECT_TRUE( D( 1, 1 ) >= 0.0 );
+
+    // The smallest singular value D(2,2) should have the same sign as det(A)
+    EXPECT_FALSE( Kokkos::signbit( !A * D( 2, 2 ) ) );
+
     // Check the determinants of U and V to ensure they are orthogonal
-    EXPECT_FLOAT_EQ( !U, -1.0 );
+    EXPECT_FLOAT_EQ( !U, 1.0 );
     EXPECT_FLOAT_EQ( !V, 1.0 );
 }
 
