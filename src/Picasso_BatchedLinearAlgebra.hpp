@@ -129,6 +129,12 @@ template <class T, int N>
 struct Vector;
 template <class T, int N>
 struct VectorView;
+template <class T, class Func>
+struct QuaternionExpression;
+template <class T>
+struct Quaternion;
+template <class T>
+struct QuaternionView;
 template <class T, int M, int N, int P, class Func>
 struct Tensor3Expression;
 template <class T, int M, int N, int P>
@@ -194,6 +200,33 @@ struct is_vector_impl<VectorView<T, N>> : public std::true_type
 
 template <class T>
 struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
+{
+};
+
+// Quaternion
+template <class>
+struct is_quaternion_impl : public std::false_type
+{
+};
+
+template <class T, class Func>
+struct is_quaternion_impl<QuaternionExpression<T, Func>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_quaternion_impl<Quaternion<T>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_quaternion_impl<QuaternionView<T>> : public std::true_type
+{
+};
+
+template <class T>
+struct is_quaternion
+    : public is_quaternion_impl<typename std::remove_cv<T>::type>::type
 {
 };
 
@@ -286,6 +319,14 @@ KOKKOS_INLINE_FUNCTION VectorExpression<T, N, Func>
 createVectorExpression( const Func& f )
 {
     return VectorExpression<T, N, Func>( f );
+}
+
+// Quaternion
+template <class T, class Func>
+KOKKOS_INLINE_FUNCTION QuaternionExpression<T, Func>
+createQuaternionExpression( const Func& f )
+{
+    return QuaternionExpression<T, Func>( f );
 }
 
 //---------------------------------------------------------------------------//
@@ -650,6 +691,47 @@ struct VectorExpression
 };
 
 //---------------------------------------------------------------------------//
+// Quaternion expression container.
+template <class T, class Func>
+struct QuaternionExpression
+{
+    static constexpr int extent_0 = 4;
+    static constexpr int extent_1 = 1;
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_cv<T>::type;
+
+    using eval_type = Quaternion<T>;
+    using copy_type = Quaternion<T>;
+
+    Func _f;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    QuaternionExpression() = default;
+
+    // Create an expression from a callable object.
+    KOKKOS_INLINE_FUNCTION
+    QuaternionExpression( const Func& f )
+        : _f( f )
+    {
+    }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    constexpr int extent( const int ) const { return extent_0; }
+
+    // Evaluate the expression at an index.
+    KOKKOS_INLINE_FUNCTION
+    value_type operator()( const int i ) const { return _f( i ); }
+
+    // Evaluate the expression at an index. 2D version for vectors treated as
+    // matrices.
+    KOKKOS_INLINE_FUNCTION
+    value_type operator()( const int i, int ) const { return _f( i ); }
+};
+
+//---------------------------------------------------------------------------//
 // Matrix
 //---------------------------------------------------------------------------//
 // Dense matrix.
@@ -971,6 +1053,225 @@ struct Matrix<T, 1, 1>
     // Scalar conversion operator.
     KOKKOS_INLINE_FUNCTION
     operator value_type() const { return _d; }
+};
+
+template <class T>
+struct Matrix<T, 3, 3>
+{
+    T _d[3][3];
+
+    static constexpr int extent_0 = 3;
+    static constexpr int extent_1 = 3;
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_cv<T>::type;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = const T&;
+
+    using eval_type = MatrixView<T, 3, 3>;
+    using copy_type = Matrix<T, 3, 3>;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Matrix() = default;
+
+    // Initializer list constructor.
+    KOKKOS_INLINE_FUNCTION
+    Matrix( const std::initializer_list<std::initializer_list<T>> data )
+    {
+        int i = 0;
+        int j = 0;
+        for ( const auto& row : data )
+        {
+            j = 0;
+            for ( const auto& value : row )
+            {
+                _d[i][j] = value;
+                ++j;
+            }
+            ++i;
+        }
+    }
+
+    // Quaternion to matrix explicit constructor
+    explicit KOKKOS_INLINE_FUNCTION Matrix( const Quaternion<T>& q )
+    {
+        value_type n = q( 0 ) * q( 0 ) + q( 1 ) * q( 1 ) + q( 2 ) * q( 2 ) +
+                       q( 3 ) * q( 3 );
+        value_type s = n == 0 ? 0 : 2.0 / n;
+
+        _d[0][0] = 1.0 - s * ( q( 2 ) * q( 2 ) + q( 3 ) * q( 3 ) );
+        _d[0][1] = s * ( q( 1 ) * q( 2 ) - q( 0 ) * q( 3 ) );
+        _d[0][2] = s * ( q( 1 ) * q( 3 ) + q( 0 ) * q( 2 ) );
+        _d[1][0] = s * ( q( 1 ) * q( 2 ) + q( 0 ) * q( 3 ) );
+        _d[1][1] = 1.0 - s * ( q( 1 ) * q( 1 ) + q( 3 ) * q( 3 ) );
+        _d[1][2] = s * ( q( 2 ) * q( 3 ) - q( 0 ) * q( 1 ) );
+        _d[2][0] = s * ( q( 1 ) * q( 3 ) - q( 0 ) * q( 2 ) );
+        _d[2][1] = s * ( q( 2 ) * q( 3 ) + q( 0 ) * q( 1 ) );
+        _d[2][2] = 1.0 - s * ( q( 1 ) * q( 1 ) + q( 2 ) * q( 2 ) );
+    }
+
+    // Deep copy constructor. Triggers expression evaluation.
+    template <
+        class Expression,
+        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) = e( i, j );
+    }
+
+    // Scalar constructor.
+    KOKKOS_INLINE_FUNCTION
+    Matrix( const T value )
+    {
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) = value;
+    }
+
+    // Assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) = e( i, j );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator+=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) += e( i, j );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
+        operator-=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) -= e( i, j );
+        return *this;
+    }
+
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    Matrix&
+    operator=( const std::initializer_list<std::initializer_list<T>> data )
+    {
+        int i = 0;
+        int j = 0;
+        for ( const auto& row : data )
+        {
+            j = 0;
+            for ( const auto& value : row )
+            {
+                _d[i][j] = value;
+                ++j;
+            }
+            ++i;
+        }
+        return *this;
+    }
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Matrix& operator=( const T value )
+    {
+        for ( int i = 0; i < extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+            for ( int j = 0; j < extent_1; ++j )
+                ( *this )( i, j ) = value;
+        return *this;
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const { return extent_1; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const { return 1; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? extent_1 : 1; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    constexpr int extent( const int d ) const
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
+    }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int j ) const
+    {
+        return _d[i][j];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int j ) { return _d[i][j]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const { return const_cast<pointer>( &_d[0][0] ); }
+
+    // Get a row as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> row( const int n ) const
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[n][0] ), 1 );
+    }
+
+    // Get a column as a vector view.
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> column( const int n ) const
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[0][n] ), extent_1 );
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -2900,6 +3201,380 @@ struct Tensor4View
 };
 
 //---------------------------------------------------------------------------//
+// Quaternion
+//---------------------------------------------------------------------------//
+// Quaternion.
+template <class T>
+struct Quaternion
+{
+    T _d[4];
+
+    static constexpr int extent_0 = 4;
+    static constexpr int extent_1 = 1;
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_cv<T>::type;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = const T&;
+
+    using eval_type = QuaternionView<T>;
+    using copy_type = Quaternion<T>;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    Quaternion() = default;
+
+    // Initializer list constructor.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion( const std::initializer_list<T> data )
+    {
+        int i = 0;
+        for ( const auto& value : data )
+        {
+            _d[i] = value;
+            ++i;
+        }
+    }
+
+    // Deep copy constructor. Triggers expression evaluation.
+    template <class Expression,
+              typename std::enable_if<is_quaternion<Expression>::value,
+                                      int>::type = 0>
+    KOKKOS_INLINE_FUNCTION Quaternion( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = e( i );
+    }
+
+    // Scalar constructor.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion( const T value )
+    {
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = value;
+    }
+
+    // Scalar + vector constructor.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion( const T value, const VectorView<T, 3> vec )
+    {
+        ( *this )( 0 ) = value;
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 1; i < extent_0; ++i )
+            ( *this )( i ) = vec( i - 1 );
+    }
+
+    // Deep copy assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                Quaternion&>::type
+        operator=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = e( i );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                Quaternion&>::type
+        operator+=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) += e( i );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                Quaternion&>::type
+        operator-=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) -= e( i );
+        return *this;
+    }
+
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion& operator=( const std::initializer_list<T> data )
+    {
+        int i = 0;
+        for ( const auto& value : data )
+        {
+            _d[i] = value;
+            ++i;
+        }
+        return *this;
+    }
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    Quaternion& operator=( const T value )
+    {
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = value;
+        return *this;
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const { return 1; }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const { return 0; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? 1 : 0; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    constexpr int extent( const int d ) const
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
+    }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i ) const { return _d[i]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i ) { return _d[i]; }
+
+    // Access an individual element. 2D version for vectors treated as matrices.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int ) const { return _d[i]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int ) { return _d[i]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const { return const_cast<pointer>( &_d[0] ); }
+
+    // Get the scalar part
+    KOKKOS_INLINE_FUNCTION
+    const_reference scalar() const { return _d[0]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference scalar() { return _d[0]; }
+
+    // Get the vector part
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> vector() const
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+    }
+
+    // Get the vector part
+    KOKKOS_INLINE_FUNCTION
+    VectorView<T, 3> vector()
+    {
+        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+    }
+};
+
+//---------------------------------------------------------------------------//
+// View for wrapping quaternion data.
+//
+// NOTE: Data in this view may be non-contiguous.
+template <class T>
+struct QuaternionView
+{
+    T* _d;
+    int _stride;
+
+    static constexpr int extent_0 = 4;
+    static constexpr int extent_1 = 1;
+
+    using value_type = T;
+    using non_const_value_type = typename std::remove_cv<T>::type;
+    using pointer = T*;
+    using reference = T&;
+    using const_reference = const T&;
+
+    using eval_type = QuaternionView<T>;
+    using copy_type = Quaternion<T>;
+
+    // Default constructor.
+    KOKKOS_DEFAULTED_FUNCTION
+    QuaternionView() = default;
+
+    // Vector construtor.
+    KOKKOS_INLINE_FUNCTION
+    QuaternionView( const Quaternion<T>& q )
+        : _d( q.data() )
+        , _stride( q.stride_0() )
+    {
+    }
+
+    // Pointer constructor.
+    KOKKOS_INLINE_FUNCTION
+    QuaternionView( T* data, const int stride )
+        : _d( data )
+        , _stride( stride )
+    {
+    }
+
+    // Assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                QuaternionView&>::type
+        operator=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = e( i );
+        return *this;
+    }
+
+    // Addition assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                QuaternionView&>::type
+        operator+=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) += e( i );
+        return *this;
+    }
+
+    // Subtraction assignment operator. Triggers expression evaluation.
+    template <class Expression>
+    KOKKOS_INLINE_FUNCTION
+        typename std::enable_if<is_quaternion<Expression>::value,
+                                QuaternionView&>::type
+        operator-=( const Expression& e )
+    {
+        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
+        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
+
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) -= e( i );
+        return *this;
+    }
+
+    // Initializer list assignment operator.
+    KOKKOS_INLINE_FUNCTION
+    QuaternionView& operator=( const std::initializer_list<T> data )
+    {
+        int i = 0;
+        for ( const auto& value : data )
+        {
+            ( *this )( i ) = value;
+            ++i;
+        }
+        return *this;
+    }
+
+    // Scalar value assignment.
+    KOKKOS_INLINE_FUNCTION
+    QuaternionView& operator=( const T value )
+    {
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int i = 0; i < extent_0; ++i )
+            ( *this )( i ) = value;
+        return *this;
+    }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_0() const { return _stride; }
+
+    // Strides.
+    KOKKOS_INLINE_FUNCTION
+    int stride_1() const { return 0; }
+
+    KOKKOS_INLINE_FUNCTION
+    int stride( const int d ) const { return ( 0 == d ) ? _stride : 0; }
+
+    // Extent
+    KOKKOS_INLINE_FUNCTION
+    constexpr int extent( const int d ) const
+    {
+        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
+    }
+
+    // Access an individual element.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i ) const { return _d[_stride * i]; }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i ) { return _d[_stride * i]; }
+
+    // Access an individual element. 2D version for vectors treated as matrices.
+    KOKKOS_INLINE_FUNCTION
+    const_reference operator()( const int i, const int ) const
+    {
+        return _d[_stride * i];
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    reference operator()( const int i, const int ) { return _d[_stride * i]; }
+
+    // Get the raw data.
+    KOKKOS_INLINE_FUNCTION
+    pointer data() const { return const_cast<pointer>( _d ); }
+};
+
+//---------------------------------------------------------------------------//
 // Tensor4-tensor4 deep copy.
 //---------------------------------------------------------------------------//
 template <
@@ -3002,6 +3677,27 @@ KOKKOS_INLINE_FUNCTION void deepCopy( VectorX& x, const ExpressionY& y )
 }
 
 //---------------------------------------------------------------------------//
+// Quaternion-quaternion deep copy.
+//---------------------------------------------------------------------------//
+template <class QuaternionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<QuaternionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION void deepCopy( QuaternionX& x, const ExpressionY& y )
+{
+    static_assert( std::is_same<typename QuaternionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( QuaternionX::extent_0 == ExpressionY::extent_0,
+                   "extent must match" );
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+    for ( int i = 0; i < QuaternionX::extent_0; ++i )
+        x( i ) = y( i );
+}
+
+//---------------------------------------------------------------------------//
 // Transpose.
 //---------------------------------------------------------------------------//
 // Matrix operator.
@@ -3023,6 +3719,18 @@ KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
     return createMatrixExpression<typename Expression::value_type, 1,
                                   Expression::extent_0>(
         [=]( const int, const int j ) { return e( j ); } );
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion conjugate
+template <class Expression,
+          typename std::enable_if_t<is_quaternion<Expression>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
+{
+    typename Expression::eval_type x_eval = e;
+
+    return Quaternion<typename Expression::value_type>{
+        x_eval( 0 ), -x_eval( 1 ), -x_eval( 2 ), -x_eval( 3 ) };
 }
 
 //---------------------------------------------------------------------------//
@@ -3204,6 +3912,164 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
 }
 
 //---------------------------------------------------------------------------//
+// Quaternion-quaternion addition.
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
+                                       const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent must match" );
+    return createQuaternionExpression<typename ExpressionX::value_type,
+                                      ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) + y( i ); } );
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion-quaternion subtraction.
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
+                                       const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent must match" );
+    return createQuaternionExpression<typename ExpressionX::value_type,
+                                      ExpressionX::extent_0>(
+        [=]( const int i ) { return x( i ) - y( i ); } );
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion-quaternion multiplication
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
+                                       const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent_0 must match" );
+
+    typename ExpressionX::eval_type x_eval = x;
+    typename ExpressionY::eval_type y_eval = y;
+
+    // Hamilton product of two quaternions
+    return Quaternion<typename ExpressionX::value_type>{
+        x_eval( 0 ) * y_eval( 0 ) - x_eval( 1 ) * y_eval( 1 ) -
+            x_eval( 2 ) * y_eval( 2 ) - x_eval( 3 ) * y_eval( 3 ),
+        x_eval( 0 ) * y_eval( 1 ) + x_eval( 1 ) * y_eval( 0 ) +
+            x_eval( 2 ) * y_eval( 3 ) - x_eval( 3 ) * y_eval( 2 ),
+        x_eval( 0 ) * y_eval( 2 ) - x_eval( 1 ) * y_eval( 3 ) +
+            x_eval( 2 ) * y_eval( 0 ) + x_eval( 3 ) * y_eval( 1 ),
+        x_eval( 0 ) * y_eval( 3 ) + x_eval( 1 ) * y_eval( 2 ) -
+            x_eval( 2 ) * y_eval( 1 ) + x_eval( 3 ) * y_eval( 0 ) };
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion-matrix conjugation
+//---------------------------------------------------------------------------//
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_matrix<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& X,
+                                       const ExpressionY& q )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == 3 && ExpressionX::extent_1 == 3,
+                   "matrix must be 3x3" );
+
+    typename ExpressionX::eval_type X_eval = X;
+    typename ExpressionY::eval_type q_eval = q;
+
+    ExpressionX X_res;
+
+    for ( int n = 0; n < 3; n++ )
+    {
+        LinearAlgebra::Quaternion<double> p = { 0.0, X_eval.row( n ) };
+        auto p_rot = ( q_eval & p ) & ~q_eval;
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int d = 0; d < 3; d++ )
+            X_res.row( n )( d ) = p_rot.vector()( d );
+    }
+
+    return X_res;
+}
+
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator&=( const ExpressionX& x,
+                                        const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent_0 must match" );
+
+    typename ExpressionX::eval_type x_eval = x;
+    typename ExpressionY::eval_type y_eval = y;
+
+    return Quaternion<typename ExpressionX::value_type>{
+        x_eval( 0 ) * y_eval( 0 ) - x_eval( 1 ) * y_eval( 1 ) -
+            x_eval( 2 ) * y_eval( 2 ) - x_eval( 3 ) * y_eval( 3 ),
+        x_eval( 0 ) * y_eval( 1 ) + x_eval( 1 ) * y_eval( 0 ) +
+            x_eval( 2 ) * y_eval( 3 ) - x_eval( 3 ) * y_eval( 2 ),
+        x_eval( 0 ) * y_eval( 2 ) - x_eval( 1 ) * y_eval( 3 ) +
+            x_eval( 2 ) * y_eval( 0 ) + x_eval( 3 ) * y_eval( 1 ),
+        x_eval( 0 ) * y_eval( 3 ) + x_eval( 1 ) * y_eval( 2 ) -
+            x_eval( 2 ) * y_eval( 1 ) + x_eval( 3 ) * y_eval( 0 ) };
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion-quaternion division
+template <class ExpressionX, class ExpressionY,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value &&
+                                        is_quaternion<ExpressionY>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
+                                       const ExpressionY& y )
+{
+    static_assert( std::is_same<typename ExpressionX::value_type,
+                                typename ExpressionY::value_type>::value,
+                   "value_type must match" );
+    static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
+                   "extent must match" );
+
+    typename ExpressionX::eval_type x_eval = x;
+    typename ExpressionY::eval_type y_eval = y;
+
+    auto y_norm_2 = y_eval( 0 ) * y_eval( 0 ) + y_eval( 1 ) * y_eval( 1 ) +
+                    y_eval( 2 ) * y_eval( 2 ) + y_eval( 3 ) * y_eval( 3 );
+    auto y_inv = ~y_eval / y_norm_2;
+
+    return x_eval & y_inv;
+}
+
+//---------------------------------------------------------------------------//
 // Vector products.
 //---------------------------------------------------------------------------//
 // Cross product
@@ -3352,6 +4218,25 @@ operator*( const ExpressionX& x, const typename ExpressionX::value_type& s )
 }
 
 //---------------------------------------------------------------------------//
+// Quaternion.
+template <class ExpressionX,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
+operator*( const typename ExpressionX::value_type& s, const ExpressionX& x )
+{
+    return createQuaternionExpression<typename ExpressionX::value_type>(
+        [=]( const int i ) { return s * x( i ); } );
+}
+
+template <class ExpressionX,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
+operator*( const ExpressionX& x, const typename ExpressionX::value_type& s )
+{
+    return s * x;
+}
+
+//---------------------------------------------------------------------------//
 // Scalar division.
 //---------------------------------------------------------------------------//
 // Tensor4.
@@ -3388,6 +4273,17 @@ operator/( const ExpressionA& a, const typename ExpressionA::value_type& s )
 // Vector.
 template <class ExpressionX,
           typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+KOKKOS_INLINE_FUNCTION auto
+operator/( const ExpressionX& x, const typename ExpressionX::value_type& s )
+{
+    auto s_inv = static_cast<typename ExpressionX::value_type>( 1 ) / s;
+    return s_inv * x;
+}
+
+//---------------------------------------------------------------------------//
+// Quaternion.
+template <class ExpressionX,
+          typename std::enable_if_t<is_quaternion<ExpressionX>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionX& x, const typename ExpressionX::value_type& s )
 {

@@ -179,6 +179,8 @@ template <class T>
 struct Scalar;
 template <class T, int D>
 struct Vector;
+template <class T>
+struct Quaternion;
 template <class T, int D0, int D1>
 struct Matrix;
 template <class T, int D0, int D1, int D2>
@@ -235,6 +237,21 @@ struct Vector : VectorBase
     using field_type = Vector<U, D>;
     template <int NumSpaceDim>
     using gradient_type = LinearAlgebra::Matrix<T, D, NumSpaceDim>;
+};
+
+template <class T>
+struct Quaternion : VectorBase
+{
+    using value_type = T;
+    static constexpr int rank = 1;
+    static constexpr int size = 4;
+    static constexpr int dim0 = 4;
+    using data_type = value_type[4];
+    using linear_algebra_type = LinearAlgebra::QuaternionView<T>;
+    template <class U>
+    using field_type = Quaternion<U>;
+    template <class U>
+    using matrix_type = Mat3<U>;
 };
 
 template <class T>
