@@ -18,7 +18,6 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-#include <cmath>
 #include <memory>
 
 #include <mpi.h>

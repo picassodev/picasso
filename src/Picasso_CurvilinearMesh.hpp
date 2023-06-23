@@ -20,7 +20,6 @@
 #include <Kokkos_Core.hpp>
 
 #include <array>
-#include <cmath>
 #include <memory>
 #include <type_traits>
 

@@ -23,8 +23,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <cmath>
-
 #include <gtest/gtest.h>
 
 using namespace Picasso;
@@ -116,7 +114,7 @@ void zalesaksTest( const std::string& filename )
         0, time, *( level_set->levelSet()->getSignedDistance() ) );
 
     // Advect the disk one full rotation.
-    double pi = 4.0 * atan( 1.0 );
+    double pi = 4.0 * Kokkos::atan( 1.0 );
     int num_step = 1; // change to 628 to go one revolution.
     double delta_phi = 2.0 * pi / num_step;
     for ( int t = 0; t < num_step; ++t )
@@ -141,14 +139,15 @@ void zalesaksTest( const std::string& filename )
                 double r = sqrt( x * x + y * y );
 
                 // Compute the angle relative to the origin.
-                double phi = ( y >= 0.0 ) ? acos( x / r ) : -acos( x / r );
+                double phi = ( y >= 0.0 ) ? Kokkos::acos( x / r )
+                                          : -Kokkos::acos( x / r );
 
                 // Increment the angle.
                 phi += delta_phi;
 
                 // Compute new particle location.
-                x = r * cos( phi ) + 0.5;
-                y = r * sin( phi ) + 0.5;
+                x = r * Kokkos::cos( phi ) + 0.5;
+                y = r * Kokkos::sin( phi ) + 0.5;
 
                 // Update.
                 xp( p, Dim::I ) = x;
