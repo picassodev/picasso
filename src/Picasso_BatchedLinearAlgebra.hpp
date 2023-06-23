@@ -14,7 +14,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <cmath>
 #include <functional>
 #include <type_traits>
 

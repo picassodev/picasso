@@ -23,7 +23,6 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <cfloat>
-#include <cmath>
 
 //---------------------------------------------------------------------------//
 // ArborX Data

@@ -18,14 +18,14 @@ jobs:
         cxx: ['g++', 'clang++']
         openmp: ['ON', 'OFF']
         cmake_build_type: ['Debug', 'Release']
-        kokkos_ver: ['3.4.01']
+        kokkos_ver: ['3.7.01']
         coverage: ['OFF']
         include:
           - distro: 'ubuntu:latest'
             cxx: 'g++'
             openmp: 'ON'
             cmake_build_type: 'Debug'
-            kokkos_ver: '3.4.01'
+            kokkos_ver: '3.7.01'
             coverage: 'ON'
     runs-on: ubuntu-20.04
     container: ghcr.io/ecp-copa/ci-containers/${{ matrix.distro }}

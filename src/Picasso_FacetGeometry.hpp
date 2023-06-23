@@ -20,7 +20,6 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <cfloat>
-#include <cmath>
 #include <fstream>
 #include <unordered_map>
 #include <vector>
@@ -119,6 +118,9 @@ class FacetGeometry
         KOKKOS_FUNCTION
         void operator()( const size_type facet_id, value_type result ) const
         {
+            using Kokkos::fmax;
+            using Kokkos::fmin;
+
             auto f_start = ( volume_id == 0 ) ? 0 : offsets( volume_id - 1 );
             auto f = f_start + facet_id;
             result[0] =
@@ -150,27 +152,13 @@ class FacetGeometry
         KOKKOS_FUNCTION
         void join( value_type dst, const value_type src ) const
         {
-            dst[0] = fmin( dst[0], src[0] );
-            dst[1] = fmin( dst[1], src[1] );
-            dst[2] = fmin( dst[2], src[2] );
-            dst[3] = fmax( dst[3], src[3] );
-            dst[4] = fmax( dst[4], src[4] );
-            dst[5] = fmax( dst[5], src[5] );
+            dst[0] = Kokkos::fmin( dst[0], src[0] );
+            dst[1] = Kokkos::fmin( dst[1], src[1] );
+            dst[2] = Kokkos::fmin( dst[2], src[2] );
+            dst[3] = Kokkos::fmax( dst[3], src[3] );
+            dst[4] = Kokkos::fmax( dst[4], src[4] );
+            dst[5] = Kokkos::fmax( dst[5], src[5] );
         }
-        // FIXME: remove when Kokkos 3.7 is required.
-#if KOKKOS_VERSION < 30700
-        KOKKOS_FUNCTION
-        void join( volatile value_type dst,
-                   const volatile value_type src ) const
-        {
-            dst[0] = fmin( dst[0], src[0] );
-            dst[1] = fmin( dst[1], src[1] );
-            dst[2] = fmin( dst[2], src[2] );
-            dst[3] = fmax( dst[3], src[3] );
-            dst[4] = fmax( dst[4], src[4] );
-            dst[5] = fmax( dst[5], src[5] );
-        }
-#endif
 
         KOKKOS_FUNCTION
         void init( value_type v ) const

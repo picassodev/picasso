@@ -1267,14 +1267,11 @@ void quaternionTest()
 
 void quaMatRotTest()
 {
-    double pi = 4.0 * atan( 1.0 );
+    double pi = 4.0 * Kokkos::atan( 1.0 );
     double phi = pi / 2.0;
 
-    using Kokkos::Experimental::cos;
-    using Kokkos::Experimental::sin;
-
-    LinearAlgebra::Quaternion<double> q = { cos( phi / 2.0 ), 0.0, 0.0,
-                                            sin( phi / 2.0 ) };
+    LinearAlgebra::Quaternion<double> q = { Kokkos::cos( phi / 2.0 ), 0.0, 0.0,
+                                            Kokkos::sin( phi / 2.0 ) };
 
     // Convert the quaternion to its equivalent rotation matrix
     auto rot_mat = static_cast<Mat3<double>>( q );

@@ -19,7 +19,6 @@
 
 #include <Kokkos_Core.hpp>
 
-#include <cmath>
 #include <type_traits>
 
 namespace Picasso

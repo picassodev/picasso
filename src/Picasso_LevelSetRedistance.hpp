@@ -19,7 +19,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-#include <cmath>
 #include <limits>
 
 namespace Picasso
@@ -45,10 +44,11 @@ clampPointToLocalDomain( const LocalMeshType& local_mesh, const double dx,
 {
     for ( int d = 0; d < 3; ++d )
     {
-        x[d] =
-            fmin( local_mesh.highCorner( Cajita::Ghost(), d ) - 0.001 * dx,
-                  fmax( local_mesh.lowCorner( Cajita::Ghost(), d ) + 0.001 * dx,
-                        x[d] ) );
+        x[d] = Kokkos::fmin(
+            local_mesh.highCorner( Cajita::Ghost(), d ) - 0.001 * dx,
+            Kokkos::fmax( local_mesh.lowCorner( Cajita::Ghost(), d ) +
+                              0.001 * dx,
+                          x[d] ) );
     }
 }
 
@@ -162,7 +162,7 @@ globalMin( const SignedDistanceView& phi_0, const double sign,
             mag += ray[d] * ray[d];
         }
         mag = t_k *
-              ( 1 - exp( Kokkos::rand<RandState, double>::draw(
+              ( 1 - Kokkos::exp( Kokkos::rand<RandState, double>::draw(
                         rand_state, -4.0, 0.0 ) ) ) /
               sqrt( mag );
         for ( int d = 0; d < 3; ++d )
@@ -176,7 +176,7 @@ globalMin( const SignedDistanceView& phi_0, const double sign,
 
         // If less than the current value assign the results as the new
         // minimum.
-        if ( fabs( phi_trial ) < fabs( phi_min ) )
+        if ( Kokkos::fabs( phi_trial ) < Kokkos::fabs( phi_min ) )
         {
             phi_min = phi_trial;
             for ( int d = 0; d < 3; ++d )
@@ -256,7 +256,7 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
                          max_projection_iter, num_random, rng, sd, y );
 
     // Check for convergence.
-    if ( fabs( phi_new ) < dx * secant_tol )
+    if ( Kokkos::fabs( phi_new ) < dx * secant_tol )
         return sign * t_new;
 
     // Perform secant iterations to compute the signed distance. Stop when
@@ -270,7 +270,7 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
         // Clamp the step size if it exceeds the maximum step size. This
         // is needed to detect near division-by-zero resulting from a local
         // minimum.
-        if ( fabs( delta_t ) > delta_t_max )
+        if ( Kokkos::fabs( delta_t ) > delta_t_max )
         {
             delta_t = ( phi_new > 0.0 ) ? delta_t_max : -delta_t_max;
         }
@@ -285,7 +285,7 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
                              max_projection_iter, num_random, rng, sd, y );
 
         // Check for convergence.
-        if ( fabs( phi_new ) < dx * secant_tol )
+        if ( Kokkos::fabs( phi_new ) < dx * secant_tol )
         {
             break;
         }

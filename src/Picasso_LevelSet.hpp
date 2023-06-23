@@ -21,7 +21,6 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <cfloat>
-#include <cmath>
 
 //---------------------------------------------------------------------------//
 namespace Picasso
@@ -238,7 +237,7 @@ class LevelSet
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Only redistance on the fine grid if the estimate is less
                 // than the threshold distance.
-                if ( fabs( estimate_view( i, j, k, 0 ) ) < threshold )
+                if ( Kokkos::fabs( estimate_view( i, j, k, 0 ) ) < threshold )
                 {
                     int entity_index[3] = { i, j, k };
                     distance_view( i, j, k, 0 ) =
