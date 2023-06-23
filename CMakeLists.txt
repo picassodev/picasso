@@ -13,6 +13,10 @@ find_package(Cabana REQUIRED 0.5 COMPONENTS Cabana::Cajita Cabana::cabanacore)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 
+if(Kokkos_VERSION_MAJOR LESS 4 AND Kokkos_VERSION_MINOR LESS 7)
+  message( FATAL_ERROR "Picasso requires Kokkos >= 3.7" )
+endif()
+
 if( NOT Cabana_ENABLE_CAJITA )
   message( FATAL_ERROR "Cabana must be compiled with Cajita enabled" )
 endif()

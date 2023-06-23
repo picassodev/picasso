@@ -116,7 +116,7 @@ RUN SILO_VERSION=4.10.2 && \
     cd ../../ && rm -r silo
 
 # Install Kokkos
-ARG KOKKOS_VERSION=3.4.01
+ARG KOKKOS_VERSION=3.7.01
 ENV KOKKOS_DIR=/opt/kokkos
 RUN KOKKOS_URL=https://github.com/kokkos/kokkos/archive/${KOKKOS_VERSION}.tar.gz && \
     KOKKOS_ARCHIVE=kokkos-${KOKKOS_HASH}.tar.gz && \
