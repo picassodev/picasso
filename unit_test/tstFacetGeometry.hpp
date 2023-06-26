@@ -273,14 +273,13 @@ void rayFireTestXZ()
 void constructionTest()
 {
     // Create inputs.
-    InputParser parser( "facet_geometry_test.json", "json" );
-    auto pt = parser.propertyTree();
+    auto inputs = parse( "facet_geometry_test.json" );
 
     // Create the geometry from the test file. It contains a sphere of radius
     // 10 centered at the origin and a 4x4x4 cube centered at (15,15,15).
     // The sphere and box are saved as both surfaces and volumes. The global
     // bounding volume is from (-12,20) in each dimension.
-    FacetGeometry<TEST_MEMSPACE> geometry( pt, TEST_EXECSPACE() );
+    FacetGeometry<TEST_MEMSPACE> geometry( inputs, TEST_EXECSPACE() );
 
     // Get the device data.
     const auto& geom_data = geometry.data();
@@ -498,7 +497,7 @@ struct LocateFunctor
 void initExample()
 {
     // Get inputs.
-    InputParser parser( "facet_init_example.json", "json" );
+    auto inputs = parse( "facet_init_example.json" );
 
     // Make mesh.
     std::array<double, 3> global_low_corner = { -12.0, -12.0, -12.0 };
@@ -508,14 +507,13 @@ void initExample()
         global_high_corner[0], global_high_corner[1], global_high_corner[2] };
     int minimum_halo_size = 0;
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
                                    Field::PhysicalPosition<3>, Field::VolumeId>;
     list_type particles( "particles", mesh );
 
-    FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
-                                           TEST_EXECSPACE() );
+    FacetGeometry<TEST_MEMSPACE> geometry( inputs, TEST_EXECSPACE() );
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();

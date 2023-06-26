@@ -59,7 +59,7 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
         global_low_corner[2] + cell_size * global_num_cell[2] };
 
     // Get inputs for mesh.
-    InputParser parser( "particle_init_test.json", "json" );
+    auto inputs = Picasso::parse( "particle_init_test.json" );
     Kokkos::Array<double, 6> global_box = {
         global_low_corner[0],  global_low_corner[1],  global_low_corner[2],
         global_high_corner[0], global_high_corner[1], global_high_corner[2] };
@@ -67,7 +67,7 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;

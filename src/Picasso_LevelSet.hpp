@@ -18,8 +18,6 @@
 
 #include <Cajita.hpp>
 
-#include <boost/property_tree/ptree.hpp>
-
 #include <cfloat>
 
 //---------------------------------------------------------------------------//
@@ -41,12 +39,12 @@ class LevelSet
 
     /*!
       \brief Construct the level set over the given mesh.
-      \param ptree Level set settings.
+      \param inputs Level set settings.
       \param mesh The mesh over which to build the signed distance function.
       \param The particle color over which to build the level set. Use -1 if
       the level set is to be built over all particles.
     */
-    LevelSet( const boost::property_tree::ptree& ptree,
+    LevelSet( const nlohmann::json inputs,
               const std::shared_ptr<MeshType>& mesh )
         : _mesh( mesh )
     {
@@ -62,19 +60,21 @@ class LevelSet
         _dx = _mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
 
         // Extract parameters.
-        const auto& params = ptree.get_child( "level_set" );
+        const auto& params = inputs["level_set"];
 
         // Get the Hopf-Lax redistancing parameters.
-        _redistance_secant_tol =
-            params.get<double>( "redistance_secant_tol", 0.25 );
-        _redistance_max_secant_iter =
-            params.get<int>( "redistance_max_secant_iter", 10 );
-        _redistance_num_random_guess =
-            params.get<int>( "redistance_num_random_guess", 5 );
-        _redistance_projection_tol =
-            params.get<double>( "redistance_projection_tol", 1.0e-4 );
-        _redistance_max_projection_iter =
-            params.get<int>( "redistance_max_projection_iter", 200 );
+        if ( params.count( "redistance_secant_tol" ) )
+            _redistance_secant_tol = params["redistance_secant_tol"];
+        if ( params.count( "redistance_max_secant_iter" ) )
+            _redistance_max_secant_iter = params["redistance_max_secant_iter"];
+        if ( params.count( "redistance_num_random_guess" ) )
+            _redistance_num_random_guess =
+                params["redistance_num_random_guess"];
+        if ( params.count( "redistance_projection_tol" ) )
+            _redistance_projection_tol = params["redistance_projection_tol"];
+        if ( params.count( "redistance_max_projection_iter" ) )
+            _redistance_max_projection_iter =
+                params["redistance_max_projection_iter"];
     }
 
     /*!
@@ -285,25 +285,25 @@ class LevelSet
     std::shared_ptr<array_type> _signed_distance;
     std::shared_ptr<halo_type> _halo;
     double _dx;
-    double _redistance_secant_tol;
-    int _redistance_max_secant_iter;
-    int _redistance_num_random_guess;
-    double _redistance_projection_tol;
-    int _redistance_max_projection_iter;
+    double _redistance_secant_tol = 0.25;
+    int _redistance_max_secant_iter = 10;
+    int _redistance_num_random_guess = 5;
+    double _redistance_projection_tol = 1.0e-4;
+    int _redistance_max_projection_iter = 200;
 };
 
 //---------------------------------------------------------------------------//
 /*!
   \brief Create a level set over particles of the given color.
-  \param ptree Level set settings.
+  \param inputs Level set settings.
   \param mesh The mesh over which to build the signed distance function.
 */
 template <class SignedDistanceLocation, class MeshType>
 std::shared_ptr<LevelSet<MeshType, SignedDistanceLocation>>
-createLevelSet( const boost::property_tree::ptree& ptree,
+createLevelSet( const nlohmann::json inputs,
                 const std::shared_ptr<MeshType>& mesh )
 {
-    return std::make_shared<LevelSet<MeshType, SignedDistanceLocation>>( ptree,
+    return std::make_shared<LevelSet<MeshType, SignedDistanceLocation>>( inputs,
                                                                          mesh );
 }
 

@@ -17,7 +17,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
-#include <boost/property_tree/ptree.hpp>
+#include <nlohmann/json.hpp>
 
 #include <cfloat>
 #include <fstream>
@@ -180,16 +180,16 @@ class FacetGeometry
 
     // Create the geometry from an ASCII STL file.
     template <class ExecutionSpace>
-    FacetGeometry( const boost::property_tree::ptree& ptree,
+    FacetGeometry( const nlohmann::json inputs,
                    const ExecutionSpace& exec_space )
     {
         Kokkos::Profiling::pushRegion( "Picasso::FacetGeoemtry::create" );
 
         // Get the geometry parameters.
-        const auto& params = ptree.get_child( "geometry" );
+        auto params = inputs["geometry"];
 
         // Read the stl file and create the facet geometry.
-        auto stl_ascii_filename = params.get<std::string>( "stl_file" );
+        std::string stl_ascii_filename = params["stl_file"];
 
         // Containers.
         std::vector<int> volume_ids;
@@ -334,7 +334,7 @@ class FacetGeometry
         // the global bounds of the problem. The user input is the global id
         // of this volume.
         _data.global_bounding_volume_id =
-            localVolumeId( params.get<int>( "global_bounding_volume_id" ) );
+            localVolumeId( params["global_bounding_volume_id"] );
 
         // Compute the bounding boxes of all the volumes.
         _data.volume_bounding_boxes = Kokkos::View<float* [6], MemorySpace>(

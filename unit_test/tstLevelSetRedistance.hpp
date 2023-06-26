@@ -40,18 +40,17 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     Kokkos::Array<double, 6> global_box = { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 
     // Get inputs for mesh.
-    InputParser parser( "level_set_redistance_test.json", "json" );
-    auto pt = parser.propertyTree();
+    auto inputs = Picasso::parse( "level_set_redistance_test.json" );
 
     // Make mesh.
     int minimum_halo_size = 4;
-    auto mesh = createUniformMesh( TEST_MEMSPACE(), pt, global_box,
+    auto mesh = createUniformMesh( TEST_MEMSPACE(), inputs, global_box,
                                    minimum_halo_size, MPI_COMM_WORLD );
     auto dx = mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
     auto halo_width = dx * minimum_halo_size;
 
     // Create a level set.
-    auto level_set = createLevelSet<FieldLocation::Node>( pt, mesh );
+    auto level_set = createLevelSet<FieldLocation::Node>( inputs, mesh );
 
     // Signed distance fields.
     auto estimate = level_set->getDistanceEstimate();

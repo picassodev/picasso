@@ -34,11 +34,10 @@ void constructionTest()
     int minimum_halo_size = 1;
 
     // Get inputs for mesh 1.
-    InputParser parser_1( "uniform_mesh_test_1.json", "json" );
-    auto pt1 = parser_1.propertyTree();
+    auto inputs_1 = Picasso::parse( "uniform_mesh_test_1.json" );
 
     // Make mesh 1.
-    UniformMesh<TEST_MEMSPACE> mesh_1( pt1, global_box, minimum_halo_size,
+    UniformMesh<TEST_MEMSPACE> mesh_1( inputs_1, global_box, minimum_halo_size,
                                        MPI_COMM_WORLD );
 
     // Check cell sizes.
@@ -68,11 +67,10 @@ void constructionTest()
     EXPECT_EQ( mesh_1.localGrid()->haloCellWidth(), 2 );
 
     // Get inputs for mesh 2.
-    InputParser parser_2( "uniform_mesh_test_2.json", "json" );
-    auto pt2 = parser_2.propertyTree();
+    auto inputs_2 = Picasso::parse( "uniform_mesh_test_2.json" );
 
     // Make mesh 2.
-    UniformMesh<TEST_MEMSPACE> mesh_2( pt2, global_box, minimum_halo_size,
+    UniformMesh<TEST_MEMSPACE> mesh_2( inputs_2, global_box, minimum_halo_size,
                                        MPI_COMM_WORLD );
 
     // Check cell sizes.

@@ -20,8 +20,6 @@
 
 #include <ArborX.hpp>
 
-#include <boost/property_tree/ptree.hpp>
-
 #include <cfloat>
 
 //---------------------------------------------------------------------------//
@@ -215,23 +213,26 @@ class ParticleLevelSet
       \brief Construct the level set with particles of a given color. If the
       input color is negative then all particles will be used in the level set
       regardless of color.
-      \param ptree Level set settings.
+      \param inputs Level set settings.
       \param mesh The mesh over which to build the signed distnace function.
       \param color The particle color over which to build the level set. Use
       -1 if the level set is to be built over all particles.
     */
-    ParticleLevelSet( const boost::property_tree::ptree& ptree,
+    ParticleLevelSet( const nlohmann::json inputs,
                       const std::shared_ptr<MeshType>& mesh, const int color )
         : _color( color )
-        , _ls( createLevelSet<SignedDistanceLocation>( ptree, mesh ) )
+        , _ls( createLevelSet<SignedDistanceLocation>( inputs, mesh ) )
     {
         // Extract parameters.
-        const auto& params = ptree.get_child( "particle_level_set" );
+        const auto& params = inputs["particle_level_set"];
 
         // Particles have an analytic spherical level set. Get the radius as a
         // fraction of the cell size.
         _dx = mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
-        _radius = _dx * params.get<double>( "particle_radius", 0.5 );
+        _radius = 0.5;
+        if ( params.count( "particle_radius" ) )
+            _radius = params["particle_radius"];
+        _radius *= _dx;
     }
 
     Kokkos::View<const int*, memory_space> colorIndex() const
@@ -410,18 +411,18 @@ class ParticleLevelSet
 /*!
   \brief Create a particle level set over particles of the given color. A
   color of -1 will create the level set over all particles.
-  \param ptree Level set settings.
+  \param inputs Level set settings.
   \param mesh The mesh over which to build the signed distance function.
   \param color The particle color over which to build the level set. Use -1 if
   the level set is to be built over all particles.
 */
 template <class SignedDistanceLocation, class MeshType>
 std::shared_ptr<ParticleLevelSet<MeshType, SignedDistanceLocation>>
-createParticleLevelSet( const boost::property_tree::ptree& ptree,
+createParticleLevelSet( const nlohmann::json inputs,
                         const std::shared_ptr<MeshType>& mesh, const int color )
 {
     return std::make_shared<ParticleLevelSet<MeshType, SignedDistanceLocation>>(
-        ptree, mesh, color );
+        inputs, mesh, color );
 }
 
 //---------------------------------------------------------------------------//

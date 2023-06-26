@@ -544,12 +544,11 @@ void collocatedTest()
                                             50.0,  50.0,  50.0 };
 
     // Get inputs for mesh.
-    InputParser parser( "polypic_test.json", "json" );
-    auto ptree = parser.propertyTree();
+    auto inputs = Picasso::parse( "polypic_test.json" );
 
     // Make mesh.
     int minimum_halo_size = 0;
-    UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
+    UniformMesh<TEST_MEMSPACE> mesh( inputs, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
         Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
@@ -716,12 +715,11 @@ void staggeredTest()
     }
 
     // Get inputs for mesh.
-    InputParser parser( "polypic_test.json", "json" );
-    auto ptree = parser.propertyTree();
+    auto inputs = Picasso::parse( "polypic_test.json" );
 
     // Make mesh.
     int minimum_halo_size = 0;
-    UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
+    UniformMesh<TEST_MEMSPACE> mesh( inputs, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
         Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );

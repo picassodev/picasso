@@ -41,14 +41,14 @@ void checkGather( const View& view, const IndexSpace& index_space,
 void uniformTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "field_manager_test.json", "json" );
+    auto inputs = Picasso::parse( "field_manager_test.json" );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 0;
 
     // Make mesh.
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a field Manager
     FieldManager<UniformMesh<TEST_MEMSPACE>> fm( mesh );
@@ -147,7 +147,7 @@ void uniformTest()
 void adaptiveTest()
 {
     // Get inputs for mesh.
-    InputParser parser( "field_manager_test.json", "json" );
+    auto inputs = Picasso::parse( "field_manager_test.json" );
     Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
                                             10.0,  10.0,  10.0 };
     int minimum_halo_size = 1;
@@ -155,7 +155,7 @@ void adaptiveTest()
 
     // Make mesh.
     auto mesh = std::make_shared<AdaptiveMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD,
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD,
         TEST_EXECSPACE() );
 
     // Make a field Manager
