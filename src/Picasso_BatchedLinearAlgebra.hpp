@@ -5064,7 +5064,15 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
     // Perform a QR factorization of the matrix B = AV
     auto B = A * V_rot;
 
+    std::cout << B( 0, 0 ) << " " << B( 0, 1 ) << " " << B( 0, 2 ) << "\n";
+    std::cout << B( 1, 0 ) << " " << B( 1, 1 ) << " " << B( 1, 2 ) << "\n";
+    std::cout << B( 2, 0 ) << " " << B( 2, 1 ) << " " << B( 2, 2 ) << std::endl;
+    
     sortSingularValues( B, V_rot );
+
+    std::cout << B( 0, 0 ) << " " << B( 0, 1 ) << " " << B( 0, 2 ) << "\n";
+    std::cout << B( 1, 0 ) << " " << B( 1, 1 ) << " " << B( 1, 2 ) << "\n";
+    std::cout << B( 2, 0 ) << " " << B( 2, 1 ) << " " << B( 2, 2 ) << std::endl;
 
     auto q31 = givensQR( B( 1, 0 ), B( 2, 0 ), tol, { 2, 0 } );
     auto Q1 = static_cast<Matrix<double, 3, 3>>( q31 );
