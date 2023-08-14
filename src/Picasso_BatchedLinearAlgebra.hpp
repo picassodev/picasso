@@ -4921,7 +4921,7 @@ Quaternion<double> givensQR( double a1, double a2, double tol,
     // according to the element indices
     if ( ij[0] == 2 && ij[1] == 0 )
     {
-        q = { ch, sh, 0.0, 0.0 };
+        q = { ch, 0.0, -sh, 0.0 };
     }
     else if ( ij[0] == 1 && ij[1] == 0 )
     {
@@ -4999,8 +4999,7 @@ KOKKOS_INLINE_FUNCTION void sortSingularValues( MatrixType& B, MatrixType& V )
     for ( int d = 0; d < 3; d++ )
     {
         auto b = B.column( d );
-        rho[d] =
-            Kokkos::sqrt( b( 0 ) * b( 0 ) + b( 1 ) * b( 1 ) + b( 2 ) * b( 2 ) );
+        rho[d] = b( 0 ) * b( 0 ) + b( 1 ) * b( 1 ) + b( 2 ) * b( 2 );
     }
 
     auto b0 = B.column( 0 );
@@ -5067,20 +5066,20 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
     std::cout << B( 0, 0 ) << " " << B( 0, 1 ) << " " << B( 0, 2 ) << "\n";
     std::cout << B( 1, 0 ) << " " << B( 1, 1 ) << " " << B( 1, 2 ) << "\n";
     std::cout << B( 2, 0 ) << " " << B( 2, 1 ) << " " << B( 2, 2 ) << std::endl;
-    
+
     sortSingularValues( B, V_rot );
 
     std::cout << B( 0, 0 ) << " " << B( 0, 1 ) << " " << B( 0, 2 ) << "\n";
     std::cout << B( 1, 0 ) << " " << B( 1, 1 ) << " " << B( 1, 2 ) << "\n";
     std::cout << B( 2, 0 ) << " " << B( 2, 1 ) << " " << B( 2, 2 ) << std::endl;
 
-    auto q31 = givensQR( B( 1, 0 ), B( 2, 0 ), tol, { 2, 0 } );
-    auto Q1 = static_cast<Matrix<double, 3, 3>>( q31 );
+    auto q21 = givensQR( B( 0, 0 ), B( 1, 0 ), tol, { 1, 0 } );
+    auto Q1 = static_cast<Matrix<double, 3, 3>>( q21 );
 
     auto B1 = ~Q1 * B;
 
-    auto q21 = givensQR( B1( 0, 0 ), B1( 1, 0 ), tol, { 1, 0 } );
-    auto Q2 = static_cast<Matrix<double, 3, 3>>( q21 );
+    auto q31 = givensQR( B1( 0, 0 ), B1( 2, 0 ), tol, { 2, 0 } );
+    auto Q2 = static_cast<Matrix<double, 3, 3>>( q31 );
 
     auto B2 = ~Q2 * B1;
 
@@ -5089,9 +5088,9 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
 
     auto B3 = ~Q3 * B2;
 
-    Q = static_cast<Matrix<double, 3, 3>>( q32 & q21 & q31 );
+    Q = static_cast<Matrix<double, 3, 3>>( q21 & q31 & q32 );
 
-    U = ~Q;
+    U = Q;
     D = B3;
     V = V_rot;
 }
