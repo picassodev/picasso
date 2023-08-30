@@ -1793,6 +1793,7 @@ void matrixSVDTest()
 
     LinearAlgebra::svd( A, U, D, V );
 
+    // These values are computed in the corresponding Mathematica notebook.
     EXPECT_FLOAT_EQ( U( 0, 0 ), 0.693615379790 );
     EXPECT_FLOAT_EQ( U( 0, 1 ), -0.672565530742 );
     EXPECT_FLOAT_EQ( U( 0, 2 ), -0.257979285557 );
