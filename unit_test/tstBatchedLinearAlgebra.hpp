@@ -1780,6 +1780,74 @@ void kernelTest()
         }
 }
 
+void matrixSVDTest()
+{
+    const double tol = 1e-14;
+
+    LinearAlgebra::Matrix<double, 3, 3> A = {
+        { 9.0, 8.0, -2.0 }, { -5.0, -3.0, -4.0 }, { 6.0, 0.0, 9.0 } };
+
+    LinearAlgebra::Matrix<double, 3, 3> U = 0.0;
+    LinearAlgebra::Matrix<double, 3, 3> D = 0.0;
+    LinearAlgebra::Matrix<double, 3, 3> V = 0.0;
+
+    LinearAlgebra::svd( A, U, D, V );
+
+    // These values are computed in the corresponding Mathematica notebook.
+    EXPECT_FLOAT_EQ( U( 0, 0 ), 0.693615379790 );
+    EXPECT_FLOAT_EQ( U( 0, 1 ), -0.672565530742 );
+    EXPECT_FLOAT_EQ( U( 0, 2 ), -0.257979285557 );
+    EXPECT_FLOAT_EQ( U( 1, 0 ), -0.466193654656 );
+    EXPECT_FLOAT_EQ( U( 1, 1 ), -0.146101858820 );
+    EXPECT_FLOAT_EQ( U( 1, 2 ), -0.872535227488 );
+    EXPECT_FLOAT_EQ( U( 2, 0 ), 0.549145865210 );
+    EXPECT_FLOAT_EQ( U( 2, 1 ), 0.725472159154 );
+    EXPECT_FLOAT_EQ( U( 2, 2 ), -0.414884279066 );
+
+    EXPECT_FLOAT_EQ( D( 0, 0 ), 14.7817842778 );
+    EXPECT_NEAR( D( 0, 1 ), 0.0, tol );
+    EXPECT_NEAR( D( 0, 2 ), 0.0, tol );
+    EXPECT_NEAR( D( 1, 0 ), 0.0, tol );
+    EXPECT_FLOAT_EQ( D( 1, 1 ), 9.84464467996 );
+    EXPECT_NEAR( D( 1, 2 ), 0.0, tol );
+    EXPECT_NEAR( D( 2, 0 ), 0.0, tol );
+    EXPECT_NEAR( D( 2, 1 ), 0.0, tol );
+    EXPECT_FLOAT_EQ( D( 2, 2 ), -0.762774336685 );
+
+    EXPECT_FLOAT_EQ( V( 0, 0 ), 0.802905904968 );
+    EXPECT_FLOAT_EQ( V( 0, 1 ), -0.0985050816132 );
+    EXPECT_FLOAT_EQ( V( 0, 2 ), 0.587910585602 );
+    EXPECT_FLOAT_EQ( V( 1, 0 ), 0.470004423803 );
+    EXPECT_FLOAT_EQ( V( 1, 1 ), -0.502021030737 );
+    EXPECT_FLOAT_EQ( V( 1, 2 ), -0.725996367968 );
+    EXPECT_FLOAT_EQ( V( 2, 0 ), 0.366657809643 );
+    EXPECT_FLOAT_EQ( V( 2, 1 ), 0.859227346861 );
+    EXPECT_FLOAT_EQ( V( 2, 2 ), -0.356777825872 );
+
+    // The two largest singular values should be non-negative
+    EXPECT_TRUE( D( 0, 0 ) >= 0.0 );
+    EXPECT_TRUE( D( 1, 1 ) >= 0.0 );
+
+    // The smallest singular value D(2,2) should have the same sign as det(A)
+    EXPECT_FALSE( Kokkos::signbit( !A * D( 2, 2 ) ) );
+
+    // Check the determinants of U and V to ensure they are orthogonal
+    EXPECT_FLOAT_EQ( !U, 1.0 );
+    EXPECT_FLOAT_EQ( !V, 1.0 );
+
+    // Test that the re-composed decomposition recovers the original matrix
+    auto A_0 = U * ( D * ~V );
+    EXPECT_FLOAT_EQ( A( 0, 0 ), A_0( 0, 0 ) );
+    EXPECT_FLOAT_EQ( A( 0, 1 ), A_0( 0, 1 ) );
+    EXPECT_FLOAT_EQ( A( 0, 2 ), A_0( 0, 2 ) );
+    EXPECT_FLOAT_EQ( A( 1, 0 ), A_0( 1, 0 ) );
+    EXPECT_FLOAT_EQ( A( 1, 1 ), A_0( 1, 1 ) );
+    EXPECT_FLOAT_EQ( A( 1, 2 ), A_0( 1, 2 ) );
+    EXPECT_FLOAT_EQ( A( 2, 0 ), A_0( 2, 0 ) );
+    EXPECT_NEAR( A( 2, 1 ), A_0( 2, 1 ), tol );
+    EXPECT_FLOAT_EQ( A( 2, 2 ), A_0( 2, 2 ) );
+}
+
 //---------------------------------------------------------------------------//
 /*
 void eigendecompositionTest()
@@ -1946,6 +2014,8 @@ TEST( TEST_CATEGORY, kernelTest )
 }
 
 TEST( TEST_CATEGORY, matrixExponential_test ) { matrixExponentialTest(); }
+
+TEST( TEST_CATEGORY, matrixSVD_test ) { matrixSVDTest(); }
 
 // FIXME_KOKKOSKERNELS
 // TEST( TEST_CATEGORY, eigendecomposition_test ) { eigendecompositionTest(); }

@@ -4825,6 +4825,264 @@ operator^( const ExpressionA& a, const ExpressionB& b )
     return x;
 }
 
+template <typename ValueType>
+KOKKOS_INLINE_FUNCTION void condSwap( bool b, ValueType& lv, ValueType& rv )
+{
+    auto tmpv = lv;
+    lv = b ? rv : lv;
+    rv = b ? tmpv : rv;
+}
+
+template <typename ValueType>
+KOKKOS_INLINE_FUNCTION void condNegSwap( bool b, ValueType& lv, ValueType& rv )
+{
+    auto tmpv = -1.0 * lv;
+    lv = b ? rv : lv;
+    rv = b ? tmpv : rv;
+}
+
+template <>
+KOKKOS_INLINE_FUNCTION void
+condNegSwap<VectorView<double, 3>>( bool b, VectorView<double, 3>& lv,
+                                    VectorView<double, 3>& rv )
+{
+    using vector_type = typename VectorView<double, 3>::copy_type;
+    vector_type tmpv;
+
+    if ( b )
+    {
+        for ( int d = 0; d < 3; d++ )
+        {
+            tmpv( d ) = -1.0 * lv( d );
+            lv( d ) = rv( d );
+            rv( d ) = tmpv( d );
+        }
+    }
+}
+
+KOKKOS_INLINE_FUNCTION
+Quaternion<double> givensQuaternion( double a11, double a12, double a22,
+                                     Kokkos::Array<std::size_t, 2> ij )
+{
+    const double gamma = 3.0 + 2.0 * Kokkos::sqrt( 2.0 );
+    const double pi = 4.0 * Kokkos::atan( 1.0 );
+
+    const double cs = Kokkos::cos( pi / 8.0 );
+    const double ss = Kokkos::sin( pi / 8.0 );
+
+    double ch = 2.0 * ( a11 - a22 );
+    double sh = a12;
+
+    bool b = ( gamma * sh * sh ) < ( ch * ch );
+
+    double ome = 1.0 / Kokkos::sqrt( ch * ch + sh * sh );
+    ch = b ? ome * ch : cs;
+    sh = b ? ome * sh : ss;
+
+    Quaternion<double> q = 0.0;
+
+    // The ordering of the quaternion is different
+    // according to the element indices
+    if ( ij[0] == 0 && ij[1] == 1 )
+    {
+        q = { ch, 0.0, 0.0, sh };
+    }
+    else if ( ij[0] == 0 && ij[1] == 2 )
+    {
+        q = { ch, 0.0, -sh, 0.0 };
+    }
+    else if ( ij[0] == 1 && ij[1] == 2 )
+    {
+        q = { ch, sh, 0.0, 0.0 };
+    }
+
+    return q;
+}
+
+KOKKOS_INLINE_FUNCTION
+Quaternion<double> givensQR( double a1, double a2, double tol,
+                             Kokkos::Array<std::size_t, 2> ij )
+{
+    double rho = Kokkos::sqrt( a1 * a1 + a2 * a2 );
+
+    double sh = rho > tol ? a2 : 0.0;
+    double ch = Kokkos::fabs( a1 ) + Kokkos::max( rho, tol );
+
+    condSwap( a1 < 0, sh, ch );
+
+    double ome = 1.0 / Kokkos::sqrt( ch * ch + sh * sh );
+
+    ch = ome * ch;
+    sh = ome * sh;
+
+    Quaternion<double> q = 0.0;
+
+    // The ordering of the quaternion is different
+    // according to the element indices
+    if ( ij[0] == 2 && ij[1] == 0 )
+    {
+        q = { ch, 0.0, -sh, 0.0 };
+    }
+    else if ( ij[0] == 1 && ij[1] == 0 )
+    {
+        q = { ch, 0.0, 0.0, sh };
+    }
+    else if ( ij[0] == 2 && ij[1] == 1 )
+    {
+        q = { ch, sh, 0.0, 0.0 };
+    }
+
+    return q;
+}
+
+template <class ExpressionA>
+KOKKOS_INLINE_FUNCTION
+    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
+                                  ExpressionA::extent_0 == 3 &&
+                                  ExpressionA::extent_1 == 3,
+                              Quaternion<typename ExpressionA::value_type>>
+    cyclicJacobi( const ExpressionA& A, const int max_iter )
+{
+    // Form the symmetric positive-definite matrix from A
+    auto S = ~A * A;
+
+    // Indices for cyclic Jacobi
+    Kokkos::Array<Kokkos::Array<std::size_t, 2>, 3> diag_inds;
+    diag_inds = { Kokkos::Array<std::size_t, 2>{ 0, 1 },
+                  Kokkos::Array<std::size_t, 2>{ 0, 2 },
+                  Kokkos::Array<std::size_t, 2>{ 1, 2 } };
+
+    // Get the next pq pair in the sequence
+    auto pq = diag_inds[0];
+
+    // Construct the 2x2 submatrix from the (pq)-entries of the 3x3 matrix
+    double s_pp = S( pq[0], pq[0] );
+    double s_pq = S( pq[0], pq[1] );
+    double s_qq = S( pq[1], pq[1] );
+
+    Quaternion<double> q_total = givensQuaternion( s_pp, s_pq, s_qq, pq );
+
+    // Convert to rotation matrix for conjugation
+    Matrix<double, 3, 3> Q_1{ q_total };
+
+    S = ~Q_1 * S * Q_1;
+
+    for ( int i = 1; i < max_iter; ++i )
+    {
+        // Get the next pq pair in the sequence
+        pq = diag_inds[i % 3];
+
+        // Construct the 2x2 submatrix from the (pq)-entries of the 3x3 matrix
+        s_pp = S( pq[0], pq[0] );
+        s_pq = S( pq[0], pq[1] );
+        s_qq = S( pq[1], pq[1] );
+
+        // Compute the approximate Given's quaternion
+        auto q = givensQuaternion( s_pp, s_pq, s_qq, pq );
+
+        // Convert to rotation matrix for conjugation
+        Matrix<double, 3, 3> Q{ q };
+
+        S = ~Q * S * Q; // Update to (k+1)
+        q_total = q_total & q;
+    }
+
+    return q_total;
+}
+
+template <class MatrixType>
+KOKKOS_INLINE_FUNCTION void sortSingularValues( MatrixType& B, MatrixType& V )
+{
+    // Array of singular values
+    Kokkos::Array<double, 3> rho = { 0.0 };
+
+    for ( int d = 0; d < 3; d++ )
+    {
+        auto b = B.column( d );
+        rho[d] = b( 0 ) * b( 0 ) + b( 1 ) * b( 1 ) + b( 2 ) * b( 2 );
+    }
+
+    auto b0 = B.column( 0 );
+    auto b1 = B.column( 1 );
+    auto b2 = B.column( 2 );
+
+    auto v0 = V.column( 0 );
+    auto v1 = V.column( 1 );
+    auto v2 = V.column( 2 );
+
+    // Perform column swaps based on the ordering of the singular values
+    condNegSwap( rho[0] < rho[1], b0, b1 );
+    condNegSwap( rho[0] < rho[1], v0, v1 );
+
+    condSwap( rho[0] < rho[1], rho[0], rho[1] );
+
+    condNegSwap( rho[0] < rho[2], b0, b2 );
+    condNegSwap( rho[0] < rho[2], v0, v2 );
+
+    condSwap( rho[0] < rho[2], rho[0], rho[2] );
+
+    condNegSwap( rho[1] < rho[2], b1, b2 );
+    condNegSwap( rho[1] < rho[2], v1, v2 );
+}
+
+//---------------------------------------------------------------------------//
+// Matrix Singular Value Decomposition
+// Implementation based on McAdams, Selle, et al.,
+// Technical Report Univ. Wisconsin, 2011.
+//
+// Computes the singular value decomposition of the matrix A
+// A = U * Σ * V^T
+//
+//---------------------------------------------------------------------------//
+
+template <class ExpressionA, class EigenU, class Diagonal, class EigenV>
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    is_matrix<ExpressionA>::value && is_matrix<EigenU>::value &&
+        is_matrix<Diagonal>::value && is_matrix<EigenV>::value,
+    void>
+svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
+{
+    constexpr int num_iter = 15;
+    constexpr double tol = 1e-14;
+
+    // Perform modified cyclic Jacobi iterations to calculate V
+    auto q = cyclicJacobi( A, num_iter );
+
+    // Normalize the quaternion and convert to the orthogonal matrix V
+    double q_mag = Kokkos::sqrt( q( 0 ) * q( 0 ) + q( 1 ) * q( 1 ) +
+                                 q( 2 ) * q( 2 ) + q( 3 ) * q( 3 ) );
+
+    Matrix<double, 3, 3> V_rot{ q / q_mag };
+
+    Matrix<double, 3, 3> Q = 0.0;
+
+    // Perform a QR factorization of the matrix B = AV
+    auto B = A * V_rot;
+
+    sortSingularValues( B, V_rot );
+
+    auto q21 = givensQR( B( 0, 0 ), B( 1, 0 ), tol, { 1, 0 } );
+    auto Q1 = static_cast<Matrix<double, 3, 3>>( q21 );
+
+    auto B1 = ~Q1 * B;
+
+    auto q31 = givensQR( B1( 0, 0 ), B1( 2, 0 ), tol, { 2, 0 } );
+    auto Q2 = static_cast<Matrix<double, 3, 3>>( q31 );
+
+    auto B2 = ~Q2 * B1;
+
+    auto q32 = givensQR( B2( 1, 1 ), B2( 2, 1 ), tol, { 2, 1 } );
+    auto Q3 = static_cast<Matrix<double, 3, 3>>( q32 );
+
+    auto B3 = ~Q3 * B2;
+
+    Q = static_cast<Matrix<double, 3, 3>>( q21 & q31 & q32 );
+
+    U = Q;
+    D = B3;
+    V = V_rot;
+}
+
 //---------------------------------------------------------------------------//
 // Eigendecomposition
 //---------------------------------------------------------------------------//
