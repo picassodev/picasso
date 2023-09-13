@@ -1600,6 +1600,9 @@ struct Vector
     KOKKOS_INLINE_FUNCTION
     Vector& normalize()
     {
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
         auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
         for ( int i = 0; i < N; ++i )
             ( *this )( i ) /= norm2;
@@ -1891,6 +1894,9 @@ struct VectorView
     KOKKOS_INLINE_FUNCTION
     VectorView& normalize()
     {
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
         auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
         for ( int i = 0; i < N; ++i )
             ( *this )( i ) /= norm2;
