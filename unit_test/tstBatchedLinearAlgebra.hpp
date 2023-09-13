@@ -1021,6 +1021,15 @@ void vectorTest()
     EXPECT_EQ( x.stride( 0 ), 1 );
     EXPECT_EQ( x.extent( 0 ), 3 );
 
+    // normalize
+    auto x_copy = x;
+    auto norm2 = std::sqrt( ~x_copy * x_copy );
+    x_copy.normalize();
+
+    EXPECT_EQ( x_copy( 0 ), x( 0 ) / norm2 );
+    EXPECT_EQ( x_copy( 1 ), x( 1 ) / norm2 );
+    EXPECT_EQ( x_copy( 2 ), x( 2 ) / norm2 );
+
     EXPECT_EQ( x( 0 ), 1.2 );
     EXPECT_EQ( x( 1 ), -3.5 );
     EXPECT_EQ( x( 2 ), 5.4 );
@@ -1387,6 +1396,12 @@ void viewTest()
     EXPECT_EQ( x3.extent( 0 ), 2 );
     for ( int i = 0; i < 2; ++i )
         EXPECT_EQ( x3( i ), 1.0 + 3.0 * i );
+
+    // normalize
+    auto norm2 = std::sqrt( ~x1 * x1 );
+    x1.normalize();
+    for ( int i = 0; i < x1.extent( 0 ); ++i )
+        EXPECT_EQ( x1( i ), 1.0 * i / norm2 );
 }
 
 //---------------------------------------------------------------------------//

@@ -1596,6 +1596,16 @@ struct Vector
         return *this;
     }
 
+    // Normalization
+    KOKKOS_INLINE_FUNCTION
+    Vector& normalize()
+    {
+        auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) /= norm2;
+        return *this;
+    }
+
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const { return 1; }
@@ -1874,6 +1884,16 @@ struct VectorView
 #endif
         for ( int i = 0; i < N; ++i )
             ( *this )( i ) = value;
+        return *this;
+    }
+
+    // Normalization
+    KOKKOS_INLINE_FUNCTION
+    VectorView& normalize()
+    {
+        auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
+        for ( int i = 0; i < N; ++i )
+            ( *this )( i ) /= norm2;
         return *this;
     }
 
