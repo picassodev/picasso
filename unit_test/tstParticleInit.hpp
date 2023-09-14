@@ -91,9 +91,9 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
              x[Dim::J] < box[3] && x[Dim::K] > box[4] && x[Dim::K] < box[5] )
         {
             for ( int d = 0; d < 3; ++d )
-                get( p, Foo(), d ) = x[d];
+                Picasso::get( p, Foo(), d ) = x[d];
 
-            get( p, Bar() ) = v;
+            Picasso::get( p, Bar() ) = v;
 
             return true;
         }

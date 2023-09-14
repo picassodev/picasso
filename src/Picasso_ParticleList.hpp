@@ -26,97 +26,17 @@
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
-// Particle Traits
-//---------------------------------------------------------------------------//
-template <class... FieldTags>
-struct ParticleTraits
-{
-    using member_types = Cabana::MemberTypes<typename FieldTags::data_type...>;
-};
-
-//---------------------------------------------------------------------------//
-// Particle copy. Wraps a tuple copy of a particle.
-//---------------------------------------------------------------------------//
-template <class... FieldTags>
-struct Particle
-{
-    using traits = ParticleTraits<FieldTags...>;
-    using tuple_type = Cabana::Tuple<typename traits::member_types>;
-
-    static constexpr int vector_length = 1;
-
-    // Default constructor.
-    Particle() = default;
-
-    // Tuple wrapper constructor.
-    KOKKOS_FORCEINLINE_FUNCTION
-    Particle( const tuple_type& tuple )
-        : _tuple( tuple )
-    {
-    }
-
-    // Get the underlying tuple.
-    KOKKOS_FORCEINLINE_FUNCTION
-    tuple_type& tuple() { return _tuple; }
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    const tuple_type& tuple() const { return _tuple; }
-
-    // The tuple this particle wraps.
-    tuple_type _tuple;
-};
-
-//---------------------------------------------------------------------------//
-// Particle view. Wraps a view of the SoA the particle resides in.
-//---------------------------------------------------------------------------//
-template <int VectorLength, class... FieldTags>
-struct ParticleView
-{
-    using traits = ParticleTraits<FieldTags...>;
-    using soa_type = Cabana::SoA<typename traits::member_types, VectorLength>;
-
-    static constexpr int vector_length = VectorLength;
-
-    // Default constructor.
-    ParticleView() = default;
-
-    // Tuple wrapper constructor.
-    KOKKOS_FORCEINLINE_FUNCTION
-    ParticleView( soa_type& soa, const int vector_index )
-        : _soa( soa )
-        , _vector_index( vector_index )
-    {
-    }
-
-    // Get the underlying SoA.
-    KOKKOS_FORCEINLINE_FUNCTION
-    soa_type& soa() { return _soa; }
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    const soa_type& soa() const { return _soa; }
-
-    // Get the vector index of the particle in the SoA.
-    KOKKOS_FORCEINLINE_FUNCTION
-    int vectorIndex() const { return _vector_index; }
-
-    // The soa the particle is in.
-    soa_type& _soa;
-
-    // The local vector index of the particle.
-    int _vector_index;
-};
-
-//---------------------------------------------------------------------------//
 // Particle accessor.
 //---------------------------------------------------------------------------//
 // Particle accessor
 template <class FieldTag, class... FieldTags, class... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
     sizeof...( IndexTypes ) == FieldTag::rank,
-    typename Particle<FieldTags...>::tuple_type::
+    typename Cabana::Particle<FieldTags...>::tuple_type::
         template member_const_reference_type<
             TypeIndexer<FieldTag, FieldTags...>::index>>::type
-get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
+get( const Cabana::Particle<FieldTags...>& particle, FieldTag,
+     IndexTypes... indices )
 {
     return Cabana::get<TypeIndexer<FieldTag, FieldTags...>::index>(
         particle.tuple(), indices... );
@@ -125,9 +45,10 @@ get( const Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 template <class FieldTag, class... FieldTags, class... IndexTypes>
 KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
     sizeof...( IndexTypes ) == FieldTag::rank,
-    typename Particle<FieldTags...>::tuple_type::template member_reference_type<
-        TypeIndexer<FieldTag, FieldTags...>::index>>::type
-get( Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
+    typename Cabana::Particle<FieldTags...>::tuple_type::
+        template member_reference_type<
+            TypeIndexer<FieldTag, FieldTags...>::index>>::type
+get( Cabana::Particle<FieldTags...>& particle, FieldTag, IndexTypes... indices )
 {
     return Cabana::get<TypeIndexer<FieldTag, FieldTags...>::index>(
         particle.tuple(), indices... );
@@ -139,10 +60,10 @@ template <class FieldTag, class... FieldTags, class... IndexTypes,
           int VectorLength>
 KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
     sizeof...( IndexTypes ) == FieldTag::rank,
-    typename ParticleView<VectorLength, FieldTags...>::soa_type::
+    typename Cabana::ParticleView<VectorLength, FieldTags...>::soa_type::
         template member_const_reference_type<
             TypeIndexer<FieldTag, FieldTags...>::index>>::type
-get( const ParticleView<VectorLength, FieldTags...>& particle, FieldTag,
+get( const Cabana::ParticleView<VectorLength, FieldTags...>& particle, FieldTag,
      IndexTypes... indices )
 {
     return Cabana::get<TypeIndexer<FieldTag, FieldTags...>::index>(
@@ -153,10 +74,10 @@ template <class FieldTag, class... FieldTags, class... IndexTypes,
           int VectorLength>
 KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
     sizeof...( IndexTypes ) == FieldTag::rank,
-    typename ParticleView<VectorLength, FieldTags...>::soa_type::
+    typename Cabana::ParticleView<VectorLength, FieldTags...>::soa_type::
         template member_reference_type<
             TypeIndexer<FieldTag, FieldTags...>::index>>::type
-get( ParticleView<VectorLength, FieldTags...>& particle, FieldTag,
+get( Cabana::ParticleView<VectorLength, FieldTags...>& particle, FieldTag,
      IndexTypes... indices )
 {
     return Cabana::get<TypeIndexer<FieldTag, FieldTags...>::index>(
@@ -173,7 +94,7 @@ KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
 get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &( get( particle, tag, 0 ) ), ParticleType::vector_length );
+        &( Cabana::get( particle, tag, 0 ) ), ParticleType::vector_length );
 }
 
 template <class ParticleType, class FieldTag>
@@ -184,7 +105,7 @@ get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         const_cast<typename FieldTag::value_type*>(
-            &( get( particle, tag, 0 ) ) ),
+            &( Cabana::get( particle, tag, 0 ) ) ),
         ParticleType::vector_length );
 }
 
@@ -198,7 +119,7 @@ KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
 get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
-        &( get( particle, tag, 0, 0 ) ),
+        &( Cabana::get( particle, tag, 0, 0 ) ),
         ParticleType::vector_length * FieldTag::dim1,
         ParticleType::vector_length );
 }
@@ -211,7 +132,7 @@ get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         const_cast<typename FieldTag::value_type*>(
-            &( get( particle, tag, 0, 0 ) ) ),
+            &( Cabana::get( particle, tag, 0, 0 ) ) ),
         ParticleType::vector_length * FieldTag::dim1,
         ParticleType::vector_length );
 }
@@ -227,7 +148,7 @@ class ParticleList
 
     using memory_space = typename Mesh::memory_space;
 
-    using traits = ParticleTraits<FieldTags...>;
+    using traits = Cabana::ParticleTraits<FieldTags...>;
 
     using aosoa_type =
         Cabana::AoSoA<typename traits::member_types, memory_space>;
@@ -237,10 +158,10 @@ class ParticleList
     template <std::size_t M>
     using slice_type = typename aosoa_type::template member_slice_type<M>;
 
-    using particle_type = Particle<FieldTags...>;
+    using particle_type = Cabana::Particle<FieldTags...>;
 
     using particle_view_type =
-        ParticleView<aosoa_type::vector_length, FieldTags...>;
+        Cabana::ParticleView<aosoa_type::vector_length, FieldTags...>;
 
     // Default constructor.
     ParticleList( const std::string& label, const std::shared_ptr<Mesh>& mesh )
@@ -294,7 +215,7 @@ class ParticleList
 template <class Mesh, class... FieldTags>
 std::shared_ptr<ParticleList<Mesh, FieldTags...>>
 createParticleList( const std::string& label, const std::shared_ptr<Mesh>& mesh,
-                    ParticleTraits<FieldTags...> )
+                    Cabana::ParticleTraits<FieldTags...> )
 {
     return std::make_shared<ParticleList<Mesh, FieldTags...>>( label, mesh );
 }

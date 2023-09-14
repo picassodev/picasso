@@ -120,7 +120,7 @@ struct ParticleFunc
 
         // Get particle data.
         auto foop = get( particle, FooP() );
-        auto& barp = get( particle, BarP() );
+        auto& barp = Picasso::get( particle, BarP() );
 
         // Zero-order cell interpolant.
         auto spline = createSpline(
@@ -353,7 +353,7 @@ void gatherScatterTest()
         KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition<3>(), d ) = x[d];
+            Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 

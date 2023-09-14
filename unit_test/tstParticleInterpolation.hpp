@@ -73,7 +73,7 @@ struct ScalarValueP2G
             scatter_deps.get( FieldLocation::Node(), NodeScalar() );
 
         // Get particle data.
-        auto particle_scalar = get( particle, ParticleScalar() );
+        auto particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -129,7 +129,7 @@ struct ScalarGradientP2G
             scatter_deps.get( FieldLocation::Node(), NodeVector() );
 
         // Get particle data.
-        auto particle_scalar = get( particle, ParticleScalar() );
+        auto particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -217,7 +217,7 @@ struct ScalarValueG2P
             gather_deps.get( FieldLocation::Node(), NodeScalar() );
 
         // Get particle data.
-        auto& particle_scalar = get( particle, ParticleScalar() );
+        auto& particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -335,7 +335,7 @@ struct VectorDivergenceG2P
             gather_deps.get( FieldLocation::Node(), NodeVector() );
 
         // Get particle data.
-        auto& particle_scalar = get( particle, ParticleScalar() );
+        auto& particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -388,7 +388,7 @@ void interpolationTest()
         KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition<3>(), d ) = x[d];
+            Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 
