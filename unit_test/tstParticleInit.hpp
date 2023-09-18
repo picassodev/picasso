@@ -70,7 +70,8 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;
+    using list_type =
+        Cajita::ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;
     list_type particles( "test_particles", mesh );
     using particle_type = typename list_type::particle_type;
 

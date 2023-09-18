@@ -510,9 +510,10 @@ void initExample()
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition<3>, Field::VolumeId>;
-    list_type particles( "particles", mesh );
+    using list_type =
+        Cajita::ParticleList<TEST_MEMSPACE, Field::PhysicalPosition<3>,
+                             Field::VolumeId>;
+    list_type particles( "particles" );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
                                            TEST_EXECSPACE() );

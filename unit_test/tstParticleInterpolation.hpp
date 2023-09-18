@@ -378,9 +378,9 @@ void interpolationTest()
 
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>,
-                     ParticleScalar, ParticleVector, ParticleTensor>;
-    list_type particles( "test_particles", mesh );
+        Cajita::ParticleList<TEST_MEMSPACE, Field::LogicalPosition<3>,
+                             ParticleScalar, ParticleVector, ParticleTensor>;
+    list_type particles( "test_particles" );
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.

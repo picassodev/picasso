@@ -39,22 +39,12 @@ struct Bar : Field::Matrix<double, 3, 3>
 //---------------------------------------------------------------------------//
 void linearAlgebraTest()
 {
-    // Get inputs for mesh.
-    InputParser parser( "uniform_mesh_test_1.json", "json" );
-    Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
-                                            10.0,  10.0,  10.0 };
-    int minimum_halo_size = 0;
-
-    // Make mesh.
-    auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
-
     // Make a particle list.
     using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>, Foo,
-                     Field::Color, Bar>;
+        Cajita::ParticleList<TEST_MEMSPACE, Field::LogicalPosition<3>, Foo,
+                             Field::Color, Bar>;
 
-    list_type particles( "test_particles", mesh );
+    list_type particles( "test_particles" );
 
     // Resize the aosoa.
     auto& aosoa = particles.aosoa();
