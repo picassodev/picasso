@@ -117,7 +117,7 @@ struct GridOperatorDependencies<>
 
     // Create a halo for the gather fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
     {
         return nullptr;
@@ -125,7 +125,7 @@ struct GridOperatorDependencies<>
 
     // Create a halo for the scatter fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t&, MemorySpace )
     {
         return nullptr;
@@ -181,17 +181,18 @@ struct GridOperatorDependencies<GatherDependencies<Layouts...>, Dependencies...>
 
     // Create a halo for the gather fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t& fm, MemorySpace )
     {
-        return Cajita::createHalo(
-            Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
+        return Cabana::Grid::createHalo(
+            Cabana::Grid::NodeHaloPattern<
+                FieldManager_t::mesh_type::num_space_dim>(),
             -1, ( *fm.array( Layouts{} ) )... );
     }
 
     // Create a halo for the scatter fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t& fm, MemorySpace space )
     {
         return GridOperatorDependencies<Dependencies...>::createScatterHalo(
@@ -250,7 +251,7 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
 
     // Create a halo for the gather fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
     {
         return nullptr;
@@ -258,11 +259,12 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
 
     // Create a halo for the scatter fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t& fm, MemorySpace )
     {
-        return Cajita::createHalo(
-            Cajita::NodeHaloPattern<FieldManager_t::mesh_type::num_space_dim>(),
+        return Cabana::Grid::createHalo(
+            Cabana::Grid::NodeHaloPattern<
+                FieldManager_t::mesh_type::num_space_dim>(),
             -1, ( *fm.array( Layouts{} ) )... );
     }
 
@@ -278,7 +280,7 @@ struct GridOperatorDependencies<ScatterDependencies<Layouts...>,
     static void scatter( const Halo& halo, const FieldManager_t& fm,
                          const ExecutionSpace& space )
     {
-        halo->scatter( space, Cajita::ScatterReduce::Sum(),
+        halo->scatter( space, Cabana::Grid::ScatterReduce::Sum(),
                        *( fm.array( Layouts{} ) )... );
     }
 };
@@ -315,7 +317,7 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
 
     // Create a halo for the gather fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createGatherHalo( const FieldManager_t&, MemorySpace )
     {
         return nullptr;
@@ -323,7 +325,7 @@ struct GridOperatorDependencies<LocalDependencies<Layouts...>>
 
     // Create a halo for the scatter fields.
     template <class FieldManager_t, class MemorySpace>
-    static std::shared_ptr<Cajita::Halo<MemorySpace>>
+    static std::shared_ptr<Cabana::Grid::Halo<MemorySpace>>
     createScatterHalo( const FieldManager_t&, MemorySpace )
     {
         return nullptr;
@@ -477,8 +479,8 @@ class GridOperator
             createDependencies( fm, typename field_deps::local_dep_type() );
 
         // Create local mesh.
-        auto local_mesh =
-            Cajita::createLocalMesh<ExecutionSpace>( *( _mesh->localGrid() ) );
+        auto local_mesh = Cabana::Grid::createLocalMesh<ExecutionSpace>(
+            *( _mesh->localGrid() ) );
 
         // Apply the operator.
         applyOp<WorkTag>( label, local_mesh, gather_deps, scatter_deps,
@@ -654,8 +656,8 @@ class GridOperator
         // geometric operations, gather, scatter, and local dependencies for
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
-        Cajita::grid_parallel_for(
-            label, exec_space, *( _mesh->localGrid() ), Cajita::Own(),
+        Cabana::Grid::grid_parallel_for(
+            label, exec_space, *( _mesh->localGrid() ), Cabana::Grid::Own(),
             typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
@@ -680,8 +682,8 @@ class GridOperator
         // field operations (all of which may be empty), and the local ijk
         // index of the entity they are currently working on.
         auto grid = *( _mesh->localGrid() );
-        Cajita::grid_parallel_for(
-            label, exec_space, grid, Cajita::Own(),
+        Cabana::Grid::grid_parallel_for(
+            label, exec_space, grid, Cabana::Grid::Own(),
             typename Location::entity_type(),
             KOKKOS_LAMBDA( const int i, const int j ) {
                 functorTagDispatch<WorkTag>( func, local_mesh, gather_deps,
@@ -691,8 +693,8 @@ class GridOperator
 
   private:
     std::shared_ptr<Mesh> _mesh;
-    std::shared_ptr<Cajita::Halo<memory_space>> _gather_halo;
-    std::shared_ptr<Cajita::Halo<memory_space>> _scatter_halo;
+    std::shared_ptr<Cabana::Grid::Halo<memory_space>> _gather_halo;
+    std::shared_ptr<Cabana::Grid::Halo<memory_space>> _scatter_halo;
 };
 
 //---------------------------------------------------------------------------//

@@ -36,35 +36,35 @@ struct InterpolationOrder
 // Indicates that the spline data should include the weight values.
 struct SplineValue
 {
-    using spline_data_member = Cajita::SplineWeightValues;
+    using spline_data_member = Cabana::Grid::SplineWeightValues;
 };
 
 // Indicates that the spline data should include the gradient of the weight
 // values in the physical frame.
 struct SplineGradient
 {
-    using spline_data_member = Cajita::SplineWeightPhysicalGradients;
+    using spline_data_member = Cabana::Grid::SplineWeightPhysicalGradients;
 };
 
 // Indicates that the spline data should include the physical distance between
 // the particle and the entities in the interpolation stencil
 struct SplineDistance
 {
-    using spline_data_member = Cajita::SplinePhysicalDistance;
+    using spline_data_member = Cabana::Grid::SplinePhysicalDistance;
 };
 
 // Indicates that the spline data should include the physical size of the cell
 // in each direction.
 struct SplineCellSize
 {
-    using spline_data_member = Cajita::SplinePhysicalCellSize;
+    using spline_data_member = Cabana::Grid::SplinePhysicalCellSize;
 };
 
 // Indicates that the spline data should include the position of the particle
 // in the reference frame of the spline stencil.
 struct SplineLogicalPosition
 {
-    using spline_data_member = Cajita::SplineLogicalPosition;
+    using spline_data_member = Cabana::Grid::SplineLogicalPosition;
 };
 
 //---------------------------------------------------------------------------//
@@ -95,12 +95,12 @@ createSpline( Location, Order, const LocalMesh& local_mesh,
     // operator() of the input point data for interpolation.
     typename PositionVector::value_type x[3] = { position( 0 ), position( 1 ),
                                                  position( 2 ) };
-    Cajita::SplineData<typename PositionVector::value_type, Order::value, 3,
-                       typename Location::entity_type,
-                       Cajita::SplineDataMemberTypes<
-                           typename SplineMembers::spline_data_member...>>
+    Cabana::Grid::SplineData<typename PositionVector::value_type, Order::value,
+                             3, typename Location::entity_type,
+                             Cabana::Grid::SplineDataMemberTypes<
+                                 typename SplineMembers::spline_data_member...>>
         sd;
-    Cajita::evaluateSpline( local_mesh, x, sd );
+    Cabana::Grid::evaluateSpline( local_mesh, x, sd );
     return sd;
 }
 
@@ -117,7 +117,7 @@ template <class ViewType, class SplineDataType, class Scalar,
 KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const ViewType& view, Scalar& result )
 {
-    Cajita::G2P::value( view, sd, result );
+    Cabana::Grid::G2P::value( view, sd, result );
 }
 
 //---------------------------------------------------------------------------//
@@ -131,7 +131,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
     // FIXME - replace this with eval_type once we update Cajita to use
     // operator() of the input point data for interpolation.
     typename ResultVector::value_type r[3];
-    Cajita::G2P::value( view, sd, r );
+    Cabana::Grid::G2P::value( view, sd, r );
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -151,7 +151,7 @@ gradient( const SplineDataType& sd, const ViewType& view, ResultVector& result )
     // FIXME - replace this with eval_type once we update Cajita to use
     // operator() of the input point data for interpolation.
     typename ResultVector::value_type r[3];
-    Cajita::G2P::gradient( view, sd, r );
+    Cabana::Grid::G2P::gradient( view, sd, r );
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
 #endif
@@ -171,7 +171,7 @@ gradient( const SplineDataType& sd, const ViewType& view, ResultMatrix& result )
     // FIXME - replace this with eval_type once we update Cajita to use
     // operator() of the input point data for interpolation.
     typename ResultMatrix::value_type r[3][3];
-    Cajita::G2P::gradient( view, sd, r );
+    Cabana::Grid::G2P::gradient( view, sd, r );
     for ( int i = 0; i < 3; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
 #pragma unroll
@@ -187,7 +187,7 @@ template <class ViewType, class SplineDataType, class Scalar>
 KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
                                         const ViewType& view, Scalar& result )
 {
-    Cajita::G2P::divergence( view, sd, result );
+    Cabana::Grid::G2P::divergence( view, sd, result );
 }
 
 //---------------------------------------------------------------------------//
@@ -208,7 +208,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const Scalar& value,
                                    const ScatterViewType& view )
 {
-    Cajita::P2G::value( value, sd, view );
+    Cabana::Grid::P2G::value( value, sd, view );
 }
 
 //---------------------------------------------------------------------------//
@@ -224,7 +224,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
     // operator() of the input point data for interpolation.
     typename ValueVector::value_type v[3] = { value( 0 ), value( 1 ),
                                               value( 2 ) };
-    Cajita::P2G::value( v, sd, view );
+    Cabana::Grid::P2G::value( v, sd, view );
 }
 
 //---------------------------------------------------------------------------//
@@ -235,7 +235,7 @@ KOKKOS_INLINE_FUNCTION void gradient( const SplineDataType& sd,
                                       const Scalar& value,
                                       const ScatterViewType& view )
 {
-    Cajita::P2G::gradient( value, sd, view );
+    Cabana::Grid::P2G::gradient( value, sd, view );
 }
 
 //---------------------------------------------------------------------------//
@@ -252,7 +252,7 @@ KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
     // operator() of the input point data for interpolation.
     typename ValueVector::value_type v[3] = { value( 0 ), value( 1 ),
                                               value( 2 ) };
-    Cajita::P2G::divergence( v, sd, view );
+    Cabana::Grid::P2G::divergence( v, sd, view );
 }
 
 //---------------------------------------------------------------------------//
@@ -271,7 +271,7 @@ KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
         { value( 0, 0 ), value( 0, 1 ), value( 0, 2 ) },
         { value( 1, 0 ), value( 1, 1 ), value( 1, 2 ) },
         { value( 2, 0 ), value( 2, 1 ), value( 2, 2 ) } };
-    Cajita::P2G::divergence( v, sd, view );
+    Cabana::Grid::P2G::divergence( v, sd, view );
 }
 
 //---------------------------------------------------------------------------//

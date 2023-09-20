@@ -55,10 +55,12 @@ void constructionTest()
     EXPECT_EQ( global_mesh_1.highCorner( 1 ), num_cell + 1 );
     EXPECT_EQ( global_mesh_1.highCorner( 2 ), num_cell );
 
-    EXPECT_EQ( global_grid_1.globalNumEntity( Cajita::Cell(), 0 ), num_cell );
-    EXPECT_EQ( global_grid_1.globalNumEntity( Cajita::Cell(), 1 ),
+    EXPECT_EQ( global_grid_1.globalNumEntity( Cabana::Grid::Cell(), 0 ),
+               num_cell );
+    EXPECT_EQ( global_grid_1.globalNumEntity( Cabana::Grid::Cell(), 1 ),
                num_cell + 2 );
-    EXPECT_EQ( global_grid_1.globalNumEntity( Cajita::Cell(), 2 ), num_cell );
+    EXPECT_EQ( global_grid_1.globalNumEntity( Cabana::Grid::Cell(), 2 ),
+               num_cell );
 
     EXPECT_TRUE( global_grid_1.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid_1.isPeriodic( 1 ) );
@@ -71,8 +73,8 @@ void constructionTest()
     auto host_coords_1 = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), nodes_1->view() );
     auto local_space_1 = nodes_1->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
-    auto local_mesh_1 = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
+    auto local_mesh_1 = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
         *( nodes_1->layout()->localGrid() ) );
     for ( int i = local_space_1.min( 0 ); i < local_space_1.max( 0 ); ++i )
         for ( int j = local_space_1.min( 1 ); j < local_space_1.max( 1 ); ++j )
@@ -80,13 +82,13 @@ void constructionTest()
                   ++k )
             {
                 EXPECT_EQ( host_coords_1( i, j, k, 0 ),
-                           local_mesh_1.lowCorner( Cajita::Ghost(), 0 ) +
+                           local_mesh_1.lowCorner( Cabana::Grid::Ghost(), 0 ) +
                                i * cell_size );
                 EXPECT_EQ( host_coords_1( i, j, k, 1 ),
-                           local_mesh_1.lowCorner( Cajita::Ghost(), 1 ) +
+                           local_mesh_1.lowCorner( Cabana::Grid::Ghost(), 1 ) +
                                j * cell_size );
                 EXPECT_EQ( host_coords_1( i, j, k, 2 ),
-                           local_mesh_1.lowCorner( Cajita::Ghost(), 2 ) +
+                           local_mesh_1.lowCorner( Cabana::Grid::Ghost(), 2 ) +
                                k * cell_size );
             }
 
@@ -110,10 +112,11 @@ void constructionTest()
     EXPECT_EQ( global_mesh_2.highCorner( 1 ), num_cell );
     EXPECT_EQ( global_mesh_2.highCorner( 2 ), num_cell + 1 );
 
-    EXPECT_EQ( global_grid_2.globalNumEntity( Cajita::Cell(), 0 ),
+    EXPECT_EQ( global_grid_2.globalNumEntity( Cabana::Grid::Cell(), 0 ),
                num_cell + 2 );
-    EXPECT_EQ( global_grid_2.globalNumEntity( Cajita::Cell(), 1 ), num_cell );
-    EXPECT_EQ( global_grid_2.globalNumEntity( Cajita::Cell(), 2 ),
+    EXPECT_EQ( global_grid_2.globalNumEntity( Cabana::Grid::Cell(), 1 ),
+               num_cell );
+    EXPECT_EQ( global_grid_2.globalNumEntity( Cabana::Grid::Cell(), 2 ),
                num_cell + 2 );
 
     EXPECT_FALSE( global_grid_2.isPeriodic( 0 ) );
@@ -127,8 +130,8 @@ void constructionTest()
     auto host_coords_2 = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), nodes_2->view() );
     auto local_space_2 = nodes_2->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
-    auto local_mesh_2 = Cajita::createLocalMesh<TEST_EXECSPACE>(
+        Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
+    auto local_mesh_2 = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
         *( nodes_2->layout()->localGrid() ) );
     for ( int i = local_space_2.min( 0 ); i < local_space_2.max( 0 ); ++i )
         for ( int j = local_space_2.min( 1 ); j < local_space_2.max( 1 ); ++j )
@@ -136,13 +139,13 @@ void constructionTest()
                   ++k )
             {
                 EXPECT_EQ( host_coords_2( i, j, k, 0 ),
-                           local_mesh_2.lowCorner( Cajita::Ghost(), 0 ) +
+                           local_mesh_2.lowCorner( Cabana::Grid::Ghost(), 0 ) +
                                i * cell_size );
                 EXPECT_EQ( host_coords_2( i, j, k, 1 ),
-                           local_mesh_2.lowCorner( Cajita::Ghost(), 1 ) +
+                           local_mesh_2.lowCorner( Cabana::Grid::Ghost(), 1 ) +
                                j * cell_size );
                 EXPECT_EQ( host_coords_2( i, j, k, 2 ),
-                           local_mesh_2.lowCorner( Cajita::Ghost(), 2 ) +
+                           local_mesh_2.lowCorner( Cabana::Grid::Ghost(), 2 ) +
                                k * cell_size );
             }
 }

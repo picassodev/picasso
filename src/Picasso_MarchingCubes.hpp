@@ -57,8 +57,9 @@ struct Data
     template <class Mesh>
     Data( const Mesh& mesh )
     {
-        auto cell_space = mesh.localGrid()->indexSpace(
-            Cajita::Ghost{}, Cajita::Cell{}, Cajita::Local{} );
+        auto cell_space = mesh.localGrid()->indexSpace( Cabana::Grid::Ghost{},
+                                                        Cabana::Grid::Cell{},
+                                                        Cabana::Grid::Local{} );
 
         cell_case_ids_and_offsets =
             Kokkos::View<int*** [2], typename Mesh::memory_space>(
@@ -1026,12 +1027,13 @@ vertexLocations( const LocalMesh& local_mesh, const int i, const int j,
                  const int k, Kokkos::Array<double, 6>& vertex_locations )
 {
     int index[3] = { i, j, k };
-    local_mesh.coordinates( Cajita::Node{}, index, vertex_locations.data() );
+    local_mesh.coordinates( Cabana::Grid::Node{}, index,
+                            vertex_locations.data() );
     for ( int d = 0; d < 3; ++d )
     {
         ++index[d];
     }
-    local_mesh.coordinates( Cajita::Node{}, index,
+    local_mesh.coordinates( Cabana::Grid::Node{}, index,
                             vertex_locations.data() + 3 );
     for ( int d = 0; d < 3; ++d )
     {
@@ -1131,7 +1133,7 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
     Kokkos::Profiling::pushRegion( "Picasso::MarchingCubes::build" );
 
     static_assert( std::is_same<typename SignedDistanceArray::entity_type,
-                                Cajita::Node>::value,
+                                Cabana::Grid::Node>::value,
                    "Marching cubes facets may only be constructed from nodal "
                    "distance fields" );
 
@@ -1143,11 +1145,11 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
 
     // Get the cell space we are working on.
     auto cell_space = signed_distance.layout()->localGrid()->indexSpace(
-        Cajita::Own{}, Cajita::Cell{}, Cajita::Local{} );
+        Cabana::Grid::Own{}, Cabana::Grid::Cell{}, Cabana::Grid::Local{} );
 
     // Get the case id and number of facets for each cell.
     data.num_facet = 0;
-    Cajita::grid_parallel_reduce(
+    Cabana::Grid::grid_parallel_reduce(
         "marching_cubes_facet_count", exec_space, cell_space,
         KOKKOS_LAMBDA( const int i, const int j, const int k, int& result ) {
             Kokkos::Array<double, 8> vertex_data;
@@ -1193,8 +1195,8 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
 
     // Fill facets.
     auto local_mesh =
-        Cajita::createLocalMesh<MemorySpace>( *( mesh.localGrid() ) );
-    Cajita::grid_parallel_for(
+        Cabana::Grid::createLocalMesh<MemorySpace>( *( mesh.localGrid() ) );
+    Cabana::Grid::grid_parallel_for(
         "marching_cubes_fill_facets", exec_space, cell_space,
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             int case_id = data.cell_case_ids_and_offsets( i, j, k, 0 );

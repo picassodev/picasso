@@ -21,7 +21,7 @@ namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Logical dimension index.
-using Dim = Cajita::Dim;
+using Dim = Cabana::Grid::Dim;
 
 //---------------------------------------------------------------------------//
 // Spatial dimension selector.

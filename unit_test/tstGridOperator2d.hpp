@@ -19,7 +19,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformCartesianMeshMapping.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -178,9 +178,9 @@ void gatherScatterTest()
                        fm->view( FieldLocation::Cell(), FooOut() ) );
     Kokkos::deep_copy( bar_out_host,
                        fm->view( FieldLocation::Cell(), BarOut() ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
-        *( fm->mesh()->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( fm->mesh()->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j ) {
             for ( int d = 0; d < 2; ++d )
                 EXPECT_EQ( foo_out_host( i, j, d ), 4.0 + i + j );

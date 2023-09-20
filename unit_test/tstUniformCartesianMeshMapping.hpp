@@ -70,9 +70,12 @@ void mappingTest3d()
     EXPECT_EQ( global_mesh.highCorner( 1 ), num_cell );
     EXPECT_EQ( global_mesh.highCorner( 2 ), num_cell );
 
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 0 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 1 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 2 ), num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 0 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 1 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 2 ),
+               num_cell );
 
     EXPECT_TRUE( global_grid.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
@@ -83,8 +86,9 @@ void mappingTest3d()
 
     // Check mapping.
     auto ghosted_cells = local_grid->indexSpace(
-        Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
-    auto local_mesh = Cajita::createLocalMesh<TEST_MEMSPACE>( *local_grid );
+        Cabana::Grid::Ghost(), Cabana::Grid::Cell(), Cabana::Grid::Local() );
+    auto local_mesh =
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *local_grid );
     Kokkos::View<double*** [3], TEST_MEMSPACE> cell_forward_map(
         "cell_forward_map", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ), ghosted_cells.extent( Dim::K ) );
@@ -100,13 +104,14 @@ void mappingTest3d()
     Kokkos::View<bool***, TEST_MEMSPACE> default_cell_map_success(
         "default_cell_reverse_map_success", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ), ghosted_cells.extent( Dim::K ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Map to physical frame.
             LinearAlgebra::Vector<double, 3> cell_coords = 0.0;
             int ijk[3] = { i, j, k };
-            local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
+            local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
+                                    cell_coords.data() );
             LinearAlgebra::VectorView<double, 3> phys_coords(
                 &cell_forward_map( i, j, k, 0 ), cell_forward_map.stride( 3 ) );
             CurvilinearMeshMapping<mapping_type>::mapToPhysicalFrame(
@@ -231,8 +236,10 @@ void mappingTest2d()
     EXPECT_EQ( global_mesh.highCorner( 0 ), num_cell );
     EXPECT_EQ( global_mesh.highCorner( 1 ), num_cell );
 
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 0 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 1 ), num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 0 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 1 ),
+               num_cell );
 
     EXPECT_TRUE( global_grid.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
@@ -242,8 +249,9 @@ void mappingTest2d()
 
     // Check mapping.
     auto ghosted_cells = local_grid->indexSpace(
-        Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
-    auto local_mesh = Cajita::createLocalMesh<TEST_MEMSPACE>( *local_grid );
+        Cabana::Grid::Ghost(), Cabana::Grid::Cell(), Cabana::Grid::Local() );
+    auto local_mesh =
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *local_grid );
     Kokkos::View<double** [2], TEST_MEMSPACE> cell_forward_map(
         "cell_forward_map", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ) );
@@ -259,13 +267,14 @@ void mappingTest2d()
     Kokkos::View<bool**, TEST_MEMSPACE> default_cell_map_success(
         "default_cell_reverse_map_success", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j ) {
             // Map to physical frame.
             LinearAlgebra::Vector<double, 2> cell_coords = 0.0;
             int ijk[2] = { i, j };
-            local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
+            local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
+                                    cell_coords.data() );
             LinearAlgebra::VectorView<double, 2> phys_coords(
                 &cell_forward_map( i, j, 0 ), cell_forward_map.stride( 2 ) );
             CurvilinearMeshMapping<mapping_type>::mapToPhysicalFrame(

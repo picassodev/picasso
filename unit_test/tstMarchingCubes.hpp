@@ -16,7 +16,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -63,21 +63,21 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
 
     // Local mesh.
     auto local_mesh =
-        Cajita::createLocalMesh<TEST_MEMSPACE>( *( mesh->localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *( mesh->localGrid() ) );
 
     // Populate the initial estimate.
     auto own_entities = mesh->localGrid()->indexSpace(
-        Cajita::Own(), Cajita::Node(), Cajita::Local() );
+        Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
     Kokkos::parallel_for(
         "estimate",
-        Cajita::createExecutionPolicy( own_entities, TEST_EXECSPACE{} ),
+        Cabana::Grid::createExecutionPolicy( own_entities, TEST_EXECSPACE{} ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Get the entity index.
             int entity_index[3] = { i, j, k };
 
             // Get the entity location.
             double x[3];
-            local_mesh.coordinates( Cajita::Node(), entity_index, x );
+            local_mesh.coordinates( Cabana::Grid::Node(), entity_index, x );
 
             // Assign the estimate value.
             estimate_view( i, j, k, 0 ) = phi_0( x[0], x[1], x[2] );
@@ -94,7 +94,7 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
     MarchingCubes::writeDataToSTL( *mc_data, MPI_COMM_WORLD, stl_filename );
 
     // Output a bov file with the level set.
-    Cajita::Experimental::BovWriter::writeTimeStep( 0, 0.0, *distance );
+    Cabana::Grid::Experimental::BovWriter::writeTimeStep( 0, 0.0, *distance );
 
     double area = 16.0 * std::atan( 1.0 ) * 0.25 * 0.25;
     double facet_area = 0.0;

@@ -181,9 +181,9 @@ class CurvilinearMesh
     static constexpr std::size_t num_space_dim =
         CurvilinearMeshMapping<Mapping>::num_space_dim;
 
-    using cajita_mesh = Cajita::UniformMesh<double, num_space_dim>;
+    using cajita_mesh = Cabana::Grid::UniformMesh<double, num_space_dim>;
 
-    using local_grid = Cajita::LocalGrid<cajita_mesh>;
+    using local_grid = Cabana::Grid::LocalGrid<cajita_mesh>;
 
     /*!
       \brief Constructor.
@@ -215,16 +215,17 @@ class CurvilinearMesh
         }
 
         // Create the global mesh.
-        auto global_mesh = Cajita::createUniformGlobalMesh(
+        auto global_mesh = Cabana::Grid::createUniformGlobalMesh(
             global_low_corner, global_high_corner, global_num_cell );
 
         // Build the global grid.
-        auto global_grid = Cajita::createGlobalGrid(
+        auto global_grid = Cabana::Grid::createGlobalGrid(
             comm, global_mesh, periodic,
-            Cajita::ManualBlockPartitioner<num_space_dim>( ranks_per_dim ) );
+            Cabana::Grid::ManualBlockPartitioner<num_space_dim>(
+                ranks_per_dim ) );
 
         // Build the local grid.
-        _local_grid = Cajita::createLocalGrid( global_grid, halo_width );
+        _local_grid = Cabana::Grid::createLocalGrid( global_grid, halo_width );
     }
 
     // Get the mesh mapping.

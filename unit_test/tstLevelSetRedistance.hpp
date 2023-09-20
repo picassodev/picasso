@@ -15,7 +15,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -63,21 +63,21 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
 
     // Local mesh.
     auto local_mesh =
-        Cajita::createLocalMesh<TEST_MEMSPACE>( *( mesh->localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *( mesh->localGrid() ) );
 
     // Populate the initial estimate.
     auto own_entities = mesh->localGrid()->indexSpace(
-        Cajita::Own(), Cajita::Node(), Cajita::Local() );
+        Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
     Kokkos::parallel_for(
         "estimate",
-        Cajita::createExecutionPolicy( own_entities, TEST_EXECSPACE() ),
+        Cabana::Grid::createExecutionPolicy( own_entities, TEST_EXECSPACE() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Get the entity index.
             int entity_index[3] = { i, j, k };
 
             // Get the entity location.
             double x[3];
-            local_mesh.coordinates( Cajita::Node(), entity_index, x );
+            local_mesh.coordinates( Cabana::Grid::Node(), entity_index, x );
 
             // Assign the estimate value.
             estimate_view( i, j, k, 0 ) = phi_0( x[0], x[1], x[2] );
@@ -95,12 +95,12 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
     // is less than the halo.
     auto host_distance = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), distance_view );
-    auto host_mesh =
-        Cajita::createLocalMesh<Kokkos::HostSpace>( *( mesh->localGrid() ) );
+    auto host_mesh = Cabana::Grid::createLocalMesh<Kokkos::HostSpace>(
+        *( mesh->localGrid() ) );
     Kokkos::parallel_for(
         "test",
-        Cajita::createExecutionPolicy( own_entities,
-                                       Kokkos::DefaultHostExecutionSpace() ),
+        Cabana::Grid::createExecutionPolicy(
+            own_entities, Kokkos::DefaultHostExecutionSpace() ),
         [=]( const int i, const int j, const int k )
         {
             // Get the entity index.
@@ -108,7 +108,7 @@ void runTest( const Phi0& phi_0, const PhiR& phi_r, const double test_eps )
 
             // Get the entity location.
             double x[3];
-            host_mesh.coordinates( Cajita::Node(), entity_index, x );
+            host_mesh.coordinates( Cabana::Grid::Node(), entity_index, x );
 
             // Observed result.
             auto observed = host_distance( i, j, k, 0 );
