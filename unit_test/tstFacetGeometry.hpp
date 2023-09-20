@@ -16,6 +16,9 @@
 
 #include <Picasso_ParticleInit.hpp>
 
+#include <Cabana_Core.hpp>
+#include <Cajita.hpp>
+
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
@@ -481,7 +484,8 @@ struct LocateFunctor
     FacetGeometryData<MemorySpace> geom;
 
     template <class ParticleType>
-    KOKKOS_INLINE_FUNCTION bool operator()( const double x[3], const double,
+    KOKKOS_INLINE_FUNCTION bool operator()( const int, const double x[3],
+                                            const double,
                                             ParticleType& p ) const
     {
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
@@ -520,8 +524,8 @@ void initExample()
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    initializeParticles( InitUniform(), TEST_EXECSPACE(), 1, init_func,
-                         particles );
+    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(), init_func,
+                             particles, 1, *( mesh->localGrid() ) );
 
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(

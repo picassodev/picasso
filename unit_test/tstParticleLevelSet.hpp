@@ -36,7 +36,8 @@ struct LocateFunctor
     FacetGeometryData<MemorySpace> geom;
 
     template <class ParticleType>
-    KOKKOS_INLINE_FUNCTION bool operator()( const double x[3], const double,
+    KOKKOS_INLINE_FUNCTION bool operator()( const int, const double x[3],
+                                            const double,
                                             ParticleType& p ) const
     {
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
@@ -72,28 +73,27 @@ void zalesaksTest( const std::string& filename )
         MPI_COMM_WORLD );
 
     // Create particles.
-    auto particles = createParticleList(
-        "particles", mesh,
-        Cabana::ParticleTraits<Field::PhysicalPosition<3>,
-                               Field::LogicalPosition<3>, Field::Color,
-                               Field::CommRank>() );
+    auto particles = Cajita::createParticleList<TEST_MEMSPACE>(
+        "particles", Cabana::ParticleTraits<Field::PhysicalPosition<3>,
+                                            Field::LogicalPosition<3>,
+                                            Field::Color, Field::CommRank>() );
 
     // Assign particles a color equal to the volume id in which they are
     // located. The implicit complement is not constructed.
     int ppc = 3;
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    initializeParticles( InitUniform(), TEST_EXECSPACE(), ppc, init_func,
-                         *particles );
+    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(), init_func,
+                             particles, ppc, *( mesh->localGrid() ) );
 
     // Write the initial particle state.
     double time = 0.0;
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(
         "particles", mesh->localGrid()->globalGrid(), 0, time,
-        particles->slice( Field::PhysicalPosition<3>() ),
-        particles->slice( Field::Color() ),
-        particles->slice( Field::CommRank() ) );
+        particles.slice( Field::PhysicalPosition<3>() ),
+        particles.slice( Field::Color() ),
+        particles.slice( Field::CommRank() ) );
 #endif
 
     // Build a level set for disk.
@@ -101,11 +101,11 @@ void zalesaksTest( const std::string& filename )
     auto level_set = createParticleLevelSet<FieldLocation::Node>(
         parser.propertyTree(), mesh, disk_color );
     level_set->updateParticleColors( TEST_EXECSPACE(),
-                                     particles->slice( Field::Color() ) );
+                                     particles.slice( Field::Color() ) );
 
     // Compute the initial level set.
     level_set->estimateSignedDistance(
-        TEST_EXECSPACE(), particles->slice( Field::LogicalPosition<3>() ) );
+        TEST_EXECSPACE(), particles.slice( Field::LogicalPosition<3>() ) );
     level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
     // Write the initial level set.
@@ -121,14 +121,14 @@ void zalesaksTest( const std::string& filename )
     for ( int t = 0; t < num_step; ++t )
     {
         // Get slices.
-        auto xp = particles->slice( Field::PhysicalPosition<3>() );
-        auto xl = particles->slice( Field::LogicalPosition<3>() );
-        auto xr = particles->slice( Field::CommRank() );
+        auto xp = particles.slice( Field::PhysicalPosition<3>() );
+        auto xl = particles.slice( Field::LogicalPosition<3>() );
+        auto xr = particles.slice( Field::CommRank() );
 
         // Move the particles around the circle.
         Kokkos::parallel_for(
             "move_particles",
-            Kokkos::RangePolicy<TEST_EXECSPACE>( 0, particles->size() ),
+            Kokkos::RangePolicy<TEST_EXECSPACE>( 0, particles.size() ),
             KOKKOS_LAMBDA( const int p ) {
                 // Get the particle location relative to the origin of
                 // rotation.
@@ -159,27 +159,28 @@ void zalesaksTest( const std::string& filename )
             } );
 
         // Move particles to new ranks if needed if needed.
-        bool did_redistribute = particles->redistribute();
+        bool did_redistribute =
+            particles.redistribute( *( mesh->localGrid() ) );
 
         // If they went to new ranks, update the list of colors which write to
         // the level set.
         if ( did_redistribute )
             level_set->updateParticleColors(
-                TEST_EXECSPACE(), particles->slice( Field::Color() ) );
+                TEST_EXECSPACE(), particles.slice( Field::Color() ) );
 
         // Write the particle state.
         time += 1.0;
 #ifdef Cabana_ENABLE_SILO
         Cajita::Experimental::SiloParticleOutput::writeTimeStep(
             "particles", mesh->localGrid()->globalGrid(), t + 1, time,
-            particles->slice( Field::PhysicalPosition<3>() ),
-            particles->slice( Field::Color() ),
-            particles->slice( Field::CommRank() ) );
+            particles.slice( Field::PhysicalPosition<3>() ),
+            particles.slice( Field::Color() ),
+            particles.slice( Field::CommRank() ) );
 #endif
 
         // Compute the level set.
         level_set->estimateSignedDistance(
-            TEST_EXECSPACE(), particles->slice( Field::LogicalPosition<3>() ) );
+            TEST_EXECSPACE(), particles.slice( Field::LogicalPosition<3>() ) );
         level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
         // Write the level set.

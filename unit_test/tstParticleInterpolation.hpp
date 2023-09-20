@@ -384,8 +384,8 @@ void interpolationTest()
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
-    auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
+    auto particle_init_func = KOKKOS_LAMBDA( const int, const double x[3],
+                                             const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
             Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
@@ -394,8 +394,9 @@ void interpolationTest()
 
     // Initialize particles. Put one particle in the center of every cell.
     int ppc = 1;
-    initializeParticles( InitUniform(), TEST_EXECSPACE(), ppc,
-                         particle_init_func, particles );
+    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
+                             particle_init_func, particles, ppc,
+                             *( mesh->localGrid() ) );
     int num_particle = particles.size();
 
     // Get slices.

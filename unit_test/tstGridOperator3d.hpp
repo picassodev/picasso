@@ -278,7 +278,6 @@ struct GridTensor4Func
 
         // Get output dependencies
         auto foo_out = scatter_deps.get( FieldLocation::Cell(), FooOut() );
-        auto foo_out_access = foo_out.access();
 
         // Get local dependencies
         auto cam = local_deps.get( FieldLocation::Cell(), Cam() );
@@ -350,8 +349,8 @@ void gatherScatterTest()
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
-    auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
+    auto particle_init_func = KOKKOS_LAMBDA( const int, const double x[3],
+                                             const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
             Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
@@ -360,8 +359,9 @@ void gatherScatterTest()
 
     // Initialize particles.
     int ppc = 10;
-    initializeParticles( InitRandom(), TEST_EXECSPACE(), ppc,
-                         particle_init_func, particles );
+    Cajita::createParticles( Cabana::InitRandom(), TEST_EXECSPACE(),
+                             particle_init_func, particles, ppc,
+                             *( mesh->localGrid() ) );
 
     // Make an operator.
     using gather_deps =
