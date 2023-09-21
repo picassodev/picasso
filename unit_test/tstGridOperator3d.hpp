@@ -343,8 +343,8 @@ void gatherScatterTest()
 
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, FooP, BarP> fields;
-    auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
+        "test_particles", fields );
     using list_type = decltype( particles );
 
     using particle_type = typename list_type::particle_type;

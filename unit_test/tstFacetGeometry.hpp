@@ -516,7 +516,7 @@ void initExample()
 
     Cabana::ParticleTraits<Field::PhysicalPosition<3>, Field::VolumeId> fields;
     auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "particles", fields );
+        Cabana::Grid::createParticleList<TEST_MEMSPACE>( "particles", fields );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
                                            TEST_EXECSPACE() );

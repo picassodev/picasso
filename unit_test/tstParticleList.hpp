@@ -43,8 +43,8 @@ void linearAlgebraTest()
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, Foo, Field::Color, Bar>
         fields;
-    auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
+        "test_particles", fields );
 
     // Resize the aosoa.
     auto& aosoa = particles.aosoa();
