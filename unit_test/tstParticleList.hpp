@@ -14,6 +14,7 @@
 #include <Picasso_ParticleList.hpp>
 
 #include <Cabana_Core.hpp>
+#include <Cajita.hpp>
 #include <impl/Cabana_Index.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -40,11 +41,10 @@ struct Bar : Field::Matrix<double, 3, 3>
 void linearAlgebraTest()
 {
     // Make a particle list.
-    using list_type =
-        Cajita::ParticleList<TEST_MEMSPACE, Field::LogicalPosition<3>, Foo,
-                             Field::Color, Bar>;
-
-    list_type particles( "test_particles" );
+    Cabana::ParticleTraits<Field::LogicalPosition<3>, Foo, Field::Color, Bar>
+        fields;
+    auto particles =
+        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
 
     // Resize the aosoa.
     auto& aosoa = particles.aosoa();

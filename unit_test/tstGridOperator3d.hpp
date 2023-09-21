@@ -342,10 +342,11 @@ void gatherScatterTest()
                            minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    using list_type =
-        Cajita::ParticleList<TEST_MEMSPACE, Field::LogicalPosition<3>, FooP,
-                             BarP>;
-    list_type particles( "test_particles" );
+    Cabana::ParticleTraits<Field::LogicalPosition<3>, FooP, BarP> fields;
+    auto particles =
+        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    using list_type = decltype( particles );
+
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
