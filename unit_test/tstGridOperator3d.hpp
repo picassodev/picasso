@@ -120,7 +120,7 @@ struct ParticleFunc
 
         // Get particle data.
         auto foop = get( particle, FooP() );
-        auto& barp = get( particle, BarP() );
+        auto& barp = Picasso::get( particle, BarP() );
 
         // Zero-order cell interpolant.
         auto spline = createSpline(
@@ -278,7 +278,6 @@ struct GridTensor4Func
 
         // Get output dependencies
         auto foo_out = scatter_deps.get( FieldLocation::Cell(), FooOut() );
-        auto foo_out_access = foo_out.access();
 
         // Get local dependencies
         auto cam = local_deps.get( FieldLocation::Cell(), Cam() );
@@ -343,24 +342,27 @@ void gatherScatterTest()
                            minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::LogicalPosition<3>, FooP, BarP>;
-    list_type particles( "test_particles", mesh );
+    Cabana::ParticleTraits<Field::LogicalPosition<3>, FooP, BarP> fields;
+    auto particles =
+        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    using list_type = decltype( particles );
+
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
-    auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
+    auto particle_init_func = KOKKOS_LAMBDA( const int, const double x[3],
+                                             const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition<3>(), d ) = x[d];
+            Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 
     // Initialize particles.
     int ppc = 10;
-    initializeParticles( InitRandom(), TEST_EXECSPACE(), ppc,
-                         particle_init_func, particles );
+    Cajita::createParticles( Cabana::InitRandom(), TEST_EXECSPACE(),
+                             particle_init_func, particles, ppc,
+                             *( mesh->localGrid() ) );
 
     // Make an operator.
     using gather_deps =

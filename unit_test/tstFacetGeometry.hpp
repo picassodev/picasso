@@ -16,6 +16,9 @@
 
 #include <Picasso_ParticleInit.hpp>
 
+#include <Cabana_Core.hpp>
+#include <Cajita.hpp>
+
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
@@ -481,16 +484,17 @@ struct LocateFunctor
     FacetGeometryData<MemorySpace> geom;
 
     template <class ParticleType>
-    KOKKOS_INLINE_FUNCTION bool operator()( const double x[3], const double,
+    KOKKOS_INLINE_FUNCTION bool operator()( const int, const double x[3],
+                                            const double,
                                             ParticleType& p ) const
     {
         float xf[3] = { float( x[0] ), float( x[1] ), float( x[2] ) };
         for ( int d = 0; d < 3; ++d )
         {
-            get( p, Field::PhysicalPosition<3>(), d ) = x[d];
+            Picasso::get( p, Field::PhysicalPosition<3>(), d ) = x[d];
         }
         auto volume_id = FacetGeometryOps::locatePoint( xf, geom );
-        get( p, Field::VolumeId() ) = volume_id;
+        Picasso::get( p, Field::VolumeId() ) = volume_id;
         return ( volume_id > -2 );
     }
 };
@@ -510,17 +514,17 @@ void initExample()
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
         parser.propertyTree(), global_box, minimum_halo_size, MPI_COMM_WORLD );
 
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>,
-                                   Field::PhysicalPosition<3>, Field::VolumeId>;
-    list_type particles( "particles", mesh );
+    Cabana::ParticleTraits<Field::PhysicalPosition<3>, Field::VolumeId> fields;
+    auto particles =
+        Cajita::createParticleList<TEST_MEMSPACE>( "particles", fields );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
                                            TEST_EXECSPACE() );
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    initializeParticles( InitUniform(), TEST_EXECSPACE(), 1, init_func,
-                         particles );
+    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(), init_func,
+                             particles, 1, *( mesh->localGrid() ) );
 
 #ifdef Cabana_ENABLE_SILO
     Cajita::Experimental::SiloParticleOutput::writeTimeStep(

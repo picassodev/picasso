@@ -152,7 +152,7 @@ RUN ARBORX_VERSION=v1.0 && \
 
 # Install Cabana
 ENV CABANA_DIR=/opt/cabana
-RUN CABANA_VERSION=0.5.0 && \
+RUN CABANA_VERSION=0.6.0 && \
     CABANA_URL=https://github.com/ECP-copa/Cabana/archive/${CABANA_VERSION}.tar.gz && \
     CABANA_ARCHIVE=cabana.tar.gz && \
     wget --quiet ${CABANA_URL} --output-document=${CABANA_ARCHIVE} && \

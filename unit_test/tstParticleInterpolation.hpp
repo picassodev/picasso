@@ -73,7 +73,7 @@ struct ScalarValueP2G
             scatter_deps.get( FieldLocation::Node(), NodeScalar() );
 
         // Get particle data.
-        auto particle_scalar = get( particle, ParticleScalar() );
+        auto particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -129,7 +129,7 @@ struct ScalarGradientP2G
             scatter_deps.get( FieldLocation::Node(), NodeVector() );
 
         // Get particle data.
-        auto particle_scalar = get( particle, ParticleScalar() );
+        auto particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -217,7 +217,7 @@ struct ScalarValueG2P
             gather_deps.get( FieldLocation::Node(), NodeScalar() );
 
         // Get particle data.
-        auto& particle_scalar = get( particle, ParticleScalar() );
+        auto& particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -335,7 +335,7 @@ struct VectorDivergenceG2P
             gather_deps.get( FieldLocation::Node(), NodeVector() );
 
         // Get particle data.
-        auto& particle_scalar = get( particle, ParticleScalar() );
+        auto& particle_scalar = Picasso::get( particle, ParticleScalar() );
 
         // Node Interpolant
         auto spline = createSpline(
@@ -377,25 +377,28 @@ void interpolationTest()
         Cajita::Own(), Cajita::Node(), Cajita::Local() );
 
     // Make a particle list.
-    using list_type =
-        ParticleList<UniformMesh<TEST_MEMSPACE>, Field::LogicalPosition<3>,
-                     ParticleScalar, ParticleVector, ParticleTensor>;
-    list_type particles( "test_particles", mesh );
+    Cabana::ParticleTraits<Field::LogicalPosition<3>, ParticleScalar,
+                           ParticleVector, ParticleTensor>
+        fields;
+    auto particles =
+        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    using list_type = decltype( particles );
     using particle_type = typename list_type::particle_type;
 
     // Particle initialization functor. Make particles everywhere.
-    auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double, particle_type& p )
+    auto particle_init_func = KOKKOS_LAMBDA( const int, const double x[3],
+                                             const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            get( p, Field::LogicalPosition<3>(), d ) = x[d];
+            Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 
     // Initialize particles. Put one particle in the center of every cell.
     int ppc = 1;
-    initializeParticles( InitUniform(), TEST_EXECSPACE(), ppc,
-                         particle_init_func, particles );
+    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
+                             particle_init_func, particles, ppc,
+                             *( mesh->localGrid() ) );
     int num_particle = particles.size();
 
     // Get slices.
