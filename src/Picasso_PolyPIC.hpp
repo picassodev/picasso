@@ -12,7 +12,7 @@
 #ifndef PICASSO_POLYPIC_HPP
 #define PICASSO_POLYPIC_HPP
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>

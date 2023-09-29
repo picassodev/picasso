@@ -12,11 +12,10 @@
 #ifndef PICASSO_APIC_HPP
 #define PICASSO_APIC_HPP
 
-#include <Cajita.hpp>
-
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <type_traits>

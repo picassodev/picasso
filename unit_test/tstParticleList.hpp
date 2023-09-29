@@ -14,8 +14,6 @@
 #include <Picasso_ParticleList.hpp>
 
 #include <Cabana_Core.hpp>
-#include <Cajita.hpp>
-#include <impl/Cabana_Index.hpp>
 
 #include <Kokkos_Core.hpp>
 

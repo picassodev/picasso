@@ -16,7 +16,7 @@
 #include <Picasso_LevelSet.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <ArborX.hpp>
 

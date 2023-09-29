@@ -12,7 +12,7 @@
 #ifndef PICASSO_UNIFORMMESH_HPP
 #define PICASSO_UNIFORMMESH_HPP
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 

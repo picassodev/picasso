@@ -19,9 +19,8 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformCartesianMeshMapping.hpp>
 
-#include <Cabana_Grid.hpp>
-
 #include <Cabana_Core.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 

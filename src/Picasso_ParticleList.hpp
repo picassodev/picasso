@@ -17,7 +17,7 @@
 #include <Picasso_UniformMesh.hpp>
 
 #include <Cabana_Core.hpp>
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <memory>
 #include <string>

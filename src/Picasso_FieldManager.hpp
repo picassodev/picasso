@@ -18,7 +18,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 

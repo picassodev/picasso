@@ -14,7 +14,7 @@
 
 #include <Picasso_BatchedLinearAlgebra.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Cabana_Core.hpp>
 

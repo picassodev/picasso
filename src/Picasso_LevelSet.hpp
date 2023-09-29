@@ -16,7 +16,7 @@
 #include <Picasso_LevelSetRedistance.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 

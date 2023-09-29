@@ -12,8 +12,8 @@
 #ifndef PICASSO_ADAPTIVEMESH_HPP
 #define PICASSO_ADAPTIVEMESH_HPP
 
-#include <Cajita.hpp>
-
+#include <Cabana_Core.hpp>
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <boost/property_tree/ptree.hpp>
@@ -33,11 +33,11 @@ template <class MemorySpace>
 class AdaptiveMesh
 {
   public:
-    using cajita_mesh = Cabana::Grid::UniformMesh<double>;
+    using cabana_mesh = Cabana::Grid::UniformMesh<double>;
 
     using memory_space = MemorySpace;
 
-    using local_grid = Cabana::Grid::LocalGrid<cajita_mesh>;
+    using local_grid = Cabana::Grid::LocalGrid<cabana_mesh>;
 
     using node_array =
         Cabana::Grid::Array<double, Cabana::Grid::Node,

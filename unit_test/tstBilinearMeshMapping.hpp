@@ -14,6 +14,7 @@
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_Types.hpp>
 
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <cmath>

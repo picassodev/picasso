@@ -15,7 +15,7 @@
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldTypes.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <type_traits>
 
