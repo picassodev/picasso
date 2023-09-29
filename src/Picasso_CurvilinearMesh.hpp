@@ -181,9 +181,10 @@ class CurvilinearMesh
     static constexpr std::size_t num_space_dim =
         CurvilinearMeshMapping<Mapping>::num_space_dim;
 
-    using cajita_mesh = Cabana::Grid::UniformMesh<double, num_space_dim>;
+    using cabana_mesh = Cabana::Grid::UniformMesh<double, num_space_dim>;
+    using cajita_mesh [[deprecated]] = cabana_mesh;
 
-    using local_grid = Cabana::Grid::LocalGrid<cajita_mesh>;
+    using local_grid = Cabana::Grid::LocalGrid<cabana_mesh>;
 
     /*!
       \brief Constructor.

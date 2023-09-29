@@ -33,11 +33,12 @@ template <class MemorySpace>
 class UniformMesh
 {
   public:
-    using cajita_mesh = Cabana::Grid::UniformMesh<double>;
+    using cabana_mesh = Cabana::Grid::UniformMesh<double>;
+    using cajita_mesh [[deprecated]] = cabana_mesh;
 
     using memory_space = MemorySpace;
 
-    using local_grid = Cabana::Grid::LocalGrid<cajita_mesh>;
+    using local_grid = Cabana::Grid::LocalGrid<cabana_mesh>;
 
     using node_array =
         Cabana::Grid::Array<double, Cabana::Grid::Node,

@@ -55,7 +55,7 @@ struct FieldHandle : public FieldHandleBase
 {
     std::shared_ptr<Cabana::Grid::Array<
         typename FieldTag::value_type, typename Location::entity_type,
-        typename Mesh::cajita_mesh, typename Mesh::memory_space>>
+        typename Mesh::cabana_mesh, typename Mesh::memory_space>>
         array;
 
     std::shared_ptr<Cabana::Grid::Halo<typename Mesh::memory_space>> halo;
