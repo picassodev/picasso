@@ -1735,6 +1735,15 @@ struct Vector<T, 1>
         return *this;
     }
 
+    // Normalization
+    KOKKOS_INLINE_FUNCTION
+    Vector& normalize()
+    {
+        ( *this )( 0 ) = ( *this )( 0 ) > 0 ? 1.0 : -1.0;
+        ;
+        return *this;
+    }
+
     // Strides.
     KOKKOS_INLINE_FUNCTION
     int stride_0() const { return 1; }
