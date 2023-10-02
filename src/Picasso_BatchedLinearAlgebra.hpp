@@ -12,6 +12,8 @@
 #ifndef PICASSO_BATCHEDLINEARALGEBRA_HPP
 #define PICASSO_BATCHEDLINEARALGEBRA_HPP
 
+#include <cassert>
+
 #include <Kokkos_Core.hpp>
 
 #include <functional>
@@ -1604,6 +1606,8 @@ struct Vector
 #pragma unroll
 #endif
         auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
+        assert( norm2 != 0.0 );
+
         for ( int i = 0; i < N; ++i )
             ( *this )( i ) /= norm2;
         return *this;
@@ -1739,8 +1743,9 @@ struct Vector<T, 1>
     KOKKOS_INLINE_FUNCTION
     Vector& normalize()
     {
+        assert( ( *this )( 0 ) != 0.0 );
+
         ( *this )( 0 ) = ( *this )( 0 ) > 0 ? 1.0 : -1.0;
-        ;
         return *this;
     }
 
@@ -1907,6 +1912,8 @@ struct VectorView
 #pragma unroll
 #endif
         auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
+        assert( norm2 != 0.0 );
+
         for ( int i = 0; i < N; ++i )
             ( *this )( i ) /= norm2;
         return *this;
