@@ -39,7 +39,7 @@ struct Data
     Kokkos::View<int*** [2], MemorySpace> cell_case_ids_and_offsets;
 
     // Number of facets.
-    int num_facet;
+    std::size_t num_facet;
 
     // Facets. Facets are only created for owned cells.
     Kokkos::View<double* [3][3], MemorySpace> facets;
@@ -60,13 +60,11 @@ struct Data
         auto cell_space = mesh.localGrid()->indexSpace(
             Cajita::Ghost{}, Cajita::Cell{}, Cajita::Local{} );
 
+        // Purposely initializing to zero here.
         cell_case_ids_and_offsets =
             Kokkos::View<int*** [2], typename Mesh::memory_space>(
-                Kokkos::ViewAllocateWithoutInitializing(
-                    "cell_case_ids_and_offset" ),
-                cell_space.extent( 0 ), cell_space.extent( 1 ),
-                cell_space.extent( 2 ) );
-        Kokkos::deep_copy( cell_case_ids_and_offsets, 0 );
+                "cell_case_ids_and_offset", cell_space.extent( 0 ),
+                cell_space.extent( 1 ), cell_space.extent( 2 ) );
         num_facet = 0;
         facets = Kokkos::View<double* [3][3], typename Mesh::memory_space>(
             Kokkos::ViewAllocateWithoutInitializing( "facets" ), 0 );
@@ -944,6 +942,39 @@ struct Data
                          Kokkos::Array<short, 3>{ 5, 0, 9 },
                          Kokkos::Array<short, 3>{ 0, 4, 8 } };
     }
+
+    // Return the number of facets (not necessarily equal to the size of the
+    // facet View).
+    std::size_t numFacet() const { return num_facet; }
+
+    // Return the number of facets allocated.
+    std::size_t facetCapacity() const { return facets.extent( 0 ); }
+
+    // Set number of facets.
+    void resetNumFacet( const std::size_t new_num_facet,
+                        const bool reset_data_memory = false )
+    {
+        num_facet = new_num_facet;
+
+        // Allocate facet data if necessary.
+        if ( numFacet() > facetCapacity() || reset_data_memory )
+        {
+            Kokkos::realloc( facets, numFacet() );
+        }
+    }
+
+    template <class CellSpace>
+    void resetCellIdsAndOffsets( CellSpace cell_space )
+    {
+        // Resize the IDs and offsets if needed (without copying).
+        if ( cell_space.extent( 0 ) > cell_case_ids_and_offsets.extent( 0 ) ||
+             cell_space.extent( 1 ) > cell_case_ids_and_offsets.extent( 1 ) ||
+             cell_space.extent( 2 ) > cell_case_ids_and_offsets.extent( 2 ) )
+            Kokkos::realloc( cell_case_ids_and_offsets, cell_space.extent( 0 ),
+                             cell_space.extent( 1 ), cell_space.extent( 2 ) );
+        // Reset IDs and offsets.
+        Kokkos::deep_copy( cell_case_ids_and_offsets, 0 );
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -1145,11 +1176,14 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
     auto cell_space = signed_distance.layout()->localGrid()->indexSpace(
         Cajita::Own{}, Cajita::Cell{}, Cajita::Local{} );
 
+    data.resetCellIdsAndOffsets( cell_space );
+
     // Get the case id and number of facets for each cell.
-    data.num_facet = 0;
+    std::size_t new_num_facet = 0;
     Cajita::grid_parallel_reduce(
         "marching_cubes_facet_count", exec_space, cell_space,
-        KOKKOS_LAMBDA( const int i, const int j, const int k, int& result ) {
+        KOKKOS_LAMBDA( const int i, const int j, const int k,
+                       std::size_t& result ) {
             Kokkos::Array<double, 8> vertex_data;
             Impl::vertexData( distance_view, i, j, k, vertex_data );
             Kokkos::Array<int, 8> vertex_signs;
@@ -1160,14 +1194,8 @@ void build( const ExecutionSpace& exec_space, const Mesh& mesh,
             data.cell_case_ids_and_offsets( i, j, k, 1 ) = num_facet;
             result += num_facet;
         },
-        data.num_facet );
-
-    // Allocate facet data if necessary.
-    if ( data.num_facet > static_cast<int>( data.facets.extent( 0 ) ) ||
-         reset_data_memory )
-    {
-        Kokkos::realloc( data.facets, data.num_facet );
-    }
+        new_num_facet );
+    data.resetNumFacet( new_num_facet, reset_data_memory );
 
     // Compute cell offsets into facet data via exclusive scan.
     Kokkos::parallel_scan(
@@ -1261,8 +1289,8 @@ void writeDataToSTL( const Data<MemorySpace>& data, MPI_Comm comm,
     {
         if ( r == comm_rank )
         {
-            int num_facet = facets.extent( 0 );
-            for ( int f = 0; f < num_facet; ++f )
+            std::size_t num_facet = data.numFacet();
+            for ( std::size_t f = 0; f < num_facet; ++f )
             {
                 file << "  facet normal 0.000000e+00 0.000000e+00 0.000000e+00"
                      << std::endl;
