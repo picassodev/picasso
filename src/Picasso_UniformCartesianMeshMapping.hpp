@@ -17,7 +17,7 @@
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 

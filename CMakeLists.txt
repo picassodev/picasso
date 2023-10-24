@@ -9,7 +9,7 @@ include(GNUInstallDirs)
 # find dependencies (MPI and Kokkos found through Cabana)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
-find_package(Cabana REQUIRED 0.5 COMPONENTS Cabana::Cajita Cabana::cabanacore)
+find_package(Cabana REQUIRED 0.5 COMPONENTS Cabana::Grid Cabana::Core)
 find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
 

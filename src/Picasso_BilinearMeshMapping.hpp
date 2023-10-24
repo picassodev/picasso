@@ -17,7 +17,7 @@
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -460,10 +460,11 @@ struct BilinearMeshGenerator<UniformBilinearMeshGenerator<NumSpaceDim>>
 
         // Create local nodes.
         auto local_grid = coords.layout()->localGrid();
-        auto local_space = local_grid->indexSpace(
-            Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+        auto local_space =
+            local_grid->indexSpace( Cabana::Grid::Ghost(), Cabana::Grid::Node(),
+                                    Cabana::Grid::Local() );
         auto local_mesh =
-            Cajita::createLocalMesh<Kokkos::HostSpace>( *local_grid );
+            Cabana::Grid::createLocalMesh<Kokkos::HostSpace>( *local_grid );
         for ( int i = local_space.min( Dim::I ); i < local_space.max( Dim::I );
               ++i )
             for ( int j = local_space.min( Dim::J );
@@ -473,17 +474,20 @@ struct BilinearMeshGenerator<UniformBilinearMeshGenerator<NumSpaceDim>>
                 {
                     coords_h( i, j, k, Dim::I ) =
                         generator.global_bounding_box[Dim::I] +
-                        ( local_mesh.lowCorner( Cajita::Ghost(), Dim::I ) +
+                        ( local_mesh.lowCorner( Cabana::Grid::Ghost(),
+                                                Dim::I ) +
                           i ) *
                             generator.cell_size;
                     coords_h( i, j, k, Dim::J ) =
                         generator.global_bounding_box[Dim::J] +
-                        ( local_mesh.lowCorner( Cajita::Ghost(), Dim::J ) +
+                        ( local_mesh.lowCorner( Cabana::Grid::Ghost(),
+                                                Dim::J ) +
                           j ) *
                             generator.cell_size;
                     coords_h( i, j, k, Dim::K ) =
                         generator.global_bounding_box[Dim::K] +
-                        ( local_mesh.lowCorner( Cajita::Ghost(), Dim::K ) +
+                        ( local_mesh.lowCorner( Cabana::Grid::Ghost(),
+                                                Dim::K ) +
                           k ) *
                             generator.cell_size;
                 }
@@ -505,10 +509,11 @@ struct BilinearMeshGenerator<UniformBilinearMeshGenerator<NumSpaceDim>>
 
         // Create owned nodes.
         auto local_grid = coords.layout()->localGrid();
-        auto local_space = local_grid->indexSpace(
-            Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+        auto local_space =
+            local_grid->indexSpace( Cabana::Grid::Ghost(), Cabana::Grid::Node(),
+                                    Cabana::Grid::Local() );
         auto local_mesh =
-            Cajita::createLocalMesh<Kokkos::HostSpace>( *local_grid );
+            Cabana::Grid::createLocalMesh<Kokkos::HostSpace>( *local_grid );
         for ( int i = local_space.min( Dim::I ); i < local_space.max( Dim::I );
               ++i )
             for ( int j = local_space.min( Dim::J );
@@ -516,11 +521,13 @@ struct BilinearMeshGenerator<UniformBilinearMeshGenerator<NumSpaceDim>>
             {
                 coords_h( i, j, Dim::I ) =
                     generator.global_bounding_box[Dim::I] +
-                    ( local_mesh.lowCorner( Cajita::Ghost(), Dim::I ) + i ) *
+                    ( local_mesh.lowCorner( Cabana::Grid::Ghost(), Dim::I ) +
+                      i ) *
                         generator.cell_size;
                 coords_h( i, j, Dim::J ) =
                     generator.global_bounding_box[Dim::J] +
-                    ( local_mesh.lowCorner( Cajita::Ghost(), Dim::J ) + j ) *
+                    ( local_mesh.lowCorner( Cabana::Grid::Ghost(), Dim::J ) +
+                      j ) *
                         generator.cell_size;
             }
 

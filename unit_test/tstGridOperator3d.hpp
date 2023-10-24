@@ -18,7 +18,7 @@
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -343,8 +343,8 @@ void gatherScatterTest()
 
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, FooP, BarP> fields;
-    auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
+        "test_particles", fields );
     using list_type = decltype( particles );
 
     using particle_type = typename list_type::particle_type;
@@ -360,9 +360,9 @@ void gatherScatterTest()
 
     // Initialize particles.
     int ppc = 10;
-    Cajita::createParticles( Cabana::InitRandom(), TEST_EXECSPACE(),
-                             particle_init_func, particles, ppc,
-                             *( mesh->localGrid() ) );
+    Cabana::Grid::createParticles( Cabana::InitRandom(), TEST_EXECSPACE(),
+                                   particle_init_func, particles, ppc,
+                                   *( mesh->localGrid() ) );
 
     // Make an operator.
     using gather_deps =
@@ -420,9 +420,9 @@ void gatherScatterTest()
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), FooOut() ) );
     auto bar_out_host = Kokkos::create_mirror_view_and_copy(
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), BarOut() ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( mesh->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             for ( int d = 0; d < 3; ++d )
                 EXPECT_EQ( foo_out_host( i, j, k, d ), ppc * 2.0 );
@@ -439,9 +439,9 @@ void gatherScatterTest()
                        fm->view( FieldLocation::Cell(), FooOut() ) );
     Kokkos::deep_copy( bar_out_host,
                        fm->view( FieldLocation::Cell(), BarOut() ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_grid_out", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( mesh->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             for ( int d = 0; d < 3; ++d )
                 EXPECT_EQ( foo_out_host( i, j, k, d ), 4.0 + i + j + k );
@@ -472,9 +472,9 @@ void gatherScatterTest()
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), MatK() ) );
 
     // Expect the correct cross-product for the given vector fields
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_tensor3_cross_product", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( mesh->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             EXPECT_EQ( foo_out_host( i, j, k, 0 ), -6.0 );
             EXPECT_EQ( foo_out_host( i, j, k, 1 ), 6.0 );
@@ -482,9 +482,9 @@ void gatherScatterTest()
         } );
 
     // Expect the correct matrices from the various Tensor3 contractions
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_tensor3_vector_contract", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( mesh->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             EXPECT_EQ( mi_out_host( i, j, k, 0 ), 72 );
             EXPECT_EQ( mi_out_host( i, j, k, 1 ), 78 );
@@ -525,9 +525,9 @@ void gatherScatterTest()
         Kokkos::HostSpace(), fm->view( FieldLocation::Cell(), Baz() ) );
 
     // Expect the correct matrices from the various tensor contractions
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_tensor4_matrix_contract", Kokkos::DefaultHostExecutionSpace(),
-        *( mesh->localGrid() ), Cajita::Own(), Cajita::Cell(),
+        *( mesh->localGrid() ), Cabana::Grid::Own(), Cabana::Grid::Cell(),
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             EXPECT_EQ( baz_out_host( i, j, k, 0 ), 1.25 );
             EXPECT_EQ( baz_out_host( i, j, k, 1 ), 2 );

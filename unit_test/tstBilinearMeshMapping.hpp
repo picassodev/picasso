@@ -14,6 +14,7 @@
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_Types.hpp>
 
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <cmath>
@@ -68,9 +69,12 @@ void mappingTest3d()
     EXPECT_EQ( global_mesh.highCorner( 1 ), num_cell );
     EXPECT_EQ( global_mesh.highCorner( 2 ), num_cell );
 
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 0 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 1 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 2 ), num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 0 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 1 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 2 ),
+               num_cell );
 
     EXPECT_TRUE( global_grid.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
@@ -81,8 +85,8 @@ void mappingTest3d()
 
     // Give a bad guess that is still in the local domain to test the ability
     // to search.
-    auto global_cells = local_grid->indexSpace( Cajita::Own(), Cajita::Cell(),
-                                                Cajita::Global() );
+    auto global_cells = local_grid->indexSpace(
+        Cabana::Grid::Own(), Cabana::Grid::Cell(), Cabana::Grid::Global() );
     Kokkos::Array<double, 3> guess = {
         static_cast<double>( global_cells.min( Dim::I ) ),
         static_cast<double>( global_cells.min( Dim::J ) ),
@@ -90,8 +94,9 @@ void mappingTest3d()
 
     // Check mapping.
     auto ghosted_cells = local_grid->indexSpace(
-        Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
-    auto local_mesh = Cajita::createLocalMesh<TEST_MEMSPACE>( *local_grid );
+        Cabana::Grid::Ghost(), Cabana::Grid::Cell(), Cabana::Grid::Local() );
+    auto local_mesh =
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *local_grid );
     Kokkos::View<double*** [3], TEST_MEMSPACE> cell_forward_map(
         "cell_forward_map", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ), ghosted_cells.extent( Dim::K ) );
@@ -107,13 +112,14 @@ void mappingTest3d()
     Kokkos::View<bool***, TEST_MEMSPACE> default_cell_map_success(
         "default_cell_reverse_map_success", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ), ghosted_cells.extent( Dim::K ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Map to physical frame.
             LinearAlgebra::Vector<double, 3> cell_coords = 0.0;
             int ijk[3] = { i, j, k };
-            local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
+            local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
+                                    cell_coords.data() );
 
             LinearAlgebra::VectorView<double, 3> phys_coords(
                 &cell_forward_map( i, j, k, 0 ), cell_forward_map.stride( 3 ) );
@@ -236,8 +242,10 @@ void mappingTest2d()
     EXPECT_EQ( global_mesh.highCorner( 0 ), num_cell );
     EXPECT_EQ( global_mesh.highCorner( 1 ), num_cell );
 
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 0 ), num_cell );
-    EXPECT_EQ( global_grid.globalNumEntity( Cajita::Cell(), 1 ), num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 0 ),
+               num_cell );
+    EXPECT_EQ( global_grid.globalNumEntity( Cabana::Grid::Cell(), 1 ),
+               num_cell );
 
     EXPECT_TRUE( global_grid.isPeriodic( 0 ) );
     EXPECT_FALSE( global_grid.isPeriodic( 1 ) );
@@ -247,16 +255,17 @@ void mappingTest2d()
 
     // Give a bad guess that is still in the local domain to test the ability
     // to search.
-    auto global_cells = local_grid->indexSpace( Cajita::Own(), Cajita::Cell(),
-                                                Cajita::Global() );
+    auto global_cells = local_grid->indexSpace(
+        Cabana::Grid::Own(), Cabana::Grid::Cell(), Cabana::Grid::Global() );
     Kokkos::Array<double, 2> guess = {
         static_cast<double>( global_cells.min( Dim::I ) ),
         static_cast<double>( global_cells.min( Dim::J ) ) };
 
     // Check mapping.
     auto ghosted_cells = local_grid->indexSpace(
-        Cajita::Ghost(), Cajita::Cell(), Cajita::Local() );
-    auto local_mesh = Cajita::createLocalMesh<TEST_MEMSPACE>( *local_grid );
+        Cabana::Grid::Ghost(), Cabana::Grid::Cell(), Cabana::Grid::Local() );
+    auto local_mesh =
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *local_grid );
     Kokkos::View<double** [2], TEST_MEMSPACE> cell_forward_map(
         "cell_forward_map", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ) );
@@ -272,13 +281,14 @@ void mappingTest2d()
     Kokkos::View<bool**, TEST_MEMSPACE> default_cell_map_success(
         "default_cell_reverse_map_success", ghosted_cells.extent( Dim::I ),
         ghosted_cells.extent( Dim::J ) );
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j ) {
             // Map to physical frame.
             LinearAlgebra::Vector<double, 2> cell_coords = 0.0;
             int ijk[2] = { i, j };
-            local_mesh.coordinates( Cajita::Cell{}, ijk, cell_coords.data() );
+            local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
+                                    cell_coords.data() );
             LinearAlgebra::VectorView<double, 2> phys_coords(
                 &cell_forward_map( i, j, 0 ), cell_forward_map.stride( 2 ) );
             CurvilinearMeshMapping<mapping_type>::mapToPhysicalFrame(

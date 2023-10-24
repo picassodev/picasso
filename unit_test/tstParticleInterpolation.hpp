@@ -18,7 +18,7 @@
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -374,14 +374,14 @@ void interpolationTest()
 
     // Get a set of locall-owned node indices for testing.
     auto node_space = mesh->localGrid()->indexSpace(
-        Cajita::Own(), Cajita::Node(), Cajita::Local() );
+        Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
 
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, ParticleScalar,
                            ParticleVector, ParticleTensor>
         fields;
-    auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "test_particles", fields );
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
+        "test_particles", fields );
     using list_type = decltype( particles );
     using particle_type = typename list_type::particle_type;
 
@@ -396,9 +396,9 @@ void interpolationTest()
 
     // Initialize particles. Put one particle in the center of every cell.
     int ppc = 1;
-    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
-                             particle_init_func, particles, ppc,
-                             *( mesh->localGrid() ) );
+    Cabana::Grid::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
+                                   particle_init_func, particles, ppc,
+                                   *( mesh->localGrid() ) );
     int num_particle = particles.size();
 
     // Get slices.

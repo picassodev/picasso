@@ -16,7 +16,7 @@
 #include <Picasso_LevelSet.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <ArborX.hpp>
 
@@ -74,7 +74,7 @@ struct ParticleLevelSetPredicateData
         : local_mesh( lm )
     {
         auto ghost_entities = local_grid.indexSpace(
-            Cajita::Ghost(), entity_type(), Cajita::Local() );
+            Cabana::Grid::Ghost(), entity_type(), Cabana::Grid::Local() );
         size = ghost_entities.size();
         i_size = ghost_entities.extent( Dim::I );
         ij_size = i_size * ghost_entities.extent( Dim::J );
@@ -208,7 +208,7 @@ class ParticleLevelSet
     using memory_space = typename mesh_type::memory_space;
     using location_type = SignedDistanceLocation;
     using entity_type = typename location_type::entity_type;
-    using halo_type = Cajita::Halo<memory_space>;
+    using halo_type = Cabana::Grid::Halo<memory_space>;
     using level_set = LevelSet<MeshType, SignedDistanceLocation>;
 
     /*!
@@ -337,7 +337,8 @@ class ParticleLevelSet
 
         // Local mesh.
         auto local_grid = distance_estimate->layout()->localGrid();
-        auto local_mesh = Cajita::createLocalMesh<memory_space>( *local_grid );
+        auto local_mesh =
+            Cabana::Grid::createLocalMesh<memory_space>( *local_grid );
 
         // If we have no particles of the given color on this rank then we are
         // in a region of positive distance. Estimate the signed distance
@@ -347,8 +348,8 @@ class ParticleLevelSet
         if ( 0 == _color_count )
         {
             double min_dist = _dx * local_grid->haloCellWidth();
-            Cajita::ArrayOp::assign( *distance_estimate, min_dist,
-                                     Cajita::Ghost() );
+            Cabana::Grid::ArrayOp::assign( *distance_estimate, min_dist,
+                                           Cabana::Grid::Ghost() );
         }
 
         // Otherwise we have particles so build a tree from the particles of
@@ -385,7 +386,7 @@ class ParticleLevelSet
 
         // Do a reduction to get the minimum distance within the minimum halo
         // width.
-        _ls->getHalo()->scatter( exec_space, Cajita::ScatterReduce::Min(),
+        _ls->getHalo()->scatter( exec_space, Cabana::Grid::ScatterReduce::Min(),
                                  *distance_estimate );
 
         Kokkos::Profiling::popRegion();

@@ -14,7 +14,7 @@
 
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -45,8 +45,8 @@ clampPointToLocalDomain( const LocalMeshType& local_mesh, const double dx,
     for ( int d = 0; d < 3; ++d )
     {
         x[d] = Kokkos::fmin(
-            local_mesh.highCorner( Cajita::Ghost(), d ) - 0.001 * dx,
-            Kokkos::fmax( local_mesh.lowCorner( Cajita::Ghost(), d ) +
+            local_mesh.highCorner( Cabana::Grid::Ghost(), d ) - 0.001 * dx,
+            Kokkos::fmax( local_mesh.lowCorner( Cabana::Grid::Ghost(), d ) +
                               0.001 * dx,
                           x[d] ) );
     }
@@ -80,7 +80,7 @@ evaluate( const SignedDistanceView& phi_0, const double sign,
           double y[3] )
 {
     // Get the cell size. We assume a uniform cell size in this implementation.
-    Cajita::evaluateSpline( local_mesh, y, sd );
+    Cabana::Grid::evaluateSpline( local_mesh, y, sd );
     double sign_dx = sign * sd.dx[0];
 
     // Perform gradient projections to get the minimum argument on the ball.
@@ -94,8 +94,8 @@ evaluate( const SignedDistanceView& phi_0, const double sign,
         clampPointToLocalDomain( local_mesh, sd.dx[0], y_old );
 
         // Do a gradient projection.
-        Cajita::evaluateSpline( local_mesh, y_old, sd );
-        Cajita::G2P::gradient( phi_0, sd, grad_phi_0 );
+        Cabana::Grid::evaluateSpline( local_mesh, y_old, sd );
+        Cabana::Grid::G2P::gradient( phi_0, sd, grad_phi_0 );
         for ( int d = 0; d < 3; ++d )
             y[d] = y_old[d] - sign_dx * grad_phi_0[d];
 
@@ -120,8 +120,8 @@ evaluate( const SignedDistanceView& phi_0, const double sign,
     // Evaluate the signed distance function at the minimum argument.
     clampPointToLocalDomain( local_mesh, sd.dx[0], y );
     double phi_argmin_eval;
-    Cajita::evaluateSpline( local_mesh, y, sd );
-    Cajita::G2P::value( phi_0, sd, phi_argmin_eval );
+    Cabana::Grid::evaluateSpline( local_mesh, y, sd );
+    Cabana::Grid::G2P::value( phi_0, sd, phi_argmin_eval );
     return sign * phi_argmin_eval;
 }
 
@@ -209,11 +209,11 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
                   const int max_projection_iter )
 {
     // Grid interpolant.
-    using SplineTags =
-        Cajita::SplineDataMemberTypes<Cajita::SplineWeightValues,
-                                      Cajita::SplineWeightPhysicalGradients,
-                                      Cajita::SplinePhysicalCellSize>;
-    Cajita::SplineData<double, 1, 3, EntityType, SplineTags> sd;
+    using SplineTags = Cabana::Grid::SplineDataMemberTypes<
+        Cabana::Grid::SplineWeightValues,
+        Cabana::Grid::SplineWeightPhysicalGradients,
+        Cabana::Grid::SplinePhysicalCellSize>;
+    Cabana::Grid::SplineData<double, 1, 3, EntityType, SplineTags> sd;
 
     // Random number generator.
     using rand_type =
@@ -226,7 +226,7 @@ redistanceEntity( EntityType, const SignedDistanceView& phi_0,
 
     // Uniform mesh spacing.
     int low_id[3] = { 0, 0, 0 };
-    double dx = local_mesh.measure( Cajita::Edge<Dim::I>(), low_id );
+    double dx = local_mesh.measure( Cabana::Grid::Edge<Dim::I>(), low_id );
 
     // Initial guess. The signed distance estimate is the phi value at time
     // zero.

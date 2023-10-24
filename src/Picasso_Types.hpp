@@ -12,7 +12,7 @@
 #ifndef PICASSO_TYPES_HPP
 #define PICASSO_TYPES_HPP
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <type_traits>
@@ -21,7 +21,7 @@ namespace Picasso
 {
 //---------------------------------------------------------------------------//
 // Logical dimension index.
-using Dim = Cajita::Dim;
+using Dim = Cabana::Grid::Dim;
 
 //---------------------------------------------------------------------------//
 // Spatial dimension selector.

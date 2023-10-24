@@ -19,7 +19,7 @@
 
 #include <Picasso_ParticleInit.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -73,7 +73,7 @@ void zalesaksTest( const std::string& filename )
         MPI_COMM_WORLD );
 
     // Create particles.
-    auto particles = Cajita::createParticleList<TEST_MEMSPACE>(
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
         "particles", Cabana::ParticleTraits<Field::PhysicalPosition<3>,
                                             Field::LogicalPosition<3>,
                                             Field::Color, Field::CommRank>() );
@@ -83,13 +83,14 @@ void zalesaksTest( const std::string& filename )
     int ppc = 3;
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(), init_func,
-                             particles, ppc, *( mesh->localGrid() ) );
+    Cabana::Grid::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
+                                   init_func, particles, ppc,
+                                   *( mesh->localGrid() ) );
 
     // Write the initial particle state.
     double time = 0.0;
 #ifdef Cabana_ENABLE_SILO
-    Cajita::Experimental::SiloParticleOutput::writeTimeStep(
+    Cabana::Grid::Experimental::SiloParticleOutput::writeTimeStep(
         "particles", mesh->localGrid()->globalGrid(), 0, time,
         particles.slice( Field::PhysicalPosition<3>() ),
         particles.slice( Field::Color() ),
@@ -109,9 +110,9 @@ void zalesaksTest( const std::string& filename )
     level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
     // Write the initial level set.
-    Cajita::Experimental::BovWriter::writeTimeStep(
+    Cabana::Grid::Experimental::BovWriter::writeTimeStep(
         0, time, *( level_set->levelSet()->getDistanceEstimate() ) );
-    Cajita::Experimental::BovWriter::writeTimeStep(
+    Cabana::Grid::Experimental::BovWriter::writeTimeStep(
         0, time, *( level_set->levelSet()->getSignedDistance() ) );
 
     // Advect the disk one full rotation.
@@ -171,7 +172,7 @@ void zalesaksTest( const std::string& filename )
         // Write the particle state.
         time += 1.0;
 #ifdef Cabana_ENABLE_SILO
-        Cajita::Experimental::SiloParticleOutput::writeTimeStep(
+        Cabana::Grid::Experimental::SiloParticleOutput::writeTimeStep(
             "particles", mesh->localGrid()->globalGrid(), t + 1, time,
             particles.slice( Field::PhysicalPosition<3>() ),
             particles.slice( Field::Color() ),
@@ -184,9 +185,9 @@ void zalesaksTest( const std::string& filename )
         level_set->levelSet()->redistance( TEST_EXECSPACE() );
 
         // Write the level set.
-        Cajita::Experimental::BovWriter::writeTimeStep(
+        Cabana::Grid::Experimental::BovWriter::writeTimeStep(
             t + 1, time, *( level_set->levelSet()->getDistanceEstimate() ) );
-        Cajita::Experimental::BovWriter::writeTimeStep(
+        Cabana::Grid::Experimental::BovWriter::writeTimeStep(
             t + 1, time, *( level_set->levelSet()->getSignedDistance() ) );
     }
 }

@@ -17,7 +17,7 @@
 #include <Picasso_ParticleInit.hpp>
 
 #include <Cabana_Core.hpp>
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -516,18 +516,19 @@ void initExample()
 
     Cabana::ParticleTraits<Field::PhysicalPosition<3>, Field::VolumeId> fields;
     auto particles =
-        Cajita::createParticleList<TEST_MEMSPACE>( "particles", fields );
+        Cabana::Grid::createParticleList<TEST_MEMSPACE>( "particles", fields );
 
     FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
                                            TEST_EXECSPACE() );
 
     LocateFunctor<TEST_MEMSPACE> init_func;
     init_func.geom = geometry.data();
-    Cajita::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(), init_func,
-                             particles, 1, *( mesh->localGrid() ) );
+    Cabana::Grid::createParticles( Cabana::InitUniform(), TEST_EXECSPACE(),
+                                   init_func, particles, 1,
+                                   *( mesh->localGrid() ) );
 
 #ifdef Cabana_ENABLE_SILO
-    Cajita::Experimental::SiloParticleOutput::writeTimeStep(
+    Cabana::Grid::Experimental::SiloParticleOutput::writeTimeStep(
         "particles", mesh->localGrid()->globalGrid(), 0, 0.0,
         particles.slice( Field::PhysicalPosition<3>() ),
         particles.slice( Field::VolumeId() ) );

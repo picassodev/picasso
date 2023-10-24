@@ -14,7 +14,7 @@
 #include <Picasso_InputParser.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -65,28 +65,30 @@ void uniformTest()
     fm.add( FieldLocation::Edge<Dim::K>(), Field::Color() );
 
     // Put data in the fields.
-    Cajita::ArrayOp::assign( *fm.array( FieldLocation::Node(), Field::Color() ),
-                             1, Cajita::Own() );
-    Cajita::ArrayOp::assign( *fm.array( FieldLocation::Cell(), Field::Color() ),
-                             2, Cajita::Own() );
-    Cajita::ArrayOp::assign(
+    Cabana::Grid::ArrayOp::assign(
+        *fm.array( FieldLocation::Node(), Field::Color() ), 1,
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
+        *fm.array( FieldLocation::Cell(), Field::Color() ), 2,
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Face<Dim::I>(), Field::Color() ), 3,
-        Cajita::Own() );
-    Cajita::ArrayOp::assign(
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Face<Dim::J>(), Field::Color() ), 4,
-        Cajita::Own() );
-    Cajita::ArrayOp::assign(
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Face<Dim::K>(), Field::Color() ), 5,
-        Cajita::Own() );
-    Cajita::ArrayOp::assign(
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Edge<Dim::I>(), Field::Color() ), 6,
-        Cajita::Own() );
-    Cajita::ArrayOp::assign(
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Edge<Dim::J>(), Field::Color() ), 7,
-        Cajita::Own() );
-    Cajita::ArrayOp::assign(
+        Cabana::Grid::Own() );
+    Cabana::Grid::ArrayOp::assign(
         *fm.array( FieldLocation::Edge<Dim::K>(), Field::Color() ), 8,
-        Cajita::Own() );
+        Cabana::Grid::Own() );
 
     // Gather into the ghost zones.
     fm.gather( FieldLocation::Node(), Field::Color() );
@@ -100,36 +102,44 @@ void uniformTest()
 
     // Check the gather.
     checkGather( fm.view( FieldLocation::Node(), Field::Color() ),
-                 mesh->localGrid()->indexSpace( Cajita::Ghost(), Cajita::Node(),
-                                                Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Node(),
+                                                Cabana::Grid::Local() ),
                  1 );
     checkGather( fm.view( FieldLocation::Cell(), Field::Color() ),
-                 mesh->localGrid()->indexSpace( Cajita::Ghost(), Cajita::Cell(),
-                                                Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Cell(),
+                                                Cabana::Grid::Local() ),
                  2 );
     checkGather( fm.view( FieldLocation::Face<Dim::I>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Face<Dim::I>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Face<Dim::I>(),
+                                                Cabana::Grid::Local() ),
                  3 );
     checkGather( fm.view( FieldLocation::Face<Dim::J>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Face<Dim::J>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Face<Dim::J>(),
+                                                Cabana::Grid::Local() ),
                  4 );
     checkGather( fm.view( FieldLocation::Face<Dim::K>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Face<Dim::K>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Face<Dim::K>(),
+                                                Cabana::Grid::Local() ),
                  5 );
     checkGather( fm.view( FieldLocation::Edge<Dim::I>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Edge<Dim::I>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Edge<Dim::I>(),
+                                                Cabana::Grid::Local() ),
                  6 );
     checkGather( fm.view( FieldLocation::Edge<Dim::J>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Edge<Dim::J>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Edge<Dim::J>(),
+                                                Cabana::Grid::Local() ),
                  7 );
     checkGather( fm.view( FieldLocation::Edge<Dim::K>(), Field::Color() ),
-                 mesh->localGrid()->indexSpace(
-                     Cajita::Ghost(), Cajita::Edge<Dim::K>(), Cajita::Local() ),
+                 mesh->localGrid()->indexSpace( Cabana::Grid::Ghost(),
+                                                Cabana::Grid::Edge<Dim::K>(),
+                                                Cabana::Grid::Local() ),
                  8 );
 
     // Scatter back to owned.
@@ -166,22 +176,22 @@ void adaptiveTest()
         fm.array( FieldLocation::Node(), Field::PhysicalPosition<3>() );
     auto host_coords = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(),
                                                             nodes->view() );
-    auto local_mesh = Cajita::createLocalMesh<TEST_EXECSPACE>(
+    auto local_mesh = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
         *( nodes->layout()->localGrid() ) );
     auto local_space = nodes->layout()->localGrid()->indexSpace(
-        Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+        Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
     for ( int i = local_space.min( 0 ); i < local_space.max( 0 ); ++i )
         for ( int j = local_space.min( 1 ); j < local_space.max( 1 ); ++j )
             for ( int k = local_space.min( 2 ); k < local_space.max( 2 ); ++k )
             {
                 EXPECT_EQ( host_coords( i, j, k, 0 ),
-                           local_mesh.lowCorner( Cajita::Ghost(), 0 ) +
+                           local_mesh.lowCorner( Cabana::Grid::Ghost(), 0 ) +
                                i * cell_size );
                 EXPECT_EQ( host_coords( i, j, k, 1 ),
-                           local_mesh.lowCorner( Cajita::Ghost(), 1 ) +
+                           local_mesh.lowCorner( Cabana::Grid::Ghost(), 1 ) +
                                j * cell_size );
                 EXPECT_EQ( host_coords( i, j, k, 2 ),
-                           local_mesh.lowCorner( Cajita::Ghost(), 2 ) +
+                           local_mesh.lowCorner( Cabana::Grid::Ghost(), 2 ) +
                                k * cell_size );
             }
 }

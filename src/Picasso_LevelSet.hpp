@@ -16,7 +16,7 @@
 #include <Picasso_LevelSetRedistance.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -35,9 +35,10 @@ class LevelSet
     using memory_space = typename mesh_type::memory_space;
     using location_type = SignedDistanceLocation;
     using entity_type = typename location_type::entity_type;
-    using array_type = Cajita::Array<double, entity_type,
-                                     Cajita::UniformMesh<double>, memory_space>;
-    using halo_type = Cajita::Halo<memory_space>;
+    using array_type =
+        Cabana::Grid::Array<double, entity_type,
+                            Cabana::Grid::UniformMesh<double>, memory_space>;
+    using halo_type = Cabana::Grid::Halo<memory_space>;
 
     /*!
       \brief Construct the level set over the given mesh.
@@ -55,8 +56,8 @@ class LevelSet
             createArray( *_mesh, location_type(), Field::DistanceEstimate() );
         _signed_distance =
             createArray( *_mesh, location_type(), Field::SignedDistance() );
-        _halo = Cajita::createHalo( Cajita::NodeHaloPattern<3>(), -1,
-                                    *( _signed_distance ) );
+        _halo = Cabana::Grid::createHalo( Cabana::Grid::NodeHaloPattern<3>(),
+                                          -1, *( _signed_distance ) );
 
         // Cell size.
         _dx = _mesh->localGrid()->globalGrid().globalMesh().cellSize( 0 );
@@ -89,23 +90,23 @@ class LevelSet
         Kokkos::Profiling::pushRegion( "Picasso::LevelSet::redistance" );
 
         // Local mesh.
-        auto local_mesh =
-            Cajita::createLocalMesh<memory_space>( *( _mesh->localGrid() ) );
+        auto local_mesh = Cabana::Grid::createLocalMesh<memory_space>(
+            *( _mesh->localGrid() ) );
 
         // Views.
         auto estimate_view = _distance_estimate->view();
         auto distance_view = _signed_distance->view();
 
         // Local-to-global indexer.
-        auto l2g = Cajita::IndexConversion::createL2G( *( _mesh->localGrid() ),
-                                                       entity_type() );
+        auto l2g = Cabana::Grid::IndexConversion::createL2G(
+            *( _mesh->localGrid() ), entity_type() );
 
         // Gather to get updated ghost values.
         _halo->gather( exec_space, *_distance_estimate );
 
         // Redistance on the coarse grid.
         auto own_entities = _mesh->localGrid()->indexSpace(
-            Cajita::Own(), entity_type(), Cajita::Local() );
+            Cabana::Grid::Own(), entity_type(), Cabana::Grid::Local() );
 
         double secant_tol = _redistance_secant_tol;
         int max_secant_iter = _redistance_max_secant_iter;
@@ -115,7 +116,7 @@ class LevelSet
 
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceCoarse",
-            Cajita::createExecutionPolicy( own_entities, exec_space ),
+            Cabana::Grid::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
                 int gi, gj, gk;
@@ -142,7 +143,7 @@ class LevelSet
         // Interpolate from coarse grid to fine grid.
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceInterpolate",
-            Cajita::createExecutionPolicy( own_entities, exec_space ),
+            Cabana::Grid::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Get the global id of the entity.
                 int gi, gj, gk;
@@ -233,7 +234,7 @@ class LevelSet
         auto threshold = _dx * _mesh->localGrid()->haloCellWidth();
         Kokkos::parallel_for(
             "Picasso::LevelSet::RedistanceFine",
-            Cajita::createExecutionPolicy( own_entities, exec_space ),
+            Cabana::Grid::createExecutionPolicy( own_entities, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 // Only redistance on the fine grid if the estimate is less
                 // than the threshold distance.

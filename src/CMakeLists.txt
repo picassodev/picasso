@@ -36,8 +36,8 @@ set(SOURCES
 add_library(picasso ${SOURCES})
 
 target_link_libraries(picasso
-  Cabana::cabanacore
-  Cabana::Cajita
+  Cabana::Core
+  Cabana::Grid
   ArborX::ArborX
   Boost::boost )
 

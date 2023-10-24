@@ -14,7 +14,7 @@
 
 #include <Picasso_BatchedLinearAlgebra.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Cabana_Core.hpp>
 
@@ -73,7 +73,7 @@ template <class Views, class... Layouts>
 struct FieldViewTuple
 {
     static_assert( Cabana::is_parameter_pack<Views>::value,
-                   "Views must be in a Cajita::ParameterPack" );
+                   "Views must be in a Cabana::Grid::ParameterPack" );
 
     Views _views;
 
@@ -126,14 +126,14 @@ namespace FieldLocation
 {
 struct Cell
 {
-    using entity_type = Cajita::Cell;
+    using entity_type = Cabana::Grid::Cell;
     static std::string label() { return "Cell"; }
 };
 
 template <int D>
 struct Face
 {
-    using entity_type = Cajita::Face<D>;
+    using entity_type = Cabana::Grid::Face<D>;
     static std::string label()
     {
         std::stringstream l;
@@ -145,7 +145,7 @@ struct Face
 template <int D>
 struct Edge
 {
-    using entity_type = Cajita::Edge<D>;
+    using entity_type = Cabana::Grid::Edge<D>;
     static std::string label()
     {
         std::stringstream l;
@@ -156,7 +156,7 @@ struct Edge
 
 struct Node
 {
-    using entity_type = Cajita::Node;
+    using entity_type = Cabana::Grid::Node;
     static std::string label() { return "Node"; }
 };
 

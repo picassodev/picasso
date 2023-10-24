@@ -12,11 +12,10 @@
 #ifndef PICASSO_APIC_HPP
 #define PICASSO_APIC_HPP
 
-#include <Cajita.hpp>
-
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <type_traits>
@@ -55,20 +54,21 @@ typename SplineDataType::scalar_type KOKKOS_INLINE_FUNCTION inertialScaling(
 // (1*N matrix) and particle  affine matrix B_p ( 3*N matrix ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
           class GridMass, class GridField>
-KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
-     const GridField& mu_i, const SplineDataType& sd,
-     typename std::enable_if<
-         ( ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
-             Cajita::isCell<typename SplineDataType::entity_type>::value ) &&
-           ( SplineDataType::order == 2 || SplineDataType::order == 3 ) ),
-         void*>::type = 0 )
+KOKKOS_INLINE_FUNCTION void p2g(
+    const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+    const GridField& mu_i, const SplineDataType& sd,
+    typename std::enable_if<
+        ( ( Cabana::Grid::isNode<typename SplineDataType::entity_type>::value ||
+            Cabana::Grid::isCell<
+                typename SplineDataType::entity_type>::value ) &&
+          ( SplineDataType::order == 2 || SplineDataType::order == 3 ) ),
+        void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<GridField>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridField>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto field_access = mu_i.access();
 
-    static_assert( Cajita::P2G::is_scatter_view<GridMass>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMass>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto mass_access = m_i.access();
 
@@ -147,20 +147,21 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
 // u_p (1*3 matrix) and particle  affine matrix B_p ( 3*3 matrix ).
 template <class ParticleMass, class ParticleVelocity, class SplineDataType,
           class GridMass, class GridMomentum>
-KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
-     const GridMomentum& mu_i, const SplineDataType& sd,
-     typename std::enable_if<
-         ( ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
-             Cajita::isFace<typename SplineDataType::entity_type>::value ) &&
-           ( SplineDataType::order == 2 || SplineDataType::order == 3 ) ),
-         void*>::type = 0 )
+KOKKOS_INLINE_FUNCTION void p2g(
+    const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
+    const GridMomentum& mu_i, const SplineDataType& sd,
+    typename std::enable_if<
+        ( ( Cabana::Grid::isEdge<typename SplineDataType::entity_type>::value ||
+            Cabana::Grid::isFace<
+                typename SplineDataType::entity_type>::value ) &&
+          ( SplineDataType::order == 2 || SplineDataType::order == 3 ) ),
+        void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMomentum>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto momentum_access = mu_i.access();
 
-    static_assert( Cajita::P2G::is_scatter_view<GridMass>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMass>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto mass_access = m_i.access();
 
@@ -238,20 +239,21 @@ p2g( const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
 // 3*N matrix ).
 template <class ParticleMass, class ParticleField, class SplineDataType,
           class GridMass, class GridField>
-KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
-     const GridField& mu_i, const SplineDataType& sd,
-     typename std::enable_if<
-         ( ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
-             Cajita::isCell<typename SplineDataType::entity_type>::value ) &&
-           ( SplineDataType::order == 1 ) ),
-         void*>::type = 0 )
+KOKKOS_INLINE_FUNCTION void p2g(
+    const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
+    const GridField& mu_i, const SplineDataType& sd,
+    typename std::enable_if<
+        ( ( Cabana::Grid::isNode<typename SplineDataType::entity_type>::value ||
+            Cabana::Grid::isCell<
+                typename SplineDataType::entity_type>::value ) &&
+          ( SplineDataType::order == 1 ) ),
+        void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<GridField>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridField>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto field_access = mu_i.access();
 
-    static_assert( Cajita::P2G::is_scatter_view<GridMass>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMass>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto mass_access = m_i.access();
 
@@ -324,20 +326,21 @@ p2g( const ParticleMass& m_p, const ParticleField& c_p, const GridMass& m_i,
 // ).
 template <class ParticleMass, class ParticleVelocity, class SplineDataType,
           class GridMass, class GridMomentum>
-KOKKOS_INLINE_FUNCTION void
-p2g( const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
-     const GridMomentum& mu_i, const SplineDataType& sd,
-     typename std::enable_if<
-         ( ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
-             Cajita::isFace<typename SplineDataType::entity_type>::value ) &&
-           ( SplineDataType::order == 1 ) ),
-         void*>::type = 0 )
+KOKKOS_INLINE_FUNCTION void p2g(
+    const ParticleMass& m_p, const ParticleVelocity& c_p, const GridMass& m_i,
+    const GridMomentum& mu_i, const SplineDataType& sd,
+    typename std::enable_if<
+        ( ( Cabana::Grid::isEdge<typename SplineDataType::entity_type>::value ||
+            Cabana::Grid::isFace<
+                typename SplineDataType::entity_type>::value ) &&
+          ( SplineDataType::order == 1 ) ),
+        void*>::type = 0 )
 {
-    static_assert( Cajita::P2G::is_scatter_view<GridMomentum>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMomentum>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto momentum_access = mu_i.access();
 
-    static_assert( Cajita::P2G::is_scatter_view<GridMass>::value,
+    static_assert( Cabana::Grid::P2G::is_scatter_view<GridMass>::value,
                    "P2G requires a Kokkos::ScatterView" );
     auto mass_access = m_i.access();
 
@@ -405,8 +408,8 @@ template <class GridField, class SplineDataType, class ParticleField>
 KOKKOS_INLINE_FUNCTION void
 g2p( const GridField& u_i, ParticleField& c_p, const SplineDataType& sd,
      typename std::enable_if<
-         ( Cajita::isNode<typename SplineDataType::entity_type>::value ||
-           Cajita::isCell<typename SplineDataType::entity_type>::value ),
+         ( Cabana::Grid::isNode<typename SplineDataType::entity_type>::value ||
+           Cabana::Grid::isCell<typename SplineDataType::entity_type>::value ),
          void*>::type = 0 )
 {
     using value_type = typename GridField::value_type;
@@ -475,8 +478,8 @@ template <class GridMomentum, class SplineDataType, class ParticleVelocity>
 KOKKOS_INLINE_FUNCTION void
 g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
      typename std::enable_if<
-         ( Cajita::isEdge<typename SplineDataType::entity_type>::value ||
-           Cajita::isFace<typename SplineDataType::entity_type>::value ),
+         ( Cabana::Grid::isEdge<typename SplineDataType::entity_type>::value ||
+           Cabana::Grid::isFace<typename SplineDataType::entity_type>::value ),
          void*>::type = 0 )
 {
     static_assert( SplineDataType::has_weight_values,

@@ -18,7 +18,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -34,11 +34,11 @@ namespace Picasso
 template <class Location, class FieldTag, class Mesh>
 auto createArray( const Mesh& mesh, Location, FieldTag )
 {
-    auto array_layout = Cajita::createArrayLayout(
+    auto array_layout = Cabana::Grid::createArrayLayout(
         mesh.localGrid(), FieldTag::size, typename Location::entity_type() );
-    return Cajita::createArray<typename FieldTag::value_type,
-                               typename Mesh::memory_space>( FieldTag::label(),
-                                                             array_layout );
+    return Cabana::Grid::createArray<typename FieldTag::value_type,
+                                     typename Mesh::memory_space>(
+        FieldTag::label(), array_layout );
 }
 
 //---------------------------------------------------------------------------//
@@ -53,12 +53,12 @@ struct FieldHandleBase
 template <class Location, class FieldTag, class Mesh>
 struct FieldHandle : public FieldHandleBase
 {
-    std::shared_ptr<Cajita::Array<
+    std::shared_ptr<Cabana::Grid::Array<
         typename FieldTag::value_type, typename Location::entity_type,
-        typename Mesh::cajita_mesh, typename Mesh::memory_space>>
+        typename Mesh::cabana_mesh, typename Mesh::memory_space>>
         array;
 
-    std::shared_ptr<Cajita::Halo<typename Mesh::memory_space>> halo;
+    std::shared_ptr<Cabana::Grid::Halo<typename Mesh::memory_space>> halo;
 };
 
 //---------------------------------------------------------------------------//
@@ -97,9 +97,9 @@ class FieldManager
             FieldLocation::Node,
             Field::PhysicalPosition<mesh_type::num_space_dim>, Mesh>>();
         handle->array = _mesh->nodes();
-        handle->halo =
-            Cajita::createHalo( Cajita::NodeHaloPattern<Mesh::num_space_dim>(),
-                                -1, *( handle->array ) );
+        handle->halo = Cabana::Grid::createHalo(
+            Cabana::Grid::NodeHaloPattern<Mesh::num_space_dim>(), -1,
+            *( handle->array ) );
         _fields.emplace( key, handle );
     }
 
@@ -160,7 +160,7 @@ class FieldManager
         auto handle = getFieldHandle( location, tag );
         handle->halo->scatter(
             typename mesh_type::memory_space::execution_space(),
-            Cajita::ScatterReduce::Sum(), *( handle->array ) );
+            Cabana::Grid::ScatterReduce::Sum(), *( handle->array ) );
     }
 
     // Scatter a field by layout.
@@ -202,9 +202,9 @@ class FieldManager
     {
         auto handle = std::make_shared<FieldHandle<Location, FieldTag, Mesh>>();
         handle->array = createArray( *_mesh, location, tag );
-        handle->halo =
-            Cajita::createHalo( Cajita::NodeHaloPattern<Mesh::num_space_dim>(),
-                                -1, *( handle->array ) );
+        handle->halo = Cabana::Grid::createHalo(
+            Cabana::Grid::NodeHaloPattern<Mesh::num_space_dim>(), -1,
+            *( handle->array ) );
         return handle;
     }
 

@@ -12,8 +12,8 @@
 #ifndef PICASSO_ADAPTIVEMESH_HPP
 #define PICASSO_ADAPTIVEMESH_HPP
 
-#include <Cajita.hpp>
-
+#include <Cabana_Core.hpp>
+#include <Cabana_Grid.hpp>
 #include <Kokkos_Core.hpp>
 
 #include <boost/property_tree/ptree.hpp>
@@ -33,14 +33,15 @@ template <class MemorySpace>
 class AdaptiveMesh
 {
   public:
-    using cajita_mesh = Cajita::UniformMesh<double>;
+    using cabana_mesh = Cabana::Grid::UniformMesh<double>;
 
     using memory_space = MemorySpace;
 
-    using local_grid = Cajita::LocalGrid<cajita_mesh>;
+    using local_grid = Cabana::Grid::LocalGrid<cabana_mesh>;
 
-    using node_array = Cajita::Array<double, Cajita::Node,
-                                     Cajita::UniformMesh<double>, MemorySpace>;
+    using node_array =
+        Cabana::Grid::Array<double, Cabana::Grid::Node,
+                            Cabana::Grid::UniformMesh<double>, MemorySpace>;
 
     static constexpr std::size_t num_space_dim = 3;
 
@@ -152,16 +153,17 @@ class AdaptiveMesh
         }
 
         // Create the global mesh.
-        auto global_mesh = Cajita::createUniformGlobalMesh(
+        auto global_mesh = Cabana::Grid::createUniformGlobalMesh(
             global_low_corner, global_high_corner, global_num_cell );
 
         // Create the partitioner.
         const auto& part_params = mesh_params.get_child( "partitioner" );
-        std::shared_ptr<Cajita::BlockPartitioner<3>> partitioner;
+        std::shared_ptr<Cabana::Grid::BlockPartitioner<3>> partitioner;
         if ( part_params.get<std::string>( "type" ).compare( "uniform_dim" ) ==
              0 )
         {
-            partitioner = std::make_shared<Cajita::DimBlockPartitioner<3>>();
+            partitioner =
+                std::make_shared<Cabana::Grid::DimBlockPartitioner<3>>();
         }
         else if ( part_params.get<std::string>( "type" ).compare( "manual" ) ==
                   0 )
@@ -177,13 +179,14 @@ class AdaptiveMesh
                 ranks_per_dim[d] = element.second.get_value<int>();
                 ++d;
             }
-            partitioner = std::make_shared<Cajita::ManualBlockPartitioner<3>>(
-                ranks_per_dim );
+            partitioner =
+                std::make_shared<Cabana::Grid::ManualBlockPartitioner<3>>(
+                    ranks_per_dim );
         }
 
         // Build the global grid.
-        auto global_grid = Cajita::createGlobalGrid( comm, global_mesh,
-                                                     periodic, *partitioner );
+        auto global_grid = Cabana::Grid::createGlobalGrid(
+            comm, global_mesh, periodic, *partitioner );
 
         // Get the halo cell width. If the user does not assign one then it is
         // assumed the minimum halo cell width will be used.
@@ -191,7 +194,8 @@ class AdaptiveMesh
             _minimum_halo_width, mesh_params.get<int>( "halo_cell_width", 0 ) );
 
         // Build the local grid.
-        _local_grid = Cajita::createLocalGrid( global_grid, halo_cell_width );
+        _local_grid =
+            Cabana::Grid::createLocalGrid( global_grid, halo_cell_width );
 
         // Create the nodes.
         buildNodes( cell_size, exec_space );
@@ -216,27 +220,28 @@ class AdaptiveMesh
     {
         // Create both owned and ghosted nodes so we don't have to gather
         // initially.
-        auto node_layout =
-            Cajita::createArrayLayout( _local_grid, 3, Cajita::Node() );
-        _nodes = Cajita::createArray<double, MemorySpace>( "mesh_nodes",
-                                                           node_layout );
+        auto node_layout = Cabana::Grid::createArrayLayout(
+            _local_grid, 3, Cabana::Grid::Node() );
+        _nodes = Cabana::Grid::createArray<double, MemorySpace>( "mesh_nodes",
+                                                                 node_layout );
         auto node_view = _nodes->view();
         auto local_mesh =
-            Cajita::createLocalMesh<ExecutionSpace>( *_local_grid );
-        auto local_space = _local_grid->indexSpace(
-            Cajita::Ghost(), Cajita::Node(), Cajita::Local() );
+            Cabana::Grid::createLocalMesh<ExecutionSpace>( *_local_grid );
+        auto local_space = _local_grid->indexSpace( Cabana::Grid::Ghost(),
+                                                    Cabana::Grid::Node(),
+                                                    Cabana::Grid::Local() );
         Kokkos::parallel_for(
             "Picasso::AdaptiveMesh::CreateNodes",
-            Cajita::createExecutionPolicy( local_space, exec_space ),
+            Cabana::Grid::createExecutionPolicy( local_space, exec_space ),
             KOKKOS_LAMBDA( const int i, const int j, const int k ) {
                 node_view( i, j, k, 0 ) =
-                    local_mesh.lowCorner( Cajita::Ghost(), 0 ) +
+                    local_mesh.lowCorner( Cabana::Grid::Ghost(), 0 ) +
                     i * cell_size[0];
                 node_view( i, j, k, 1 ) =
-                    local_mesh.lowCorner( Cajita::Ghost(), 1 ) +
+                    local_mesh.lowCorner( Cabana::Grid::Ghost(), 1 ) +
                     j * cell_size[1];
                 node_view( i, j, k, 2 ) =
-                    local_mesh.lowCorner( Cajita::Ghost(), 2 ) +
+                    local_mesh.lowCorner( Cabana::Grid::Ghost(), 2 ) +
                     k * cell_size[2];
             } );
     }

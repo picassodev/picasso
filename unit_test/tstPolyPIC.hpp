@@ -17,7 +17,7 @@
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
-#include <Cajita.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -208,7 +208,7 @@ void collocatedTest()
     UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
-        Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
 
     // Time step size.
     double dt = 0.0001;
@@ -237,9 +237,10 @@ void collocatedTest()
 
     // Initialize the grid vector.
     auto gv_view = grid_vector->view();
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "fill_grid_vector", TEST_EXECSPACE(),
-        grid_vector->layout()->indexSpace( Cajita::Own(), Cajita::Local() ),
+        grid_vector->layout()->indexSpace( Cabana::Grid::Own(),
+                                           Cabana::Grid::Local() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int d ) {
             int ic = i - 2;
             int jc = j - 2;
@@ -350,7 +351,7 @@ void staggeredTest()
 
     // If we are using faces offset the non-test dimensions to align with the
     // mathematica grid.
-    if ( Cajita::isFace<typename Location::entity_type>::value )
+    if ( Cabana::Grid::isFace<typename Location::entity_type>::value )
         for ( int d = 0; d < 3; ++d )
         {
             if ( d != Dim )
@@ -362,7 +363,7 @@ void staggeredTest()
 
     // If we are using edges offset that dimension to align with the
     // mathematica grid for the quadratic functions.
-    else if ( Cajita::isEdge<typename Location::entity_type>::value )
+    else if ( Cabana::Grid::isEdge<typename Location::entity_type>::value )
     {
         global_box[Dim] -= 0.25;
         global_box[Dim + 3] -= 0.25;
@@ -377,7 +378,7 @@ void staggeredTest()
     UniformMesh<TEST_MEMSPACE> mesh( ptree, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
-        Cajita::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
 
     // Time step size.
     double dt = 0.0001;
@@ -406,9 +407,10 @@ void staggeredTest()
 
     // Initialize the grid scalar.
     auto gs_view = grid_scalar->view();
-    Cajita::grid_parallel_for(
+    Cabana::Grid::grid_parallel_for(
         "fill_grid_scalar", TEST_EXECSPACE(),
-        grid_scalar->layout()->indexSpace( Cajita::Own(), Cajita::Local() ),
+        grid_scalar->layout()->indexSpace( Cabana::Grid::Own(),
+                                           Cabana::Grid::Local() ),
         KOKKOS_LAMBDA( const int i, const int j, const int k, const int ) {
             int ic = i - 2;
             int jc = j - 2;
