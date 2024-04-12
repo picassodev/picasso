@@ -86,8 +86,13 @@ write_basic_package_version_file("PicassoConfigVersion.cmake"
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoConfig.cmakein
   ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoSettings.cmakein
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoSettings.cmake @ONLY)
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake"
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoSettings.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso)
 
 # Clang Format
