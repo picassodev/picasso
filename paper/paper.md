@@ -37,10 +37,22 @@ methods, which in turn extends the `Kokkos` library for on-node parallelism
 across hardware architectures [@kokkos:2022] and `MPI` for scalable multi-node
 communication. `Picasso` provides interpolation schemes for particle-to-grid
 and grid-to-particle updates, embedded free surface tracking, and robust
-linear algebra support for particle and grid operations.
+linear algebra support for particle and grid operations. This separation of
+concerns results in a parallelism layer, a simulation motif (and distributed
+communication) layer, and finally a PIC algorithms layer, all enabling the
+user-level physics.
 
 # Statement of need
 
+Computational predictions are increasingly necessary for answering scientific
+and engineering questions. As these needs continue to expand, striking the
+proper balance of computational performance, portability across hardware
+architectures, and programmer productivity requires substantial effort.
+While `Kokkos` provides general portability for parallel algorithms, many
+particle-specific extensions are necessary in `Cabana` to improve the
+productivity, both in capability and in achieving peak performance.
+Even still, there are no known current libraries to support PIC algorithms
+and related complex particle operations.
 
 # Library capabilities
 
