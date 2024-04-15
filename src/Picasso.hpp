@@ -12,6 +12,8 @@
 #ifndef PICASSO_HPP
 #define PICASSO_HPP
 
+#include <Picasso_config.hpp>
+
 #include <Picasso_APIC.hpp>
 #include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_BatchedLinearAlgebra.hpp>
@@ -26,7 +28,9 @@
 #include <Picasso_LevelSetRedistance.hpp>
 #include <Picasso_ParticleInit.hpp>
 #include <Picasso_ParticleInterpolation.hpp>
+#ifdef Picasso_ENABLE_ARBORX
 #include <Picasso_ParticleLevelSet.hpp>
+#endif
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_PolyPIC.hpp>
 #include <Picasso_Types.hpp>

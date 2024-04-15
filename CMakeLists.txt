@@ -6,12 +6,21 @@ project(Picasso LANGUAGES CXX C VERSION 0.1.0)
 
 include(GNUInstallDirs)
 
+# User options
+option(Picasso_REQUIRE_ARBORX "Build with ArborX support" OFF)
+
 # find dependencies (MPI and Kokkos found through Cabana)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 find_package(CLANG_FORMAT 10)
 find_package(Cabana REQUIRED 0.5 COMPONENTS Cabana::Grid Cabana::Core)
-find_package(ArborX REQUIRED)
 find_package(Boost 1.66.0 REQUIRED)
+
+# Build with ArborX if available or if requested.
+find_package(ArborX QUIET)
+if(Picasso_REQUIRE_ARBORX OR ArborX_FOUND)
+  set(Picasso_ENABLE_ARBORX ON)
+  find_package(ArborX REQUIRED)
+endif()
 
 if(Kokkos_VERSION_MAJOR LESS 4 AND Kokkos_VERSION_MINOR LESS 7)
   message( FATAL_ERROR "Picasso requires Kokkos >= 3.7" )
@@ -77,8 +86,13 @@ write_basic_package_version_file("PicassoConfigVersion.cmake"
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoConfig.cmakein
   ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/PicassoSettings.cmakein
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoSettings.cmake @ONLY)
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake"
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/PicassoSettings.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Picasso)
 
 # Clang Format

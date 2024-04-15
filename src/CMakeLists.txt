@@ -18,7 +18,6 @@ set(HEADERS
   Picasso_MarchingCubes.hpp
   Picasso_ParticleInit.hpp
   Picasso_ParticleInterpolation.hpp
-  Picasso_ParticleLevelSet.hpp
   Picasso_ParticleList.hpp
   Picasso_PolyPIC.hpp
   Picasso_Types.hpp
@@ -26,6 +25,10 @@ set(HEADERS
   Picasso_UniformCartesianMeshMapping.hpp
   Picasso_Version.hpp
   )
+
+if(Picasso_ENABLE_ARBORX)
+  list(APPEND HEADERS Picasso_ParticleLevelSet.hpp)
+endif()
 
 set(SOURCES
   Picasso_InputParser.cpp
@@ -38,8 +41,11 @@ add_library(picasso ${SOURCES})
 target_link_libraries(picasso
   Cabana::Core
   Cabana::Grid
-  ArborX::ArborX
   Boost::boost )
+
+if(Picasso_ENABLE_ARBORX)
+  target_link_libraries(picasso ArborX::ArborX)
+endif()
 
 target_include_directories(picasso
   PUBLIC
