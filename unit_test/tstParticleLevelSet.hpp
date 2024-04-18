@@ -60,16 +60,15 @@ void zalesaksTest( const std::string& filename )
     MPI_Comm_rank( MPI_COMM_WORLD, &comm_rank );
 
     // Get inputs.
-    InputParser parser( filename, "json" );
+    auto inputs = parse( filename );
 
     // Get the geometry.
-    FacetGeometry<TEST_MEMSPACE> geometry( parser.propertyTree(),
-                                           TEST_EXECSPACE() );
+    FacetGeometry<TEST_MEMSPACE> geometry( inputs, TEST_EXECSPACE() );
 
     // Make mesh.
     int minimum_halo_size = 4;
     auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
-        parser.propertyTree(), geometry.globalBoundingBox(), minimum_halo_size,
+        inputs, geometry.globalBoundingBox(), minimum_halo_size,
         MPI_COMM_WORLD );
 
     // Create particles.
@@ -99,8 +98,8 @@ void zalesaksTest( const std::string& filename )
 
     // Build a level set for disk.
     int disk_color = 0;
-    auto level_set = createParticleLevelSet<FieldLocation::Node>(
-        parser.propertyTree(), mesh, disk_color );
+    auto level_set =
+        createParticleLevelSet<FieldLocation::Node>( inputs, mesh, disk_color );
     level_set->updateParticleColors( TEST_EXECSPACE(),
                                      particles.slice( Field::Color() ) );
 

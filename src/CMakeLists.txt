@@ -31,7 +31,6 @@ if(Picasso_ENABLE_ARBORX)
 endif()
 
 set(SOURCES
-  Picasso_InputParser.cpp
   Picasso_UniformMesh.cpp
   Picasso_Version.cpp
   )
@@ -41,7 +40,8 @@ add_library(picasso ${SOURCES})
 target_link_libraries(picasso
   Cabana::Core
   Cabana::Grid
-  Boost::boost )
+  nlohmann_json::nlohmann_json
+  )
 
 if(Picasso_ENABLE_ARBORX)
   target_link_libraries(picasso ArborX::ArborX)
