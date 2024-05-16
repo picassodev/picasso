@@ -2,7 +2,8 @@
 cmake_minimum_required(VERSION 3.12)
 
 # FIXME: C language only for Cabana HDF5
-project(Picasso LANGUAGES CXX C VERSION 0.1.0)
+project(Picasso LANGUAGES CXX C)
+set(PROJECT_VERSION "0.2.0-dev")
 
 include(GNUInstallDirs)
 
