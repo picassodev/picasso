@@ -128,6 +128,9 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Random" );
 
+    // Memory space.
+    using memory_space = typename ParticleListType::memory_space;
+
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
 
@@ -135,8 +138,7 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
-    auto local_mesh =
-        Cabana::Grid::createLocalMesh<ExecutionSpace>( local_grid );
+    auto local_mesh = Cabana::Grid::createLocalMesh<memory_space>( local_grid );
 
     // Get the global grid.
     const auto& global_grid = local_grid.globalGrid();
@@ -307,8 +309,7 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
-    auto local_mesh =
-        Cabana::Grid::createLocalMesh<ExecutionSpace>( local_grid );
+    auto local_mesh = Cabana::Grid::createLocalMesh<memory_space>( local_grid );
 
     // Get the local set of owned cell indices.
     auto owned_cells = local_grid.indexSpace(
@@ -485,6 +486,9 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
 {
     Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
 
+    // Memory space.
+    using memory_space = typename ParticleListType::memory_space;
+
     // Particle type.
     using particle_type = typename ParticleListType::particle_type;
 
@@ -492,8 +496,7 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     const auto& local_grid = *( mesh->localGrid() );
 
     // Create a local mesh.
-    auto local_mesh =
-        Cabana::Grid::createLocalMesh<ExecutionSpace>( local_grid );
+    auto local_mesh = Cabana::Grid::createLocalMesh<memory_space>( local_grid );
 
     // Get the global grid.
     const auto& global_grid = local_grid.globalGrid();

@@ -244,7 +244,7 @@ class UniformMesh
                                                                  node_layout );
         auto node_view = _nodes->view();
         auto local_mesh =
-            Cabana::Grid::createLocalMesh<ExecutionSpace>( *_local_grid );
+            Cabana::Grid::createLocalMesh<MemorySpace>( *_local_grid );
         auto local_space = _local_grid->indexSpace( Cabana::Grid::Ghost(),
                                                     Cabana::Grid::Node(),
                                                     Cabana::Grid::Local() );
