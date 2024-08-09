@@ -479,7 +479,7 @@ class GridOperator
             createDependencies( fm, typename field_deps::local_dep_type() );
 
         // Create local mesh.
-        auto local_mesh = Cabana::Grid::createLocalMesh<ExecutionSpace>(
+        auto local_mesh = Cabana::Grid::createLocalMesh<memory_space>(
             *( _mesh->localGrid() ) );
 
         // Apply the operator.
