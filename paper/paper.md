@@ -29,7 +29,7 @@ bibliography: paper.bib
 # Summary
 
 Particle-in-cell (PIC) methods are used is disparate fields, from plasma
-physics to solid mechanics and computer graphics. 
+physics to solid mechanics and computer graphics.
 `Picasso` is a performance portable library for PIC simulations, developed
 throughout the Exascale Computing Project (ECP) [@ecp:2020]. `Picasso` builds
 on the `Cabana` library [@cabana:2022] for particle and structured grid
@@ -55,6 +55,28 @@ Even still, there are no known current libraries to support PIC algorithms
 and related complex particle operations.
 
 # Library capabilities
+`Picasso` introduces various classes and supporting types for enabling a high-level specification of field data and PIC algorithms, with the intent to hide implementation details such as memory spaces and allocation, halo communication patterns, and device versus host access. The design principles of performance transparency and PIC domain abstraction thus allows the algorithm designer/user implementor to focus only on the field data definitions and their interdependencies within various sequential "operations", allowing for a natural identification. `Picasso` defines two necessary types for facilitating data management and communication: the `FieldManager` and `GridOperator`'s, discussed in the following sections.
+
+At the core of `Picasso`'s domain model is the concept of a `FieldLayout`, which contains a location and a field tag. A location can be one of any structured mesh entity (`Node`, `Cell`, `Face<D>`, `Edge<D>`), where `D` is a specific dimension `I`,`J`, or `K`, or a `Particle`. A tag is any type with a string-like `label()` static member function. The complete specification of a `FieldLayout` uniquely defines a field as known to the `FieldManager`, while also allowing the same field tag (e.g. `Temperature`) to be associated with multiple locations (e.g. both `Node` and `Particle`).
+### Field Manager
+The `Picasso::FieldManager` is a single collection wrapper type for storing unique handles to field layouts in an `unordered_map`. The `FieldManager` itself is separately initialized by passing it to each `GridOperator::setup()` function.
+
+### Grid Operators
+The `Picasso::GridOperator` encapsulates all of the field management work associated with parallel grid operations. Both particle-centric loops are supported (for operations like P2G and G2P) as well as entity centric loops for more traditional discrete grid operations.
+A `GridOperator` is defined over a given mesh type and a user defines the fields which must be gathered on the grid to apply the operator and the fields which will be scattered on the grid after the operation is complete. All distributed parallel work is managed by these dependencies - the user needs to only write the body of the operator kernel to be applied at each data point (e.g. each particle or mesh entity).
+The order of the dependency templates (if there are any dependencies) is defined above in the documentation for `GridOperatorDependencies`.
+
+### Particle Initialization
+`Picasso` provides two modes for initializing particles on a background grid: `InitUniform` and `InitRandom`. In addition to requiring parameters (particles per dimension for `InitUniform` or particles per cell for `InitRandom`), a user-defined predicate functor must also be provided that returns true or false based on certain criteria of the candidate particle, such as position. The design for a custom user-hook during the creation phase allows for flexible and arbitrary particle initialization.
+
+### Batched Linear Algebra
+Matrix-vector and matrix-matrix operations are nearly ubiquitous in particle-to-grid and grid-to-particle mappings, function space projections, and other common operations wherein support for writing concise vectorial expressions is benefitial for both code readability, as well as exposing algorithmic parallelism.  The `Picasso` library also implements kernel-level dense linear algebra operations in a corresponding `LinearAlgebra` namespace using a combination of expression templates for lazy evaluation and data structures to hold intermediates for eager evaluations when necessary. The general concept in the `Picasso` implementation for lazy vs. eager evaluations disencumbers the algorithm author from considering additional performance factors such as overhead incurred from excessive copies or total operation counts in otherwise unoptimized code. Using built-in operator overloading with support for expression templates, users can build complex nested tensorial expressions that are a mixture of both eager and lazy evaluations. For example, if `A` and `B` are NxN and `x` is length N:
+```cpp
+  auto C = 0.5 * (A + ~A) * B + (x * ~x);
+```
+where the returned `C` is an NxN matrix, `~` is the transpose operator, and the `*` is an outer-product operation in the last term.
+
+`Picasso` provides an interface for various supported linear algebra types defined in `FieldTypes`: `Scalar`, `Vector`, `Matrix`, as well as specialized support for higher-rank `Tensor3`, `Tensor4`, and `Quaternion` types. Field tags need only derive from these types in order to make use of `Picasso` linear algebra features. Although all basic operations on vectors and matrices are implemented, several specialized operations are also available, including matrix determinant, inverse, exponential, LU, and SVD decompositions, higher-order tensor contractions, and quaternion-matrix conjugation.
 
 ## Interpolation
 
