@@ -125,3 +125,197 @@ jobs:
           CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target test
       - name: Upload Report to codecov.io
         uses: codecov/codecov-action@v1
+
+  HIP:
+    defaults:
+      run:
+        shell: bash
+    env:
+      # Needed because FindMPI relies heavily on the compiler wrappers, which aren't used with hipcc
+      MPI_LOCATION: /usr/lib/x86_64-linux-gnu/openmpi/
+    strategy:
+      matrix:
+        cxx: ['hipcc']
+        cmake_build_type: ['Release']
+        kokkos_ver: ['3.7.02']
+    runs-on: ubuntu-20.04
+    container: ghcr.io/ecp-copa/ci-containers/rocm:latest
+    steps:
+      - name: Checkout json
+        uses: actions/checkout@v3
+        with:
+          repository: nlohmann/json
+          ref: v3.11.2
+          path: json
+      - name: Build json
+        working-directory: json
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/json \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DJSON_BuildTests=OFF
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout kokkos
+        uses: actions/checkout@v3
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ matrix.kokkos_ver }}
+          path: kokkos
+      - name: Build kokkos
+        working-directory: kokkos
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/kokkos \
+            -DKokkos_ENABLE_HIP=ON \
+            -DKokkos_ARCH_VEGA908=ON \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout arborx
+        uses: actions/checkout@v3
+        with:
+          repository: arborx/ArborX
+          ref: v1.2
+          path: arborx
+      - name: Build arborx
+        working-directory: arborx
+        run: |
+          cmake -B build \
+            -DARBORX_ENABLE_ROCTHRUST=OFF \
+            -DCMAKE_PREFIX_PATH=${HOME}/kokkos \
+            -DCMAKE_INSTALL_PREFIX=$HOME/arborx \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout Cabana
+        uses: actions/checkout@v3
+        with:
+          repository: ECP-CoPA/Cabana
+          # This version is post-release 0.6
+          ref: f99c7db9d54c57373ada6b16132c20d89d1ebb8e
+          path: cabana
+      - name: Build Cabana
+        working-directory: cabana
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -DCMAKE_INSTALL_PREFIX=$HOME/Cabana \
+            -DCMAKE_PREFIX_PATH="$HOME/kokkos" \
+            -DCMAKE_CXX_FLAGS="-I${MPI_LOCATION}/include" \
+            -DCMAKE_EXE_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DCabana_DISABLE_CAJITA_DEPRECATION_WARNINGS=ON \
+            -DCabana_REQUIRE_MPI=ON
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout Picasso
+        uses: actions/checkout@v3
+      - name: Build Picasso
+        run: |
+          cmake -B build \
+            -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -D CMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            -D CMAKE_INSTALL_PREFIX=$HOME/Picasso \
+            -D CMAKE_PREFIX_PATH="$HOME/Cabana;$HOME/arborx;$HOME/json" \
+            -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -Werror -I${MPI_LOCATION}/include ${cmake_cxx_flags[@]}" \
+            -D CMAKE_EXE_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -D CMAKE_SHARED_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -D MPIEXEC_MAX_NUMPROCS=2 \
+            -D MPIEXEC_PREFLAGS="--oversubscribe" \
+            -D Picasso_ENABLE_TESTING=ON
+          cmake --build build --parallel 2
+          cmake --install build
+  CUDA:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        cmake_build_type: ['Release']
+        kokkos_ver: ['3.7.02']
+    runs-on: ubuntu-20.04
+    container: ghcr.io/ecp-copa/ci-containers/cuda:12.2.0
+    steps:
+      - name: Checkout json
+        uses: actions/checkout@v3
+        with:
+          repository: nlohmann/json
+          ref: v3.11.2
+          path: json
+      - name: Build json
+        working-directory: json
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/json \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DJSON_BuildTests=OFF
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout kokkos
+        uses: actions/checkout@v3
+        with:
+          repository: kokkos/kokkos
+          ref: ${{ matrix.kokkos_ver }}
+          path: kokkos
+      - name: Build kokkos
+        working-directory: kokkos
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/kokkos \
+            -DKokkos_ENABLE_CUDA=ON \
+            -DKokkos_ARCH_VOLTA72=ON \
+            -DKokkos_ENABLE_CUDA_LAMBDA=ON \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout arborx
+        uses: actions/checkout@v3
+        with:
+          repository: arborx/ArborX
+          ref: v1.2
+          path: arborx
+      - name: Build arborx
+        working-directory: arborx
+        run: |
+          cmake -B build \
+            -DCMAKE_PREFIX_PATH=${HOME}/kokkos \
+            -DCMAKE_INSTALL_PREFIX=$HOME/arborx \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout Cabana
+        uses: actions/checkout@v3
+        with:
+          repository: ECP-CoPA/Cabana
+          # This version is post-release 0.6
+          ref: f99c7db9d54c57373ada6b16132c20d89d1ebb8e
+          path: cabana
+      - name: Build Cabana
+        working-directory: cabana
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DCMAKE_INSTALL_PREFIX=$HOME/Cabana \
+            -DCMAKE_PREFIX_PATH="$HOME/kokkos" \
+            -DCabana_DISABLE_CAJITA_DEPRECATION_WARNINGS=ON \
+            -DCabana_REQUIRE_MPI=ON
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout Picasso
+        uses: actions/checkout@v3
+      - name: Build Picasso
+        run: |
+          cmake -B build \
+            -D CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -Werror -Wno-unused-but-set-variable ${cmake_cxx_flags[@]}" \
+            -D CMAKE_INSTALL_PREFIX=$HOME/Picasso \
+            -D CMAKE_PREFIX_PATH="$HOME/Cabana;$HOME/arborx;$HOME/json" \
+            -D MPIEXEC_MAX_NUMPROCS=2 \
+            -D MPIEXEC_PREFLAGS="--oversubscribe" \
+            -D Picasso_ENABLE_TESTING=ON
+          cmake --build build --parallel 2
+          cmake --install build
