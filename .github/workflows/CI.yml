@@ -36,7 +36,7 @@ jobs:
           mkdir ~/Licenses
           curl https://dynamicinstaller.intel.com/api/v2/license > ~/Licenses/intel.lic
       - name: Checkout kokkos
-        uses: actions/checkout@v2.2.0
+        uses: actions/checkout@v3
         with:
           repository: kokkos/kokkos
           ref: ${{ matrix.kokkos_ver }}
@@ -53,7 +53,7 @@ jobs:
           cmake --build build --parallel 2
           cmake --install build
       - name: Checkout arborx
-        uses: actions/checkout@v2.2.0
+        uses: actions/checkout@v3
         with:
           repository: arborx/ArborX
           ref: v1.2
@@ -69,7 +69,7 @@ jobs:
           cmake --build build --parallel 2
           cmake --install build
       - name: Checkout Cabana
-        uses: actions/checkout@v2.2.0
+        uses: actions/checkout@v3
         with:
           repository: ECP-CoPA/Cabana
           ref: 0.6.1
@@ -101,7 +101,7 @@ jobs:
           cmake --build build --parallel 2
           cmake --install build
       - name: Checkout Picasso
-        uses: actions/checkout@v2.2.0
+        uses: actions/checkout@v3
       - name: Build Picasso
         run: |
           if [[ ${{ matrix.coverage }} == 'ON' ]]; then
