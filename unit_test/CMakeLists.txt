@@ -149,6 +149,7 @@ Picasso_add_tests(NAMES
 
 Picasso_add_tests(MPI NAMES
   FacetGeometry
+  ParticleInit
   ParticleList
   UniformCartesianMeshMapping
   BilinearMeshMapping

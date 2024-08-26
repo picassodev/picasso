@@ -15,9 +15,8 @@
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_Types.hpp>
 
-#include <Cajita.hpp>
-
 #include <Cabana_Core.hpp>
+#include <Cabana_Grid.hpp>
 
 #include <Kokkos_Core.hpp>
 
@@ -34,12 +33,12 @@ int totalParticlesPerCell( InitRandom, int ppc ) { return ppc; }
 
 //---------------------------------------------------------------------------//
 // Field tags.
-struct Foo : public Field::Vector<double, 3>
+struct Foo : public Picasso::Field::Vector<double, 3>
 {
     static std::string label() { return "foo"; }
 };
 
-struct Bar : public Field::Scalar<double>
+struct Bar : public Picasso::Field::Scalar<double>
 {
     static std::string label() { return "bar"; }
 };
@@ -59,8 +58,7 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
         global_low_corner[2] + cell_size * global_num_cell[2] };
 
     // Get inputs for mesh.
-    std::ifstream stream( "particle_init_test.json" );
-    auto inputs = Picasso::json::parse( stream );
+    auto inputs = Picasso::parse( "particle_init_test.json" );
     Kokkos::Array<double, 6> global_box = {
         global_low_corner[0],  global_low_corner[1],  global_low_corner[2],
         global_high_corner[0], global_high_corner[1], global_high_corner[2] };
@@ -71,10 +69,9 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
         inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    using list_type = ParticleList<UniformMesh<TEST_MEMSPACE>, Foo, Bar>;
-    list_type particles( "test_particles", mesh );
-    using particle_type = typename list_type::particle_type;
-
+    Cabana::ParticleTraits<Foo, Bar> fields;
+    auto particles = Cabana::Grid::createParticleList<TEST_MEMSPACE>(
+        "test_particles", fields );
     // Particle initialization functor.
     const Kokkos::Array<double, 6> box = {
         global_low_corner[Dim::I] + cell_size * boundary,
@@ -83,8 +80,10 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
         global_high_corner[Dim::J] - cell_size * boundary,
         global_low_corner[Dim::K] + cell_size * boundary,
         global_high_corner[Dim::K] - cell_size * boundary };
+    using particle_list_type = decltype( particles );
     auto particle_init_func =
-        KOKKOS_LAMBDA( const double x[3], const double v, particle_type& p )
+        KOKKOS_LAMBDA( const double x[3], const double v,
+                       typename particle_list_type::particle_type& p )
     {
         // Put particles in a box that is one cell smaller than the global
         // mesh. This will give us a layer of empty cells.
@@ -92,9 +91,9 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
              x[Dim::J] < box[3] && x[Dim::K] > box[4] && x[Dim::K] < box[5] )
         {
             for ( int d = 0; d < 3; ++d )
-                get( p, Foo(), d ) = x[d];
+                Picasso::get( p, Foo(), d ) = x[d];
 
-            get( p, Bar() ) = v;
+            Picasso::get( p, Bar() ) = v;
 
             return true;
         }
@@ -106,8 +105,8 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
 
     // Initialize particles (potentially multiple times).
     for ( int m = 0; m < multiplier; ++m )
-        initializeParticles( init_type, TEST_EXECSPACE(), ppc,
-                             particle_init_func, particles );
+        Picasso::initializeParticles( init_type, TEST_EXECSPACE(), ppc,
+                                      particle_init_func, particles, mesh );
 
     // Check that we made particles.
     int num_p = particles.size();
@@ -120,11 +119,11 @@ void InitTest( InitType init_type, const int ppc, const int boundary = 1,
                    MPI_COMM_WORLD );
     int expect_num_particle =
         multiplier * totalParticlesPerCell( init_type, ppc ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::I ) -
+        ( global_grid.globalNumEntity( Cabana::Grid::Cell(), Dim::I ) -
           2 * boundary ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::J ) -
+        ( global_grid.globalNumEntity( Cabana::Grid::Cell(), Dim::J ) -
           2 * boundary ) *
-        ( global_grid.globalNumEntity( Cajita::Cell(), Dim::K ) -
+        ( global_grid.globalNumEntity( Cabana::Grid::Cell(), Dim::K ) -
           2 * boundary );
     EXPECT_EQ( global_num_particle, expect_num_particle );
 
