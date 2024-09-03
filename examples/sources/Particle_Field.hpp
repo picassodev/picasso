@@ -10,7 +10,7 @@
 namespace Picasso
 {
 
-namespace Field
+namespace Example
 {
 
 struct Mass : Field::Scalar<double>
@@ -60,7 +60,7 @@ struct DetDefGrad : Field::Scalar<double>
 
 using Position = Picasso::Field::LogicalPosition<3>;
 
-} // namespace Field
+} // namespace Example
 
 namespace APIC
 {

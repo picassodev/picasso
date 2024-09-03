@@ -32,11 +32,11 @@ void outputParticles( MPI_Comm comm, ExecutionSpace, ParticleVelocity,
     {
         auto h5_config = Impl::setupHDF5Config();
 
-        auto x = particles.slice( Picasso::Field::Position() );
-        auto p_p = particles.slice( Picasso::Field::Pressure() );
+        auto x = particles.slice( Picasso::Example::Position() );
+        auto p_p = particles.slice( Picasso::Example::Pressure() );
         auto vel_p = particles.slice( ParticleVelocity() );
-        auto m_p = particles.slice( Picasso::Field::Mass() );
-        auto v_p = particles.slice( Picasso::Field::Volume() );
+        auto m_p = particles.slice( Picasso::Example::Mass() );
+        auto v_p = particles.slice( Picasso::Example::Volume() );
 
         std::string prefix = "particles";
         Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(

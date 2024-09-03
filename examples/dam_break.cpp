@@ -45,9 +45,9 @@ void DamBreak()
                                    minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    Cabana::ParticleTraits<Field::Stress, ParticleVelocity, Field::Position,
-                           Field::Mass, Field::Pressure, Field::Volume,
-                           Field::DetDefGrad>
+    Cabana::ParticleTraits<Example::Stress, ParticleVelocity, Example::Position,
+                           Example::Mass, Example::Pressure, Example::Volume,
+                           Example::DetDefGrad>
         fields;
     auto particles = Cabana::Grid::createParticleList<memory_space>(
         "test_particles", fields );

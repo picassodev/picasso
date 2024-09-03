@@ -33,15 +33,15 @@ struct ParticleInitFunc
              x[1] <= block[4] && block[2] <= x[2] && x[2] <= block[5] )
         {
 
-            Picasso::get( p, Picasso::Field::Stress() ) = 0.0;
+            Picasso::get( p, Picasso::Example::Stress() ) = 0.0;
             Picasso::get( p, VelocityType() ) = 0.0;
-            Picasso::get( p, Picasso::Field::DetDefGrad() ) = 1.0;
-            Picasso::get( p, Picasso::Field::Mass() ) = pv * density;
-            Picasso::get( p, Picasso::Field::Volume() ) = pv;
-            Picasso::get( p, Picasso::Field::Pressure() ) = 0.0;
+            Picasso::get( p, Picasso::Example::DetDefGrad() ) = 1.0;
+            Picasso::get( p, Picasso::Example::Mass() ) = pv * density;
+            Picasso::get( p, Picasso::Example::Volume() ) = pv;
+            Picasso::get( p, Picasso::Example::Pressure() ) = 0.0;
 
             for ( int d = 0; d < 3; ++d )
-                Picasso::get( p, Picasso::Field::Position(), d ) = x[d];
+                Picasso::get( p, Picasso::Example::Position(), d ) = x[d];
             return true;
         }
 
