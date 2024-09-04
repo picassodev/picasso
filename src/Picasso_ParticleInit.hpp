@@ -247,19 +247,6 @@ void initializeParticles( InitRandom, const ExecutionSpace& exec_space,
     Kokkos::Profiling::popRegion();
 }
 
-// Wrapper for Picasso::ParticleList
-template <class ParticleListType, class InitFunctor, class ExecutionSpace>
-void initializeParticles( InitRandom tag, const ExecutionSpace& exec_space,
-                          const int particles_per_cell,
-                          const InitFunctor& create_functor,
-                          ParticleListType& particle_list,
-                          const bool shrink_to_fit = true )
-{
-
-    initializeParticles( tag, exec_space, particles_per_cell, create_functor,
-                         particle_list, particle_list.mesh(), shrink_to_fit );
-}
-
 //---------------------------------------------------------------------------//
 /*!
   \brief Initialize a uniform number of particles in each cell given an
@@ -422,20 +409,6 @@ void initializeParticles( InitUniform, const ExecutionSpace& exec_space,
     Kokkos::Profiling::popRegion();
 }
 
-// Wrapper for Picasso::ParticleList
-template <class ParticleListType, class InitFunctor, class ExecutionSpace>
-void initializeParticles( InitUniform tag, const ExecutionSpace& exec_space,
-                          const int particles_per_cell_dim,
-                          const InitFunctor& create_functor,
-                          ParticleListType& particle_list,
-                          const bool shrink_to_fit = true )
-{
-
-    initializeParticles( tag, exec_space, particles_per_cell_dim,
-                         create_functor, particle_list, particle_list.mesh(),
-                         shrink_to_fit );
-}
-
 //---------------------------------------------------------------------------//
 /*!
   \brief Initialize a uniform number of particles in each cell given an
@@ -582,22 +555,6 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
         } );
 
     Kokkos::Profiling::popRegion();
-}
-
-// Wrapper for Picasso::ParticleList
-template <class ParticleListType, class InitFunctor, class FacetGeometry,
-          class ExecutionSpace>
-void initializeParticlesSurface( InitRandom tag,
-                                 const ExecutionSpace& exec_space,
-                                 const int particles_per_facet,
-                                 const FacetGeometry& surface,
-                                 const InitFunctor& create_functor,
-                                 ParticleListType& surface_particle_list,
-                                 const bool shrink_to_fit = true )
-{
-
-    initializeParticles( tag, exec_space, particles_per_facet, create_functor,
-                         surface_particle_list, surface_particle_list.mesh() );
 }
 
 //---------------------------------------------------------------------------//

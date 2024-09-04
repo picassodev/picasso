@@ -38,6 +38,16 @@ struct Bar : Field::Matrix<double, 3, 3>
 //---------------------------------------------------------------------------//
 void linearAlgebraTest()
 {
+    // Get inputs for mesh.
+    auto inputs = Picasso::parse( "uniform_mesh_test_1.json" );
+    Kokkos::Array<double, 6> global_box = { -10.0, -10.0, -10.0,
+                                            10.0,  10.0,  10.0 };
+    int minimum_halo_size = 0;
+
+    // Make mesh.
+    auto mesh = std::make_shared<UniformMesh<TEST_MEMSPACE>>(
+        inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
+
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, Foo, Field::Color, Bar>
         fields;

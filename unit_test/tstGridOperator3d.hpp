@@ -330,16 +330,15 @@ void gatherScatterTest()
         global_low_corner[2] + cell_size * global_num_cell[2] };
 
     // Get inputs for mesh.
-    InputParser parser( "particle_init_test.json", "json" );
+    auto inputs = Picasso::parse( "particle_init_test.json" );
     Kokkos::Array<double, 6> global_box = {
         global_low_corner[0],  global_low_corner[1],  global_low_corner[2],
         global_high_corner[0], global_high_corner[1], global_high_corner[2] };
     int minimum_halo_size = 0;
 
     // Make mesh.
-    auto mesh =
-        createUniformMesh( TEST_MEMSPACE(), parser.propertyTree(), global_box,
-                           minimum_halo_size, MPI_COMM_WORLD );
+    auto mesh = createUniformMesh( TEST_MEMSPACE(), inputs, global_box,
+                                   minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
     Cabana::ParticleTraits<Field::LogicalPosition<3>, FooP, BarP> fields;
