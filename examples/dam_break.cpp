@@ -14,20 +14,14 @@
 
 using namespace Picasso;
 
-template <typename Scalar, std::size_t N>
-Kokkos::Array<Scalar, N> parserGetArray( InputParser parser,
-                                         const std::string name )
+template <typename T, std::size_t N>
+Kokkos::Array<T, N> getArray( nlohmann::json input_data,
+                              const std::string name )
 {
-    const auto& pt = parser.propertyTree();
-    Kokkos::Array<Scalar, N> array;
+    std::array<T, N> property_std = input_data[name];
+    auto property = copy( property_std );
 
-    int d = 0;
-    for ( auto& element : pt.get_child( name ) )
-    {
-        array[d] = element.second.get_value<Scalar>();
-        ++d;
-    }
-    return array;
+    return property;
 }
 //---------------------------------------------------------------------------//
 // DamBreak example
@@ -38,15 +32,14 @@ void DamBreak()
     using memory_space = exec_space::memory_space;
 
     // Get inputs for mesh.
-    InputParser parser( "dam_break.json", "json" );
-    const auto& pt = parser.propertyTree();
+    auto inputs = Picasso::parse( "dam_break.json" );
 
     // Global bounding box.
-    auto global_box = parserGetArray<double, 6>( parser, "global_box" );
+    auto global_box = getArray<double, 6>( inputs, "global_box" );
     int minimum_halo_size = 0;
 
     // Make mesh.
-    auto mesh = createUniformMesh( memory_space(), pt, global_box,
+    auto mesh = createUniformMesh( memory_space(), inputs, global_box,
                                    minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
@@ -58,13 +51,13 @@ void DamBreak()
         "test_particles", fields );
 
     // Initialize particles
-    auto particle_box = parserGetArray<double, 6>( parser, "particle_box" );
-    auto density = pt.get<double>( "density" );
+    auto particle_box = getArray<double, 6>( inputs, "particle_box" );
+    double density = inputs["density"];
 
     auto momentum_init_functor = createParticleInitFunc(
         particles, ParticleVelocity(), particle_box, density );
 
-    auto ppc = pt.get<int>( "ppc" );
+    double ppc = inputs["ppc"];
     auto local_grid = mesh->localGrid();
     Cabana::Grid::createParticles( Cabana::InitUniform(), exec_space(),
                                    momentum_init_functor, particles, ppc,
@@ -78,21 +71,21 @@ void DamBreak()
     BoundaryCondition<bc_index_type> bc{ bc_index };
 
     // Properties
-    auto gamma = pt.get<double>( "gamma" );
-    auto bulk_modulus = pt.get<double>( "bulk_modulus" );
-    auto gravity = parserGetArray<double, 3>( parser, "gravity" );
+    auto gamma = inputs["gamma"];
+    auto bulk_modulus = inputs["bulk_modulus"];
+    auto gravity = getArray<double, 3>( inputs, "gravity" );
     Picasso::Properties props( gamma, bulk_modulus, gravity );
 
     // Time integragor
-    auto dt = pt.get<double>( "dt" );
+    auto dt = inputs["dt"];
     auto time_integrator = Picasso::createExplicitMomentumIntegrator(
         mesh, InterpolationType(), ParticleVelocity(), props, dt );
     auto fm = Picasso::createFieldManager( mesh );
     time_integrator.setup( *fm );
 
     // steps
-    auto final_time = pt.get<double>( "final_time" );
-    auto write_frequency = pt.get<double>( "write_frequency" );
+    auto final_time = inputs["final_time"];
+    auto write_frequency = inputs["write_frequency"];
     while ( time_integrator.totalTime() < final_time )
     {
         // Write particle fields.

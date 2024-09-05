@@ -17,8 +17,19 @@
 #include <fstream>
 #include <string>
 
+#include <Kokkos_Core.hpp>
+
 namespace Picasso
 {
+
+template <typename T, std::size_t N>
+Kokkos::Array<T, N> copy( const std::array<T, N> in )
+{
+    Kokkos::Array<T, N> out;
+    for ( std::size_t d = 0; d < in.size(); ++d )
+        out[d] = in[d];
+    return out;
+}
 
 inline nlohmann::json parse( const std::string& filename )
 {
