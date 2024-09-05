@@ -91,7 +91,10 @@ if(Picasso_ENABLE_TESTING)
 endif()
 
 # examples
-add_subdirectory(examples)
+option(Picasso_ENABLE_EXAMPLES "Build examples" OFF)
+if(Picasso_ENABLE_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 # Package Configuration
 write_basic_package_version_file("PicassoConfigVersion.cmake"

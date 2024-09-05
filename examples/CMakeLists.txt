@@ -1,8 +1,8 @@
 add_subdirectory(sources)
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/particle_init_test.json
-  ${CMAKE_CURRENT_BINARY_DIR}/particle_init_test.json
+  ${CMAKE_CURRENT_SOURCE_DIR}/inputs/dam_break.json
+  ${CMAKE_CURRENT_BINARY_DIR}/dam_break.json
   COPYONLY)
 
 add_executable( DamBreak dam_break.cpp )
