@@ -76,7 +76,6 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/json \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
             -DJSON_BuildTests=OFF
           cmake --build build --parallel 2
