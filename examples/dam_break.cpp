@@ -114,7 +114,7 @@ int main( int argc, char* argv[] )
             $/: ./DamBreak inputs/dam_break.json\n" );
     std::string filename = argv[1];
 
-    DamBreak<Picasso::APIC::APicTag, Picasso::APIC::Field::Velocity>();
+    DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
 
     Kokkos::finalize();
     MPI_Finalize();

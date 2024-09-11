@@ -1,7 +1,5 @@
 #include <Picasso.hpp>
 
-#include "Particle_Field.hpp"
-
 #include <Cabana_Core.hpp>
 #include <Cabana_Grid.hpp>
 
