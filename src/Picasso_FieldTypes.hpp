@@ -1022,6 +1022,18 @@ using Position = Picasso::Field::LogicalPosition<3>;
 
 } // namespace Example
 
+namespace PolyPIC
+{
+namespace Field
+{
+
+struct Velocity : Picasso::Field::Matrix<double, 8, 3>
+{
+    static std::string label() { return "velocity"; }
+};
+} // namespace Field
+} // namespace PolyPIC
+
 namespace APIC
 {
 
@@ -1035,6 +1047,10 @@ struct Velocity : Picasso::Field::Matrix<double, 4, 3>
 
 } // namespace Field
 } // namespace APIC
+
+struct PolyPicTag
+{
+};
 
 struct APicTag
 {

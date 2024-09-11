@@ -15,6 +15,7 @@
 #include <Picasso_APIC.hpp>
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldTypes.hpp>
+#include <Picasso_PolyPIC.hpp>
 
 #include <Cabana_Grid.hpp>
 
@@ -285,6 +286,48 @@ template <int InterpolationOrder, class ParticleFieldType, class OldFieldType,
 struct Particle2Grid;
 
 //---------------------------------------------------------------------------//
+// Project particle enthalpy/momentum to grid. PolyPIC variant
+//---------------------------------------------------------------------------//
+template <int InterpolationOrder, class ParticleFieldType, class OldFieldType>
+struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
+                     PolyPicTag>
+{
+    // Explicit time step.
+    double dt;
+
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies,
+              class ParticleViewType>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( const LocalMeshType& local_mesh, const GatherDependencies&,
+                const ScatterDependencies& scatter_deps,
+                const LocalDependencies&, ParticleViewType& particle ) const
+    {
+        // Get particle data.
+        auto f_p = Picasso::get( particle, ParticleFieldType() );
+        auto v_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
+        auto m_p = Picasso::get( particle, Example::Mass() );
+        auto x_p = Picasso::get( particle, Example::Position() );
+
+        // Get the scatter dependencies.
+        auto m_i =
+            scatter_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
+        auto f_i =
+            scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
+
+        // Node interpolant.
+        auto spline = Picasso::createSpline(
+            Picasso::FieldLocation::Node(),
+            Picasso::InterpolationOrder<InterpolationOrder>(), local_mesh, x_p,
+            Picasso::SplineValue(), Picasso::SplineDistance() );
+
+        // Interpolate mass and mass-weighted enthalpy/momentum to grid with
+        // PolyPIC.
+        Picasso::PolyPIC::p2g( m_p, v_p, f_p, f_i, m_i, dt, spline );
+    }
+};
+
+//---------------------------------------------------------------------------//
 // Project particle enthalpy/momentum to grid. APIC variant
 //---------------------------------------------------------------------------//
 template <int InterpolationOrder, class ParticleFieldType, class OldFieldType>
@@ -369,6 +412,61 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
 
 template <int InterpolationOrder, class InterpolationType>
 struct Grid2ParticleVelocity;
+
+//---------------------------------------------------------------------------//
+// Update particle state. PolyPIC variant.
+//---------------------------------------------------------------------------//
+template <int InterpolationOrder>
+struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
+{
+    // FIXME: only needed for FLIP/PIC
+    double beta;
+
+    // Explicit time step.
+    double dt;
+
+    template <class LocalMeshType, class GatherDependencies,
+              class ScatterDependencies, class LocalDependencies,
+              class ParticleViewType>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( const LocalMeshType& local_mesh,
+                const GatherDependencies& gather_deps,
+                const ScatterDependencies&, const LocalDependencies& local_deps,
+                ParticleViewType& particle ) const
+    {
+        // Get particle data.
+        auto u_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
+        auto x_p = Picasso::get( particle, Example::Position() );
+
+        // Get the gather dependencies.
+        auto m_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
+        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
+                                    Example::Velocity() );
+        // Get the local dependencies for getting physcial location of node
+        auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
+                                   Picasso::Field::PhysicalPosition<3>() );
+
+        // Node interpolant.
+        auto spline = Picasso::createSpline(
+            Picasso::FieldLocation::Node(),
+            Picasso::InterpolationOrder<InterpolationOrder>(), local_mesh, x_p,
+            Picasso::SplineValue(), Picasso::SplineGradient() );
+
+        // Update particle velocity using a PolyPIC update.
+        Picasso::PolyPIC::g2p( u_i, u_p, spline );
+
+        // Update particle position.
+        auto x_i_updated =
+            [=]( const int i, const int j, const int k, const int d )
+        {
+            printf( "g2p %d %d %d %8.5e %8.5e\n", i, j, k, x_i( i, j, k, 2 ),
+                    u_i( i, j, k, 2 ) );
+            return x_i( i, j, k, d ) + dt * u_i( i, j, k, d );
+        };
+        Picasso::G2P::value( spline, x_i_updated, x_p );
+    }
+};
 
 //---------------------------------------------------------------------------//
 // Update particle state. APIC variant.
