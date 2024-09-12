@@ -306,12 +306,11 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
         auto v_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
-        auto m_p = Picasso::get( particle, Example::Mass() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto m_p = Picasso::get( particle, Mass() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the scatter dependencies.
-        auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
+        auto m_i = scatter_deps.get( Picasso::FieldLocation::Node(), Mass() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -347,12 +346,11 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
-        auto m_p = Picasso::get( particle, Example::Mass() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto m_p = Picasso::get( particle, Mass() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the scatter dependencies.
-        auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
+        auto m_i = scatter_deps.get( Picasso::FieldLocation::Node(), Mass() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -389,12 +387,11 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
-        auto m_p = Picasso::get( particle, Example::Mass() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto m_p = Picasso::get( particle, Mass() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the scatter dependencies.
-        auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
+        auto m_i = scatter_deps.get( Picasso::FieldLocation::Node(), Mass() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -436,13 +433,12 @@ struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
     {
         // Get particle data.
         auto u_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the gather dependencies.
-        auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Example::Velocity() );
+        auto m_i = gather_deps.get( Picasso::FieldLocation::Node(), Mass() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), Velocity() );
         // Get the local dependencies for getting physcial location of node
         auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
                                    Picasso::Field::PhysicalPosition<3>() );
@@ -491,13 +487,12 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, APIC::Field::Velocity() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the gather dependencies.
-        auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Example::Velocity() );
+        auto m_i = gather_deps.get( Picasso::FieldLocation::Node(), Mass() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), Velocity() );
         // Get the local dependencies for getting physcial location of node
         auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
                                    Picasso::Field::PhysicalPosition<3>() );
@@ -545,16 +540,15 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
                 ParticleViewType& particle ) const
     {
         // Get particle data.
-        auto u_p = Picasso::get( particle, Example::Velocity() );
-        auto x_p = Picasso::get( particle, Example::Position() );
+        auto u_p = Picasso::get( particle, Velocity() );
+        auto x_p = Picasso::get( particle, Position() );
 
         // Get the gather dependencies.
-        auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Example::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Example::Velocity() );
+        auto m_i = gather_deps.get( Picasso::FieldLocation::Node(), Mass() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), Velocity() );
         auto old_u_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Example::OldU() );
+            gather_deps.get( Picasso::FieldLocation::Node(), OldU() );
 
         // Get the local dependencies for getting physcial location of node
         auto x_i = local_deps.get( Picasso::FieldLocation::Node(),

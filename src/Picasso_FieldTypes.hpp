@@ -970,9 +970,6 @@ struct CommRank : Scalar<int>
 
 } // end namespace Field
 
-namespace Example
-{
-
 struct Mass : Field::Scalar<double>
 {
     static std::string label() { return "Mass"; }
@@ -1019,8 +1016,6 @@ struct DetDefGrad : Field::Scalar<double>
 };
 
 using Position = Picasso::Field::LogicalPosition<3>;
-
-} // namespace Example
 
 namespace PolyPIC
 {

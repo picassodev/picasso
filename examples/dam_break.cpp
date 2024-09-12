@@ -3,7 +3,6 @@
 #include "sources/Particle_Init.hpp"
 #include "sources/Picasso_BoundaryCondition.hpp"
 #include "sources/Picasso_ExplicitMomentumUpdate.hpp"
-#include "sources/Picasso_Output.hpp"
 
 #include <Cabana_Core.hpp>
 #include <Cabana_Grid.hpp>
@@ -14,15 +13,6 @@
 
 using namespace Picasso;
 
-template <typename T, std::size_t N>
-Kokkos::Array<T, N> getArray( nlohmann::json input_data,
-                              const std::string name )
-{
-    std::array<T, N> property_std = input_data[name];
-    auto property = copy( property_std );
-
-    return property;
-}
 //---------------------------------------------------------------------------//
 // DamBreak example
 template <class InterpolationType, class ParticleVelocity>
@@ -35,7 +25,7 @@ void DamBreak()
     auto inputs = Picasso::parse( "dam_break.json" );
 
     // Global bounding box.
-    auto global_box = getArray<double, 6>( inputs, "global_box" );
+    auto global_box = copy<double, 6>( inputs["global_box"] );
     int minimum_halo_size = 0;
 
     // Make mesh.
@@ -43,15 +33,14 @@ void DamBreak()
                                    minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    Cabana::ParticleTraits<Example::Stress, ParticleVelocity, Example::Position,
-                           Example::Mass, Example::Pressure, Example::Volume,
-                           Example::DetDefGrad>
+    Cabana::ParticleTraits<Stress, ParticleVelocity, Position, Mass, Pressure,
+                           Volume, DetDefGrad>
         fields;
     auto particles = Cabana::Grid::createParticleList<memory_space>(
         "test_particles", fields );
 
     // Initialize particles
-    auto particle_box = getArray<double, 6>( inputs, "particle_box" );
+    auto particle_box = copy<double, 6>( inputs["particle_box"] );
     double density = inputs["density"];
 
     auto momentum_init_functor = createParticleInitFunc(
@@ -73,7 +62,7 @@ void DamBreak()
     // Properties
     auto gamma = inputs["gamma"];
     auto bulk_modulus = inputs["bulk_modulus"];
-    auto gravity = getArray<double, 3>( inputs, "gravity" );
+    auto gravity = copy<double, 3>( inputs["gravity"] );
     Picasso::Properties props( gamma, bulk_modulus, gravity );
 
     // Time integragor
@@ -89,10 +78,15 @@ void DamBreak()
     while ( time_integrator.totalTime() < final_time )
     {
         // Write particle fields.
-        Picasso::Output::outputParticles(
-            MPI_COMM_WORLD, exec_space(), ParticleVelocity(),
-            time_integrator.totalSteps(), write_frequency,
-            time_integrator.totalTime(), particles );
+        Cabana::Experimental::HDF5ParticleOutput::HDF5Config h5_config;
+        Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
+            h5_config, "particles", MPI_COMM_WORLD,
+            time_integrator.totalSteps(), time_integrator.totalTime(),
+            particles.size(), particles.slice( Picasso::Position() ),
+            particles.slice( Picasso::Pressure() ),
+            particles.slice( ParticleVelocity() ),
+            particles.slice( Picasso::Mass() ),
+            particles.slice( Picasso::Volume() ) );
 
         printf( "aaa\n" );
 
