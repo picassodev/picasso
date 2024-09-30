@@ -29,32 +29,34 @@ bibliography: paper.bib
 # Summary
 
 Particle-in-cell (PIC) methods are used is disparate fields, from plasma
-physics to solid mechanics and computer graphics.
+physics and solid mechanics to computer graphics.
 `Picasso` is a performance portable library for PIC simulations, developed
-throughout the Exascale Computing Project (ECP) [@ecp:2020]. `Picasso` builds
+through the Exascale Computing Project (ECP) [@ecp:2020]. `Picasso` builds
 on the `Cabana` library [@cabana:2022] for particle and structured grid
 methods, which in turn extends the `Kokkos` library for on-node parallelism
-across hardware architectures [@kokkos:2022] and `MPI` for scalable multi-node
-communication. `Picasso` provides interpolation schemes for particle-to-grid
+across hardware architectures [@kokkos:2022] and uses `MPI` for scalable distributed
+simulation. `Picasso` provides interpolation schemes for particle-to-grid
 and grid-to-particle updates, embedded free surface tracking, and robust
 linear algebra support for particle and grid operations. This separation of
 concerns results in a parallelism layer, a simulation motif (and distributed
-communication) layer, and finally a PIC algorithms layer, all enabling the
-user-level physics.
+communication) layer, and finally a PIC algorithm and utility layer, all enabling
+performant user-level physics simulations.
 
 # Statement of need
 
 Computational predictions are increasingly necessary for answering scientific
-and engineering questions. As these needs continue to expand, striking the
-proper balance of computational performance, portability across hardware
-architectures, and programmer productivity requires substantial effort.
-While `Kokkos` provides general portability for parallel algorithms, many
-particle-specific extensions are necessary in `Cabana` to improve the
-productivity, both in capability and in achieving peak performance.
-Even still, there are no known current libraries to support PIC algorithms
-and related complex particle operations.
+and engineering questions; PIC methods are a robust option for simulations of highly
+dynamic systems, including plasmas, fluids, and solid materials undergoing severe
+deformation. As these needs continue to expand, striking the proper balance of
+computational performance, portability across hardware architectures, and programmer
+productivity requires substantial effort [@ppp:2021].
+Existing frameworks for PIC simulations are increasingly written with performance
+portability in mind, but focused much more on the plasma physics domain [@vpic, @ippl, @pumipic].
+In addition, there are no known current libraries to support state-of-the-art PIC algorithms
+and related complex particle operations [@apic, @polypic].
 
 # Library capabilities
+
 `Picasso` introduces various classes and supporting types for enabling a high-level specification of field data and PIC algorithms, with the intent to hide implementation details such as memory spaces and allocation, halo communication patterns, and device versus host access. The design principles of performance transparency and PIC domain abstraction thus allows the algorithm designer/user implementor to focus only on the field data definitions and their interdependencies within various sequential "operations", allowing for a natural identification. `Picasso` defines two necessary types for facilitating data management and communication: the `FieldManager` and `GridOperator`'s, discussed in the following sections.
 
 At the core of `Picasso`'s domain model is the concept of a `FieldLayout`, which contains a location and a field tag. A location can be one of any structured mesh entity (`Node`, `Cell`, `Face<D>`, `Edge<D>`), where `D` is a specific dimension `I`,`J`, or `K`, or a `Particle`. A tag is any type with a string-like `label()` static member function. The complete specification of a `FieldLayout` uniquely defines a field as known to the `FieldManager`, while also allowing the same field tag (e.g. `Temperature`) to be associated with multiple locations (e.g. both `Node` and `Particle`).
@@ -86,6 +88,11 @@ The `Picasso::LevelSet` and `Picasso::ParticleLevelSet` are fast parallel implem
 
 ## Examples and performance testing
 
+
+## Future work
+
+Picasso also provides a clear place to include further algorithmic development in the PIC
+field, e.g. @powerpic, @ipic.
 
 # Acknowledgments
 
