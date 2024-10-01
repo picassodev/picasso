@@ -95,16 +95,23 @@ struct ParticleLevelSetPredicateData
 // Query callback. When the query occurs we store the distance to the closest
 // point. We don't use the tree graph so we don't insert anything into the
 // graph.
+#if ARBORX_VERSION < 10799
 template <class CoordinateSlice, class DistanceEstimateView>
+#else
+template <class DistanceEstimateView>
+#endif
 struct ParticleLevelSetCallback
 {
+#if ARBORX_VERSION < 10799
     ParticleLevelSetPrimitiveData<
         CoordinateSlice,
         Kokkos::View<int*, typename CoordinateSlice::memory_space>>
         primitive_data;
+#endif
     DistanceEstimateView distance_estimate;
     float radius;
 
+#if ARBORX_VERSION < 10799
     template <typename Predicate>
     KOKKOS_FUNCTION void operator()( Predicate const& predicate,
                                      int primitive_index ) const
@@ -122,6 +129,22 @@ struct ParticleLevelSetCallback
         distance_estimate( storage.i, storage.j, storage.k, 0 ) =
             sqrt( dx * dx + dy * dy + dz * dz ) - radius;
     }
+#else
+    template <typename Predicate, typename Point>
+    KOKKOS_FUNCTION void operator()( Predicate const& predicate,
+                                     Point const& point ) const
+    {
+        // Get the predicate storage.
+        auto storage = getData( predicate );
+
+        // Compute the distance from the grid entity to the particle sphere.
+        float dx = static_cast<float>( point[0] ) - storage.x;
+        float dy = static_cast<float>( point[1] ) - storage.y;
+        float dz = static_cast<float>( point[2] ) - storage.z;
+        distance_estimate( storage.i, storage.j, storage.k, 0 ) =
+            sqrt( dx * dx + dy * dy + dz * dz ) - radius;
+    }
+#endif
 };
 
 } // end namespace Picasso
@@ -135,8 +158,12 @@ namespace ArborX
 // coordinates of the color we build the level set for.
 template <class CoordinateSlice, class ViewType>
 struct AccessTraits<
-    Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice, ViewType>,
-    PrimitivesTag>
+    Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice, ViewType>
+#if ARBORX_VERSION < 10799
+    ,
+    PrimitivesTag
+#endif
+    >
 {
     using primitive_data =
         Picasso::ParticleLevelSetPrimitiveData<CoordinateSlice, ViewType>;
@@ -146,15 +173,15 @@ struct AccessTraits<
     {
         return data.num_color;
     }
-    static KOKKOS_FUNCTION Point get( const primitive_data& data, size_type i )
+    static KOKKOS_FUNCTION auto get( const primitive_data& data, size_type i )
     {
         // Get the actual index of the particle.
         auto p = data.c( i );
 
         // Return a point made from the particles.
-        return { static_cast<float>( data.x( p, 0 ) ),
-                 static_cast<float>( data.x( p, 1 ) ),
-                 static_cast<float>( data.x( p, 2 ) ) };
+        return ArborX::Point{ static_cast<float>( data.x( p, 0 ) ),
+                              static_cast<float>( data.x( p, 1 ) ),
+                              static_cast<float>( data.x( p, 2 ) ) };
     }
 };
 
@@ -162,8 +189,12 @@ struct AccessTraits<
 // on which we build the level set.
 template <class LocalMesh, class EntityType>
 struct AccessTraits<
-    Picasso::ParticleLevelSetPredicateData<LocalMesh, EntityType>,
-    PredicatesTag>
+    Picasso::ParticleLevelSetPredicateData<LocalMesh, EntityType>
+#if ARBORX_VERSION < 10799
+    ,
+    PredicatesTag
+#endif
+    >
 {
     using predicate_data =
         Picasso::ParticleLevelSetPredicateData<LocalMesh, EntityType>;
@@ -366,19 +397,27 @@ class ParticleLevelSet
             primitive_data.x = x_p;
             primitive_data.c = _color_indices;
             primitive_data.num_color = _color_count;
+#if ARBORX_VERSION < 10799
             ArborX::BVH<memory_space> bvh( exec_space, primitive_data );
+#else
+            ArborX::BoundingVolumeHierarchy bvh( exec_space, primitive_data );
+#endif
 
             // Make the search predicates.
             ParticleLevelSetPredicateData<decltype( local_mesh ), entity_type>
                 predicate_data( local_mesh, *local_grid );
 
             // Make the distance callback.
+#if ARBORX_VERSION < 10799
             ParticleLevelSetCallback<ParticlePositions,
                                      decltype( estimate_view )>
-                distance_callback;
-            distance_callback.primitive_data = primitive_data;
-            distance_callback.distance_estimate = estimate_view;
-            distance_callback.radius = static_cast<float>( _radius );
+                distance_callback{ primitive_data, estimate_view,
+                                   static_cast<float>( _radius ) };
+#else
+            ParticleLevelSetCallback<decltype( estimate_view )>
+                distance_callback{ estimate_view,
+                                   static_cast<float>( _radius ) };
+#endif
 
             // Query the particle tree with the mesh entities to find the
             // closest particle and compute the initial signed distance
