@@ -7,44 +7,33 @@
 namespace Picasso
 {
 
-template <class LocalGridType>
 struct BoundaryCondition
 {
-    LocalGridType local_grid;
+    Kokkos::Array<long int, 6> bc_index_space;
+    Kokkos::Array<bool, 6 > on_boundary;
 
     // Free slip boundary condition
     template <class ViewType>
     KOKKOS_INLINE_FUNCTION void apply( ViewType view, const int i, const int j,
                                        const int k ) const
     {
-
-        auto index_space = local_grid.indexSpace( Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
-
-        auto global_grid = local_grid.globalGrid();
-
         // -x face
-        if ( i == index_space.min( Cabana::Grid::Dim::I ) &&
-             global_grid.onLowBoundary( Cabana::Grid::Dim::I ) )
+        if ( i == bc_index_space[0] && on_boundary[0] )
              view( i, j, k, 0 ) = 0.0;
         // +x face
-        if ( i == index_space.min( Cabana::Grid::Dim::I ) &&
-             global_grid.onHighBoundary( Cabana::Grid::Dim::I ) )
+        if ( i == bc_index_space[3] && on_boundary[3] )
              view( i, j, k, 0 ) = 0.0;
         // -y face
-        if ( j == index_space.min( Cabana::Grid::Dim::J ) &&
-             global_grid.onLowBoundary( Cabana::Grid::Dim::J ) )
+        if ( j == bc_index_space[1] && on_boundary[1] )
              view( i, j, k, 1 ) = 0.0;
         // +y face
-        if ( j == index_space.min( Cabana::Grid::Dim::J ) &&
-             global_grid.onHighBoundary( Cabana::Grid::Dim::J ) )
+        if ( j == bc_index_space[4] && on_boundary[4] )
              view( i, j, k, 1 ) = 0.0;
         // -z face
-        if ( k == index_space.min( Cabana::Grid::Dim::K ) &&
-             global_grid.onLowBoundary( Cabana::Grid::Dim::K ) )
+        if ( k == bc_index_space[2] && on_boundary[2] )
              view( i, j, k, 2 ) = 0.0;
         // +z face
-        if ( k == index_space.min( Cabana::Grid::Dim::K ) &&
-             global_grid.onHighBoundary( Cabana::Grid::Dim::K ) )
+        if ( k == bc_index_space[5] && on_boundary[5] )
              view( i, j, k, 2 ) = 0.0;
     }
 };

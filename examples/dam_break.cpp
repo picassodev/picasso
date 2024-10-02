@@ -53,11 +53,26 @@ void DamBreak()
                                    *local_grid );
 
     // Boundary index space
-    //auto bc_index = local_grid->boundaryIndexSpace(
-    //    Cabana::Grid::Own(), Cabana::Grid::Node(), -1, 1, 0 );
-    using local_grid_type = decltype( *local_grid );
+    auto index_space = local_grid->indexSpace( Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
+    auto global_grid = local_grid->globalGrid();
+    
+    Kokkos::Array<long int, 6> bc_index_space{ 
+index_space.min( Cabana::Grid::Dim::I ),
+index_space.min( Cabana::Grid::Dim::J ),
+index_space.min( Cabana::Grid::Dim::K ),
+index_space.max( Cabana::Grid::Dim::I ) - 1,
+index_space.max( Cabana::Grid::Dim::J ) - 1,
+index_space.max( Cabana::Grid::Dim::K ) - 1};
 
-    BoundaryCondition<local_grid_type> bc{ *local_grid };
+    Kokkos::Array<bool, 6> on_boundary { 
+     global_grid.onLowBoundary( Cabana::Grid::Dim::I ),
+     global_grid.onLowBoundary( Cabana::Grid::Dim::J ),
+     global_grid.onLowBoundary( Cabana::Grid::Dim::K ),
+     global_grid.onHighBoundary( Cabana::Grid::Dim::I ),
+     global_grid.onHighBoundary( Cabana::Grid::Dim::J ),
+     global_grid.onHighBoundary( Cabana::Grid::Dim::K ) };
+
+    BoundaryCondition bc{ bc_index_space, on_boundary  };
 
     // Properties
     auto gamma = inputs["gamma"];
