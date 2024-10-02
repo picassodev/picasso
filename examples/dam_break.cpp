@@ -53,11 +53,11 @@ void DamBreak()
                                    *local_grid );
 
     // Boundary index space
-    auto bc_index = local_grid->boundaryIndexSpace(
-        Cabana::Grid::Own(), Cabana::Grid::Node(), -1, 1, 0 );
-    using bc_index_type = decltype( bc_index );
+    //auto bc_index = local_grid->boundaryIndexSpace(
+    //    Cabana::Grid::Own(), Cabana::Grid::Node(), -1, 1, 0 );
+    using local_grid_type = decltype( *local_grid );
 
-    BoundaryCondition<bc_index_type> bc{ bc_index };
+    BoundaryCondition<local_grid_type> bc{ *local_grid };
 
     // Properties
     auto gamma = inputs["gamma"];
@@ -74,24 +74,26 @@ void DamBreak()
 
     // steps
     auto final_time = inputs["final_time"];
-    auto write_frequency = inputs["write_frequency"];
+    int write_frequency = inputs["write_frequency"];
+    int step = 0;
     while ( time_integrator.totalTime() < final_time )
     {
         // Write particle fields.
         Cabana::Experimental::HDF5ParticleOutput::HDF5Config h5_config;
+        if ( step % write_frequency == 0 )
         Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
             h5_config, "particles", MPI_COMM_WORLD,
-            time_integrator.totalSteps(), time_integrator.totalTime(),
+            step / write_frequency, time_integrator.totalTime(),
             particles.size(), particles.slice( Picasso::Position() ),
             particles.slice( Picasso::Pressure() ),
             particles.slice( ParticleVelocity() ),
             particles.slice( Picasso::Mass() ),
             particles.slice( Picasso::Volume() ) );
 
-        printf( "aaa\n" );
-
         // Step.
         time_integrator.step( exec_space(), *fm, particles, *local_grid, bc );
+
+        step++;
     }
 }
 
@@ -108,7 +110,9 @@ int main( int argc, char* argv[] )
             $/: ./DamBreak inputs/dam_break.json\n" );
     std::string filename = argv[1];
 
-    DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
+    //DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>();
+    //DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
+    DamBreak<FlipTag, Picasso::Velocity>();
 
     Kokkos::finalize();
     MPI_Finalize();

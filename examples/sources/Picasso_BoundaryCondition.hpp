@@ -7,27 +7,45 @@
 namespace Picasso
 {
 
-template <class BoundaryIndexType>
+template <class LocalGridType>
 struct BoundaryCondition
 {
-    BoundaryIndexType bc_index;
+    LocalGridType local_grid;
 
+    // Free slip boundary condition
     template <class ViewType>
     KOKKOS_INLINE_FUNCTION void apply( ViewType view, const int i, const int j,
                                        const int k ) const
     {
-        // x faces
-        if ( bc_index.min( Cabana::Grid::Dim::I ) <= i &&
-             i < bc_index.max( Cabana::Grid::Dim::I ) )
-            view( i, j, k, 0 ) = 0.0;
-        // y faces
-        if ( bc_index.min( Cabana::Grid::Dim::J ) <= j &&
-             j < bc_index.max( Cabana::Grid::Dim::J ) )
-            view( i, j, k, 1 ) = 0.0;
-        // z faces
-        if ( bc_index.min( Cabana::Grid::Dim::K ) <= k &&
-             k < bc_index.max( Cabana::Grid::Dim::K ) )
-            view( i, j, k, 2 ) = 0.0;
+
+        auto index_space = local_grid.indexSpace( Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
+
+        auto global_grid = local_grid.globalGrid();
+
+        // -x face
+        if ( i == index_space.min( Cabana::Grid::Dim::I ) &&
+             global_grid.onLowBoundary( Cabana::Grid::Dim::I ) )
+             view( i, j, k, 0 ) = 0.0;
+        // +x face
+        if ( i == index_space.min( Cabana::Grid::Dim::I ) &&
+             global_grid.onHighBoundary( Cabana::Grid::Dim::I ) )
+             view( i, j, k, 0 ) = 0.0;
+        // -y face
+        if ( j == index_space.min( Cabana::Grid::Dim::J ) &&
+             global_grid.onLowBoundary( Cabana::Grid::Dim::J ) )
+             view( i, j, k, 1 ) = 0.0;
+        // +y face
+        if ( j == index_space.min( Cabana::Grid::Dim::J ) &&
+             global_grid.onHighBoundary( Cabana::Grid::Dim::J ) )
+             view( i, j, k, 1 ) = 0.0;
+        // -z face
+        if ( k == index_space.min( Cabana::Grid::Dim::K ) &&
+             global_grid.onLowBoundary( Cabana::Grid::Dim::K ) )
+             view( i, j, k, 2 ) = 0.0;
+        // +z face
+        if ( k == index_space.min( Cabana::Grid::Dim::K ) &&
+             global_grid.onHighBoundary( Cabana::Grid::Dim::K ) )
+             view( i, j, k, 2 ) = 0.0;
     }
 };
 

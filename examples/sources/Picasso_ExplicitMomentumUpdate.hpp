@@ -90,9 +90,6 @@ struct ComputeParticlePressure
         Picasso::LinearAlgebra::identity( I );
 
         s_p = -p_p * I;
-
-        printf( "particle %8.5e %8.5e %8.5e %8.5e %8.5e %8.5e %8.5e\n", J_p,
-                p_p, v_p, m_p, x_p( 0 ), x_p( 1 ), x_p( 2 ) );
     }
 };
 
@@ -202,10 +199,6 @@ struct UpdateGridVelocity
                 ? dt * ( delta_u_s_i( i, j, k ) + delta_u_g_i( i, j, k ) ) /
                       m_i( i, j, k )
                 : zeros;
-
-        printf( "%d %d %d %8.5e %8.5e %8.5e %8.5e\n", i, j, k, m_i( i, j, k ),
-                delta_u_s_i( i, j, k, 2 ), delta_u_g_i( i, j, k, 2 ),
-                u_i( i, j, k, 2 ) );
     }
 };
 

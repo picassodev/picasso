@@ -455,11 +455,7 @@ struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
         // Update particle position.
         auto x_i_updated =
             [=]( const int i, const int j, const int k, const int d )
-        {
-            printf( "g2p %d %d %d %8.5e %8.5e\n", i, j, k, x_i( i, j, k, 2 ),
-                    u_i( i, j, k, 2 ) );
-            return x_i( i, j, k, d ) + dt * u_i( i, j, k, d );
-        };
+        { return x_i( i, j, k, d ) + dt * u_i( i, j, k, d ); };
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };
@@ -510,11 +506,7 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
         // Update particle position.
         auto x_i_updated =
             [=]( const int i, const int j, const int k, const int d )
-        {
-            printf( "g2p %d %d %d %8.5e %8.5e\n", i, j, k, x_i( i, j, k, 2 ),
-                    u_i( i, j, k, 2 ) );
-            return x_i( i, j, k, d ) + dt * u_i( i, j, k, d );
-        };
+        { return x_i( i, j, k, d ) + dt * u_i( i, j, k, d ); };
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };
