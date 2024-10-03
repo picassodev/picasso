@@ -10,7 +10,7 @@ namespace Picasso
 struct BoundaryCondition
 {
     Kokkos::Array<long int, 6> bc_index_space;
-    Kokkos::Array<bool, 6 > on_boundary;
+    Kokkos::Array<bool, 6> on_boundary;
 
     // Free slip boundary condition
     template <class ViewType>
@@ -19,22 +19,22 @@ struct BoundaryCondition
     {
         // -x face
         if ( i == bc_index_space[0] && on_boundary[0] )
-             view( i, j, k, 0 ) = 0.0;
+            view( i, j, k, 0 ) = 0.0;
         // +x face
         if ( i == bc_index_space[3] && on_boundary[3] )
-             view( i, j, k, 0 ) = 0.0;
+            view( i, j, k, 0 ) = 0.0;
         // -y face
         if ( j == bc_index_space[1] && on_boundary[1] )
-             view( i, j, k, 1 ) = 0.0;
+            view( i, j, k, 1 ) = 0.0;
         // +y face
         if ( j == bc_index_space[4] && on_boundary[4] )
-             view( i, j, k, 1 ) = 0.0;
+            view( i, j, k, 1 ) = 0.0;
         // -z face
         if ( k == bc_index_space[2] && on_boundary[2] )
-             view( i, j, k, 2 ) = 0.0;
+            view( i, j, k, 2 ) = 0.0;
         // +z face
         if ( k == bc_index_space[5] && on_boundary[5] )
-             view( i, j, k, 2 ) = 0.0;
+            view( i, j, k, 2 ) = 0.0;
     }
 };
 

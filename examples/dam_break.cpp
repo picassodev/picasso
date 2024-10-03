@@ -53,26 +53,27 @@ void DamBreak()
                                    *local_grid );
 
     // Boundary index space
-    auto index_space = local_grid->indexSpace( Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
+    auto index_space = local_grid->indexSpace(
+        Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
     auto global_grid = local_grid->globalGrid();
-    
-    Kokkos::Array<long int, 6> bc_index_space{ 
-index_space.min( Cabana::Grid::Dim::I ),
-index_space.min( Cabana::Grid::Dim::J ),
-index_space.min( Cabana::Grid::Dim::K ),
-index_space.max( Cabana::Grid::Dim::I ) - 1,
-index_space.max( Cabana::Grid::Dim::J ) - 1,
-index_space.max( Cabana::Grid::Dim::K ) - 1};
 
-    Kokkos::Array<bool, 6> on_boundary { 
-     global_grid.onLowBoundary( Cabana::Grid::Dim::I ),
-     global_grid.onLowBoundary( Cabana::Grid::Dim::J ),
-     global_grid.onLowBoundary( Cabana::Grid::Dim::K ),
-     global_grid.onHighBoundary( Cabana::Grid::Dim::I ),
-     global_grid.onHighBoundary( Cabana::Grid::Dim::J ),
-     global_grid.onHighBoundary( Cabana::Grid::Dim::K ) };
+    Kokkos::Array<long int, 6> bc_index_space{
+        index_space.min( Cabana::Grid::Dim::I ),
+        index_space.min( Cabana::Grid::Dim::J ),
+        index_space.min( Cabana::Grid::Dim::K ),
+        index_space.max( Cabana::Grid::Dim::I ) - 1,
+        index_space.max( Cabana::Grid::Dim::J ) - 1,
+        index_space.max( Cabana::Grid::Dim::K ) - 1 };
 
-    BoundaryCondition bc{ bc_index_space, on_boundary  };
+    Kokkos::Array<bool, 6> on_boundary{
+        global_grid.onLowBoundary( Cabana::Grid::Dim::I ),
+        global_grid.onLowBoundary( Cabana::Grid::Dim::J ),
+        global_grid.onLowBoundary( Cabana::Grid::Dim::K ),
+        global_grid.onHighBoundary( Cabana::Grid::Dim::I ),
+        global_grid.onHighBoundary( Cabana::Grid::Dim::J ),
+        global_grid.onHighBoundary( Cabana::Grid::Dim::K ) };
+
+    BoundaryCondition bc{ bc_index_space, on_boundary };
 
     // Properties
     auto gamma = inputs["gamma"];
@@ -96,14 +97,14 @@ index_space.max( Cabana::Grid::Dim::K ) - 1};
         // Write particle fields.
         Cabana::Experimental::HDF5ParticleOutput::HDF5Config h5_config;
         if ( step % write_frequency == 0 )
-        Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
-            h5_config, "particles", MPI_COMM_WORLD,
-            step / write_frequency, time_integrator.totalTime(),
-            particles.size(), particles.slice( Picasso::Position() ),
-            particles.slice( Picasso::Pressure() ),
-            particles.slice( ParticleVelocity() ),
-            particles.slice( Picasso::Mass() ),
-            particles.slice( Picasso::Volume() ) );
+            Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
+                h5_config, "particles", MPI_COMM_WORLD, step / write_frequency,
+                time_integrator.totalTime(), particles.size(),
+                particles.slice( Picasso::Position() ),
+                particles.slice( Picasso::Pressure() ),
+                particles.slice( ParticleVelocity() ),
+                particles.slice( Picasso::Mass() ),
+                particles.slice( Picasso::Volume() ) );
 
         // Step.
         time_integrator.step( exec_space(), *fm, particles, *local_grid, bc );
@@ -125,8 +126,8 @@ int main( int argc, char* argv[] )
             $/: ./DamBreak inputs/dam_break.json\n" );
     std::string filename = argv[1];
 
-    //DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>();
-    //DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
+    // DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>();
+    // DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
     DamBreak<FlipTag, Picasso::Velocity>();
 
     Kokkos::finalize();
