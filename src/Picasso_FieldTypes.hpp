@@ -966,10 +966,6 @@ struct CommRank : Scalar<int>
     static std::string label() { return "comm_rank"; }
 };
 
-//---------------------------------------------------------------------------//
-
-} // end namespace Field
-
 struct Mass : Field::Scalar<double>
 {
     static std::string label() { return "Mass"; }
@@ -995,19 +991,9 @@ struct OldU : Field::Vector<double, 3>
     static std::string label() { return "Old_Velocity"; }
 };
 
-struct DeltaUGravity : Field::Vector<double, 3>
-{
-    static std::string label() { return "velocity_change_from_gravity"; }
-};
-
 struct Stress : Field::Matrix<double, 3, 3>
 {
     static std::string label() { return "stress"; }
-};
-
-struct DeltaUStress : Field::Vector<double, 3>
-{
-    static std::string label() { return "velocity_change_from_stress"; }
 };
 
 struct DetDefGrad : Field::Scalar<double>
@@ -1016,6 +1002,10 @@ struct DetDefGrad : Field::Scalar<double>
 };
 
 using Position = Picasso::Field::LogicalPosition<3>;
+
+//---------------------------------------------------------------------------//
+
+} // end namespace Field
 
 namespace PolyPIC
 {

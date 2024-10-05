@@ -23,6 +23,7 @@
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_FieldTypes.hpp>
 #include <Picasso_GridOperator.hpp>
+#include <Picasso_GridUpdate.hpp>
 #include <Picasso_InputParser.hpp>
 #include <Picasso_LevelSet.hpp>
 #include <Picasso_LevelSetRedistance.hpp>
