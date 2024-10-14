@@ -293,7 +293,13 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
                      PolyPicTag>
 {
     // Explicit time step.
-    double dt;
+    double _dt;
+
+    // Constructor
+    Particle2Grid( const double dt )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -323,7 +329,7 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
 
         // Interpolate mass and mass-weighted enthalpy/momentum to grid with
         // PolyPIC.
-        Picasso::PolyPIC::p2g( m_p, v_p, f_p, f_i, m_i, dt, spline );
+        Picasso::PolyPIC::p2g( m_p, v_p, f_p, f_i, m_i, _dt, spline );
     }
 };
 
@@ -335,7 +341,13 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
                      APicTag>
 {
     // Explicit time step.
-    double dt;
+    double _dt;
+
+    // Constructor
+    Particle2Grid( const double dt )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -377,7 +389,13 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
                      FlipTag>
 {
     // Explicit time step.
-    double dt;
+    double _dt;
+
+    // Constructor
+    Particle2Grid( const double dt )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -420,7 +438,19 @@ template <int InterpolationOrder>
 struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
 {
     // Explicit time step.
-    double dt;
+    double _dt;
+
+    // Primary constructor
+    Grid2ParticleVelocity( const double dt )
+        : _dt( dt )
+    {
+    }
+
+    // Constructor for easier compatibility with FLIP
+    Grid2ParticleVelocity( const double dt, const double )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -456,7 +486,7 @@ struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
         // Update particle position.
         auto x_i_updated =
             [=]( const int i, const int j, const int k, const int d )
-        { return x_i( i, j, k, d ) + dt * u_i( i, j, k, d ); };
+        { return x_i( i, j, k, d ) + _dt * u_i( i, j, k, d ); };
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };
@@ -468,7 +498,19 @@ template <int InterpolationOrder>
 struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
 {
     // Explicit time step.
-    double dt;
+    double _dt;
+
+    // Primary constructor
+    Grid2ParticleVelocity( const double dt )
+        : _dt( dt )
+    {
+    }
+
+    // Constructor for easier compatibility with FLIP
+    Grid2ParticleVelocity( const double dt, const double )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -505,7 +547,7 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
         // Update particle position.
         auto x_i_updated =
             [=]( const int i, const int j, const int k, const int d )
-        { return x_i( i, j, k, d ) + dt * u_i( i, j, k, d ); };
+        { return x_i( i, j, k, d ) + _dt * u_i( i, j, k, d ); };
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };
@@ -516,10 +558,23 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
 template <int InterpolationOrder>
 struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
 {
-    double beta = 0.01;
-
     // Explicit time step.
-    double dt;
+    double _dt;
+    // FLIP/PIC ratio
+    double _beta = 0.99;
+
+    // Primary constructor
+    Grid2ParticleVelocity( const double dt, const double beta )
+        : _dt( dt )
+        , _beta( beta )
+    {
+    }
+
+    // Default beta constructor
+    Grid2ParticleVelocity( const double dt )
+        : _dt( dt )
+    {
+    }
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
@@ -576,12 +631,12 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
         u_p_flip = u_p + d_u_p;
 
         // Update particle velocity.
-        u_p = beta * u_p_flip + ( 1.0 - beta ) * u_p_pic;
+        u_p = _beta * u_p_flip + ( 1.0 - _beta ) * u_p_pic;
 
         // Update particle position.
         auto x_i_updated =
             [=]( const int i, const int j, const int k, const int d )
-        { return x_i( i, j, k, d ) + dt * u_i( i, j, k, d ); };
+        { return x_i( i, j, k, d ) + _dt * u_i( i, j, k, d ); };
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };

@@ -379,7 +379,7 @@ void DamBreak( std::string filename )
 
         // Grid interpolation (Picasso built-in).
         Picasso::Grid2ParticleVelocity<spline_order, InterpolationType>
-            g2p_func{ beta, dt };
+            g2p_func{ dt, beta };
         g2p.apply( "g2p_U", particle_type{}, exec_space{}, *fm, particles,
                    g2p_func );
 
