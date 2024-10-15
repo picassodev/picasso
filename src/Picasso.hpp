@@ -34,6 +34,7 @@
 #endif
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_PolyPIC.hpp>
+#include <Picasso_PostProcess.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformCartesianMeshMapping.hpp>
 #include <Picasso_UniformMesh.hpp>

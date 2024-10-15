@@ -398,6 +398,11 @@ void DamBreak( std::string filename )
                 particles.slice( Picasso::Field::Mass() ),
                 particles.slice( Picasso::Field::Volume() ) );
 
+        // Write conservation sums
+        Picasso::PostProcess::globalConservation(
+            MPI_COMM_WORLD, exec_space(), mesh, *fm,
+            steps, write_frequency, particles, ParticleVelocity() );
+
         time += dt;
         steps++;
     }
@@ -417,8 +422,8 @@ int main( int argc, char* argv[] )
     std::string filename = argv[1];
 
     // Problem can run with any interpolation scheme.
-    // DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>();
-    // DamBreak<APicTag, Picasso::APIC::Field::Velocity>();
+    // DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>( filename);
+    // DamBreak<APicTag, Picasso::APIC::Field::Velocity>( filename );
     DamBreak<FlipTag, Picasso::Field::Velocity>( filename );
 
     Kokkos::finalize();

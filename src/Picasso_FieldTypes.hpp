@@ -1045,6 +1045,37 @@ struct FlipTag
 {
 };
 
+// Particle indexing for PIC/FLIP vs PolyPIC scalar field
+KOKKOS_INLINE_FUNCTION auto getField( const double field ) { return field; }
+
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_matrix<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field )
+{
+    return field( 0, 0 );
+}
+
+// Particle indexing for PIC/FLIP vs PolyPIC vector field
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_matrix<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field, const int dir )
+{
+    return field( 0, dir );
+}
+
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_vector<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field, const int dir )
+{
+    return field( dir );
+}
+
 } // end namespace Picasso
 
 #endif // PICASSO_FIELDTYPES_HPP
