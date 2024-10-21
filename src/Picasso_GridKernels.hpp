@@ -24,8 +24,8 @@ namespace Picasso
 //---------------------------------------------------------------------------//
 // Compute nodal velocity from mass-weighted momentum.
 //---------------------------------------------------------------------------//
-template <class MassType = Field::Mass, class VelocityType = Field::Velocity,
-          class OldVelType = Field::OldVelocity>
+template <class MassType = Field::Mass, class VelocityType = Field::Velocity<3>,
+          class OldVelType = Field::OldVelocity<3>>
 struct ComputeGridVelocity
 {
     template <class LocalMeshType, class GatherDependencies,

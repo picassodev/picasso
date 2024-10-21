@@ -24,7 +24,7 @@ struct ParticleInitFunc
              x[1] <= block[4] && block[2] <= x[2] && x[2] <= block[5] )
         {
 
-            Picasso::get( p, Picasso::Field::Stress() ) = 0.0;
+            Picasso::get( p, Picasso::Field::Stress<3>() ) = 0.0;
             Picasso::get( p, VelocityType() ) = 0.0;
             Picasso::get( p, Picasso::Field::DetDefGrad() ) = 1.0;
             Picasso::get( p, Picasso::Field::Mass() ) = pv * density;
@@ -32,7 +32,8 @@ struct ParticleInitFunc
             Picasso::get( p, Picasso::Field::Pressure() ) = 0.0;
 
             for ( int d = 0; d < 3; ++d )
-                Picasso::get( p, Picasso::Field::Position(), d ) = x[d];
+                Picasso::get( p, Picasso::Field::LogicalPosition<3>(), d ) =
+                    x[d];
             return true;
         }
 
@@ -102,16 +103,17 @@ struct ComputeParticlePressure
                 ParticleViewType& particle ) const
     {
         // Get particle data.
-        auto x_p = Picasso::get( particle, Picasso::Field::Position() );
+        auto x_p =
+            Picasso::get( particle, Picasso::Field::LogicalPosition<3>() );
         auto& J_p = Picasso::get( particle, Picasso::Field::DetDefGrad() );
         auto& p_p = Picasso::get( particle, Picasso::Field::Pressure() );
-        auto s_p = Picasso::get( particle, Picasso::Field::Stress() );
+        auto s_p = Picasso::get( particle, Picasso::Field::Stress<3>() );
         auto v_p = Picasso::get( particle, Picasso::Field::Volume() );
         auto m_p = Picasso::get( particle, Picasso::Field::Mass() );
 
         // Get the gather dependencies.
         auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Picasso::Field::Velocity() );
+                                    Picasso::Field::Velocity<3>() );
 
         // update strain rate
         auto spline = Picasso::createSpline(
@@ -158,8 +160,9 @@ struct ComputeGridVelocityChange
         // Get particle data.
         auto m_p = Picasso::get( particle, Picasso::Field::Mass() );
         auto v_p = Picasso::get( particle, Picasso::Field::Volume() );
-        auto x_p = Picasso::get( particle, Picasso::Field::Position() );
-        auto s_p = Picasso::get( particle, Picasso::Field::Stress() );
+        auto x_p =
+            Picasso::get( particle, Picasso::Field::LogicalPosition<3>() );
+        auto s_p = Picasso::get( particle, Picasso::Field::Stress<3>() );
 
         // Get the scatter dependencies.
         auto delta_u_s_i =
@@ -200,7 +203,7 @@ struct UpdateGridVelocity
         auto m_i = gather_deps.get( Picasso::FieldLocation::Node(),
                                     Picasso::Field::Mass() );
         auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Picasso::Field::Velocity() );
+                                    Picasso::Field::Velocity<3>() );
         auto delta_u_s_i =
             gather_deps.get( Picasso::FieldLocation::Node(), DeltaUStress() );
 
@@ -241,10 +244,10 @@ void DamBreak( std::string filename )
         memory_space(), inputs, global_box, minimum_halo_size, MPI_COMM_WORLD );
 
     // Make a particle list.
-    Cabana::ParticleTraits<Picasso::Field::Stress, ParticleVelocity,
-                           Picasso::Field::Position, Picasso::Field::Mass,
-                           Picasso::Field::Pressure, Picasso::Field::Volume,
-                           Picasso::Field::DetDefGrad>
+    Cabana::ParticleTraits<Picasso::Field::Stress<3>, ParticleVelocity,
+                           Picasso::Field::LogicalPosition<3>,
+                           Picasso::Field::Mass, Picasso::Field::Pressure,
+                           Picasso::Field::Volume, Picasso::Field::DetDefGrad>
         fields;
     auto particles = Cabana::Grid::createParticleList<memory_space>(
         "test_particles", fields );
@@ -304,9 +307,9 @@ void DamBreak( std::string filename )
     using particle_type = Picasso::FieldLocation::Particle;
     using mass_type = Picasso::FieldLayout<node_type, Picasso::Field::Mass>;
     using velocity_type =
-        Picasso::FieldLayout<node_type, Picasso::Field::Velocity>;
+        Picasso::FieldLayout<node_type, Picasso::Field::Velocity<3>>;
     using old_u_type =
-        Picasso::FieldLayout<node_type, Picasso::Field::OldVelocity>;
+        Picasso::FieldLayout<node_type, Picasso::Field::OldVelocity<3>>;
     using delta_u_s_type = Picasso::FieldLayout<node_type, DeltaUStress>;
     using delta_u_g_type = Picasso::FieldLayout<node_type, DeltaUGravity>;
 
@@ -351,9 +354,9 @@ void DamBreak( std::string filename )
     while ( time < final_time )
     {
         // Particle interpolation (Picasso built-in).
-        Picasso::Particle2Grid<spline_order, ParticleVelocity,
-                               Picasso::Field::OldU, InterpolationType>
-            p2g_func{ dt };
+        auto p2g_func =
+            Picasso::createParticle2Grid<spline_order, InterpolationType,
+                                         ParticleVelocity>( dt );
         p2g.apply( "p2g_u", particle_type{}, exec_space{}, *fm, particles,
                    p2g_func );
 
@@ -379,13 +382,15 @@ void DamBreak( std::string filename )
                                update_u_func );
 
         // Grid interpolation (Picasso built-in).
-        Picasso::Grid2ParticleVelocity<spline_order, InterpolationType>
-            g2p_func{ dt, beta };
+        auto g2p_func =
+            Picasso::createGrid2ParticleVelocity<spline_order,
+                                                 InterpolationType>( dt, beta );
         g2p.apply( "g2p_U", particle_type{}, exec_space{}, *fm, particles,
                    g2p_func );
 
         // Redistribution of particles across MPI subdomains.
-        particles.redistribute( *local_grid, Picasso::Field::Position() );
+        particles.redistribute( *local_grid,
+                                Picasso::Field::LogicalPosition<3>() );
 
         // Write particle fields.
         Cabana::Experimental::HDF5ParticleOutput::HDF5Config h5_config;
@@ -394,7 +399,7 @@ void DamBreak( std::string filename )
             Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
                 h5_config, "particles", global_grid.comm(),
                 steps / write_frequency, time, particles.size(),
-                particles.slice( Picasso::Field::Position() ),
+                particles.slice( Picasso::Field::LogicalPosition<3>() ),
                 particles.slice( Picasso::Field::Pressure() ),
                 particles.slice( ParticleVelocity() ),
                 particles.slice( Picasso::Field::Mass() ),
@@ -436,9 +441,9 @@ int main( int argc, char* argv[] )
     std::string filename = argv[1];
 
     // Problem can run with any interpolation scheme.
-    // DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity>( filename);
-    // DamBreak<APicTag, Picasso::APIC::Field::Velocity>( filename );
-    DamBreak<FlipTag, Picasso::Field::Velocity>( filename );
+    // DamBreak<PolyPicTag, Picasso::PolyPIC::Field::Velocity<3>>( filename);
+    // DamBreak<APicTag, Picasso::APIC::Field::Velocity<3>>( filename );
+    DamBreak<FlipTag, Picasso::Field::Velocity<3>>( filename );
 
     Kokkos::finalize();
     MPI_Finalize();

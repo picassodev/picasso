@@ -62,7 +62,7 @@ void gridConservation( MPI_Comm comm, ExecutionSpace exec_space,
     auto m_i =
         fm.view( Picasso::FieldLocation::Node(), Picasso::Field::Mass() );
     auto v_i =
-        fm.view( Picasso::FieldLocation::Node(), Picasso::Field::Velocity() );
+        fm.view( Picasso::FieldLocation::Node(), Picasso::Field::Velocity<3>() );
     double mass_integral = 0;
     double ke_integral = 0;
 

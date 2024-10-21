@@ -981,17 +981,20 @@ struct Volume : Field::Scalar<double>
     static std::string label() { return "volume"; }
 };
 
-struct Velocity : Field::Vector<double, 3>
+template <std::size_t NumSpaceDim>
+struct Velocity : Field::Vector<double, NumSpaceDim>
 {
     static std::string label() { return "velocity"; }
 };
 
-struct OldVelocity : Field::Vector<double, 3>
+template <std::size_t NumSpaceDim>
+struct OldVelocity : Field::Vector<double, NumSpaceDim>
 {
     static std::string label() { return "old_velocity"; }
 };
 
-struct Stress : Field::Matrix<double, 3, 3>
+template <std::size_t NumSpaceDim>
+struct Stress : Field::Matrix<double, NumSpaceDim, NumSpaceDim>
 {
     static std::string label() { return "stress"; }
 };
@@ -1010,7 +1013,8 @@ namespace PolyPIC
 namespace Field
 {
 
-struct Velocity : Picasso::Field::Matrix<double, 8, 3>
+template <std::size_t NumSpaceDim>
+struct Velocity : Picasso::Field::Matrix<double, 8, NumSpaceDim>
 {
     static std::string label() { return "velocity"; }
 };
@@ -1023,7 +1027,8 @@ namespace APIC
 namespace Field
 {
 
-struct Velocity : Picasso::Field::Matrix<double, 4, 3>
+template <std::size_t NumSpaceDim>
+struct Velocity : Picasso::Field::Matrix<double, 4, NumSpaceDim>
 {
     static std::string label() { return "velocity"; }
 };
