@@ -49,11 +49,16 @@ developers.
 
 ## Building Picasso
 
-To build picasso, clone the repository via `git clone https://github.com/picassodev/picasso.git`
+To build picasso, clone the repository via
+`git clone https://github.com/picassodev/picasso.git`. Ensure that
+you have an install of Cabana with the MPI and grid build options
+enabled ([Cabana Build Details](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
+Alternatively to using a cmake build of Cabana, you can also use
+a [Cabana Container build](https://github.com/ECP-copa/Cabana/pkgs/container/cabana)
 
-Ensure that you have an install of Cabana with the MPI and grid build options enabled ([Cabana Build Details](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
-
-From the the source directory, run the following script to create a build directory for picasso, configure the picasso build in that directory, and build Picasso in that directory
+From the the source directory, run the following script to create
+a build directory for picasso, configure the picasso build in that
+directory, and build Picasso in that directory
 
 ```
 export CABANA_DIR='pwd'/Cabana/build/install
@@ -73,17 +78,18 @@ make install
 
 ## Testing Picasso install
 
-To test your Picasso install, from the build directory of a Picasso build run with testing enabled, run the `ctest` command and ensure that all tests list as passing
+To test your Picasso install, from the build directory of a Picasso
+build run with testing enabled, run the `ctest` command and ensure
+that all tests list as passing
 
 ## Contributing
 
 We encourage you to contribute to Picasso! Please check the
 [guidelines](CONTRIBUTING.md) on how to do so.
 
--## Citing
--
--If you use Picasso in your work, please cite the [JOSS article](CITATION.bib).
--Also consider citing the appropriate [release](https://doi.org/10.5281/zenodo.2558368).
+## Citing
+
+If you use Picasso in your work, please cite the appropriate [release](https://doi.org/10.5281/zenodo.8309476).
 
 ## License
 
