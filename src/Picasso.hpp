@@ -23,9 +23,10 @@
 #include <Picasso_FacetGeometry.hpp>
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_FieldTypes.hpp>
+#include <Picasso_GridKernels.hpp>
 #include <Picasso_GridOperator.hpp>
-#include <Picasso_GridUpdate.hpp>
 #include <Picasso_InputParser.hpp>
+#include <Picasso_InterpolationKernels.hpp>
 #include <Picasso_LevelSet.hpp>
 #include <Picasso_LevelSetRedistance.hpp>
 #include <Picasso_ParticleInit.hpp>

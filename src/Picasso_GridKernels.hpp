@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
-#ifndef PICASSO_GRIDUPDATE_HPP
-#define PICASSO_GRIDUPDATE_HPP
+#ifndef PICASSO_GRIDKERNELS_HPP
+#define PICASSO_GRIDKERNELS_HPP
 
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldTypes.hpp>
@@ -54,4 +54,4 @@ struct ComputeGridVelocity
 };
 } // namespace Picasso
 
-#endif // end PICASSO_GRIDUPDATE_HPP
+#endif // end PICASSO_GRIDKERNELS_HPP
