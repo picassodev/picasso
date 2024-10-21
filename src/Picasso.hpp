@@ -18,6 +18,7 @@
 #include <Picasso_AdaptiveMesh.hpp>
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_BilinearMeshMapping.hpp>
+#include <Picasso_Conservation.hpp>
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_FacetGeometry.hpp>
 #include <Picasso_FieldManager.hpp>
@@ -34,7 +35,6 @@
 #endif
 #include <Picasso_ParticleList.hpp>
 #include <Picasso_PolyPIC.hpp>
-#include <Picasso_PostProcess.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformCartesianMeshMapping.hpp>
 #include <Picasso_UniformMesh.hpp>

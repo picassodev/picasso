@@ -389,20 +389,33 @@ void DamBreak( std::string filename )
         // Write particle fields.
         Cabana::Experimental::HDF5ParticleOutput::HDF5Config h5_config;
         if ( steps % write_frequency == 0 )
+        {
             Cabana::Experimental::HDF5ParticleOutput::writeTimeStep(
-                h5_config, "particles", MPI_COMM_WORLD, steps / write_frequency,
-                time, particles.size(),
+                h5_config, "particles", global_grid.comm(),
+                steps / write_frequency, time, particles.size(),
                 particles.slice( Picasso::Field::Position() ),
                 particles.slice( Picasso::Field::Pressure() ),
                 particles.slice( ParticleVelocity() ),
                 particles.slice( Picasso::Field::Mass() ),
                 particles.slice( Picasso::Field::Volume() ) );
 
-        // Write conservation sums
-        Picasso::PostProcess::globalConservation(
-            MPI_COMM_WORLD, exec_space(), mesh, *fm,
-            steps, write_frequency, particles, ParticleVelocity() );
+            // Calculate conservation sums
+            double mass_particles = 0.0;
+            double ke_particles = 0.0;
+            Picasso::particleConservation( global_grid.comm(), exec_space(),
+                                           particles, ParticleVelocity(),
+                                           mass_particles, ke_particles );
+            double mass_grid = 0.0;
+            double ke_grid = 0.0;
+            Picasso::gridConservation( global_grid.comm(), exec_space(), mesh,
+                                       *fm, mass_grid, ke_grid );
 
+            if ( global_grid.blockId() == 0 )
+                std::cout << "Particle/Grid Mass: " << mass_particles << " / "
+                          << mass_grid << "\n"
+                          << "Particle/Grid Kinetic Energy: " << ke_particles
+                          << " / " << ke_grid << "\n\n";
+        }
         time += dt;
         steps++;
     }
