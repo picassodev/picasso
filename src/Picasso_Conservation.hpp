@@ -61,8 +61,8 @@ void gridConservation( MPI_Comm comm, ExecutionSpace exec_space,
         Cabana::Grid::Own(), Cabana::Grid::Node(), Cabana::Grid::Local() );
     auto m_i =
         fm.view( Picasso::FieldLocation::Node(), Picasso::Field::Mass() );
-    auto v_i =
-        fm.view( Picasso::FieldLocation::Node(), Picasso::Field::Velocity<3>() );
+    auto v_i = fm.view( Picasso::FieldLocation::Node(),
+                        Picasso::Field::Velocity<3>() );
     double mass_integral = 0;
     double ke_integral = 0;
 
