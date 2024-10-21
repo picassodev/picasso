@@ -305,7 +305,8 @@ void DamBreak( std::string filename )
     using mass_type = Picasso::FieldLayout<node_type, Picasso::Field::Mass>;
     using velocity_type =
         Picasso::FieldLayout<node_type, Picasso::Field::Velocity>;
-    using old_u_type = Picasso::FieldLayout<node_type, Picasso::Field::OldU>;
+    using old_u_type =
+        Picasso::FieldLayout<node_type, Picasso::Field::OldVelocity>;
     using delta_u_s_type = Picasso::FieldLayout<node_type, DeltaUStress>;
     using delta_u_g_type = Picasso::FieldLayout<node_type, DeltaUGravity>;
 

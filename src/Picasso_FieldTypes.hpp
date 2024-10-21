@@ -968,27 +968,27 @@ struct CommRank : Scalar<int>
 
 struct Mass : Field::Scalar<double>
 {
-    static std::string label() { return "Mass"; }
+    static std::string label() { return "mass"; }
 };
 
 struct Pressure : Field::Scalar<double>
 {
-    static std::string label() { return "Pressure"; }
+    static std::string label() { return "pressure"; }
 };
 
 struct Volume : Field::Scalar<double>
 {
-    static std::string label() { return "Volume"; }
+    static std::string label() { return "volume"; }
 };
 
 struct Velocity : Field::Vector<double, 3>
 {
-    static std::string label() { return "Velocity"; }
+    static std::string label() { return "velocity"; }
 };
 
-struct OldU : Field::Vector<double, 3>
+struct OldVelocity : Field::Vector<double, 3>
 {
-    static std::string label() { return "Old_Velocity"; }
+    static std::string label() { return "old_velocity"; }
 };
 
 struct Stress : Field::Matrix<double, 3, 3>
@@ -998,10 +998,8 @@ struct Stress : Field::Matrix<double, 3, 3>
 
 struct DetDefGrad : Field::Scalar<double>
 {
-    static std::string label() { return "Det_deformation_gradient"; }
+    static std::string label() { return "determinant_deformation_gradient"; }
 };
-
-using Position = Picasso::Field::LogicalPosition<3>;
 
 //---------------------------------------------------------------------------//
 

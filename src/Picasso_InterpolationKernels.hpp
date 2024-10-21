@@ -338,8 +338,8 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
             gather_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
         auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
                                     Field::Velocity() );
-        auto old_u_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Field::OldU() );
+        auto old_u_i = gather_deps.get( Picasso::FieldLocation::Node(),
+                                        Field::OldVelocity() );
 
         // Get the local dependencies for getting physcial location of node
         auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
