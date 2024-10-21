@@ -216,7 +216,7 @@ class ParticleLevelSet
       input color is negative then all particles will be used in the level set
       regardless of color.
       \param inputs Level set settings.
-      \param mesh The mesh over which to build the signed distnace function.
+      \param mesh The mesh over which to build the signed distance function.
       \param color The particle color over which to build the level set. Use
       -1 if the level set is to be built over all particles.
     */

@@ -272,7 +272,7 @@ TEST( TEST_CATEGORY, scaled_sphere_redistance_test )
 //     };
 
 //     // Test. The tolerance here is large because of the degenerate geometric
-//     // features. We will need to revist this in the future.
+//     // features. We will need to revisit this in the future.
 //     runTest( phi_r, phi_r, 5.0 );
 // }
 
