@@ -1798,7 +1798,7 @@ struct VectorView
     KOKKOS_DEFAULTED_FUNCTION
     VectorView() = default;
 
-    // Vector construtor.
+    // Vector constructor.
     KOKKOS_INLINE_FUNCTION
     VectorView( const Vector<T, N>& v )
         : _d( v.data() )
@@ -3464,7 +3464,7 @@ struct QuaternionView
     KOKKOS_DEFAULTED_FUNCTION
     QuaternionView() = default;
 
-    // Vector construtor.
+    // Vector constructor.
     KOKKOS_INLINE_FUNCTION
     QuaternionView( const Quaternion<T>& q )
         : _d( q.data() )

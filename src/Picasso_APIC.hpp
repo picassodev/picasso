@@ -117,7 +117,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
                 distance( Dim::K ) = sd.d[Dim::K][k];
 
                 // Compute the action of B_p on the distance scaled by the
-                // intertial tensor scaling factor.
+                // inertial tensor scaling factor.
                 auto D_p_inv_B_p_d = D_p_inv * B_p * distance;
 
                 // Weight times mass.

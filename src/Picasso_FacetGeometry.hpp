@@ -80,7 +80,7 @@ struct FacetGeometryData
     // into the facet array for each surface.
     Kokkos::View<int*, MemorySpace> surface_offsets;
 
-    // Local id of the volume the representes the global axis-aligned bounding
+    // Local id of the volume the represents the global axis-aligned bounding
     // box.
     int global_bounding_volume_id;
 
@@ -510,7 +510,7 @@ KOKKOS_FUNCTION bool pointFacetProjection( const float x[3], const float r[3],
                                            float y[3] )
 {
     // Build the system of equations to solve for intersection. Fire the ray
-    // in the Y direction - this choice is arbitary.
+    // in the Y direction - this choice is arbitrary.
     Mat3<float> A;
     Vec3<float> b;
     for ( int i = 0; i < 3; ++i )
