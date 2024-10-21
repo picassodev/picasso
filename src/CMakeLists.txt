@@ -12,8 +12,9 @@ set(HEADERS
   Picasso_FieldManager.hpp
   Picasso_FieldTypes.hpp
   Picasso_GridOperator.hpp
-  Picasso_GridUpdate.hpp
+  Picasso_GridKernels.hpp
   Picasso_InputParser.hpp
+  Picasso_InterpolationKernels.hpp
   Picasso_LevelSet.hpp
   Picasso_LevelSetRedistance.hpp
   Picasso_MarchingCubes.hpp
