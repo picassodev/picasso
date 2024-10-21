@@ -15,6 +15,7 @@
 #include <Picasso_APIC.hpp>
 #include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldTypes.hpp>
+#include <Picasso_ParticleInterpolation.hpp>
 #include <Picasso_PolyPIC.hpp>
 
 #include <Cabana_Grid.hpp>
@@ -24,16 +25,21 @@
 namespace Picasso
 {
 //---------------------------------------------------------------------------//
+// P2G
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 template <int InterpolationOrder, class ParticleFieldType, class OldFieldType,
-          class InterpolationType>
+          class MassType, class PositionType, class InterpolationType>
 struct Particle2Grid;
 
 //---------------------------------------------------------------------------//
 // Project particle enthalpy/momentum to grid. PolyPIC variant
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder, class ParticleFieldType, class OldFieldType>
+template <int InterpolationOrder, class ParticleFieldType, class OldFieldType,
+          class MassType, class PositionType>
 struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
-                     PolyPicTag>
+                     MassType, PositionType, PolyPicTag>
 {
     // Explicit time step.
     double _dt;
@@ -54,13 +60,14 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
+        // Require the PolyPIC specific field-type.
         auto v_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
-        auto m_p = Picasso::get( particle, Field::Mass() );
-        auto x_p = Picasso::get( particle, Field::Position() );
+        auto m_p = Picasso::get( particle, MassType() );
+        auto x_p = Picasso::get( particle, PositionType() );
 
         // Get the scatter dependencies.
         auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
+            scatter_deps.get( Picasso::FieldLocation::Node(), MassType() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -79,9 +86,10 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
 //---------------------------------------------------------------------------//
 // Project particle enthalpy/momentum to grid. APIC variant
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder, class ParticleFieldType, class OldFieldType>
+template <int InterpolationOrder, class ParticleFieldType, class OldFieldType,
+          class MassType, class PositionType>
 struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
-                     APicTag>
+                     MassType, PositionType, APicTag>
 {
     // Explicit time step.
     double _dt;
@@ -102,12 +110,12 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
-        auto m_p = Picasso::get( particle, Field::Mass() );
-        auto x_p = Picasso::get( particle, Field::Position() );
+        auto m_p = Picasso::get( particle, MassType() );
+        auto x_p = Picasso::get( particle, PositionType() );
 
         // Get the scatter dependencies.
         auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
+            scatter_deps.get( Picasso::FieldLocation::Node(), MassType() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -127,9 +135,10 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
 //---------------------------------------------------------------------------//
 // Project particle enthalpy/momentum to grid. FLIP/PIC variant
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder, class ParticleFieldType, class OldFieldType>
+template <int InterpolationOrder, class ParticleFieldType, class OldFieldType,
+          class MassType, class PositionType>
 struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
-                     FlipTag>
+                     MassType, PositionType, FlipTag>
 {
     // Explicit time step.
     double _dt;
@@ -150,12 +159,12 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, ParticleFieldType() );
-        auto m_p = Picasso::get( particle, Field::Mass() );
-        auto x_p = Picasso::get( particle, Field::Position() );
+        auto m_p = Picasso::get( particle, MassType() );
+        auto x_p = Picasso::get( particle, PositionType() );
 
         // Get the scatter dependencies.
         auto m_i =
-            scatter_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
+            scatter_deps.get( Picasso::FieldLocation::Node(), MassType() );
         auto f_i =
             scatter_deps.get( Picasso::FieldLocation::Node(), OldFieldType() );
 
@@ -171,14 +180,34 @@ struct Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
     }
 };
 
-template <int InterpolationOrder, class InterpolationType>
+// P2G creation function (used instead of direct class defaults because of
+// partial specializations).
+template <int InterpolationOrder, class InterpolationType,
+          class ParticleFieldType,
+          class OldFieldType = Picasso::Field::OldVelocity,
+          class MassType = Picasso::Field::Mass,
+          class PositionType = Picasso::Field::LogicalPosition<3>>
+auto createParticle2Grid( const double dt )
+{
+    return Particle2Grid<InterpolationOrder, ParticleFieldType, OldFieldType,
+                         MassType, PositionType, InterpolationType>( dt );
+}
+
+//---------------------------------------------------------------------------//
+// G2P
+//---------------------------------------------------------------------------//
+
+template <int InterpolationOrder, class MassType, class PositionType,
+          class GridVelocity, class GridPosition, class InterpolationType>
 struct Grid2ParticleVelocity;
 
 //---------------------------------------------------------------------------//
 // Update particle state. PolyPIC variant.
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder>
-struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
+template <int InterpolationOrder, class MassType, class PositionType,
+          class GridVelocity, class GridPosition>
+struct Grid2ParticleVelocity<InterpolationOrder, MassType, PositionType,
+                             GridVelocity, GridPosition, PolyPicTag>
 {
     // Explicit time step.
     double _dt;
@@ -206,16 +235,16 @@ struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
     {
         // Get particle data.
         auto u_p = Picasso::get( particle, PolyPIC::Field::Velocity() );
-        auto x_p = Picasso::get( particle, Field::Position() );
+        auto x_p = Picasso::get( particle, PositionType() );
 
         // Get the gather dependencies.
         auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Field::Velocity() );
+            gather_deps.get( Picasso::FieldLocation::Node(), MassType() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), GridVelocity() );
         // Get the local dependencies for getting physcial location of node
-        auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
-                                   Picasso::Field::PhysicalPosition<3>() );
+        auto x_i =
+            local_deps.get( Picasso::FieldLocation::Node(), GridPosition() );
 
         // Node interpolant.
         auto spline = Picasso::createSpline(
@@ -237,8 +266,10 @@ struct Grid2ParticleVelocity<InterpolationOrder, PolyPicTag>
 //---------------------------------------------------------------------------//
 // Update particle state. APIC variant.
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder>
-struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
+template <int InterpolationOrder, class MassType, class PositionType,
+          class GridVelocity, class GridPosition>
+struct Grid2ParticleVelocity<InterpolationOrder, MassType, PositionType,
+                             GridVelocity, GridPosition, APicTag>
 {
     // Explicit time step.
     double _dt;
@@ -266,16 +297,16 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
     {
         // Get particle data.
         auto f_p = Picasso::get( particle, APIC::Field::Velocity() );
-        auto x_p = Picasso::get( particle, Field::Position() );
+        auto x_p = Picasso::get( particle, PositionType() );
 
         // Get the gather dependencies.
         auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Field::Velocity() );
+            gather_deps.get( Picasso::FieldLocation::Node(), MassType() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), GridVelocity() );
         // Get the local dependencies for getting physcial location of node
-        auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
-                                   Picasso::Field::PhysicalPosition<3>() );
+        auto x_i =
+            local_deps.get( Picasso::FieldLocation::Node(), GridPosition() );
 
         // Node interpolant.
         auto spline = Picasso::createSpline(
@@ -298,8 +329,10 @@ struct Grid2ParticleVelocity<InterpolationOrder, APicTag>
 //---------------------------------------------------------------------------//
 // Update particle state. FLIP/PIC variant.
 //---------------------------------------------------------------------------//
-template <int InterpolationOrder>
-struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
+template <int InterpolationOrder, class MassType, class PositionType,
+          class GridVelocity, class GridPosition>
+struct Grid2ParticleVelocity<InterpolationOrder, MassType, PositionType,
+                             GridVelocity, GridPosition, FlipTag>
 {
     // Explicit time step.
     double _dt;
@@ -321,8 +354,7 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
 
     template <class LocalMeshType, class GatherDependencies,
               class ScatterDependencies, class LocalDependencies,
-              class ParticleViewType, class PositionType = Field::Position,
-              class VelocityType = Field::Velocity>
+              class ParticleViewType>
     KOKKOS_INLINE_FUNCTION void
     operator()( const LocalMeshType& local_mesh,
                 const GatherDependencies& gather_deps,
@@ -330,20 +362,20 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
                 ParticleViewType& particle ) const
     {
         // Get particle data.
-        auto u_p = Picasso::get( particle, VelocityType{} );
+        auto u_p = Picasso::get( particle, Field::Velocity{} );
         auto x_p = Picasso::get( particle, PositionType{} );
 
         // Get the gather dependencies.
         auto m_i =
-            gather_deps.get( Picasso::FieldLocation::Node(), Field::Mass() );
-        auto u_i = gather_deps.get( Picasso::FieldLocation::Node(),
-                                    Field::Velocity() );
+            gather_deps.get( Picasso::FieldLocation::Node(), MassType() );
+        auto u_i =
+            gather_deps.get( Picasso::FieldLocation::Node(), GridVelocity() );
         auto old_u_i = gather_deps.get( Picasso::FieldLocation::Node(),
                                         Field::OldVelocity() );
 
         // Get the local dependencies for getting physcial location of node
-        auto x_i = local_deps.get( Picasso::FieldLocation::Node(),
-                                   Picasso::Field::PhysicalPosition<3>() );
+        auto x_i =
+            local_deps.get( Picasso::FieldLocation::Node(), GridPosition() );
 
         // Node interpolant.
         auto spline = Picasso::createSpline(
@@ -383,6 +415,20 @@ struct Grid2ParticleVelocity<InterpolationOrder, FlipTag>
         Picasso::G2P::value( spline, x_i_updated, x_p );
     }
 };
+
+// G2P creation function (used instead of direct class defaults because of
+// partial specializations).
+template <int InterpolationOrder, class InterpolationType,
+          class MassType = Picasso::Field::Mass,
+          class PositionType = Picasso::Field::PhysicalPosition<3>,
+          class GridVelocity = Picasso::Field::Velocity,
+          class GridPosition = Picasso::Field::LogicalPosition<3>>
+auto createGrid2ParticleVelocity( const double dt, const double beta )
+{
+    return Grid2ParticleVelocity<InterpolationOrder, MassType, PositionType,
+                                 GridVelocity, GridPosition, InterpolationType>(
+        dt, beta );
+}
 
 } // end namespace Picasso
 
