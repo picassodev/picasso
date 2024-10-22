@@ -24,7 +24,6 @@ Picasso Required Dependencies
 |[Cabana](https://github.com/ECP-copa/Cabana) | Yes | Performance-portable particle and grid library |
 |MPI | Yes | Message Passing Interface |
 | [JSON]() | Yes | JSON variable input |
-| ---------- |-------- | ------  |
 
 In addition to these requried dependencies, the build of Cabana is required 
 to have certain options enabled, Specifically `Cabana_ENABLE_GRID=ON`.
@@ -43,7 +42,6 @@ Picasso Optional Dependencies imported from Cabana
 | CUDA | NO | | Programming model for NVIDIA GPUs | Inherited from Cabana and Kokkos | Yes |
 | HIP | NO | | Programming model for AMD GPUs | Inherited from Cabana and Kokkos | Yes |
 | SYCL | NO | | Programming model for Intel GPUs | Inherited from Cabana and Kokkos | Yes |
-| ----------| -------- | -------------- | -------  | ----- |
 
 For Picasso-related questions you can open a GitHub issue to interact with the
 developers.
