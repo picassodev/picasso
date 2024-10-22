@@ -18,7 +18,7 @@ be built with the Cabana::grid library option turned on.
 
 Picasso Required Dependencies
 | Dependency |Required | Details |
-| ---------- -------- | ------  |
+| ---------- |-------- | ------  |
 |[CMake](https://cmake.org/download/)      | Yes     | Build system |
 |[Kokkos](https://github.com/kokkos/kokkos)    | Yes      | Portable on-node parallelism |
 |[Cabana](https://github.com/ECP-copa/Cabana) | Yes | Performance-portable particle and grid library |
@@ -36,7 +36,7 @@ Picasso.
 Picasso Optional Dependencies imported from Cabana
 | Dependency |Required | CMake Variable | Details | Required in or inherited from upstream dependency |
 | ---------- -------- | -------------- | -------  | ----- |
-| ArborX | No | Picasso_REQUIRE_ARBORX |(Experimental) performance-portable geometric search (required for level-set) | N/A |
+| ArborX | No | Picasso_REQUIRE_ARBORX | Performance-portable geometric search (required for level-set) | N/A |
 | HDF5 | No | Cabana_REQUIRE_HDF5 (defined in Cabana cmake)| Particle I/O | inherited from Cabana build with HDF5 |
 | Silo | No | Picasso_REQUIRE_SILO | Particle I/O | Cabana required to be built with SILO and Picasso built with SILO |
 | GTest | NO | Picasso_REQUIRE_TESTING |Unit test Framework | N/A |
