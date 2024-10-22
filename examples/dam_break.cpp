@@ -143,7 +143,7 @@ struct ComputeGridVelocityChange
 {
     Picasso::Vec3<double> gravity;
 
-    ComputeGridVelocityChange( std::array<double, 3> g )
+    ComputeGridVelocityChange( Kokkos::Array<double, 3> g )
     {
         for ( int d = 0; d < 3; ++d )
             gravity( d ) = g[d];
@@ -290,7 +290,7 @@ void DamBreak( std::string filename )
     // Properties
     double gamma = inputs["gamma"];
     double bulk_modulus = inputs["bulk_modulus"];
-    auto gravity = inputs["gravity"];
+    auto gravity = copy<double, 3>( inputs["gravity"] );
 
     // Time integragor inputs.
     double dt = inputs["dt"];
@@ -408,19 +408,24 @@ void DamBreak( std::string filename )
             // Calculate conservation sums
             double mass_particles = 0.0;
             double ke_particles = 0.0;
-            Picasso::particleConservation( global_grid.comm(), exec_space(),
-                                           particles, ParticleVelocity(),
-                                           mass_particles, ke_particles );
+            double pe_particles = 0.0;
+            Picasso::particleConservation(
+                global_grid.comm(), exec_space(), particles, ParticleVelocity(),
+                mass_particles, ke_particles, pe_particles,
+                Cabana::Grid::Dim::K, global_box[2], gravity );
             double mass_grid = 0.0;
             double ke_grid = 0.0;
-            Picasso::gridConservation( global_grid.comm(), exec_space(), mesh,
-                                       *fm, mass_grid, ke_grid );
+            double pe_grid = 0.0;
+            Picasso::gridConservation(
+                global_grid.comm(), exec_space(), mesh, *fm, mass_grid, ke_grid,
+                pe_grid, Cabana::Grid::Dim::K, global_box[2], gravity );
 
             if ( global_grid.blockId() == 0 )
                 std::cout << "Particle/Grid Mass: " << mass_particles << " / "
                           << mass_grid << "\n"
-                          << "Particle/Grid Kinetic Energy: " << ke_particles
-                          << " / " << ke_grid << "\n\n";
+                          << "Particle/Grid Total Energy: "
+                          << ke_particles + pe_particles << " / "
+                          << ke_grid + pe_grid << "\n\n";
         }
         time += dt;
         steps++;
