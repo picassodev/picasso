@@ -1,81 +1,76 @@
 # Picasso
 
-Picasso is a performance portable library for particle-in-cell simulations
-which are utilized in application including plasmas physics and fluids and 
-solid mechanics. Picasso provides a range of interpolation schemes between
-particles and grids, both in order of the scheme and the type of scheme 
+Picasso is a performance portable library for particle-in-cell (PIC) simulations
+which are used in applications including plasmas physics and fluid/solid
+mechanics. Picasso provides a range of interpolation schemes between
+particles and grids, both in order of the scheme and the type
 (FLIP, APIC, PolyPIC), embedded free-surface tracking, extensive batched 
 linear algebra capabilties, as well as utilities for managing field data
-and simplifying on-node parallel execution.
-
+and simplifying parallel execution.
 
 ## Dependencies
 
-Picasso's main dependency for building is [Cabana](https://github.com/ECP-copa/Cabana).
+Picasso's main dependency is [Cabana](https://github.com/ECP-copa/Cabana).
 The instructions for building Cabana can be found in the [Cabana wiki](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
-In addition to the core Cabana dependencies of Kokkos and CMake, Cabana must 
-be built with the Cabana::grid library option turned on.
+Cabana requires the Kokkos library and must be built with the optional Cabana::Grid
+subpackaged enabled.
 
-Picasso Required Dependencies
-| Dependency |Required | Details |
-| ---------- |-------- | ------  |
+Picasso Dependencies
+| Dependency |Required | CMake Variable | Details |
+| ---------- | ------- | -------------  | ------  |
 |[CMake](https://cmake.org/download/)      | Yes     | Build system |
 |[Kokkos](https://github.com/kokkos/kokkos)    | Yes      | Portable on-node parallelism |
 |[Cabana](https://github.com/ECP-copa/Cabana) | Yes | Performance-portable particle and grid library |
 |MPI | Yes | Message Passing Interface |
-| [JSON]() | Yes | JSON variable input |
+|[JSON](https://github.com/nlohmann/json) | Yes | JSON input files |
+|ArborX | No | Picasso_REQUIRE_ARBORX | Performance-portable geometric search (required for level-set) | N/A |
+|GTest | No | Picasso_REQUIRE_TESTING |Unit test Framework | N/A |
 
-In addition to these requried dependencies, the build of Cabana is required 
-to have certain options enabled, Specifically `Cabana_ENABLE_GRID=ON`.
+In addition to these required dependencies, note that Cabana must be built with
+`Cabana_ENABLE_GRID=ON` and will need further options as noted below for some additional capabilities.
 
 There are additional optional dependencies for Picasso that depend on the 
-use case desired from Picasso or hardware type for the system building 
-Picasso.
+use case desired or hardware type on the system.
 
-Picasso Optional Dependencies imported from Cabana
+Picasso dependencies imported from Cabana
 | Dependency |Required | CMake Variable | Details | Required in or inherited from upstream dependency |
 | ----------| -------- | -------------- | -------  | ----- |
-| ArborX | No | Picasso_REQUIRE_ARBORX | Performance-portable geometric search (required for level-set) | N/A |
-| HDF5 | No | Cabana_REQUIRE_HDF5 (defined in Cabana cmake)| Particle I/O | inherited from Cabana build with HDF5 |
-| Silo | No | Picasso_REQUIRE_SILO | Particle I/O | Cabana required to be built with SILO and Picasso built with SILO |
-| GTest | NO | Picasso_REQUIRE_TESTING |Unit test Framework | N/A |
-| CUDA | NO | | Programming model for NVIDIA GPUs | Inherited from Cabana and Kokkos | Yes |
-| HIP | NO | | Programming model for AMD GPUs | Inherited from Cabana and Kokkos | Yes |
-| SYCL | NO | | Programming model for Intel GPUs | Inherited from Cabana and Kokkos | Yes |
-
-For Picasso-related questions you can open a GitHub issue to interact with the
-developers.
+| HDF5 | No | Cabana_REQUIRE_HDF5 | Particle I/O | inherited from Cabana build with HDF5 |
+| Silo | No | Cabana_REQUIRE_SILO | Particle I/O | Cabana required to be built with SILO and Picasso built with SILO |
+| CUDA | No | | Programming model for NVIDIA GPUs | Inherited from Cabana and Kokkos | Yes |
+| HIP | No | | Programming model for AMD GPUs | Inherited from Cabana and Kokkos | Yes |
+| SYCL | No | | Programming model for Intel GPUs | Inherited from Cabana and Kokkos | Yes |
 
 ## Building Picasso
 
-To build picasso, clone the repository via
+To build Picasso, clone the repository via
 `git clone https://github.com/picassodev/picasso.git`. Ensure that
-you have an install of Cabana with the MPI and grid build options
+you have an install of Cabana with the grid build option
 enabled ([Cabana Build Details](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
-Alternatively to using a cmake build of Cabana, you can also use
-a [Cabana Container build](https://github.com/ECP-copa/Cabana/pkgs/container/cabana)
+
+A [Cabana Docker container](https://github.com/ECP-copa/Cabana/pkgs/container/cabana)
+is maintained to facilitate development 
 
 From the the source directory, run the following script to create
-a build directory for picasso, configure the picasso build in that
+a build directory for Picasso, configure the Picasso build in that
 directory, and build Picasso in that directory
 
 ```
+# Change directory as needed
 export CABANA_DIR='pwd'/Cabana/build/install
-export PICASSO_DIR='pwd'/Cabana/build/install
 
 cd picasso
-mkdir build
-cd build
 cmake \
-  -D CMAKE_BUILD_TYPE="RELEASE" \
-  -D CMAKE_PREFIX_PATH="$CABANA_DIR \
-  -D CMAKE_INSTALL_PREFIX="$PICASSO_DIR \
-  -D Picasso_ENABLE_TESTING=ON \
-  ..
-make install
+  -B build
+  -D CMAKE_BUILD_TYPE=Release \
+  -D CMAKE_PREFIX_PATH="$CABANA_DIR" \
+  -D CMAKE_INSTALL_PREFIX=install \
+  -D Picasso_ENABLE_TESTING=ON
+cmake --build build
+cmake --install build
 ```
 
-## Testing Picasso install
+## Testing Picasso
 
 To test your Picasso install, from the build directory of a Picasso
 build run with testing enabled, run the `ctest` command and ensure
