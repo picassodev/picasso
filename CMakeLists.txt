@@ -39,11 +39,6 @@ if(Picasso_REQUIRE_ARBORX OR ArborX_FOUND)
   find_package(ArborX REQUIRED)
 endif()
 
-option( Picasso_REQUIRE_SILO "Require Picasso to build with Cabana Silo support" OFF )
-if( Picasso_REQUIRE_SILO AND NOT Cabana_ENABLE_SILO )
-    message( FATAL_ERROR "Cabana was not compiled with SILO" )
-endif()
-
 # find dependencies (from Cabana CMakeLists.txt)
 macro(Picasso_add_dependency)
   cmake_parse_arguments(PICASSO_DEPENDENCY "" "PACKAGE" "" ${ARGN})
