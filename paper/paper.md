@@ -89,7 +89,7 @@ The `LevelSet` and `ParticleLevelSet` are fast parallel implementations of grid-
 
 # Examples and performance testing
 
-`Picasso` currently implements the dam break problem as a demonstration of fluid mechanics capabilities.
+`Picasso` currently implements the dam break problem as a demonstration of fluid mechanics capabilities. In the dam break example, a block of water are discretized with particles in the corner of walls. Once the membrane of water breaks, water collapse due to the gravity and shows splash and free surface wave. In each steps, P2G interpolates mass and momentum from particles to grid and velocity on grid is updated by solving Euler equation in which pressure term is implemented with equation of state. After no-flow through boundary condition is enforced the position and velocity of particles are newly updated with G2P.
 
 ## Future work
 
