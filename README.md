@@ -13,7 +13,7 @@ and simplifying parallel execution.
 Picasso's main dependency is [Cabana](https://github.com/ECP-copa/Cabana).
 The instructions for building Cabana can be found in the [Cabana wiki](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
 Cabana requires the Kokkos library and must be built with the optional Cabana::Grid
-subpackaged enabled.
+subpackage enabled (which in turn requires MPI).
 
 Picasso Dependencies
 | Dependency |Required | CMake Variable | Details |
@@ -27,19 +27,20 @@ Picasso Dependencies
 |GTest | No | Picasso_REQUIRE_TESTING |Unit test Framework | N/A |
 
 In addition to these required dependencies, note that Cabana must be built with
-`Cabana_ENABLE_GRID=ON` and will need further options as noted below for some additional capabilities.
+`Cabana_ENABLE_GRID=ON` (enabled by default) and will need further options as noted below for some additional capabilities.
 
 There are additional optional dependencies for Picasso that depend on the 
 use case desired or hardware type on the system.
 
-Picasso dependencies imported from Cabana
-| Dependency |Required | CMake Variable | Details | Required in or inherited from upstream dependency |
-| ----------| -------- | -------------- | -------  | ----- |
-| HDF5 | No | Cabana_REQUIRE_HDF5 | Particle I/O | inherited from Cabana build with HDF5 |
-| Silo | No | Cabana_REQUIRE_SILO | Particle I/O | Cabana required to be built with SILO and Picasso built with SILO |
-| CUDA | No | | Programming model for NVIDIA GPUs | Inherited from Cabana and Kokkos | Yes |
-| HIP | No | | Programming model for AMD GPUs | Inherited from Cabana and Kokkos | Yes |
-| SYCL | No | | Programming model for Intel GPUs | Inherited from Cabana and Kokkos | Yes |
+Picasso dependencies imported from Cabana. Note that the `REQUIRE` variables enforce that those options are
+available for Cabana at configuration, but are not necessary.
+| Dependency |Required | CMake Variable | Details |
+| ----------| -------- | -------------- | -------  |
+| HDF5 | No | Cabana_REQUIRE_HDF5 | Particle I/O |
+| Silo | No | Cabana_REQUIRE_SILO | Particle I/O |
+| CUDA | No | Cabana_REQUIRE_CUDA | Programming model for NVIDIA GPUs |
+| HIP  | No | Cabana_REQUIRE_HIP  | Programming model for AMD GPUs |
+| SYCL | No | Cabana_REQUIRE_SYCL | Programming model for Intel GPUs |
 
 ## Building Picasso
 
@@ -49,7 +50,7 @@ you have an install of Cabana with the grid build option
 enabled ([Cabana Build Details](https://github.com/ECP-copa/Cabana/wiki/1-Build-Instructions)
 
 A [Cabana Docker container](https://github.com/ECP-copa/Cabana/pkgs/container/cabana)
-is maintained to facilitate development 
+is maintained to facilitate development with most optional dependencies.
 
 From the the source directory, run the following script to create
 a build directory for Picasso, configure the Picasso build in that
