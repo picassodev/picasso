@@ -457,7 +457,8 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
                                  ParticleListType& surface_particle_list,
                                  std::shared_ptr<MeshType>& mesh )
 {
-    Kokkos::Profiling::pushRegion( "Picasso::initializeParticles::Surface" );
+    Kokkos::Profiling::pushRegion(
+        "Picasso::initializeParticles::RandomSurface" );
 
     // Memory space.
     using memory_space = typename ParticleListType::memory_space;
@@ -557,6 +558,148 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
     Kokkos::Profiling::popRegion();
 }
 
+//---------------------------------------------------------------------------//
+/*!
+  \brief Initialize a uniform number of particles in each cell given an
+  initialization functor.
+
+  \tparam ParticleListType The type of particle list to initialize.
+
+  \tparam InitFunc Initialization functor type. See the documentation below
+  for the create_functor parameter on the signature of this functor.
+
+  \tparam FacetGeometry The type of the facet geometry representing the
+  surface to initialize with particles
+
+  \param Initialization type tag.
+
+  \param particles_per_facet_median The number of particles to populate each
+  facet median with (+1 on the centroid for 3n+1 total per facet).
+
+  \param surface A FacetGeometry type (FacetGeoemtry or MarchingCubes data)
+  containing the list of surface facets to seed the particle list
+
+  \param create_functor A functor which populates a particle on a facet given
+  the logical position of a particle. This functor returns true if a particle
+  was created and false if it was not giving the signature:
+
+      bool createFunctor( const double px[3], const double pan[3], double area,
+                          typename ParticleAoSoA::tuple_type& particle );
+
+    px[3] : particle logical coordinates
+    pan[3] : facet area normal vector
+    area : the discretized surface area
+    particle& : the surface particle to create
+
+  \param surface_particle_list The list of particles to populate. This will be
+  filled with particles and resized to a size equal to the number of particles
+  created.
+*/
+template <class ParticleListType, class InitFunc, class FacetGeometry,
+          class ExecutionSpace>
+void initializeParticlesSurface( InitUniform, const ExecutionSpace&,
+                                 const int particles_per_facet_median,
+                                 const FacetGeometry& surface,
+                                 const InitFunc& create_functor,
+                                 ParticleListType& surface_particle_list )
+{
+    Kokkos::Profiling::pushRegion(
+        "Picasso::initializeParticles::UniformSurface" );
+
+    // Particle type.
+    using particle_type = typename ParticleListType::particle_type;
+
+    // Get the local grid.
+    const auto& local_grid = *( surface_particle_list.mesh().localGrid() );
+
+    // Create a local mesh.
+    auto local_mesh = Cajita::createLocalMesh<ExecutionSpace>( local_grid );
+
+    // Get the global grid.
+    const auto& global_grid = local_grid.globalGrid();
+
+    // Get the particles.
+    auto& particles = surface_particle_list.aosoa();
+
+    // Allocate the particles.
+    int num_facets = surface.facets.extent( 0 );
+    int particles_per_facet = particles_per_facet_median * 3 + 1;
+    int num_particles = particles_per_facet * num_facets;
+    particles.resize( num_particles );
+
+    // FIXME: Re-thread over particles instead of facets.
+    // Initialize particles.
+    Kokkos::parallel_for(
+        "Picasso::ParticleInit::UniformSurface",
+        Kokkos::RangePolicy<ExecutionSpace>( 0, num_facets ),
+        KOKKOS_LAMBDA( const int f ) {
+            // Particle coordinate.
+            Vec3<double> px;
+
+            // Particle.
+            particle_type particle;
+
+            Vec3<double> a = { surface.facets( f, 0, 0 ),
+                               surface.facets( f, 0, 1 ),
+                               surface.facets( f, 0, 2 ) };
+
+            Vec3<double> b = { surface.facets( f, 1, 0 ),
+                               surface.facets( f, 1, 1 ),
+                               surface.facets( f, 1, 2 ) };
+
+            Vec3<double> c = { surface.facets( f, 2, 0 ),
+                               surface.facets( f, 2, 1 ),
+                               surface.facets( f, 2, 2 ) };
+
+            Vec3<double> ab = b - a;
+            Vec3<double> ac = c - a;
+
+            auto cross = ab % ac;
+            double c2 = ~cross * cross;
+            double sqc2 = sqrt( c2 );
+            double facet_area = 0.5 * sqc2;
+
+            // Create unit normal vector for the facet area
+            Vec3<double> pan = cross / sqc2;
+            // Particle surface area.
+            double pa = facet_area / particles_per_facet;
+
+            // centroid of triangle facet
+            Vec3<double> centroid = ( a + b + c ) / 3.0;
+            int median_div = particles_per_facet_median + 1;
+
+            // Create one particle at the centroid.
+            create_functor( centroid.data(), pan.data(), pa, particle );
+            particles.setTuple( f * particles_per_facet, particle.tuple() );
+
+            int ppf_count = 1;
+            for ( int ip = 1; ip <= particles_per_facet_median; ++ip )
+	    {
+                for ( int it = 0; it < 3; ++it )
+                {
+                    // internal division points
+                    Vec3<double> a_median = ( a*(median_div-ip) + centroid*ip ) / median_div;
+                    Vec3<double> b_median = ( b*(median_div-ip) + centroid*ip ) / median_div;
+                    Vec3<double> c_median = ( c*(median_div-ip) + centroid*ip ) / median_div;
+                    Kokkos::Array<Vec3<double>, 3> abc_median = { a_median, b_median,
+                                                          c_median };
+
+                    // Local particle id.
+                    int pid = f * particles_per_facet + ppf_count;
+
+                    px = abc_median[it];
+                    // abc_median[it] = ip * abc_median[it];
+
+                    // Create a new particle with the given logical coordinates.
+                    create_functor( px.data(), pan.data(), pa, particle );
+                    particles.setTuple( pid, particle.tuple() );
+                    ppf_count++;
+                }
+	    }
+        } );
+
+    Kokkos::Profiling::popRegion();
+}
 //---------------------------------------------------------------------------//
 
 } // end namespace Picasso
