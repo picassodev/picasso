@@ -88,20 +88,22 @@ get( Cabana::ParticleView<VectorLength, FieldTags...>& particle, FieldTag,
 // Get a view of a particle member as a vector. (Works for both Particle
 // and ParticleView)
 template <class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
-    LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
-get( ParticleType& particle, FieldTag tag )
+KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<Cabana::LinearAlgebra::is_vector<
+                                typename FieldTag::linear_algebra_type>::value,
+                            typename FieldTag::linear_algebra_type>::type
+    get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         &( Cabana::get( particle, tag, 0 ) ), ParticleType::vector_length );
 }
 
 template <class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
-    LinearAlgebra::is_vector<typename FieldTag::linear_algebra_type>::value,
-    const typename FieldTag::linear_algebra_type>::type
-get( const ParticleType& particle, FieldTag tag )
+KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<Cabana::LinearAlgebra::is_vector<
+                                typename FieldTag::linear_algebra_type>::value,
+                            const typename FieldTag::linear_algebra_type>::type
+    get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         const_cast<typename FieldTag::value_type*>(
@@ -113,10 +115,11 @@ get( const ParticleType& particle, FieldTag tag )
 // Get a view of a particle member as a matrix. (Works for both Particle
 // and ParticleView)
 template <class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
-    LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
-    typename FieldTag::linear_algebra_type>::type
-get( ParticleType& particle, FieldTag tag )
+KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<Cabana::LinearAlgebra::is_matrix<
+                                typename FieldTag::linear_algebra_type>::value,
+                            typename FieldTag::linear_algebra_type>::type
+    get( ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         &( Cabana::get( particle, tag, 0, 0 ) ),
@@ -125,10 +128,11 @@ get( ParticleType& particle, FieldTag tag )
 }
 
 template <class ParticleType, class FieldTag>
-KOKKOS_FORCEINLINE_FUNCTION typename std::enable_if<
-    LinearAlgebra::is_matrix<typename FieldTag::linear_algebra_type>::value,
-    const typename FieldTag::linear_algebra_type>::type
-get( const ParticleType& particle, FieldTag tag )
+KOKKOS_FORCEINLINE_FUNCTION
+    typename std::enable_if<Cabana::LinearAlgebra::is_matrix<
+                                typename FieldTag::linear_algebra_type>::value,
+                            const typename FieldTag::linear_algebra_type>::type
+    get( const ParticleType& particle, FieldTag tag )
 {
     return typename FieldTag::linear_algebra_type(
         const_cast<typename FieldTag::value_type*>(

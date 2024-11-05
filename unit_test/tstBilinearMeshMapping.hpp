@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_BilinearMeshMapping.hpp>
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_Types.hpp>
@@ -116,18 +115,18 @@ void mappingTest3d()
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j, const int k ) {
             // Map to physical frame.
-            LinearAlgebra::Vector<double, 3> cell_coords = 0.0;
+            Cabana::LinearAlgebra::Vector<double, 3> cell_coords = 0.0;
             int ijk[3] = { i, j, k };
             local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
                                     cell_coords.data() );
 
-            LinearAlgebra::VectorView<double, 3> phys_coords(
+            Cabana::LinearAlgebra::VectorView<double, 3> phys_coords(
                 &cell_forward_map( i, j, k, 0 ), cell_forward_map.stride( 3 ) );
             CurvilinearMeshMapping<mapping_type>::mapToPhysicalFrame(
                 mapping, cell_coords, phys_coords );
 
             // Map to reference frame. Use the bad guess to test search.
-            LinearAlgebra::VectorView<double, 3> ref_coords(
+            Cabana::LinearAlgebra::VectorView<double, 3> ref_coords(
                 &cell_reverse_map( i, j, k, 0 ), cell_reverse_map.stride( 3 ) );
             ref_coords = { guess[Dim::I], guess[Dim::J], guess[Dim::K] };
             cell_map_success( i, j, k ) =
@@ -135,7 +134,7 @@ void mappingTest3d()
                     mapping, phys_coords, ref_coords );
 
             // Default map to reference frame. Use a good guess in the cell.
-            LinearAlgebra::VectorView<double, 3> default_ref_coords(
+            Cabana::LinearAlgebra::VectorView<double, 3> default_ref_coords(
                 &default_cell_reverse_map( i, j, k, 0 ),
                 default_cell_reverse_map.stride( 3 ) );
             default_ref_coords = { cell_coords( Dim::I ) - 0.1,
@@ -285,17 +284,17 @@ void mappingTest2d()
         "check_mapping", TEST_EXECSPACE{}, ghosted_cells,
         KOKKOS_LAMBDA( const int i, const int j ) {
             // Map to physical frame.
-            LinearAlgebra::Vector<double, 2> cell_coords = 0.0;
+            Cabana::LinearAlgebra::Vector<double, 2> cell_coords = 0.0;
             int ijk[2] = { i, j };
             local_mesh.coordinates( Cabana::Grid::Cell{}, ijk,
                                     cell_coords.data() );
-            LinearAlgebra::VectorView<double, 2> phys_coords(
+            Cabana::LinearAlgebra::VectorView<double, 2> phys_coords(
                 &cell_forward_map( i, j, 0 ), cell_forward_map.stride( 2 ) );
             CurvilinearMeshMapping<mapping_type>::mapToPhysicalFrame(
                 mapping, cell_coords, phys_coords );
 
             // Map to reference frame. Use a bad guess to test the search.
-            LinearAlgebra::VectorView<double, 2> ref_coords(
+            Cabana::LinearAlgebra::VectorView<double, 2> ref_coords(
                 &cell_reverse_map( i, j, 0 ), cell_reverse_map.stride( 2 ) );
             ref_coords = { guess[Dim::I], guess[Dim::J] };
             cell_map_success( i, j ) =
@@ -304,7 +303,7 @@ void mappingTest2d()
 
             // Default map to reference frame. Use a good guess that is in the
             // cell.
-            LinearAlgebra::VectorView<double, 2> default_ref_coords(
+            Cabana::LinearAlgebra::VectorView<double, 2> default_ref_coords(
                 &default_cell_reverse_map( i, j, 0 ),
                 default_cell_reverse_map.stride( 2 ) );
             default_ref_coords = { cell_coords( Dim::I ) - 0.1,

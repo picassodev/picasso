@@ -12,7 +12,6 @@
 #ifndef PICASSO_CURVILINEARMESH_HPP
 #define PICASSO_CURVILINEARMESH_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
 #include <Cabana_Grid.hpp>
@@ -76,11 +75,12 @@ struct CurvilinearMeshMapping
     template <class ReferenceCoords>
     static KOKKOS_INLINE_FUNCTION void transformationMetrics(
         const Mapping& mapping, const ReferenceCoords& reference_coords,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
-                              num_space_dim, num_space_dim>& jacobian,
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
+                                      num_space_dim, num_space_dim>& jacobian,
         typename ReferenceCoords::value_type& jacobian_det,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
-                              num_space_dim, num_space_dim>& jacobian_inv );
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
+                                      num_space_dim, num_space_dim>&
+            jacobian_inv );
 
     // Reverse mapping. Given coordinates in the physical frame compute the
     // coordinates in the reference frame. The data in reference_coords
@@ -123,12 +123,12 @@ struct DefaultCurvilinearMeshMapping
         int max_iter = 15;
 
         // Iteration data.
-        LinearAlgebra::Vector<value_type, num_space_dim> x_ref_old;
-        LinearAlgebra::Vector<value_type, num_space_dim> x_phys_new;
-        LinearAlgebra::Matrix<value_type, num_space_dim, num_space_dim>
+        Cabana::LinearAlgebra::Vector<value_type, num_space_dim> x_ref_old;
+        Cabana::LinearAlgebra::Vector<value_type, num_space_dim> x_phys_new;
+        Cabana::LinearAlgebra::Matrix<value_type, num_space_dim, num_space_dim>
             jacobian;
         value_type jacobian_det;
-        LinearAlgebra::Matrix<value_type, num_space_dim, num_space_dim>
+        Cabana::LinearAlgebra::Matrix<value_type, num_space_dim, num_space_dim>
             jacobian_inv;
 
         // Newton iterations.
