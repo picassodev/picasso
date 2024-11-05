@@ -14,7 +14,6 @@
 
 #include <Cabana_Grid.hpp>
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -78,17 +77,17 @@ KOKKOS_INLINE_FUNCTION void p2g(
     int ncomp = ParticleField::extent_1;
 
     // Affine material motion operator.
-    Mat3<value_type> am_p = {
+    Cabana::Mat3<value_type> am_p = {
         { 1.0 + dt * u_p( 1, 0 ), dt * u_p( 1, 1 ), dt * u_p( 1, 2 ) },
         { dt * u_p( 2, 0 ), 1.0 + dt * u_p( 2, 1 ), dt * u_p( 2, 2 ) },
         { dt * u_p( 3, 0 ), dt * u_p( 3, 1 ), 1.0 + dt * u_p( 3, 2 ) } };
 
     // Invert the affine operator.
-    auto am_inv_p = LinearAlgebra::inverse( am_p );
+    auto am_inv_p = Cabana::LinearAlgebra::inverse( am_p );
 
     // Project mass and mass-weighted field.
-    LinearAlgebra::Vector<value_type, 8> basis;
-    Vec3<value_type> distance;
+    Cabana::LinearAlgebra::Vector<value_type, 8> basis;
+    Cabana::Vec3<value_type> distance;
     value_type wm;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -181,17 +180,17 @@ KOKKOS_INLINE_FUNCTION void p2g(
     const int dim = ( 3 == ncomp ) ? SplineDataType::entity_type::dim : 0;
 
     // Affine material motion operator.
-    Mat3<value_type> am_p = {
+    Cabana::Mat3<value_type> am_p = {
         { 1.0 + dt * u_p( 1, 0 ), dt * u_p( 1, 1 ), dt * u_p( 1, 2 ) },
         { dt * u_p( 2, 0 ), 1.0 + dt * u_p( 2, 1 ), dt * u_p( 2, 2 ) },
         { dt * u_p( 3, 0 ), dt * u_p( 3, 1 ), 1.0 + dt * u_p( 3, 2 ) } };
 
     // Invert the affine operator.
-    auto am_inv_p = LinearAlgebra::inverse( am_p );
+    auto am_inv_p = Cabana::LinearAlgebra::inverse( am_p );
 
     // Project mass and mass-weighted field.
-    LinearAlgebra::Vector<value_type, 8> basis;
-    Vec3<value_type> distance;
+    Cabana::LinearAlgebra::Vector<value_type, 8> basis;
+    Cabana::Vec3<value_type> distance;
     value_type wm;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -260,7 +259,7 @@ KOKKOS_INLINE_FUNCTION void g2p(
     c_p = 0.0;
 
     // Update particle.
-    LinearAlgebra::Vector<value_type, 8> coeff;
+    Cabana::LinearAlgebra::Vector<value_type, 8> coeff;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )
@@ -328,7 +327,7 @@ KOKKOS_INLINE_FUNCTION void g2p(
     c_p.column( dim ) = 0.0;
 
     // Update particle.
-    LinearAlgebra::Vector<value_type, 8> coeff;
+    Cabana::LinearAlgebra::Vector<value_type, 8> coeff;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
             for ( int k = 0; k < SplineDataType::num_knot; ++k )

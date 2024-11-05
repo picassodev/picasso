@@ -12,10 +12,10 @@
 #ifndef PICASSO_FACETGEOMETRY_HPP
 #define PICASSO_FACETGEOMETRY_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
-
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
+
+#include <Cabana_Core.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -511,8 +511,8 @@ KOKKOS_FUNCTION bool pointFacetProjection( const float x[3], const float r[3],
 {
     // Build the system of equations to solve for intersection. Fire the ray
     // in the Y direction - this choice is arbitrary.
-    Mat3<float> A;
-    Vec3<float> b;
+    Cabana::Mat3<float> A;
+    Cabana::Vec3<float> b;
     for ( int i = 0; i < 3; ++i )
     {
         A( i, 0 ) = facets( f, 1, i ) - facets( f, 0, i );
@@ -528,7 +528,7 @@ KOKKOS_FUNCTION bool pointFacetProjection( const float x[3], const float r[3],
         return false;
 
     // Solve the system.
-    VecView3<float> y_view( y, 1 );
+    Cabana::VecView3<float> y_view( y, 1 );
     y_view = A ^ b;
 
     // Check the solution for inclusion in the triangle.

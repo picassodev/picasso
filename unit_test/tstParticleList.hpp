@@ -104,15 +104,15 @@ void linearAlgebraTest()
         KOKKOS_LAMBDA( const int p ) {
             auto particle = particles.getParticleView( p );
 
-            auto px_v = get( particle, Field::LogicalPosition<3>() );
+            auto px_v = Cabana::get( particle, Field::LogicalPosition<3>() );
             for ( int d = 0; d < 3; ++d )
                 px_v( d ) += p + d;
 
-            Picasso::get( particle, Foo() ) += p;
+            Cabana::get( particle, Foo() ) += p;
 
-            Picasso::get( particle, Field::Color() ) += p;
+            Cabana::get( particle, Field::Color() ) += p;
 
-            auto pf_m = Picasso::get( particle, Bar() );
+            auto pf_m = Cabana::get( particle, Bar() );
             for ( int i = 0; i < 3; ++i )
                 for ( int j = 0; j < 3; ++j )
                     pf_m( i, j ) += p + i + j;
