@@ -31,7 +31,7 @@ jobs:
             cmake_build_type: 'Debug'
             kokkos_ver: '4.1.00'
             coverage: 'ON'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/ecp-copa/ci-containers/${{ matrix.distro }}
     steps:
       - name: Get trail license
