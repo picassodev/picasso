@@ -12,7 +12,6 @@
 #ifndef PICASSO_APIC_HPP
 #define PICASSO_APIC_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 
 #include <Cabana_Grid.hpp>
@@ -91,7 +90,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     constexpr int ncomp = ParticleField::extent_1;
 
     // Affine Matrix
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
+    Cabana::LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
         // B_p is sliced from c_p and is transposed.
@@ -105,7 +104,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     value_type D_p_inv = inertialScaling( sd );
 
     // Project momentum.
-    Vec3<value_type> distance;
+    Cabana::Vec3<value_type> distance;
     value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -187,7 +186,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     constexpr int ncomp = ParticleVelocity::extent_1;
 
     // Affine Matrix
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
+    Cabana::LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
         // B_p is sliced from c_p and is transposed.
@@ -204,7 +203,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     value_type D_p_inv = inertialScaling( sd );
 
     // Project momentum.
-    Vec3<value_type> distance;
+    Cabana::Vec3<value_type> distance;
     value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -273,7 +272,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     constexpr int ncomp = ParticleField::extent_1;
 
     // Affine Matrix
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
+    Cabana::LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
     for ( int d = 0; d < ncomp; ++d )
     {
         // B_p is sliced from c_p and is transposed.
@@ -282,7 +281,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
         B_p( d, 2 ) = c_p( 3, d );
     }
     // Project momentum.
-    Vec3<value_type> gm_ip;
+    Cabana::Vec3<value_type> gm_ip;
     value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -360,7 +359,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
                    "APIC requires 3 space dimensions" );
 
     // Affine Matrix
-    LinearAlgebra::Matrix<value_type, 3, 3> B_p;
+    Cabana::LinearAlgebra::Matrix<value_type, 3, 3> B_p;
     for ( int d = 0; d < 3; ++d )
     {
         // B_p is sliced from c_p and is transposed.
@@ -372,7 +371,7 @@ KOKKOS_INLINE_FUNCTION void p2g(
     const int dim = SplineDataType::entity_type::dim;
 
     // Project momentum.
-    Vec3<value_type> gm_ip;
+    Cabana::Vec3<value_type> gm_ip;
     value_type wm_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -426,15 +425,15 @@ g2p( const GridField& u_i, ParticleField& c_p, const SplineDataType& sd,
     constexpr int ncomp = ParticleField::extent_1;
 
     // Affine Matrix
-    LinearAlgebra::Vector<value_type, ncomp> u_p;
-    LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
+    Cabana::LinearAlgebra::Vector<value_type, ncomp> u_p;
+    Cabana::LinearAlgebra::Matrix<value_type, ncomp, 3> B_p;
 
     // Reset the particle values.
     u_p = 0.0;
     B_p = 0.0;
 
     // Update particle.
-    Vec3<value_type> distance;
+    Cabana::Vec3<value_type> distance;
     value_type w_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )
@@ -496,8 +495,8 @@ g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
                    "APIC requires 3 space dimensions" );
 
     // Affine Matrix
-    LinearAlgebra::Vector<value_type, 3> u_p;
-    LinearAlgebra::Matrix<value_type, 3, 3> B_p;
+    Cabana::LinearAlgebra::Vector<value_type, 3> u_p;
+    Cabana::LinearAlgebra::Matrix<value_type, 3, 3> B_p;
 
     // Get the field dimension we are working on.
     const int dim = SplineDataType::entity_type::dim;
@@ -507,7 +506,7 @@ g2p( const GridMomentum& u_i, ParticleVelocity& c_p, const SplineDataType& sd,
     B_p = 0.0;
 
     // Update particle.
-    Vec3<value_type> distance;
+    Cabana::Vec3<value_type> distance;
     value_type w_ip;
     for ( int i = 0; i < SplineDataType::num_knot; ++i )
         for ( int j = 0; j < SplineDataType::num_knot; ++j )

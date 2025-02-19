@@ -119,13 +119,14 @@ struct ParticleFunc
         auto bar_out = scatter_deps.get( FieldLocation::Cell(), BarOut() );
 
         // Get particle data.
-        auto foop = get( particle, FooP() );
-        auto& barp = Picasso::get( particle, BarP() );
+        auto foop = Cabana::get( particle, FooP() );
+        auto& barp = Cabana::get( particle, BarP() );
 
         // Zero-order cell interpolant.
         auto spline = createSpline(
             FieldLocation::Cell(), InterpolationOrder<0>(), local_mesh,
-            get( particle, Field::LogicalPosition<3>() ), SplineValue() );
+            Cabana::get( particle, Field::LogicalPosition<3>() ),
+            SplineValue() );
 
         // Interpolate to the particles.
         G2P::value( spline, foo_in, foop );
@@ -232,7 +233,7 @@ struct GridTensor3Func
         boo( i, j, k ) = levi_civita;
 
         const int index[3] = { i, j, k };
-        auto boo_t_foo_in = LinearAlgebra::contract(
+        auto boo_t_foo_in = Picasso::LinearAlgebra::contract(
             boo( index ), foo_in( index ), SpaceDim<2>{} );
 
         auto boo_t_foo_in_t_fez_in = boo_t_foo_in * fez_in( index );
@@ -247,12 +248,12 @@ struct GridTensor3Func
             { { 9, 10, 11 }, { 12, 13, 14 }, { 15, 16, 17 } },
             { { 18, 19, 20 }, { 21, 22, 23 }, { 24, 25, 26 } } };
 
-        mat_i_out( index ) =
-            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<0>() );
-        mat_j_out( index ) =
-            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<1>() );
-        mat_k_out( index ) =
-            LinearAlgebra::contract( tensor, foo_in( index ), SpaceDim<2>() );
+        mat_i_out( index ) = Picasso::LinearAlgebra::contract(
+            tensor, foo_in( index ), SpaceDim<0>() );
+        mat_j_out( index ) = Picasso::LinearAlgebra::contract(
+            tensor, foo_in( index ), SpaceDim<1>() );
+        mat_k_out( index ) = Picasso::LinearAlgebra::contract(
+            tensor, foo_in( index ), SpaceDim<2>() );
     }
 };
 
@@ -304,7 +305,7 @@ struct GridTensor4Func
                 { 0.0, lam, 0.0 },
                 { 0.0, 0.0, lam + 2 * mu } } } };
 
-        Picasso::Mat3<double> strain = {
+        Cabana::Mat3<double> strain = {
             { 0.5, 1.0, 0 }, { 1.0, 0, 0 }, { 0, 0, 0 } };
 
         const int index[3] = { i, j, k };
@@ -313,7 +314,8 @@ struct GridTensor4Func
         // "generalized" Hook's law, which is just a double contraction of a
         // fourth-order stiffness tensor with a strain tensor. baz_out is the
         // stress tensor in this example
-        baz_out( index ) = LinearAlgebra::contract( cam( index ), strain );
+        baz_out( index ) =
+            Picasso::LinearAlgebra::contract( cam( index ), strain );
     }
 };
 
@@ -353,7 +355,7 @@ void gatherScatterTest()
                                              const double, particle_type& p )
     {
         for ( int d = 0; d < 3; ++d )
-            Picasso::get( p, Field::LogicalPosition<3>(), d ) = x[d];
+            Cabana::get( p, Field::LogicalPosition<3>(), d ) = x[d];
         return true;
     };
 

@@ -12,7 +12,6 @@
 #ifndef PICASSO_UNIFORMCARTESIANMESHMAPPING_HPP
 #define PICASSO_UNIFORMCARTESIANMESHMAPPING_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_Types.hpp>
@@ -91,11 +90,11 @@ class CurvilinearMeshMapping<
     template <class ReferenceCoords>
     static KOKKOS_INLINE_FUNCTION void transformationMetrics(
         const mesh_mapping& mapping, const ReferenceCoords&,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, NumSpaceDim,
-                              NumSpaceDim>& jacobian,
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
+                                      NumSpaceDim, NumSpaceDim>& jacobian,
         typename ReferenceCoords::value_type& jacobian_det,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, NumSpaceDim,
-                              NumSpaceDim>& jacobian_inv )
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type,
+                                      NumSpaceDim, NumSpaceDim>& jacobian_inv )
     {
         for ( std::size_t i = 0; i < num_space_dim; ++i )
             for ( std::size_t j = 0; j < num_space_dim; ++j )

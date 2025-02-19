@@ -5,7 +5,6 @@ set(HEADERS
   Picasso.hpp
   Picasso_AdaptiveMesh.hpp
   Picasso_APIC.hpp
-  Picasso_BatchedLinearAlgebra.hpp
   Picasso_BilinearMeshMapping.hpp
   Picasso_CurvilinearMesh.hpp
   Picasso_FacetGeometry.hpp
