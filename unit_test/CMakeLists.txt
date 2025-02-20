@@ -147,7 +147,7 @@ Picasso_add_tests(NAMES
   APIC
   )
 
-Picasso_add_tests(MPI NAMES
+set(MPI_TESTS
   FacetGeometry
   ParticleInit
   ParticleList
@@ -160,6 +160,11 @@ Picasso_add_tests(MPI NAMES
   GridOperator2d
   ParticleInterpolation
   LevelSetRedistance
-  ParticleLevelSet
   MarchingCubes
   )
+
+if(Picasso_ENABLE_ARBORX)
+  list(APPEND MPI_TESTS ParticleLevelSet)
+endif()
+
+Picasso_add_tests(MPI NAMES ${MPI_TESTS})
