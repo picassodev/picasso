@@ -23,8 +23,16 @@ jobs:
         openmp: ['ON', 'OFF']
         cmake_build_type: ['Debug', 'Release']
         kokkos_ver: ['4.1.00']
+        arborx: ['ArborX']
         coverage: ['OFF']
         include:
+          - distro: 'ubuntu:latest'
+            cxx: 'g++'
+            openmp: 'ON'
+            cmake_build_type: 'Debug'
+            kokkos_ver: '4.1.00'
+            arborx: 'OFF'
+            coverage: 'OFF'
           - distro: 'ubuntu:latest'
             cxx: 'g++'
             openmp: 'ON'
@@ -57,12 +65,14 @@ jobs:
           cmake --build build --parallel 2
           cmake --install build
       - name: Checkout arborx
+        if: ${{ matrix.arborx != 'OFF' }}
         uses: actions/checkout@v3
         with:
           repository: arborx/ArborX
           ref: v1.2
           path: arborx
       - name: Build arborx
+        if: ${{ matrix.arborx != 'OFF' }}
         working-directory: arborx
         run: |
           cmake -B build \
