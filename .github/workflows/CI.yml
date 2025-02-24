@@ -22,8 +22,8 @@ jobs:
         cxx: ['g++', 'clang++']
         openmp: ['ON', 'OFF']
         cmake_build_type: ['Debug', 'Release']
-        kokkos_ver: ['4.1.00']
-        arborx: ['ArborX']
+        kokkos_ver: ['4.2.00']
+        arborx: ['v1.7']
         coverage: ['OFF']
         include:
           - distro: 'ubuntu:latest'
@@ -37,7 +37,15 @@ jobs:
             cxx: 'g++'
             openmp: 'ON'
             cmake_build_type: 'Debug'
-            kokkos_ver: '4.1.00'
+            kokkos_ver: '4.3.00'
+            arborx: 'fee3d777c0325a90ab50671fca69f2dc98f2a882'
+            coverage: 'OFF'
+          - distro: 'ubuntu:latest'
+            cxx: 'g++'
+            openmp: 'ON'
+            cmake_build_type: 'Debug'
+            kokkos_ver: '4.2.00'
+            arborx: 'v1.7'
             coverage: 'ON'
     runs-on: ubuntu-latest
     container: ghcr.io/ecp-copa/ci-containers/${{ matrix.distro }}
@@ -69,7 +77,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: arborx/ArborX
-          ref: v1.2
+          ref: ${{ matrix.arborx }}
           path: arborx
       - name: Build arborx
         if: ${{ matrix.arborx != 'OFF' }}
@@ -151,7 +159,7 @@ jobs:
       matrix:
         cxx: ['hipcc']
         cmake_build_type: ['Release']
-        kokkos_ver: ['3.7.02']
+        kokkos_ver: ['4.2.00']
     runs-on: ubuntu-20.04
     container: ghcr.io/ecp-copa/ci-containers/rocm:latest
     steps:
@@ -191,7 +199,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: arborx/ArborX
-          ref: v1.2
+          ref: v1.7
           path: arborx
       - name: Build arborx
         working-directory: arborx
@@ -250,7 +258,7 @@ jobs:
     strategy:
       matrix:
         cmake_build_type: ['Release']
-        kokkos_ver: ['3.7.02']
+        kokkos_ver: ['4.2.00']
     runs-on: ubuntu-20.04
     container: ghcr.io/ecp-copa/ci-containers/cuda:12.2.0
     steps:
@@ -290,7 +298,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: arborx/ArborX
-          ref: v1.2
+          ref: v1.7
           path: arborx
       - name: Build arborx
         working-directory: arborx
