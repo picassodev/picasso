@@ -205,7 +205,7 @@ struct Scalar : ScalarBase
     template <class U>
     using field_type = Scalar<U>;
     template <int NumSpaceDim>
-    using gradient_type = LinearAlgebra::Vector<T, NumSpaceDim>;
+    using gradient_type = Cabana::LinearAlgebra::Vector<T, NumSpaceDim>;
 };
 
 template <class T>
@@ -232,11 +232,11 @@ struct Vector : VectorBase
     static constexpr int size = D;
     static constexpr int dim0 = D;
     using data_type = value_type[D];
-    using linear_algebra_type = LinearAlgebra::VectorView<T, D>;
+    using linear_algebra_type = Cabana::LinearAlgebra::VectorView<T, D>;
     template <class U>
     using field_type = Vector<U, D>;
     template <int NumSpaceDim>
-    using gradient_type = LinearAlgebra::Matrix<T, D, NumSpaceDim>;
+    using gradient_type = Cabana::LinearAlgebra::Matrix<T, D, NumSpaceDim>;
 };
 
 template <class T>
@@ -247,11 +247,11 @@ struct Quaternion : VectorBase
     static constexpr int size = 4;
     static constexpr int dim0 = 4;
     using data_type = value_type[4];
-    using linear_algebra_type = LinearAlgebra::QuaternionView<T>;
+    using linear_algebra_type = Picasso::LinearAlgebra::QuaternionView<T>;
     template <class U>
     using field_type = Quaternion<U>;
     template <class U>
-    using matrix_type = Mat3<U>;
+    using matrix_type = Cabana::Mat3<U>;
 };
 
 template <class T>
@@ -279,7 +279,7 @@ struct Matrix : MatrixBase
     static constexpr int dim0 = D0;
     static constexpr int dim1 = D1;
     using data_type = value_type[D0][D1];
-    using linear_algebra_type = LinearAlgebra::MatrixView<T, D0, D1>;
+    using linear_algebra_type = Cabana::LinearAlgebra::MatrixView<T, D0, D1>;
     template <class U>
     using field_type = Matrix<U, D0, D1>;
 };
@@ -310,7 +310,8 @@ struct Tensor3 : Tensor3Base
     static constexpr int dim1 = D1;
     static constexpr int dim2 = D2;
     using data_type = value_type[D0][D1][D2];
-    using linear_algebra_type = LinearAlgebra::Tensor3View<T, D0, D1, D2>;
+    using linear_algebra_type =
+        Picasso::LinearAlgebra::Tensor3View<T, D0, D1, D2>;
     template <class U>
     using field_type = Tensor3<U, D0, D1, D2>;
 };
@@ -342,7 +343,8 @@ struct Tensor4 : Tensor4Base
     static constexpr int dim2 = D2;
     static constexpr int dim3 = D3;
     using data_type = value_type[D0][D1][D2][D3];
-    using linear_algebra_type = LinearAlgebra::Tensor4View<T, D0, D1, D2, D3>;
+    using linear_algebra_type =
+        Picasso::LinearAlgebra::Tensor4View<T, D0, D1, D2, D3>;
     template <class U>
     using field_type = Tensor4<U, D0, D1, D2, D3>;
 };

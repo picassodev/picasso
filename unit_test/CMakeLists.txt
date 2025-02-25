@@ -142,7 +142,6 @@ macro(Picasso_add_tests)
 endmacro()
 
 Picasso_add_tests(NAMES
-  BatchedLinearAlgebra
   PolyPIC
   APIC
   )

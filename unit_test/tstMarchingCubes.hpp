@@ -102,13 +102,13 @@ void runTest( const Phi0& phi_0, const std::string& stl_filename )
                                                        mc_data->facets );
     for ( std::size_t f = 0; f < facets.extent( 0 ); ++f )
     {
-        Vec3<double> ab = { facets( f, 1, 0 ) - facets( f, 0, 0 ),
-                            facets( f, 1, 1 ) - facets( f, 0, 1 ),
-                            facets( f, 1, 2 ) - facets( f, 0, 2 ) };
+        Cabana::Vec3<double> ab = { facets( f, 1, 0 ) - facets( f, 0, 0 ),
+                                    facets( f, 1, 1 ) - facets( f, 0, 1 ),
+                                    facets( f, 1, 2 ) - facets( f, 0, 2 ) };
 
-        Vec3<double> ac = { facets( f, 2, 0 ) - facets( f, 0, 0 ),
-                            facets( f, 2, 1 ) - facets( f, 0, 1 ),
-                            facets( f, 2, 2 ) - facets( f, 0, 2 ) };
+        Cabana::Vec3<double> ac = { facets( f, 2, 0 ) - facets( f, 0, 0 ),
+                                    facets( f, 2, 1 ) - facets( f, 0, 1 ),
+                                    facets( f, 2, 2 ) - facets( f, 0, 2 ) };
 
         auto cross = ab % ac;
 

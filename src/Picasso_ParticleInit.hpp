@@ -12,7 +12,6 @@
 #ifndef PICASSO_PARTICLEINIT_HPP
 #define PICASSO_PARTICLEINIT_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_Types.hpp>
 #include <Picasso_UniformMesh.hpp>
 
@@ -499,32 +498,32 @@ void initializeParticlesSurface( InitRandom, const ExecutionSpace&,
             auto rand = pool.get_state( f );
 
             // Particle coordinate.
-            Vec3<double> px;
+            Cabana::Vec3<double> px;
 
             // Particle.
             particle_type particle;
 
-            Vec3<double> a = { surface.facets( f, 0, 0 ),
-                               surface.facets( f, 0, 1 ),
-                               surface.facets( f, 0, 2 ) };
+            Cabana::Vec3<double> a = { surface.facets( f, 0, 0 ),
+                                       surface.facets( f, 0, 1 ),
+                                       surface.facets( f, 0, 2 ) };
 
-            Vec3<double> b = { surface.facets( f, 1, 0 ),
-                               surface.facets( f, 1, 1 ),
-                               surface.facets( f, 1, 2 ) };
+            Cabana::Vec3<double> b = { surface.facets( f, 1, 0 ),
+                                       surface.facets( f, 1, 1 ),
+                                       surface.facets( f, 1, 2 ) };
 
-            Vec3<double> c = { surface.facets( f, 2, 0 ),
-                               surface.facets( f, 2, 1 ),
-                               surface.facets( f, 2, 2 ) };
+            Cabana::Vec3<double> c = { surface.facets( f, 2, 0 ),
+                                       surface.facets( f, 2, 1 ),
+                                       surface.facets( f, 2, 2 ) };
 
-            Vec3<double> ab = b - a;
-            Vec3<double> ac = c - a;
+            Cabana::Vec3<double> ab = b - a;
+            Cabana::Vec3<double> ac = c - a;
 
             auto cross = ab % ac;
             double c2 = ~cross * cross;
             double sqc2 = sqrt( c2 );
             double facet_area = 0.5 * sqc2;
 
-            Vec3<double> pan =
+            Cabana::Vec3<double> pan =
                 cross / sqc2; // Create unit normal vector for the facet area
 
             // Particle surface area.
