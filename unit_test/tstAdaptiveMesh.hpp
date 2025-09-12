@@ -74,7 +74,7 @@ void constructionTest()
         Kokkos::HostSpace(), nodes_1->view() );
     auto local_space_1 = nodes_1->layout()->localGrid()->indexSpace(
         Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
-    auto local_mesh_1 = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
+    auto local_mesh_1 = Cabana::Grid::createLocalMesh<TEST_MEMSPACE>(
         *( nodes_1->layout()->localGrid() ) );
     for ( int i = local_space_1.min( 0 ); i < local_space_1.max( 0 ); ++i )
         for ( int j = local_space_1.min( 1 ); j < local_space_1.max( 1 ); ++j )
@@ -130,7 +130,7 @@ void constructionTest()
         Kokkos::HostSpace(), nodes_2->view() );
     auto local_space_2 = nodes_2->layout()->localGrid()->indexSpace(
         Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
-    auto local_mesh_2 = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
+    auto local_mesh_2 = Cabana::Grid::createLocalMesh<TEST_MEMSPACE>(
         *( nodes_2->layout()->localGrid() ) );
     for ( int i = local_space_2.min( 0 ); i < local_space_2.max( 0 ); ++i )
         for ( int j = local_space_2.min( 1 ); j < local_space_2.max( 1 ); ++j )
