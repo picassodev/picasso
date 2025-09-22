@@ -9,7 +9,6 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_InputParser.hpp>
 #include <Picasso_ParticleInterpolation.hpp>
@@ -266,12 +265,12 @@ void collocatedTest()
     Kokkos::parallel_for(
         "g2p", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ) {
-            Vec3<double> x = { px, py, pz };
+            Cabana::Vec3<double> x = { px, py, pz };
             auto sd =
                 createSpline( Location(), InterpolationOrder<Order>(),
                               local_mesh, x, SplineValue(), SplineGradient() );
 
-            LinearAlgebra::Matrix<double, num_mode, 3> modes;
+            Cabana::LinearAlgebra::Matrix<double, num_mode, 3> modes;
             PolyPIC::g2p( gv_wrapper, modes, sd );
 
             for ( int r = 0; r < num_mode; ++r )
@@ -303,12 +302,12 @@ void collocatedTest()
     Kokkos::parallel_for(
         "p2g", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ) {
-            Vec3<double> x = { px, py, pz };
+            Cabana::Vec3<double> x = { px, py, pz };
             auto sd = createSpline( Location(), InterpolationOrder<Order>(),
                                     local_mesh, x, SplineValue(),
                                     SplineGradient(), SplineDistance() );
 
-            LinearAlgebra::Matrix<double, num_mode, 3> modes;
+            Cabana::LinearAlgebra::Matrix<double, num_mode, 3> modes;
             for ( int r = 0; r < num_mode; ++r )
                 for ( int d = 0; d < 3; ++d )
                     modes( r, d ) = pc( r, d );
@@ -431,12 +430,12 @@ void staggeredTest()
     Kokkos::parallel_for(
         "g2p", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ) {
-            Vec3<double> x = { px, py, pz };
+            Cabana::Vec3<double> x = { px, py, pz };
             auto sd =
                 createSpline( Location(), InterpolationOrder<Order>(),
                               local_mesh, x, SplineValue(), SplineGradient() );
 
-            LinearAlgebra::Matrix<double, num_mode, 3> modes = 0.0;
+            Cabana::LinearAlgebra::Matrix<double, num_mode, 3> modes = 0.0;
             PolyPIC::g2p( gs_wrapper, modes, sd );
 
             for ( int r = 0; r < num_mode; ++r )
@@ -472,12 +471,12 @@ void staggeredTest()
     Kokkos::parallel_for(
         "p2g", Kokkos::RangePolicy<TEST_EXECSPACE>( 0, 1 ),
         KOKKOS_LAMBDA( const int ) {
-            Vec3<double> x = { px, py, pz };
+            Cabana::Vec3<double> x = { px, py, pz };
             auto sd = createSpline( Location(), InterpolationOrder<Order>(),
                                     local_mesh, x, SplineValue(),
                                     SplineGradient(), SplineDistance() );
 
-            LinearAlgebra::Matrix<double, num_mode, 3> modes;
+            Cabana::LinearAlgebra::Matrix<double, num_mode, 3> modes;
             for ( int r = 0; r < num_mode; ++r )
                 for ( int d = 0; d < 3; ++d )
                     modes( r, d ) = pc( r, d );

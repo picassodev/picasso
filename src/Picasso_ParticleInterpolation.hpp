@@ -12,7 +12,6 @@
 #ifndef PICASSO_PARTICLEINTERPOLATION_HPP
 #define PICASSO_PARTICLEINTERPOLATION_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_FieldTypes.hpp>
 
 #include <Cabana_Grid.hpp>
@@ -112,8 +111,8 @@ namespace G2P
 //---------------------------------------------------------------------------//
 // G2P scalar value. Requires SplineValue when constructing the spline data.
 template <class ViewType, class SplineDataType, class Scalar,
-          typename std::enable_if_t<!LinearAlgebra::is_vector<Scalar>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              !Cabana::LinearAlgebra::is_vector<Scalar>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const ViewType& view, Scalar& result )
 {
@@ -124,7 +123,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
 // G2P vector value. Requires SplineValue when constructing the spline data.
 template <class ViewType, class SplineDataType, class ResultVector,
           typename std::enable_if_t<
-              LinearAlgebra::is_vector<ResultVector>::value, int> = 0>
+              Cabana::LinearAlgebra::is_vector<ResultVector>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const ViewType& view, ResultVector& result )
 {
@@ -144,7 +143,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
 // constructing the spline data.
 template <class ViewType, class SplineDataType, class ResultVector,
           typename std::enable_if_t<
-              LinearAlgebra::is_vector<ResultVector>::value, int> = 0>
+              Cabana::LinearAlgebra::is_vector<ResultVector>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void
 gradient( const SplineDataType& sd, const ViewType& view, ResultVector& result )
 {
@@ -164,7 +163,7 @@ gradient( const SplineDataType& sd, const ViewType& view, ResultVector& result )
 // constructing the spline data.
 template <class ViewType, class SplineDataType, class ResultMatrix,
           typename std::enable_if_t<
-              LinearAlgebra::is_matrix<ResultMatrix>::value, int> = 0>
+              Cabana::LinearAlgebra::is_matrix<ResultMatrix>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void
 gradient( const SplineDataType& sd, const ViewType& view, ResultMatrix& result )
 {
@@ -202,8 +201,8 @@ namespace P2G
 //---------------------------------------------------------------------------//
 // P2G scalar value. Requires SplineValue when constructing the spline data.
 template <class Scalar, class ScatterViewType, class SplineDataType,
-          typename std::enable_if_t<!LinearAlgebra::is_vector<Scalar>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              !Cabana::LinearAlgebra::is_vector<Scalar>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const Scalar& value,
                                    const ScatterViewType& view )
@@ -215,7 +214,7 @@ KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
 // P2G vector value. Requires SplineValue when constructing the spline data.
 template <class ValueVector, class ScatterViewType, class SplineDataType,
           typename std::enable_if_t<
-              LinearAlgebra::is_vector<ValueVector>::value, int> = 0>
+              Cabana::LinearAlgebra::is_vector<ValueVector>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void value( const SplineDataType& sd,
                                    const ValueVector& value,
                                    const ScatterViewType& view )
@@ -243,7 +242,7 @@ KOKKOS_INLINE_FUNCTION void gradient( const SplineDataType& sd,
 // constructing the spline data.
 template <class ValueVector, class ScatterViewType, class SplineDataType,
           typename std::enable_if_t<
-              LinearAlgebra::is_vector<ValueVector>::value, int> = 0>
+              Cabana::LinearAlgebra::is_vector<ValueVector>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
                                         const ValueVector& value,
                                         const ScatterViewType& view )
@@ -260,7 +259,7 @@ KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
 // constructing the spline data.
 template <class ValueMatrix, class ScatterViewType, class SplineDataType,
           typename std::enable_if_t<
-              LinearAlgebra::is_matrix<ValueMatrix>::value, int> = 0>
+              Cabana::LinearAlgebra::is_matrix<ValueMatrix>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
                                         const ValueMatrix& value,
                                         const ScatterViewType& view )
