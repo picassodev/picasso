@@ -1,10 +1,10 @@
-name: Nightly
+name: Weekly
 on:
   push:
     branches:
-      - nightly_testing
+      - weekly_testing
   schedule:
-    - cron:  '0 3 * * *'
+    - cron:  '0 3 * * 1'
 
 jobs:
   CI:
