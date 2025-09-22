@@ -160,7 +160,7 @@ jobs:
         cxx: ['hipcc']
         cmake_build_type: ['Release']
         kokkos_ver: ['4.2.00']
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/ecp-copa/ci-containers/rocm:latest
     steps:
       - name: Checkout json
@@ -259,7 +259,7 @@ jobs:
       matrix:
         cmake_build_type: ['Release']
         kokkos_ver: ['4.2.00']
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/ecp-copa/ci-containers/cuda:12.2.0
     steps:
       - name: Checkout json
