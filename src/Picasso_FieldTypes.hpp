@@ -966,9 +966,119 @@ struct CommRank : Scalar<int>
     static std::string label() { return "comm_rank"; }
 };
 
+struct Mass : Field::Scalar<double>
+{
+    static std::string label() { return "mass"; }
+};
+
+struct Pressure : Field::Scalar<double>
+{
+    static std::string label() { return "pressure"; }
+};
+
+struct Volume : Field::Scalar<double>
+{
+    static std::string label() { return "volume"; }
+};
+
+template <std::size_t NumSpaceDim>
+struct Velocity : Field::Vector<double, NumSpaceDim>
+{
+    static std::string label() { return "velocity"; }
+};
+
+template <std::size_t NumSpaceDim>
+struct OldVelocity : Field::Vector<double, NumSpaceDim>
+{
+    static std::string label() { return "old_velocity"; }
+};
+
+template <std::size_t NumSpaceDim>
+struct Stress : Field::Matrix<double, NumSpaceDim, NumSpaceDim>
+{
+    static std::string label() { return "stress"; }
+};
+
+struct DetDefGrad : Field::Scalar<double>
+{
+    static std::string label() { return "determinant_deformation_gradient"; }
+};
+
 //---------------------------------------------------------------------------//
 
 } // end namespace Field
+
+namespace PolyPIC
+{
+namespace Field
+{
+
+template <std::size_t NumSpaceDim>
+struct Velocity : Picasso::Field::Matrix<double, 8, NumSpaceDim>
+{
+    static std::string label() { return "velocity"; }
+};
+} // namespace Field
+} // namespace PolyPIC
+
+namespace APIC
+{
+
+namespace Field
+{
+
+template <std::size_t NumSpaceDim>
+struct Velocity : Picasso::Field::Matrix<double, 4, NumSpaceDim>
+{
+    static std::string label() { return "velocity"; }
+};
+
+} // namespace Field
+} // namespace APIC
+
+struct PolyPicTag
+{
+};
+
+struct APicTag
+{
+};
+
+struct FlipTag
+{
+};
+
+// Particle indexing for PIC/FLIP vs PolyPIC scalar field
+KOKKOS_INLINE_FUNCTION auto getField( const double field ) { return field; }
+
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_matrix<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field )
+{
+    return field( 0, 0 );
+}
+
+// Particle indexing for PIC/FLIP vs PolyPIC vector field
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_matrix<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field, const int dir )
+{
+    return field( 0, dir );
+}
+
+template <class FieldType>
+KOKKOS_INLINE_FUNCTION
+    std::enable_if_t<Picasso::LinearAlgebra::is_vector<FieldType>::value,
+                     typename FieldType::value_type>
+    getField( const FieldType& field, const int dir )
+{
+    return field( dir );
+}
+
 } // end namespace Picasso
 
 #endif // PICASSO_FIELDTYPES_HPP
