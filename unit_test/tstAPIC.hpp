@@ -551,7 +551,7 @@ void collocatedTest()
     UniformMesh<TEST_MEMSPACE> mesh( inputs, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
-        Cabana::Grid::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *( mesh.localGrid() ) );
 
     // Particle mass.
     double pm = 0.134;
@@ -723,7 +723,7 @@ void staggeredTest()
     UniformMesh<TEST_MEMSPACE> mesh( inputs, global_box, minimum_halo_size,
                                      MPI_COMM_WORLD );
     auto local_mesh =
-        Cabana::Grid::createLocalMesh<TEST_EXECSPACE>( *( mesh.localGrid() ) );
+        Cabana::Grid::createLocalMesh<TEST_MEMSPACE>( *( mesh.localGrid() ) );
 
     // Particle mass.
     double pm = 0.134;

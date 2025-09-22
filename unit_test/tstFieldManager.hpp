@@ -176,7 +176,7 @@ void adaptiveTest()
         fm.array( FieldLocation::Node(), Field::PhysicalPosition<3>() );
     auto host_coords = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(),
                                                             nodes->view() );
-    auto local_mesh = Cabana::Grid::createLocalMesh<TEST_EXECSPACE>(
+    auto local_mesh = Cabana::Grid::createLocalMesh<TEST_MEMSPACE>(
         *( nodes->layout()->localGrid() ) );
     auto local_space = nodes->layout()->localGrid()->indexSpace(
         Cabana::Grid::Ghost(), Cabana::Grid::Node(), Cabana::Grid::Local() );
