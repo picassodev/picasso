@@ -32,6 +32,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=$HOME/kokkos \
             -DKokkos_ENABLE_OPENMP=${{ matrix.openmp }} \
             -DKokkos_ENABLE_HWLOC=ON \
+            -DKokkos_ENABLE_IMPL_VIEW_LEGACY=ON \
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}
           cmake --build build --parallel 2
           cmake --install build
