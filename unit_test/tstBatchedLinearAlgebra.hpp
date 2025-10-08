@@ -1128,6 +1128,11 @@ void vectorTest()
     for ( int i = 0; i < 3; ++i )
         EXPECT_DOUBLE_EQ( w( i ), 32.3 );
 
+    // Size 1 vector test
+    LinearAlgebra::Vector<double, 1> vec1 = { 4.7 };
+    vec1.normalize();
+    EXPECT_DOUBLE_EQ( vec1, 1.0 );
+
     // Size 1 vector test.
     // FIXME: construction of length 1 vector fails with NVCC.
     /*
