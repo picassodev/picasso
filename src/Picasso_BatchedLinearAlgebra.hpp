@@ -116,18 +116,6 @@ namespace LinearAlgebra
 //---------------------------------------------------------------------------//
 // Forward declarations.
 //---------------------------------------------------------------------------//
-template <class T, int M, int N, class Func>
-struct MatrixExpression;
-template <class T, int M, int N>
-struct Matrix;
-template <class T, int M, int N>
-struct MatrixView;
-template <class T, int N, class Func>
-struct VectorExpression;
-template <class T, int N>
-struct Vector;
-template <class T, int N>
-struct VectorView;
 template <class T, class Func>
 struct QuaternionExpression;
 template <class T>
@@ -150,58 +138,6 @@ struct Tensor4Expression;
 //---------------------------------------------------------------------------//
 // Type traits.
 //---------------------------------------------------------------------------//
-// Matrix
-template <class>
-struct is_matrix_impl : public std::false_type
-{
-};
-
-template <class T, int M, int N, class Func>
-struct is_matrix_impl<MatrixExpression<T, M, N, Func>> : public std::true_type
-{
-};
-
-template <class T, int M, int N>
-struct is_matrix_impl<Matrix<T, M, N>> : public std::true_type
-{
-};
-
-template <class T, int M, int N>
-struct is_matrix_impl<MatrixView<T, M, N>> : public std::true_type
-{
-};
-
-template <class T>
-struct is_matrix : public is_matrix_impl<typename std::remove_cv<T>::type>::type
-{
-};
-
-// Vector
-template <class>
-struct is_vector_impl : public std::false_type
-{
-};
-
-template <class T, int N, class Func>
-struct is_vector_impl<VectorExpression<T, N, Func>> : public std::true_type
-{
-};
-
-template <class T, int N>
-struct is_vector_impl<Vector<T, N>> : public std::true_type
-{
-};
-
-template <class T, int N>
-struct is_vector_impl<VectorView<T, N>> : public std::true_type
-{
-};
-
-template <class T>
-struct is_vector : public is_vector_impl<typename std::remove_cv<T>::type>::type
-{
-};
-
 // Quaternion
 template <class>
 struct is_quaternion_impl : public std::false_type
@@ -304,22 +240,6 @@ createTensor3Expression( const Func& f )
     return Tensor3Expression<T, M, N, P, Func>( f );
 }
 
-// Matrix
-template <class T, int M, int N, class Func>
-KOKKOS_INLINE_FUNCTION MatrixExpression<T, M, N, Func>
-createMatrixExpression( const Func& f )
-{
-    return MatrixExpression<T, M, N, Func>( f );
-}
-
-// Vector.
-template <class T, int N, class Func>
-KOKKOS_INLINE_FUNCTION VectorExpression<T, N, Func>
-createVectorExpression( const Func& f )
-{
-    return VectorExpression<T, N, Func>( f );
-}
-
 // Quaternion
 template <class T, class Func>
 KOKKOS_INLINE_FUNCTION QuaternionExpression<T, Func>
@@ -382,7 +302,7 @@ struct Tensor4Expression
     auto vector( const ALL_INDEX_t, const int n, const int p,
                  const int q ) const
     {
-        return createVectorExpression<T, M>(
+        return Cabana::LinearAlgebra::createVectorExpression<T, M>(
             [=]( const int i ) { return ( *this )( i, n, p, q ); } );
     }
     // Get a row as a vector view.
@@ -390,7 +310,7 @@ struct Tensor4Expression
     auto vector( const int m, const ALL_INDEX_t, const int p,
                  const int q ) const
     {
-        return createVectorExpression<T, N>(
+        return Cabana::LinearAlgebra::createVectorExpression<T, N>(
             [=]( const int i ) { return ( *this )( m, i, p, q ); } );
     }
     // Get a row as a vector view.
@@ -398,7 +318,7 @@ struct Tensor4Expression
     auto vector( const int m, const int n, const ALL_INDEX_t,
                  const int q ) const
     {
-        return createVectorExpression<T, P>(
+        return Cabana::LinearAlgebra::createVectorExpression<T, P>(
             [=]( const int i ) { return ( *this )( m, n, i, q ); } );
     }
 
@@ -407,7 +327,7 @@ struct Tensor4Expression
     auto vector( const int m, const int n, const int p,
                  const ALL_INDEX_t ) const
     {
-        return createVectorExpression<T, Q>(
+        return Cabana::LinearAlgebra::createVectorExpression<T, Q>(
             [=]( const int i ) { return ( *this )( m, n, p, i ); } );
     }
 
@@ -416,7 +336,7 @@ struct Tensor4Expression
     auto matrix( const ALL_INDEX_t, const ALL_INDEX_t, const int p,
                  const int q ) const
     {
-        return createMatrixExpression<T, M, N>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, M, N>(
             [=]( const int i, const int j )
             { return ( *this )( i, j, p, q ); } );
     }
@@ -425,7 +345,7 @@ struct Tensor4Expression
     auto matrix( const ALL_INDEX_t, const int n, const ALL_INDEX_t,
                  const int q ) const
     {
-        return createMatrixExpression<T, M, P>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, M, P>(
             [=]( const int i, const int j )
             { return ( *this )( i, n, j, q ); } );
     }
@@ -434,7 +354,7 @@ struct Tensor4Expression
     auto matrix( const int m, const ALL_INDEX_t, const ALL_INDEX_t,
                  const int q ) const
     {
-        return createMatrixExpression<T, N, P>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, N, P>(
             [=]( const int i, const int j )
             { return ( *this )( m, i, j, q ); } );
     }
@@ -443,7 +363,7 @@ struct Tensor4Expression
     auto matrix( const ALL_INDEX_t, const int n, const int p,
                  const ALL_INDEX_t ) const
     {
-        return createMatrixExpression<T, M, Q>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, M, Q>(
             [=]( const int i, const int j )
             { return ( *this )( i, n, p, j ); } );
     }
@@ -452,7 +372,7 @@ struct Tensor4Expression
     auto matrix( const int m, const ALL_INDEX_t, const int p,
                  const ALL_INDEX_t ) const
     {
-        return createMatrixExpression<T, N, Q>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, N, Q>(
             [=]( const int i, const int j )
             { return ( *this )( m, i, p, j ); } );
     }
@@ -461,7 +381,7 @@ struct Tensor4Expression
     auto matrix( const int m, const int n, const ALL_INDEX_t,
                  const ALL_INDEX_t ) const
     {
-        return createMatrixExpression<T, P, Q>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, P, Q>(
             [=]( const int i, const int j )
             { return ( *this )( m, n, i, j ); } );
     }
@@ -550,143 +470,45 @@ struct Tensor3Expression
     KOKKOS_INLINE_FUNCTION
     auto vector( const ALL_INDEX_t, const int n, const int p ) const
     {
-        return createVectorExpression<T, M>( [=]( const int i )
-                                             { return ( *this )( i, n, p ); } );
+        return Cabana::LinearAlgebra::createVectorExpression<T, M>(
+            [=]( const int i ) { return ( *this )( i, n, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const ALL_INDEX_t, const int p ) const
     {
-        return createVectorExpression<T, N>( [=]( const int i )
-                                             { return ( *this )( m, i, p ); } );
+        return Cabana::LinearAlgebra::createVectorExpression<T, N>(
+            [=]( const int i ) { return ( *this )( m, i, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const int n, const ALL_INDEX_t ) const
     {
-        return createVectorExpression<T, P>( [=]( const int i )
-                                             { return ( *this )( m, n, i ); } );
+        return Cabana::LinearAlgebra::createVectorExpression<T, P>(
+            [=]( const int i ) { return ( *this )( m, n, i ); } );
     }
 
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
     auto matrix( const ALL_INDEX_t, const ALL_INDEX_t, const int p ) const
     {
-        return createMatrixExpression<T, M, N>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, M, N>(
             [=]( const int i, const int j ) { return ( *this )( i, j, p ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
     auto matrix( const ALL_INDEX_t, const int n, const ALL_INDEX_t ) const
     {
-        return createMatrixExpression<T, M, P>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, M, P>(
             [=]( const int i, const int j ) { return ( *this )( i, n, j ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
     auto matrix( const int m, const ALL_INDEX_t, const ALL_INDEX_t ) const
     {
-        return createMatrixExpression<T, N, P>(
+        return Cabana::LinearAlgebra::createMatrixExpression<T, N, P>(
             [=]( const int i, const int j ) { return ( *this )( m, i, j ); } );
     }
-};
-
-// Matrix expression container.
-template <class T, int M, int N, class Func>
-struct MatrixExpression
-{
-    static constexpr int extent_0 = M;
-    static constexpr int extent_1 = N;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-
-    using eval_type = Matrix<T, M, N>;
-    using copy_type = Matrix<T, M, N>;
-
-    Func _f;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    MatrixExpression() = default;
-
-    // Create an expression from a callable object.
-    KOKKOS_INLINE_FUNCTION
-    MatrixExpression( const Func& f )
-        : _f( f )
-    {
-    }
-
-    // Extent.
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
-    }
-
-    // Evaluate the expression at an index.
-    KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i, const int j ) const
-    {
-        return _f( i, j );
-    }
-
-    // Get a row as a vector expression.
-    KOKKOS_INLINE_FUNCTION
-    auto row( const int n ) const
-    {
-        return createVectorExpression<T, N>( [=]( const int i )
-                                             { return ( *this )( n, i ); } );
-    }
-
-    // Get a column as a vector expression.
-    KOKKOS_INLINE_FUNCTION
-    auto column( const int n ) const
-    {
-        return createVectorExpression<T, M>( [=]( const int i )
-                                             { return ( *this )( i, n ); } );
-    }
-};
-
-//---------------------------------------------------------------------------//
-// Vector expression container.
-template <class T, int N, class Func>
-struct VectorExpression
-{
-    static constexpr int extent_0 = N;
-    static constexpr int extent_1 = 1;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-
-    using eval_type = Vector<T, N>;
-    using copy_type = Vector<T, N>;
-
-    Func _f;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    VectorExpression() = default;
-
-    // Create an expression from a callable object.
-    KOKKOS_INLINE_FUNCTION
-    VectorExpression( const Func& f )
-        : _f( f )
-    {
-    }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const { return N; }
-
-    // Evaluate the expression at an index.
-    KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i ) const { return _f( i ); }
-
-    // Evaluate the expression at an index. 2D version for vectors treated as
-    // matrices.
-    KOKKOS_INLINE_FUNCTION
-    value_type operator()( const int i, int ) const { return _f( i ); }
 };
 
 //---------------------------------------------------------------------------//
@@ -728,1219 +550,6 @@ struct QuaternionExpression
     // matrices.
     KOKKOS_INLINE_FUNCTION
     value_type operator()( const int i, int ) const { return _f( i ); }
-};
-
-//---------------------------------------------------------------------------//
-// Matrix
-//---------------------------------------------------------------------------//
-// Dense matrix.
-template <class T, int M, int N>
-struct Matrix
-{
-    T _d[M][N];
-
-    static constexpr int extent_0 = M;
-    static constexpr int extent_1 = N;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = MatrixView<T, M, N>;
-    using copy_type = Matrix<T, M, N>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    Matrix() = default;
-
-    // Initializer list constructor.
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const std::initializer_list<std::initializer_list<T>> data )
-    {
-        int i = 0;
-        int j = 0;
-        for ( const auto& row : data )
-        {
-            j = 0;
-            for ( const auto& value : row )
-            {
-                _d[i][j] = value;
-                ++j;
-            }
-            ++i;
-        }
-    }
-
-    // Deep copy constructor. Triggers expression evaluation.
-    template <
-        class Expression,
-        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
-    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = e( i, j );
-    }
-
-    // Scalar constructor.
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const T value )
-    {
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = value;
-    }
-
-    // Assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = e( i, j );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) += e( i, j );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) -= e( i, j );
-        return *this;
-    }
-
-    // Initializer list assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    Matrix&
-    operator=( const std::initializer_list<std::initializer_list<T>> data )
-    {
-        int i = 0;
-        int j = 0;
-        for ( const auto& row : data )
-        {
-            j = 0;
-            for ( const auto& value : row )
-            {
-                _d[i][j] = value;
-                ++j;
-            }
-            ++i;
-        }
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const T value )
-    {
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = value;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return N; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int d ) const { return ( 0 == d ) ? N : 1; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
-    }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
-    {
-        return _d[i][j];
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j ) { return _d[i][j]; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( &_d[0][0] ); }
-
-    // Get a row as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> row( const int n ) const
-    {
-        return VectorView<T, N>( const_cast<T*>( &_d[n][0] ), 1 );
-    }
-
-    // Get a column as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> column( const int n ) const
-    {
-        return VectorView<T, M>( const_cast<T*>( &_d[0][n] ), N );
-    }
-};
-
-//---------------------------------------------------------------------------//
-// Scalar overload.
-template <class T>
-struct Matrix<T, 1, 1>
-{
-    T _d;
-
-    static constexpr int extent_0 = 1;
-    static constexpr int extent_1 = 1;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = MatrixView<T, 1, 1>;
-    using copy_type = Matrix<T, 1, 1>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    Matrix() = default;
-
-    // Scalar constructor.
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const T value )
-        : _d( value )
-    {
-    }
-
-    // Deep copy constructor. Triggers expression evaluation.
-    template <
-        class Expression,
-        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
-    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d = e( 0, 0 );
-    }
-
-    // Assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d = e( 0, 0 );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d += e( 0, 0 );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d -= e( 0, 0 );
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const T value )
-    {
-        _d = value;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int ) const { return 1; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const { return 1; }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int, const int ) const { return _d; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int, const int ) { return _d; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( &_d ); }
-
-    // Scalar conversion operator.
-    KOKKOS_INLINE_FUNCTION
-    operator value_type() const { return _d; }
-};
-
-template <class T>
-struct Matrix<T, 3, 3>
-{
-    T _d[3][3];
-
-    static constexpr int extent_0 = 3;
-    static constexpr int extent_1 = 3;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = MatrixView<T, 3, 3>;
-    using copy_type = Matrix<T, 3, 3>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    Matrix() = default;
-
-    // Initializer list constructor.
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const std::initializer_list<std::initializer_list<T>> data )
-    {
-        int i = 0;
-        int j = 0;
-        for ( const auto& row : data )
-        {
-            j = 0;
-            for ( const auto& value : row )
-            {
-                _d[i][j] = value;
-                ++j;
-            }
-            ++i;
-        }
-    }
-
-    // Quaternion to matrix explicit constructor
-    explicit KOKKOS_INLINE_FUNCTION Matrix( const Quaternion<T>& q )
-    {
-        value_type n = q( 0 ) * q( 0 ) + q( 1 ) * q( 1 ) + q( 2 ) * q( 2 ) +
-                       q( 3 ) * q( 3 );
-        value_type s = n == 0 ? 0 : 2.0 / n;
-
-        _d[0][0] = 1.0 - s * ( q( 2 ) * q( 2 ) + q( 3 ) * q( 3 ) );
-        _d[0][1] = s * ( q( 1 ) * q( 2 ) - q( 0 ) * q( 3 ) );
-        _d[0][2] = s * ( q( 1 ) * q( 3 ) + q( 0 ) * q( 2 ) );
-        _d[1][0] = s * ( q( 1 ) * q( 2 ) + q( 0 ) * q( 3 ) );
-        _d[1][1] = 1.0 - s * ( q( 1 ) * q( 1 ) + q( 3 ) * q( 3 ) );
-        _d[1][2] = s * ( q( 2 ) * q( 3 ) - q( 0 ) * q( 1 ) );
-        _d[2][0] = s * ( q( 1 ) * q( 3 ) - q( 0 ) * q( 2 ) );
-        _d[2][1] = s * ( q( 2 ) * q( 3 ) + q( 0 ) * q( 1 ) );
-        _d[2][2] = 1.0 - s * ( q( 1 ) * q( 1 ) + q( 2 ) * q( 2 ) );
-    }
-
-    // Deep copy constructor. Triggers expression evaluation.
-    template <
-        class Expression,
-        typename std::enable_if<is_matrix<Expression>::value, int>::type = 0>
-    KOKKOS_INLINE_FUNCTION Matrix( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) = e( i, j );
-    }
-
-    // Scalar constructor.
-    KOKKOS_INLINE_FUNCTION
-    Matrix( const T value )
-    {
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) = value;
-    }
-
-    // Assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) = e( i, j );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) += e( i, j );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, Matrix&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) -= e( i, j );
-        return *this;
-    }
-
-    // Initializer list assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    Matrix&
-    operator=( const std::initializer_list<std::initializer_list<T>> data )
-    {
-        int i = 0;
-        int j = 0;
-        for ( const auto& row : data )
-        {
-            j = 0;
-            for ( const auto& value : row )
-            {
-                _d[i][j] = value;
-                ++j;
-            }
-            ++i;
-        }
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Matrix& operator=( const T value )
-    {
-        for ( int i = 0; i < extent_0; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < extent_1; ++j )
-                ( *this )( i, j ) = value;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return extent_1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int d ) const { return ( 0 == d ) ? extent_1 : 1; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
-    }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
-    {
-        return _d[i][j];
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j ) { return _d[i][j]; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( &_d[0][0] ); }
-
-    // Get a row as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, 3> row( const int n ) const
-    {
-        return VectorView<T, 3>( const_cast<T*>( &_d[n][0] ), 1 );
-    }
-
-    // Get a column as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, 3> column( const int n ) const
-    {
-        return VectorView<T, 3>( const_cast<T*>( &_d[0][n] ), extent_1 );
-    }
-};
-
-//---------------------------------------------------------------------------//
-// View for wrapping matrix data.
-//
-// NOTE: Data in this view may be non-contiguous.
-template <class T, int M, int N>
-struct MatrixView
-{
-    T* _d;
-    int _stride[2];
-
-    static constexpr int extent_0 = M;
-    static constexpr int extent_1 = N;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = MatrixView<T, M, N>;
-    using copy_type = Matrix<T, M, N>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    MatrixView() = default;
-
-    // Matrix constructor.
-    KOKKOS_INLINE_FUNCTION
-    MatrixView( const Matrix<T, M, N>& m )
-        : _d( m.data() )
-    {
-        _stride[0] = m.stride_0();
-        _stride[1] = m.stride_1();
-    }
-
-    // Pointer constructor.
-    KOKKOS_INLINE_FUNCTION
-    MatrixView( T* data, const int stride_0, const int stride_1 )
-        : _d( data )
-    {
-        _stride[0] = stride_0;
-        _stride[1] = stride_1;
-    }
-
-    // Assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = e( i, j );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) += e( i, j );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_matrix<Expression>::value, MatrixView&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) -= e( i, j );
-        return *this;
-    }
-
-    // Initializer list assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    MatrixView&
-    operator=( const std::initializer_list<std::initializer_list<T>> data )
-    {
-        int i = 0;
-        int j = 0;
-        for ( const auto& row : data )
-        {
-            j = 0;
-            for ( const auto& value : row )
-            {
-                ( *this )( i, j ) = value;
-                ++j;
-            }
-            ++i;
-        }
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    MatrixView& operator=( const T value )
-    {
-        for ( int i = 0; i < M; ++i )
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-            for ( int j = 0; j < N; ++j )
-                ( *this )( i, j ) = value;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return _stride[0]; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return _stride[1]; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int d ) const { return _stride[d]; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? extent_1 : 0 );
-    }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int j ) const
-    {
-        return _d[_stride[0] * i + _stride[1] * j];
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int j )
-    {
-        return _d[_stride[0] * i + _stride[1] * j];
-    }
-
-    // Get a row as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> row( const int n ) const
-    {
-        return VectorView<T, N>( const_cast<T*>( &_d[_stride[0] * n] ),
-                                 _stride[1] );
-    }
-
-    // Get a column as a vector view.
-    KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> column( const int n ) const
-    {
-        return VectorView<T, M>( const_cast<T*>( &_d[_stride[1] * n] ),
-                                 _stride[0] );
-    }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( _d ); }
-};
-
-//---------------------------------------------------------------------------//
-// Vector
-//---------------------------------------------------------------------------//
-// Dense vector.
-template <class T, int N>
-struct Vector
-{
-    T _d[N];
-
-    static constexpr int extent_0 = N;
-    static constexpr int extent_1 = 1;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = VectorView<T, N>;
-    using copy_type = Vector<T, N>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    Vector() = default;
-
-    // Initializer list constructor.
-    KOKKOS_INLINE_FUNCTION
-    Vector( const std::initializer_list<T> data )
-    {
-        int i = 0;
-        for ( const auto& value : data )
-        {
-            _d[i] = value;
-            ++i;
-        }
-    }
-
-    // Deep copy constructor. Triggers expression evaluation.
-    template <
-        class Expression,
-        typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
-    KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = e( i );
-    }
-
-    // Scalar constructor.
-    KOKKOS_INLINE_FUNCTION
-    Vector( const T value )
-    {
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = value;
-    }
-
-    // Deep copy assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = e( i );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) += e( i );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) -= e( i );
-        return *this;
-    }
-
-    // Initializer list assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const std::initializer_list<T> data )
-    {
-        int i = 0;
-        for ( const auto& value : data )
-        {
-            _d[i] = value;
-            ++i;
-        }
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const T value )
-    {
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = value;
-        return *this;
-    }
-
-    // Normalization
-    KOKKOS_INLINE_FUNCTION
-    Vector& normalize()
-    {
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) /= norm2;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return 1; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 0; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int d ) const { return ( 0 == d ) ? 1 : 0; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
-    }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i ) const { return _d[i]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i ) { return _d[i]; }
-
-    // Access an individual element. 2D version for vectors treated as matrices.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int ) const { return _d[i]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int ) { return _d[i]; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( &_d[0] ); }
-};
-
-//---------------------------------------------------------------------------//
-// Scalar overload.
-template <class T>
-struct Vector<T, 1>
-{
-    T _d;
-
-    static constexpr int extent_0 = 1;
-    static constexpr int extent_1 = 1;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = VectorView<T, 1>;
-    using copy_type = Vector<T, 1>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    Vector() = default;
-
-    // Scalar constructor.
-    KOKKOS_INLINE_FUNCTION
-    Vector( const T value )
-        : _d( value )
-    {
-    }
-
-    // Deep copy constructor. Triggers expression evaluation.
-    template <
-        class Expression,
-        typename std::enable_if<is_vector<Expression>::value, int>::type = 0>
-    KOKKOS_INLINE_FUNCTION Vector( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d = e( 0 );
-    }
-
-    // Deep copy assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d = e( 0 );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d += e( 0 );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, Vector&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-        _d -= e( 0 );
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    Vector& operator=( const T value )
-    {
-        _d = value;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 1; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int ) const { return 1; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int ) const { return 1; }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int ) const { return _d; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int ) { return _d; }
-
-    // Access an individual element. 2D version for vectors treated as matrices.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int, const int ) const { return _d; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int, const int ) { return _d; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( &_d ); }
-
-    // Scalar conversion operator.
-    KOKKOS_INLINE_FUNCTION
-    operator value_type() const { return _d; }
-};
-
-//---------------------------------------------------------------------------//
-// View for wrapping vector data.
-//
-// NOTE: Data in this view may be non-contiguous.
-template <class T, int N>
-struct VectorView
-{
-    T* _d;
-    int _stride;
-
-    static constexpr int extent_0 = N;
-    static constexpr int extent_1 = 1;
-
-    using value_type = T;
-    using non_const_value_type = typename std::remove_cv<T>::type;
-    using pointer = T*;
-    using reference = T&;
-    using const_reference = const T&;
-
-    using eval_type = VectorView<T, N>;
-    using copy_type = Vector<T, N>;
-
-    // Default constructor.
-    KOKKOS_DEFAULTED_FUNCTION
-    VectorView() = default;
-
-    // Vector constructor.
-    KOKKOS_INLINE_FUNCTION
-    VectorView( const Vector<T, N>& v )
-        : _d( v.data() )
-        , _stride( v.stride_0() )
-    {
-    }
-
-    // Pointer constructor.
-    KOKKOS_INLINE_FUNCTION
-    VectorView( T* data, const int stride )
-        : _d( data )
-        , _stride( stride )
-    {
-    }
-
-    // Assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
-        operator=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = e( i );
-        return *this;
-    }
-
-    // Addition assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
-        operator+=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) += e( i );
-        return *this;
-    }
-
-    // Subtraction assignment operator. Triggers expression evaluation.
-    template <class Expression>
-    KOKKOS_INLINE_FUNCTION
-        typename std::enable_if<is_vector<Expression>::value, VectorView&>::type
-        operator-=( const Expression& e )
-    {
-        static_assert( Expression::extent_0 == extent_0, "Extents must match" );
-        static_assert( Expression::extent_1 == extent_1, "Extents must match" );
-
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) -= e( i );
-        return *this;
-    }
-
-    // Initializer list assignment operator.
-    KOKKOS_INLINE_FUNCTION
-    VectorView& operator=( const std::initializer_list<T> data )
-    {
-        int i = 0;
-        for ( const auto& value : data )
-        {
-            ( *this )( i ) = value;
-            ++i;
-        }
-        return *this;
-    }
-
-    // Scalar value assignment.
-    KOKKOS_INLINE_FUNCTION
-    VectorView& operator=( const T value )
-    {
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) = value;
-        return *this;
-    }
-
-    // Normalization
-    KOKKOS_INLINE_FUNCTION
-    VectorView& normalize()
-    {
-#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
-#pragma unroll
-#endif
-        auto norm2 = Kokkos::sqrt( ~( *this ) * ( *this ) );
-        for ( int i = 0; i < N; ++i )
-            ( *this )( i ) /= norm2;
-        return *this;
-    }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_0() const { return _stride; }
-
-    // Strides.
-    KOKKOS_INLINE_FUNCTION
-    int stride_1() const { return 0; }
-
-    KOKKOS_INLINE_FUNCTION
-    int stride( const int d ) const { return ( 0 == d ) ? _stride : 0; }
-
-    // Extent
-    KOKKOS_INLINE_FUNCTION
-    constexpr int extent( const int d ) const
-    {
-        return d == 0 ? extent_0 : ( d == 1 ? 1 : 0 );
-    }
-
-    // Access an individual element.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i ) const { return _d[_stride * i]; }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i ) { return _d[_stride * i]; }
-
-    // Access an individual element. 2D version for vectors treated as matrices.
-    KOKKOS_INLINE_FUNCTION
-    const_reference operator()( const int i, const int ) const
-    {
-        return _d[_stride * i];
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    reference operator()( const int i, const int ) { return _d[_stride * i]; }
-
-    // Get the raw data.
-    KOKKOS_INLINE_FUNCTION
-    pointer data() const { return const_cast<pointer>( _d ); }
 };
 
 //---------------------------------------------------------------------------//
@@ -2184,43 +793,52 @@ struct Tensor3
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> vector( const ALL_INDEX_t, const int n, const int p ) const
+    Cabana::LinearAlgebra::VectorView<T, M>
+    vector( const ALL_INDEX_t, const int n, const int p ) const
     {
-        return VectorView<T, M>( const_cast<T*>( &_d[0][n][p] ), N * P );
+        return Cabana::LinearAlgebra::VectorView<T, M>(
+            const_cast<T*>( &_d[0][n][p] ), N * P );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> vector( const int m, const ALL_INDEX_t, const int p ) const
+    Cabana::LinearAlgebra::VectorView<T, N>
+    vector( const int m, const ALL_INDEX_t, const int p ) const
     {
-        return VectorView<T, N>( const_cast<T*>( &_d[m][0][p] ), P );
+        return Cabana::LinearAlgebra::VectorView<T, N>(
+            const_cast<T*>( &_d[m][0][p] ), P );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, P> vector( const int m, const int n, const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::VectorView<T, P> vector( const int m, const int n,
+                                                    const ALL_INDEX_t ) const
     {
-        return VectorView<T, P>( const_cast<T*>( &_d[m][n][0] ), 1 );
+        return Cabana::LinearAlgebra::VectorView<T, P>(
+            const_cast<T*>( &_d[m][n][0] ), 1 );
     }
 
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, N> matrix( const ALL_INDEX_t, const ALL_INDEX_t,
-                                const int p ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, N>
+    matrix( const ALL_INDEX_t, const ALL_INDEX_t, const int p ) const
     {
-        return MatrixView<T, M, N>( const_cast<T*>( &_d[0][0][p] ), N * P, P );
+        return Cabana::LinearAlgebra::MatrixView<T, M, N>(
+            const_cast<T*>( &_d[0][0][p] ), N * P, P );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, P> matrix( const ALL_INDEX_t, const int n,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, P>
+    matrix( const ALL_INDEX_t, const int n, const ALL_INDEX_t ) const
     {
-        return MatrixView<T, M, P>( const_cast<T*>( &_d[0][n][0] ), N * P, 1 );
+        return Cabana::LinearAlgebra::MatrixView<T, M, P>(
+            const_cast<T*>( &_d[0][n][0] ), N * P, 1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, P> matrix( const int m, const ALL_INDEX_t,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, P>
+    matrix( const int m, const ALL_INDEX_t, const ALL_INDEX_t ) const
     {
-        return MatrixView<T, N, P>( const_cast<T*>( &_d[m][0][0] ), P, 1 );
+        return Cabana::LinearAlgebra::MatrixView<T, N, P>(
+            const_cast<T*>( &_d[m][0][0] ), P, 1 );
     }
 };
 
@@ -2423,49 +1041,52 @@ struct Tensor3View
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> vector( const ALL_INDEX_t, const int n, const int p ) const
+    Cabana::LinearAlgebra::VectorView<T, M>
+    vector( const ALL_INDEX_t, const int n, const int p ) const
     {
-        return VectorView<T, M>(
+        return Cabana::LinearAlgebra::VectorView<T, M>(
             const_cast<T*>( &_d[_stride[1] * n + _stride[2] * p] ), N * P );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> vector( const int m, const ALL_INDEX_t, const int p ) const
+    Cabana::LinearAlgebra::VectorView<T, N>
+    vector( const int m, const ALL_INDEX_t, const int p ) const
     {
-        return VectorView<T, N>(
+        return Cabana::LinearAlgebra::VectorView<T, N>(
             const_cast<T*>( &_d[_stride[0] * m + _stride[2] * p] ), P );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, P> vector( const int m, const int n, const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::VectorView<T, P> vector( const int m, const int n,
+                                                    const ALL_INDEX_t ) const
     {
-        return VectorView<T, P>(
+        return Cabana::LinearAlgebra::VectorView<T, P>(
             const_cast<T*>( &_d[_stride[0] * m + _stride[1] * n] ), 1 );
     }
 
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, N> matrix( const ALL_INDEX_t, const ALL_INDEX_t,
-                                const int p ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, N>
+    matrix( const ALL_INDEX_t, const ALL_INDEX_t, const int p ) const
     {
-        return MatrixView<T, M, N>( const_cast<T*>( &_d[_stride[2] * p] ),
-                                    N * P, P );
+        return Cabana::LinearAlgebra::MatrixView<T, M, N>(
+            const_cast<T*>( &_d[_stride[2] * p] ), N * P, P );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, P> matrix( const ALL_INDEX_t, const int n,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, P>
+    matrix( const ALL_INDEX_t, const int n, const ALL_INDEX_t ) const
     {
-        return MatrixView<T, M, P>( const_cast<T*>( &_d[_stride[1] * n] ),
-                                    N * P, 1 );
+        return Cabana::LinearAlgebra::MatrixView<T, M, P>(
+            const_cast<T*>( &_d[_stride[1] * n] ), N * P, 1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, P> matrix( const int m, const ALL_INDEX_t,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, P>
+    matrix( const int m, const ALL_INDEX_t, const ALL_INDEX_t ) const
     {
-        return MatrixView<T, N, P>( const_cast<T*>( &_d[_stride[0] * m] ), P,
-                                    1 );
+        return Cabana::LinearAlgebra::MatrixView<T, N, P>(
+            const_cast<T*>( &_d[_stride[0] * m] ), P, 1 );
     }
 
     // Get the raw data.
@@ -2756,77 +1377,92 @@ struct Tensor4
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> vector( const ALL_INDEX_t, const int n, const int p,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, M>
+    vector( const ALL_INDEX_t, const int n, const int p, const int q ) const
     {
-        return VectorView<T, M>( const_cast<T*>( &_d[0][n][p][q] ), N * P * Q );
+        return Cabana::LinearAlgebra::VectorView<T, M>(
+            const_cast<T*>( &_d[0][n][p][q] ), N * P * Q );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> vector( const int m, const ALL_INDEX_t, const int p,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, N>
+    vector( const int m, const ALL_INDEX_t, const int p, const int q ) const
     {
-        return VectorView<T, N>( const_cast<T*>( &_d[m][0][p][q] ), P * Q );
+        return Cabana::LinearAlgebra::VectorView<T, N>(
+            const_cast<T*>( &_d[m][0][p][q] ), P * Q );
     } // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, P> vector( const int m, const int n, const ALL_INDEX_t,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, P>
+    vector( const int m, const int n, const ALL_INDEX_t, const int q ) const
     {
-        return VectorView<T, P>( const_cast<T*>( &_d[m][n][0][q] ), Q );
+        return Cabana::LinearAlgebra::VectorView<T, P>(
+            const_cast<T*>( &_d[m][n][0][q] ), Q );
     } // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, Q> vector( const int m, const int n, const int p,
-                             const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::VectorView<T, Q>
+    vector( const int m, const int n, const int p, const ALL_INDEX_t ) const
     {
-        return VectorView<T, Q>( const_cast<T*>( &_d[m][n][p][0] ), 1 );
+        return Cabana::LinearAlgebra::VectorView<T, Q>(
+            const_cast<T*>( &_d[m][n][p][0] ), 1 );
     }
 
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, N> matrix( const ALL_INDEX_t, const ALL_INDEX_t,
-                                const int p, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, N> matrix( const ALL_INDEX_t,
+                                                       const ALL_INDEX_t,
+                                                       const int p,
+                                                       const int q ) const
     {
-        return MatrixView<T, M, N>( const_cast<T*>( &_d[0][0][p][q] ),
-                                    N * P * Q, P * Q );
+        return Cabana::LinearAlgebra::MatrixView<T, M, N>(
+            const_cast<T*>( &_d[0][0][p][q] ), N * P * Q, P * Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, P> matrix( const ALL_INDEX_t, const int n,
-                                const ALL_INDEX_t, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, P> matrix( const ALL_INDEX_t,
+                                                       const int n,
+                                                       const ALL_INDEX_t,
+                                                       const int q ) const
     {
-        return MatrixView<T, M, P>( const_cast<T*>( &_d[0][n][0][q] ),
-                                    N * P * Q, Q );
+        return Cabana::LinearAlgebra::MatrixView<T, M, P>(
+            const_cast<T*>( &_d[0][n][0][q] ), N * P * Q, Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, P> matrix( const int m, const ALL_INDEX_t,
-                                const ALL_INDEX_t, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, P> matrix( const int m,
+                                                       const ALL_INDEX_t,
+                                                       const ALL_INDEX_t,
+                                                       const int q ) const
     {
-        return MatrixView<T, N, P>( const_cast<T*>( &_d[m][0][0][q] ), P * Q,
-                                    Q );
+        return Cabana::LinearAlgebra::MatrixView<T, N, P>(
+            const_cast<T*>( &_d[m][0][0][q] ), P * Q, Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, Q> matrix( const ALL_INDEX_t, const int n, const int p,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, Q> matrix( const ALL_INDEX_t,
+                                                       const int n, const int p,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, M, Q>( const_cast<T*>( &_d[0][n][p][0] ),
-                                    N * P * Q, 1 );
+        return Cabana::LinearAlgebra::MatrixView<T, M, Q>(
+            const_cast<T*>( &_d[0][n][p][0] ), N * P * Q, 1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, Q> matrix( const int m, const ALL_INDEX_t, const int p,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, Q> matrix( const int m,
+                                                       const ALL_INDEX_t,
+                                                       const int p,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, N, Q>( const_cast<T*>( &_d[m][0][p][0] ), P * Q,
-                                    1 );
+        return Cabana::LinearAlgebra::MatrixView<T, N, Q>(
+            const_cast<T*>( &_d[m][0][p][0] ), P * Q, 1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, P, Q> matrix( const int m, const int n, const ALL_INDEX_t,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, P, Q> matrix( const int m, const int n,
+                                                       const ALL_INDEX_t,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, P, Q>( const_cast<T*>( &_d[m][n][0][0] ), Q, 1 );
+        return Cabana::LinearAlgebra::MatrixView<T, P, Q>(
+            const_cast<T*>( &_d[m][n][0][0] ), Q, 1 );
     }
 
     // Get a tensor3 as a Tensor3 view.
@@ -3096,40 +1732,40 @@ struct Tensor4View
 
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, M> vector( const ALL_INDEX_t, const int n, const int p,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, M>
+    vector( const ALL_INDEX_t, const int n, const int p, const int q ) const
     {
-        return VectorView<T, M>(
+        return Cabana::LinearAlgebra::VectorView<T, M>(
             const_cast<T*>(
                 &_d[_stride[1] * n + _stride[2] * p + _stride[3] * q] ),
             N * P * Q );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, N> vector( const int m, const ALL_INDEX_t, const int p,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, N>
+    vector( const int m, const ALL_INDEX_t, const int p, const int q ) const
     {
-        return VectorView<T, N>(
+        return Cabana::LinearAlgebra::VectorView<T, N>(
             const_cast<T*>(
                 &_d[_stride[0] * m + _stride[2] * p + _stride[3] * q] ),
             P * Q );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, P> vector( const int m, const int n, const ALL_INDEX_t,
-                             const int q ) const
+    Cabana::LinearAlgebra::VectorView<T, P>
+    vector( const int m, const int n, const ALL_INDEX_t, const int q ) const
     {
-        return VectorView<T, P>(
+        return Cabana::LinearAlgebra::VectorView<T, P>(
             const_cast<T*>(
                 &_d[_stride[0] * m + _stride[1] * n + _stride[3] * q] ),
             Q );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, Q> vector( const int m, const int n, const int p,
-                             const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::VectorView<T, Q>
+    vector( const int m, const int n, const int p, const ALL_INDEX_t ) const
     {
-        return VectorView<T, Q>(
+        return Cabana::LinearAlgebra::VectorView<T, Q>(
             const_cast<T*>(
                 &_d[_stride[0] * m + _stride[1] * n + _stride[2] * p] ),
             1 );
@@ -3137,53 +1773,63 @@ struct Tensor4View
 
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, N> matrix( const ALL_INDEX_t, const ALL_INDEX_t,
-                                const int p, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, N> matrix( const ALL_INDEX_t,
+                                                       const ALL_INDEX_t,
+                                                       const int p,
+                                                       const int q ) const
     {
-        return MatrixView<T, M, N>(
+        return Cabana::LinearAlgebra::MatrixView<T, M, N>(
             const_cast<T*>( &_d[_stride[2] * p + _stride[3] * q] ), N * P * Q,
             P * Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, P> matrix( const ALL_INDEX_t, const int n,
-                                const ALL_INDEX_t, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, P> matrix( const ALL_INDEX_t,
+                                                       const int n,
+                                                       const ALL_INDEX_t,
+                                                       const int q ) const
     {
-        return MatrixView<T, M, P>(
+        return Cabana::LinearAlgebra::MatrixView<T, M, P>(
             const_cast<T*>( &_d[_stride[1] * n + _stride[3] * q] ), N * P * Q,
             Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, P> matrix( const int m, const ALL_INDEX_t,
-                                const ALL_INDEX_t, const int q ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, P> matrix( const int m,
+                                                       const ALL_INDEX_t,
+                                                       const ALL_INDEX_t,
+                                                       const int q ) const
     {
-        return MatrixView<T, N, P>(
+        return Cabana::LinearAlgebra::MatrixView<T, N, P>(
             const_cast<T*>( &_d[_stride[0] * m + _stride[3] * q] ), P * Q, Q );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, M, Q> matrix( const ALL_INDEX_t, const int n, const int p,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, M, Q> matrix( const ALL_INDEX_t,
+                                                       const int n, const int p,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, M, Q>(
+        return Cabana::LinearAlgebra::MatrixView<T, M, Q>(
             const_cast<T*>( &_d[_stride[1] * n + _stride[2] * p] ), N * P * Q,
             1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, N, Q> matrix( const int m, const ALL_INDEX_t, const int p,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, N, Q> matrix( const int m,
+                                                       const ALL_INDEX_t,
+                                                       const int p,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, N, Q>(
+        return Cabana::LinearAlgebra::MatrixView<T, N, Q>(
             const_cast<T*>( &_d[_stride[0] * m + _stride[2] * p] ), P * Q, 1 );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
-    MatrixView<T, P, Q> matrix( const int m, const int n, const ALL_INDEX_t,
-                                const ALL_INDEX_t ) const
+    Cabana::LinearAlgebra::MatrixView<T, P, Q> matrix( const int m, const int n,
+                                                       const ALL_INDEX_t,
+                                                       const ALL_INDEX_t ) const
     {
-        return MatrixView<T, P, Q>(
+        return Cabana::LinearAlgebra::MatrixView<T, P, Q>(
             const_cast<T*>( &_d[_stride[0] * m + _stride[1] * n] ), Q, 1 );
     }
 
@@ -3291,7 +1937,8 @@ struct Quaternion
 
     // Scalar + vector constructor.
     KOKKOS_INLINE_FUNCTION
-    Quaternion( const T value, const VectorView<T, 3> vec )
+    Quaternion( const T value,
+                const Cabana::LinearAlgebra::VectorView<T, 3> vec )
     {
         ( *this )( 0 ) = value;
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
@@ -3425,16 +2072,18 @@ struct Quaternion
 
     // Get the vector part
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, 3> vector() const
+    Cabana::LinearAlgebra::VectorView<T, 3> vector() const
     {
-        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+        return Cabana::LinearAlgebra::VectorView<T, 3>(
+            const_cast<T*>( &_d[1] ), 1 );
     }
 
     // Get the vector part
     KOKKOS_INLINE_FUNCTION
-    VectorView<T, 3> vector()
+    Cabana::LinearAlgebra::VectorView<T, 3> vector()
     {
-        return VectorView<T, 3>( const_cast<T*>( &_d[1] ), 1 );
+        return Cabana::LinearAlgebra::VectorView<T, 3>(
+            const_cast<T*>( &_d[1] ), 1 );
     }
 };
 
@@ -3659,10 +2308,11 @@ KOKKOS_INLINE_FUNCTION void deepCopy( Tensor3A& a, const ExpressionB& b )
 //---------------------------------------------------------------------------//
 // Matrix-matrix deep copy.
 //---------------------------------------------------------------------------//
-template <
-    class MatrixA, class ExpressionB,
-    typename std::enable_if_t<
-        is_matrix<MatrixA>::value && is_matrix<ExpressionB>::value, int> = 0>
+template <class MatrixA, class ExpressionB,
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<MatrixA>::value &&
+                  Cabana::LinearAlgebra::is_matrix<ExpressionB>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION void deepCopy( MatrixA& a, const ExpressionB& b )
 {
     static_assert( std::is_same<typename MatrixA::value_type,
@@ -3683,10 +2333,11 @@ KOKKOS_INLINE_FUNCTION void deepCopy( MatrixA& a, const ExpressionB& b )
 //---------------------------------------------------------------------------//
 // Vector-vector deep copy.
 //---------------------------------------------------------------------------//
-template <
-    class VectorX, class ExpressionY,
-    typename std::enable_if_t<
-        is_vector<VectorX>::value && is_vector<ExpressionY>::value, int> = 0>
+template <class VectorX, class ExpressionY,
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<VectorX>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION void deepCopy( VectorX& x, const ExpressionY& y )
 {
     static_assert( std::is_same<typename VectorX::value_type,
@@ -3725,28 +2376,6 @@ KOKKOS_INLINE_FUNCTION void deepCopy( QuaternionX& x, const ExpressionY& y )
 //---------------------------------------------------------------------------//
 // Transpose.
 //---------------------------------------------------------------------------//
-// Matrix operator.
-template <class Expression,
-          typename std::enable_if_t<is_matrix<Expression>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
-{
-    return createMatrixExpression<typename Expression::value_type,
-                                  Expression::extent_1, Expression::extent_0>(
-        [=]( const int i, const int j ) { return e( j, i ); } );
-}
-
-//---------------------------------------------------------------------------//
-// Vector operator.
-template <class Expression,
-          typename std::enable_if_t<is_vector<Expression>::value, int> = 0>
-KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
-{
-    return createMatrixExpression<typename Expression::value_type, 1,
-                                  Expression::extent_0>(
-        [=]( const int, const int j ) { return e( j ); } );
-}
-
-//---------------------------------------------------------------------------//
 // Quaternion conjugate
 template <class Expression,
           typename std::enable_if_t<is_quaternion<Expression>::value, int> = 0>
@@ -3762,9 +2391,10 @@ KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
 // Matrix-matrix addition.
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionB,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                        is_matrix<ExpressionB>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+                  Cabana::LinearAlgebra::is_matrix<ExpressionB>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionA& a,
                                        const ExpressionB& b )
 {
@@ -3775,18 +2405,20 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionA& a,
                    "extent_0 must match" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_1,
                    "extent_1 must match" );
-    return createMatrixExpression<typename ExpressionA::value_type,
-                                  ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return a( i, j ) + b( i, j ); } );
+    return Cabana::LinearAlgebra::createMatrixExpression<
+        typename ExpressionA::value_type, ExpressionA::extent_0,
+        ExpressionA::extent_1>( [=]( const int i, const int j )
+                                { return a( i, j ) + b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Matrix-matrix subtraction.
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionB,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                        is_matrix<ExpressionB>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+                  Cabana::LinearAlgebra::is_matrix<ExpressionB>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionA& a,
                                        const ExpressionB& b )
 {
@@ -3797,9 +2429,10 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionA& a,
                    "extent_0 must match" );
     static_assert( ExpressionA::extent_1 == ExpressionB::extent_1,
                    "extent_1 must_match" );
-    return createMatrixExpression<typename ExpressionA::value_type,
-                                  ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return a( i, j ) - b( i, j ); } );
+    return Cabana::LinearAlgebra::createMatrixExpression<
+        typename ExpressionA::value_type, ExpressionA::extent_0,
+        ExpressionA::extent_1>( [=]( const int i, const int j )
+                                { return a( i, j ) - b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3807,9 +2440,10 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionA& a,
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionB>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value && is_matrix<ExpressionB>::value,
-    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-           ExpressionB::extent_1>>
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        Cabana::LinearAlgebra::is_matrix<ExpressionB>::value,
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionB::extent_1>>
 operator*( const ExpressionA& a, const ExpressionB& b )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
@@ -3820,8 +2454,8 @@ operator*( const ExpressionA& a, const ExpressionB& b )
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionB::eval_type b_eval = b;
-    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-           ExpressionB::extent_1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionB::extent_1>
         c = static_cast<typename ExpressionA::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
@@ -3840,8 +2474,10 @@ operator*( const ExpressionA& a, const ExpressionB& b )
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionX>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value && is_vector<ExpressionX>::value,
-    Vector<typename ExpressionA::value_type, ExpressionA::extent_0>>
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        Cabana::LinearAlgebra::is_vector<ExpressionX>::value,
+    Cabana::LinearAlgebra::Vector<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0>>
 operator*( const ExpressionA& a, const ExpressionX& x )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
@@ -3852,8 +2488,9 @@ operator*( const ExpressionA& a, const ExpressionX& x )
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
-    Vector<typename ExpressionA::value_type, ExpressionA::extent_0> y =
-        static_cast<typename ExpressionA::value_type>( 0 );
+    Cabana::LinearAlgebra::Vector<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0>
+        y = static_cast<typename ExpressionA::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionA::extent_0; ++i )
 #if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
@@ -3870,9 +2507,10 @@ operator*( const ExpressionA& a, const ExpressionX& x )
 //---------------------------------------------------------------------------//
 template <class ExpressionA, class ExpressionX>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value && is_vector<ExpressionX>::value,
-    Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
-           ExpressionA::extent_1>>
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        Cabana::LinearAlgebra::is_vector<ExpressionX>::value,
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionX::extent_0, ExpressionA::extent_1>>
 operator*( const ExpressionX& x, const ExpressionA& a )
 {
     static_assert( std::is_same<typename ExpressionA::value_type,
@@ -3882,8 +2520,8 @@ operator*( const ExpressionX& x, const ExpressionA& a )
 
     typename ExpressionA::eval_type a_eval = a;
     typename ExpressionX::eval_type x_eval = x;
-    Matrix<typename ExpressionA::value_type, ExpressionX::extent_0,
-           ExpressionA::extent_1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionX::extent_0, ExpressionA::extent_1>
         y;
 
     for ( int i = 0; i < ExpressionX::extent_0; ++i )
@@ -3900,9 +2538,10 @@ operator*( const ExpressionX& x, const ExpressionA& a )
 // Vector-vector addition.
 //---------------------------------------------------------------------------//
 template <class ExpressionX, class ExpressionY,
-          typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                        is_vector<ExpressionY>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
                                        const ExpressionY& y )
 {
@@ -3911,8 +2550,8 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
                    "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createVectorExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0>(
         [=]( const int i ) { return x( i ) + y( i ); } );
 }
 
@@ -3920,9 +2559,10 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
 // Vector-vector subtraction.
 //---------------------------------------------------------------------------//
 template <class ExpressionX, class ExpressionY,
-          typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                        is_vector<ExpressionY>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
                                        const ExpressionY& y )
 {
@@ -3931,8 +2571,8 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
                    "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createVectorExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0>(
         [=]( const int i ) { return x( i ) - y( i ); } );
 }
 
@@ -4011,9 +2651,10 @@ KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
 // Quaternion-matrix conjugation
 //---------------------------------------------------------------------------//
 template <class ExpressionX, class ExpressionY,
-          typename std::enable_if_t<is_matrix<ExpressionX>::value &&
-                                        is_quaternion<ExpressionY>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionX>::value &&
+                  is_quaternion<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& X,
                                        const ExpressionY& q )
 {
@@ -4099,11 +2740,11 @@ KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
 //---------------------------------------------------------------------------//
 // Cross product
 template <class ExpressionX, class ExpressionY>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                  is_vector<ExpressionY>::value,
-                              Vector<typename ExpressionX::value_type, 3>>
-    operator%( const ExpressionX& x, const ExpressionY& y )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_vector<ExpressionX>::value &&
+        Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+    Cabana::LinearAlgebra::Vector<typename ExpressionX::value_type, 3>>
+operator%( const ExpressionX& x, const ExpressionY& y )
 {
     static_assert( std::is_same<typename ExpressionX::value_type,
                                 typename ExpressionY::value_type>::value,
@@ -4114,7 +2755,7 @@ KOKKOS_INLINE_FUNCTION
                    "cross product is for 3-vectors" );
     typename ExpressionX::eval_type x_eval = x;
     typename ExpressionY::eval_type y_eval = y;
-    return Vector<typename ExpressionX::value_type, 3>{
+    return Cabana::LinearAlgebra::Vector<typename ExpressionX::value_type, 3>{
         x_eval( 1 ) * y_eval( 2 ) - x_eval( 2 ) * y_eval( 1 ),
         x_eval( 2 ) * y_eval( 0 ) - x_eval( 0 ) * y_eval( 2 ),
         x_eval( 0 ) * y_eval( 1 ) - x_eval( 1 ) * y_eval( 0 ) };
@@ -4123,9 +2764,10 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // Element-wise multiplication.
 template <class ExpressionX, class ExpressionY,
-          typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                        is_vector<ExpressionY>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
                                        const ExpressionY& y )
 {
@@ -4134,17 +2776,18 @@ KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
                    "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent_0 must match" );
-    return createVectorExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createVectorExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0>(
         [=]( const int i ) { return x( i ) * y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
 // Element-wise division.
 template <class ExpressionX, class ExpressionY,
-          typename std::enable_if_t<is_vector<ExpressionX>::value &&
-                                        is_vector<ExpressionY>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionY>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
                                        const ExpressionY& y )
 {
@@ -4153,8 +2796,8 @@ KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
                    "value_type must match" );
     static_assert( ExpressionX::extent_0 == ExpressionY::extent_0,
                    "extent must match" );
-    return createVectorExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createVectorExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0>(
         [=]( const int i ) { return x( i ) / y( i ); } );
 }
 
@@ -4205,17 +2848,20 @@ operator*( const ExpressionA& a, const typename ExpressionA::value_type& s )
 
 // Matrix.
 template <class ExpressionA,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionA>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
 {
-    return createMatrixExpression<typename ExpressionA::value_type,
-                                  ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return s * a( i, j ); } );
+    return Cabana::LinearAlgebra::createMatrixExpression<
+        typename ExpressionA::value_type, ExpressionA::extent_0,
+        ExpressionA::extent_1>( [=]( const int i, const int j )
+                                { return s * a( i, j ); } );
 }
 
 template <class ExpressionA,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionA>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator*( const ExpressionA& a, const typename ExpressionA::value_type& s )
 {
@@ -4225,17 +2871,19 @@ operator*( const ExpressionA& a, const typename ExpressionA::value_type& s )
 //---------------------------------------------------------------------------//
 // Vector.
 template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator*( const typename ExpressionX::value_type& s, const ExpressionX& x )
 {
-    return createVectorExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createVectorExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0>(
         [=]( const int i ) { return s * x( i ); } );
 }
 
 template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator*( const ExpressionX& x, const typename ExpressionX::value_type& s )
 {
@@ -4286,7 +2934,8 @@ operator/( const ExpressionA& a, const typename ExpressionA::value_type& s )
 
 // Matrix.
 template <class ExpressionA,
-          typename std::enable_if_t<is_matrix<ExpressionA>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_matrix<ExpressionA>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionA& a, const typename ExpressionA::value_type& s )
 {
@@ -4297,7 +2946,8 @@ operator/( const ExpressionA& a, const typename ExpressionA::value_type& s )
 //---------------------------------------------------------------------------//
 // Vector.
 template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto
 operator/( const ExpressionX& x, const typename ExpressionX::value_type& s )
 {
@@ -4321,12 +2971,11 @@ operator/( const ExpressionX& x, const typename ExpressionX::value_type& s )
 //---------------------------------------------------------------------------//
 // 2x2 specialization
 template <class Expression>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<Expression>::value &&
-                                  Expression::extent_0 == 2 &&
-                                  Expression::extent_1 == 2,
-                              typename Expression::value_type>
-    operator!( const Expression& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<Expression>::value &&
+        Expression::extent_0 == 2 && Expression::extent_1 == 2,
+    typename Expression::value_type>
+operator!( const Expression& a )
 {
     return a( 0, 0 ) * a( 1, 1 ) - a( 0, 1 ) * a( 1, 0 );
 }
@@ -4334,12 +2983,11 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // 3x3 specialization
 template <class Expression>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<Expression>::value &&
-                                  Expression::extent_0 == 3 &&
-                                  Expression::extent_1 == 3,
-                              typename Expression::value_type>
-    operator!( const Expression& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<Expression>::value &&
+        Expression::extent_0 == 3 && Expression::extent_1 == 3,
+    typename Expression::value_type>
+operator!( const Expression& a )
 {
     return a( 0, 0 ) * a( 1, 1 ) * a( 2, 2 ) +
            a( 0, 1 ) * a( 1, 2 ) * a( 2, 0 ) +
@@ -4353,10 +3001,10 @@ KOKKOS_INLINE_FUNCTION
 // LU decomposition.
 //---------------------------------------------------------------------------//
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                              typename ExpressionA::copy_type>
-    LU( const ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value,
+    typename ExpressionA::copy_type>
+LU( const ExpressionA& a )
 {
     using value_type = typename ExpressionA::value_type;
     constexpr int m = ExpressionA::extent_0;
@@ -4390,10 +3038,10 @@ KOKKOS_INLINE_FUNCTION
 // Matrix trace
 //---------------------------------------------------------------------------//
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                              typename ExpressionA::value_type>
-    trace( const ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value,
+    typename ExpressionA::value_type>
+trace( const ExpressionA& a )
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
@@ -4411,9 +3059,9 @@ KOKKOS_INLINE_FUNCTION
 // Identity
 //---------------------------------------------------------------------------//
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value, void>
-    identity( ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value, void>
+identity( ExpressionA& a )
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
@@ -4447,11 +3095,13 @@ KOKKOS_INLINE_FUNCTION
 // Diagonal matrix.
 //---------------------------------------------------------------------------//
 template <class ExpressionX,
-          typename std::enable_if_t<is_vector<ExpressionX>::value, int> = 0>
+          typename std::enable_if_t<
+              Cabana::LinearAlgebra::is_vector<ExpressionX>::value, int> = 0>
 KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
-    return createMatrixExpression<typename ExpressionX::value_type,
-                                  ExpressionX::extent_0, ExpressionX::extent_0>(
+    return Cabana::LinearAlgebra::createMatrixExpression<
+        typename ExpressionX::value_type, ExpressionX::extent_0,
+        ExpressionX::extent_0>(
         [=]( const int i, const int j )
         {
             return ( i == j )
@@ -4466,9 +3116,10 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 //---------------------------------------------------------------------------//
 
 template <class ExpressionT, class ExpressionV,
-          typename std::enable_if_t<is_tensor3<ExpressionT>::value &&
-                                        is_vector<ExpressionV>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              is_tensor3<ExpressionT>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionV>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
                                       const ExpressionV& v,
                                       std::integral_constant<std::size_t, 0> )
@@ -4478,8 +3129,8 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 
     typename ExpressionT::eval_type t_eval = t;
     typename ExpressionV::eval_type v_eval = v;
-    Matrix<typename ExpressionT::value_type, ExpressionT::extent_1,
-           ExpressionT::extent_2>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionT::value_type,
+                                  ExpressionT::extent_1, ExpressionT::extent_2>
         res = static_cast<typename ExpressionT::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionT::extent_1; ++i )
@@ -4494,9 +3145,10 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 }
 
 template <class ExpressionT, class ExpressionV,
-          typename std::enable_if_t<is_tensor3<ExpressionT>::value &&
-                                        is_vector<ExpressionV>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              is_tensor3<ExpressionT>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionV>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
                                       const ExpressionV& v,
                                       std::integral_constant<std::size_t, 1> )
@@ -4506,8 +3158,8 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 
     typename ExpressionT::eval_type t_eval = t;
     typename ExpressionV::eval_type v_eval = v;
-    Matrix<typename ExpressionT::value_type, ExpressionT::extent_0,
-           ExpressionT::extent_2>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionT::value_type,
+                                  ExpressionT::extent_0, ExpressionT::extent_2>
         res = static_cast<typename ExpressionT::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionT::extent_0; ++i )
@@ -4522,9 +3174,10 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 }
 
 template <class ExpressionT, class ExpressionV,
-          typename std::enable_if_t<is_tensor3<ExpressionT>::value &&
-                                        is_vector<ExpressionV>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              is_tensor3<ExpressionT>::value &&
+                  Cabana::LinearAlgebra::is_vector<ExpressionV>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
                                       const ExpressionV& v,
                                       std::integral_constant<std::size_t, 2> )
@@ -4534,8 +3187,8 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 
     typename ExpressionT::eval_type t_eval = t;
     typename ExpressionV::eval_type v_eval = v;
-    Matrix<typename ExpressionT::value_type, ExpressionT::extent_0,
-           ExpressionT::extent_1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionT::value_type,
+                                  ExpressionT::extent_0, ExpressionT::extent_1>
         res = static_cast<typename ExpressionT::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionT::extent_0; ++i )
@@ -4550,9 +3203,10 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 }
 
 template <class ExpressionT, class ExpressionM,
-          typename std::enable_if_t<is_tensor4<ExpressionT>::value &&
-                                        is_matrix<ExpressionM>::value,
-                                    int> = 0>
+          typename std::enable_if_t<
+              is_tensor4<ExpressionT>::value &&
+                  Cabana::LinearAlgebra::is_matrix<ExpressionM>::value,
+              int> = 0>
 KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
                                       const ExpressionM& m )
 {
@@ -4563,8 +3217,8 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 
     typename ExpressionT::eval_type t_eval = t;
     typename ExpressionM::eval_type m_eval = m;
-    Matrix<typename ExpressionT::value_type, ExpressionT::extent_0,
-           ExpressionT::extent_1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionT::value_type,
+                                  ExpressionT::extent_0, ExpressionT::extent_1>
         res = static_cast<typename ExpressionT::value_type>( 0 );
 
     for ( int i = 0; i < ExpressionT::extent_0; ++i )
@@ -4584,19 +3238,17 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 //---------------------------------------------------------------------------//
 // 2x2 specialization with determinant given.
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                  ExpressionA::extent_0 == 2 &&
-                                  ExpressionA::extent_1 == 2,
-                              typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a,
-             const typename ExpressionA::value_type& a_det )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a, const typename ExpressionA::value_type& a_det )
 {
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = static_cast<typename ExpressionA::value_type>( 1 ) / a_det;
 
-    Matrix<typename ExpressionA::value_type, 2, 2> a_inv;
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type, 2, 2> a_inv;
 
     a_inv( 0, 0 ) = a_eval( 1, 1 ) * a_det_inv;
     a_inv( 0, 1 ) = -a_eval( 0, 1 ) * a_det_inv;
@@ -4609,12 +3261,11 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // 2x2 specialization.
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                  ExpressionA::extent_0 == 2 &&
-                                  ExpressionA::extent_1 == 2,
-                              typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a )
 {
     typename ExpressionA::eval_type a_eval = a;
     return inverse( a_eval, !a_eval );
@@ -4623,19 +3274,17 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // 3x3 specialization with determinant given.
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                  ExpressionA::extent_0 == 3 &&
-                                  ExpressionA::extent_1 == 3,
-                              typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a,
-             const typename ExpressionA::value_type& a_det )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a, const typename ExpressionA::value_type& a_det )
 {
     typename ExpressionA::eval_type a_eval = a;
 
     auto a_det_inv = static_cast<typename ExpressionA::value_type>( 1 ) / a_det;
 
-    Matrix<typename ExpressionA::value_type, 3, 3> a_inv;
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type, 3, 3> a_inv;
 
     a_inv( 0, 0 ) =
         ( a_eval( 1, 1 ) * a_eval( 2, 2 ) - a_eval( 1, 2 ) * a_eval( 2, 1 ) ) *
@@ -4673,12 +3322,11 @@ KOKKOS_INLINE_FUNCTION
 //---------------------------------------------------------------------------//
 // 3x3 specialization.
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                  ExpressionA::extent_0 == 3 &&
-                                  ExpressionA::extent_1 == 3,
-                              typename ExpressionA::copy_type>
-    inverse( const ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
+    typename ExpressionA::copy_type>
+inverse( const ExpressionA& a )
 {
     typename ExpressionA::eval_type a_eval = a;
     return inverse( a_eval, !a_eval );
@@ -4688,14 +3336,14 @@ KOKKOS_INLINE_FUNCTION
 // General case.
 template <class ExpressionA>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
         !( ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2 ) &&
         !( ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3 ),
     typename ExpressionA::copy_type>
 inverse( const ExpressionA& a )
 {
-    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-           ExpressionA::extent1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionA::extent1>
         ident;
     identity( ident );
     return a ^ ident;
@@ -4707,15 +3355,15 @@ inverse( const ExpressionA& a )
 // https://arxiv.org/abs/1606.08395
 //---------------------------------------------------------------------------//
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value,
-                              typename ExpressionA::copy_type>
-    exponential( const ExpressionA& a )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value,
+    typename ExpressionA::copy_type>
+exponential( const ExpressionA& a )
 {
     static_assert( ExpressionA::extent_1 == ExpressionA::extent_0,
                    "matrix must be square" );
-    Matrix<typename ExpressionA::value_type, ExpressionA::extent_0,
-           ExpressionA::extent_1>
+    Cabana::LinearAlgebra::Matrix<typename ExpressionA::value_type,
+                                  ExpressionA::extent_0, ExpressionA::extent_1>
         ident;
     identity( ident );
 
@@ -4758,8 +3406,9 @@ KOKKOS_INLINE_FUNCTION
 // 2x2 specialization. Single and multiple RHS supported.
 template <class ExpressionA, class ExpressionB>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
-        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ( Cabana::LinearAlgebra::is_matrix<ExpressionB>::value ||
+          Cabana::LinearAlgebra::is_vector<ExpressionB>::value ) &&
         ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2,
     typename ExpressionB::copy_type>
 operator^( const ExpressionA& a, const ExpressionB& b )
@@ -4771,8 +3420,9 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 // 3x3 specialization. Single and multiple RHS supported.
 template <class ExpressionA, class ExpressionB>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
-        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ( Cabana::LinearAlgebra::is_matrix<ExpressionB>::value ||
+          Cabana::LinearAlgebra::is_vector<ExpressionB>::value ) &&
         ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
     typename ExpressionB::copy_type>
 operator^( const ExpressionA& a, const ExpressionB& b )
@@ -4784,8 +3434,9 @@ operator^( const ExpressionA& a, const ExpressionB& b )
 // General case. Single and multiple RHS supported.
 template <class ExpressionA, class ExpressionB>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value &&
-        ( is_matrix<ExpressionB>::value || is_vector<ExpressionB>::value ) &&
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ( Cabana::LinearAlgebra::is_matrix<ExpressionB>::value ||
+          Cabana::LinearAlgebra::is_vector<ExpressionB>::value ) &&
         !( ExpressionA::extent_0 == 2 && ExpressionA::extent_1 == 2 ) &&
         !( ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3 ),
     typename ExpressionB::copy_type>
@@ -4869,10 +3520,12 @@ KOKKOS_INLINE_FUNCTION void condNegSwap( bool b, ValueType& lv, ValueType& rv )
 
 template <>
 KOKKOS_INLINE_FUNCTION void
-condNegSwap<VectorView<double, 3>>( bool b, VectorView<double, 3>& lv,
-                                    VectorView<double, 3>& rv )
+condNegSwap<Cabana::LinearAlgebra::VectorView<double, 3>>(
+    bool b, Cabana::LinearAlgebra::VectorView<double, 3>& lv,
+    Cabana::LinearAlgebra::VectorView<double, 3>& rv )
 {
-    using vector_type = typename VectorView<double, 3>::copy_type;
+    using vector_type =
+        typename Cabana::LinearAlgebra::VectorView<double, 3>::copy_type;
     vector_type tmpv;
 
     if ( b )
@@ -4962,12 +3615,11 @@ Quaternion<double> givensQR( double a1, double a2, double tol,
 }
 
 template <class ExpressionA>
-KOKKOS_INLINE_FUNCTION
-    typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-                                  ExpressionA::extent_0 == 3 &&
-                                  ExpressionA::extent_1 == 3,
-                              Quaternion<typename ExpressionA::value_type>>
-    cyclicJacobi( const ExpressionA& A, const int max_iter )
+KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        ExpressionA::extent_0 == 3 && ExpressionA::extent_1 == 3,
+    Quaternion<typename ExpressionA::value_type>>
+cyclicJacobi( const ExpressionA& A, const int max_iter )
 {
     // Form the symmetric positive-definite matrix from A
     auto S = ~A * A;
@@ -4989,7 +3641,7 @@ KOKKOS_INLINE_FUNCTION
     Quaternion<double> q_total = givensQuaternion( s_pp, s_pq, s_qq, pq );
 
     // Convert to rotation matrix for conjugation
-    Matrix<double, 3, 3> Q_1{ q_total };
+    Cabana::LinearAlgebra::Matrix<double, 3, 3> Q_1{ q_total };
 
     S = ~Q_1 * S * Q_1;
 
@@ -5007,7 +3659,7 @@ KOKKOS_INLINE_FUNCTION
         auto q = givensQuaternion( s_pp, s_pq, s_qq, pq );
 
         // Convert to rotation matrix for conjugation
-        Matrix<double, 3, 3> Q{ q };
+        Cabana::LinearAlgebra::Matrix<double, 3, 3> Q{ q };
 
         S = ~Q * S * Q; // Update to (k+1)
         q_total = q_total & q;
@@ -5063,8 +3715,10 @@ KOKKOS_INLINE_FUNCTION void sortSingularValues( MatrixType& B, MatrixType& V )
 
 template <class ExpressionA, class EigenU, class Diagonal, class EigenV>
 KOKKOS_INLINE_FUNCTION typename std::enable_if_t<
-    is_matrix<ExpressionA>::value && is_matrix<EigenU>::value &&
-        is_matrix<Diagonal>::value && is_matrix<EigenV>::value,
+    Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+        Cabana::LinearAlgebra::is_matrix<EigenU>::value &&
+        Cabana::LinearAlgebra::is_matrix<Diagonal>::value &&
+        Cabana::LinearAlgebra::is_matrix<EigenV>::value,
     void>
 svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
 {
@@ -5078,9 +3732,9 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
     double q_mag = Kokkos::sqrt( q( 0 ) * q( 0 ) + q( 1 ) * q( 1 ) +
                                  q( 2 ) * q( 2 ) + q( 3 ) * q( 3 ) );
 
-    Matrix<double, 3, 3> V_rot{ q / q_mag };
+    Cabana::LinearAlgebra::Matrix<double, 3, 3> V_rot{ q / q_mag };
 
-    Matrix<double, 3, 3> Q = 0.0;
+    Cabana::LinearAlgebra::Matrix<double, 3, 3> Q = 0.0;
 
     // Perform a QR factorization of the matrix B = AV
     auto B = A * V_rot;
@@ -5088,21 +3742,22 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
     sortSingularValues( B, V_rot );
 
     auto q21 = givensQR( B( 0, 0 ), B( 1, 0 ), tol, { 1, 0 } );
-    auto Q1 = static_cast<Matrix<double, 3, 3>>( q21 );
+    auto Q1 = static_cast<Cabana::LinearAlgebra::Matrix<double, 3, 3>>( q21 );
 
     auto B1 = ~Q1 * B;
 
     auto q31 = givensQR( B1( 0, 0 ), B1( 2, 0 ), tol, { 2, 0 } );
-    auto Q2 = static_cast<Matrix<double, 3, 3>>( q31 );
+    auto Q2 = static_cast<Cabana::LinearAlgebra::Matrix<double, 3, 3>>( q31 );
 
     auto B2 = ~Q2 * B1;
 
     auto q32 = givensQR( B2( 1, 1 ), B2( 2, 1 ), tol, { 2, 1 } );
-    auto Q3 = static_cast<Matrix<double, 3, 3>>( q32 );
+    auto Q3 = static_cast<Cabana::LinearAlgebra::Matrix<double, 3, 3>>( q32 );
 
     auto B3 = ~Q3 * B2;
 
-    Q = static_cast<Matrix<double, 3, 3>>( q21 & q31 & q32 );
+    Q = static_cast<Cabana::LinearAlgebra::Matrix<double, 3, 3>>( q21 & q31 &
+                                                                  q32 );
 
     U = Q;
     D = B3;
@@ -5114,9 +3769,11 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
 //---------------------------------------------------------------------------//
 // template <class ExpressionA, class Eigenvalues, class Eigenvectors>
 // KOKKOS_INLINE_FUNCTION
-//     typename std::enable_if_t<is_matrix<ExpressionA>::value &&
-//                               is_vector<Eigenvalues>::value &&
-//                               is_matrix<Eigenvectors>::value,
+//     typename
+//     std::enable_if_t<Cabana::LinearAlgebra::is_matrix<ExpressionA>::value &&
+//                               Cabana::LinearAlgebra::Cabana::LinearAlgebra::is_vector<Eigenvalues>::value
+//                               &&
+//                               Cabana::LinearAlgebra::is_matrix<Eigenvectors>::value,
 //                               typename ExpressionA::copy_type>
 //     eigendecomposition( const ExpressionA& a,
 //                         Eigenvalues& e_real,
@@ -5149,22 +3806,22 @@ svd( const ExpressionA& A, EigenU& U, Diagonal& D, EigenV& V )
 //---------------------------------------------------------------------------//
 
 template <class T>
-using Mat2 = LinearAlgebra::Matrix<T, 2, 2>;
+using Mat2 = Cabana::LinearAlgebra::Matrix<T, 2, 2>;
 template <class T>
-using MatView2 = LinearAlgebra::MatrixView<T, 2, 2>;
+using MatView2 = Cabana::LinearAlgebra::MatrixView<T, 2, 2>;
 template <class T>
-using Vec2 = LinearAlgebra::Vector<T, 2>;
+using Vec2 = Cabana::LinearAlgebra::Vector<T, 2>;
 template <class T>
-using VecView2 = LinearAlgebra::VectorView<T, 2>;
+using VecView2 = Cabana::LinearAlgebra::VectorView<T, 2>;
 
 template <class T>
-using Mat3 = LinearAlgebra::Matrix<T, 3, 3>;
+using Mat3 = Cabana::LinearAlgebra::Matrix<T, 3, 3>;
 template <class T>
-using MatView3 = LinearAlgebra::MatrixView<T, 3, 3>;
+using MatView3 = Cabana::LinearAlgebra::MatrixView<T, 3, 3>;
 template <class T>
-using Vec3 = LinearAlgebra::Vector<T, 3>;
+using Vec3 = Cabana::LinearAlgebra::Vector<T, 3>;
 template <class T>
-using VecView3 = LinearAlgebra::VectorView<T, 3>;
+using VecView3 = Cabana::LinearAlgebra::VectorView<T, 3>;
 
 //---------------------------------------------------------------------------//
 

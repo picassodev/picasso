@@ -12,7 +12,6 @@
 #ifndef PICASSO_BILINEARMESHMAPPING_HPP
 #define PICASSO_BILINEARMESHMAPPING_HPP
 
-#include <Picasso_BatchedLinearAlgebra.hpp>
 #include <Picasso_CurvilinearMesh.hpp>
 #include <Picasso_FieldManager.hpp>
 #include <Picasso_Types.hpp>
@@ -137,11 +136,11 @@ class CurvilinearMeshMapping<BilinearMeshMapping<MemorySpace, 3>>
     template <class ReferenceCoords>
     static KOKKOS_INLINE_FUNCTION void transformationMetrics(
         const mesh_mapping& mapping, const ReferenceCoords& reference_coords,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 3, 3>&
-            jacobian,
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 3,
+                                      3>& jacobian,
         typename ReferenceCoords::value_type& jacobian_det,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 3, 3>&
-            jacobian_inv )
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 3,
+                                      3>& jacobian_inv )
     {
         using value_type = typename ReferenceCoords::value_type;
 
@@ -186,7 +185,7 @@ class CurvilinearMeshMapping<BilinearMeshMapping<MemorySpace, 3>>
 
         jacobian_det = !jacobian;
 
-        jacobian_inv = LinearAlgebra::inverse( jacobian, jacobian_det );
+        jacobian_inv = Cabana::LinearAlgebra::inverse( jacobian, jacobian_det );
     }
 
     // Reverse mapping. Given coordinates in the physical frame compute the
@@ -262,11 +261,11 @@ struct CurvilinearMeshMapping<BilinearMeshMapping<MemorySpace, 2>>
     template <class ReferenceCoords>
     static KOKKOS_INLINE_FUNCTION void transformationMetrics(
         const mesh_mapping& mapping, const ReferenceCoords& reference_coords,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 2, 2>&
-            jacobian,
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 2,
+                                      2>& jacobian,
         typename ReferenceCoords::value_type& jacobian_det,
-        LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 2, 2>&
-            jacobian_inv )
+        Cabana::LinearAlgebra::Matrix<typename ReferenceCoords::value_type, 2,
+                                      2>& jacobian_inv )
     {
         using value_type = typename ReferenceCoords::value_type;
 
@@ -299,7 +298,7 @@ struct CurvilinearMeshMapping<BilinearMeshMapping<MemorySpace, 2>>
 
         jacobian_det = !jacobian;
 
-        jacobian_inv = LinearAlgebra::inverse( jacobian, jacobian_det );
+        jacobian_inv = Cabana::LinearAlgebra::inverse( jacobian, jacobian_det );
     }
 
     // Reverse mapping. Given coordinates in the physical frame compute the
