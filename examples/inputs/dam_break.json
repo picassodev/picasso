@@ -1,0 +1,21 @@
+{
+    "mesh": {
+        "cell_size": 0.05,
+        "periodic": [false, false, false],
+        "partitioner": {
+            "type": "uniform_dim"
+        },
+        "halo_cell_width": 0
+    },
+    "global_box": [ 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 ],
+    "particle_box": [ 0.0, 0.0, 0.0, 0.4, 0.4, 0.4 ],
+    "density": 1.0e3,
+    "ppc": 2,
+    "gamma": 7.0,
+    "bulk_modulus": 1.0e5,
+    "gravity": [ 0.0, 0.0, -9.8],
+    "dt": 1.0e-4,
+    "beta": 0.99,
+    "final_time": 1.0,
+    "write_frequency" : 10
+}

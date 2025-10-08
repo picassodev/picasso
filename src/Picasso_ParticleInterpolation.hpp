@@ -278,8 +278,6 @@ KOKKOS_INLINE_FUNCTION void divergence( const SplineDataType& sd,
 
 } // end namespace P2G
 
-//---------------------------------------------------------------------------//
-
 } // end namespace Picasso
 
 #endif // end PICASSO_PARTICLEINTERPOLATION_HPP

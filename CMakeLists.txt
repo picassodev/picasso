@@ -86,7 +86,10 @@ if(Picasso_ENABLE_TESTING)
 endif()
 
 # examples
-add_subdirectory(examples)
+option(Picasso_ENABLE_EXAMPLES "Build examples" OFF)
+if(Picasso_ENABLE_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 # Package Configuration
 write_basic_package_version_file("PicassoConfigVersion.cmake"
@@ -105,7 +108,7 @@ install(FILES
 
 # Clang Format
 if(CLANG_FORMAT_FOUND)
-  file(GLOB_RECURSE FORMAT_SOURCES src/*.[c,h]pp unit_test/*.[c,h]pp)
+  file(GLOB_RECURSE FORMAT_SOURCES src/*.[c,h]pp unit_test/*.[c,h]pp examples/*.[c,h]pp)
   add_custom_target(picasso-format
     COMMAND ${CLANG_FORMAT_EXECUTABLE} -i -style=file ${FORMAT_SOURCES}
     DEPENDS ${FORMAT_SOURCES})
