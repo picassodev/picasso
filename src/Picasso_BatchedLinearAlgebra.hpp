@@ -383,7 +383,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createVectorExpression<T, M>(
-            [=]( const int i ) { return ( *this )( i, n, p, q ); } );
+            [&]( const int i ) { return ( *this )( i, n, p, q ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
@@ -391,7 +391,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createVectorExpression<T, N>(
-            [=]( const int i ) { return ( *this )( m, i, p, q ); } );
+            [&]( const int i ) { return ( *this )( m, i, p, q ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
@@ -399,7 +399,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createVectorExpression<T, P>(
-            [=]( const int i ) { return ( *this )( m, n, i, q ); } );
+            [&]( const int i ) { return ( *this )( m, n, i, q ); } );
     }
 
     // Get a row as a vector view.
@@ -408,7 +408,7 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createVectorExpression<T, Q>(
-            [=]( const int i ) { return ( *this )( m, n, p, i ); } );
+            [&]( const int i ) { return ( *this )( m, n, p, i ); } );
     }
 
     // Get a matrix as a matrix view.
@@ -417,7 +417,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, M, N>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( i, j, p, q ); } );
     }
     // Get a matrix as a matrix view.
@@ -426,7 +426,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, M, P>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( i, n, j, q ); } );
     }
     // Get a matrix as a matrix view.
@@ -435,7 +435,7 @@ struct Tensor4Expression
                  const int q ) const
     {
         return createMatrixExpression<T, N, P>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( m, i, j, q ); } );
     }
     // Get a matrix as a matrix view.
@@ -444,7 +444,7 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, M, Q>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( i, n, p, j ); } );
     }
     // Get a matrix as a matrix view.
@@ -453,7 +453,7 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, N, Q>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( m, i, p, j ); } );
     }
     // Get a matrix as a matrix view.
@@ -462,7 +462,7 @@ struct Tensor4Expression
                  const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, P, Q>(
-            [=]( const int i, const int j )
+            [&]( const int i, const int j )
             { return ( *this )( m, n, i, j ); } );
     }
 
@@ -472,7 +472,7 @@ struct Tensor4Expression
                   const int b )
     {
         return createTensor3Expression<T, M, N, P>(
-            [=]( const int i, const int j, const int k )
+            [&]( const int i, const int j, const int k )
             { return ( *this )( i, j, k, b ); } );
     }
     // Get a tensor3 as a Tensor3 view.
@@ -481,7 +481,7 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, M, N, Q>(
-            [=]( const int i, const int j, const int k )
+            [&]( const int i, const int j, const int k )
             { return ( *this )( i, j, b, k ); } );
     }
     // Get a tensor3 as a Tensor3 view.
@@ -490,7 +490,7 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, M, P, Q>(
-            [=]( const int i, const int j, const int k )
+            [&]( const int i, const int j, const int k )
             { return ( *this )( i, b, j, k ); } );
     }
     // Get a tensor3 as a Tensor3 view.
@@ -499,7 +499,7 @@ struct Tensor4Expression
                   const ALL_INDEX_t )
     {
         return createTensor3Expression<T, N, P, Q>(
-            [=]( const int i, const int j, const int k )
+            [&]( const int i, const int j, const int k )
             { return ( *this )( b, i, j, k ); } );
     }
 };
@@ -550,21 +550,21 @@ struct Tensor3Expression
     KOKKOS_INLINE_FUNCTION
     auto vector( const ALL_INDEX_t, const int n, const int p ) const
     {
-        return createVectorExpression<T, M>( [=]( const int i )
+        return createVectorExpression<T, M>( [&]( const int i )
                                              { return ( *this )( i, n, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const ALL_INDEX_t, const int p ) const
     {
-        return createVectorExpression<T, N>( [=]( const int i )
+        return createVectorExpression<T, N>( [&]( const int i )
                                              { return ( *this )( m, i, p ); } );
     }
     // Get a row as a vector view.
     KOKKOS_INLINE_FUNCTION
     auto vector( const int m, const int n, const ALL_INDEX_t ) const
     {
-        return createVectorExpression<T, P>( [=]( const int i )
+        return createVectorExpression<T, P>( [&]( const int i )
                                              { return ( *this )( m, n, i ); } );
     }
 
@@ -573,21 +573,21 @@ struct Tensor3Expression
     auto matrix( const ALL_INDEX_t, const ALL_INDEX_t, const int p ) const
     {
         return createMatrixExpression<T, M, N>(
-            [=]( const int i, const int j ) { return ( *this )( i, j, p ); } );
+            [&]( const int i, const int j ) { return ( *this )( i, j, p ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
     auto matrix( const ALL_INDEX_t, const int n, const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, M, P>(
-            [=]( const int i, const int j ) { return ( *this )( i, n, j ); } );
+            [&]( const int i, const int j ) { return ( *this )( i, n, j ); } );
     }
     // Get a matrix as a matrix view.
     KOKKOS_INLINE_FUNCTION
     auto matrix( const int m, const ALL_INDEX_t, const ALL_INDEX_t ) const
     {
         return createMatrixExpression<T, N, P>(
-            [=]( const int i, const int j ) { return ( *this )( m, i, j ); } );
+            [&]( const int i, const int j ) { return ( *this )( m, i, j ); } );
     }
 };
 
@@ -635,7 +635,7 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     auto row( const int n ) const
     {
-        return createVectorExpression<T, N>( [=]( const int i )
+        return createVectorExpression<T, N>( [&]( const int i )
                                              { return ( *this )( n, i ); } );
     }
 
@@ -643,7 +643,7 @@ struct MatrixExpression
     KOKKOS_INLINE_FUNCTION
     auto column( const int n ) const
     {
-        return createVectorExpression<T, M>( [=]( const int i )
+        return createVectorExpression<T, M>( [&]( const int i )
                                              { return ( *this )( i, n ); } );
     }
 };
@@ -3732,7 +3732,7 @@ KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
 {
     return createMatrixExpression<typename Expression::value_type,
                                   Expression::extent_1, Expression::extent_0>(
-        [=]( const int i, const int j ) { return e( j, i ); } );
+        [&]( const int i, const int j ) { return e( j, i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3743,7 +3743,7 @@ KOKKOS_INLINE_FUNCTION auto operator~( const Expression& e )
 {
     return createMatrixExpression<typename Expression::value_type, 1,
                                   Expression::extent_0>(
-        [=]( const int, const int j ) { return e( j ); } );
+        [&]( const int, const int j ) { return e( j ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3777,7 +3777,7 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionA& a,
                    "extent_1 must match" );
     return createMatrixExpression<typename ExpressionA::value_type,
                                   ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return a( i, j ) + b( i, j ); } );
+        [&]( const int i, const int j ) { return a( i, j ) + b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3799,7 +3799,7 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionA& a,
                    "extent_1 must_match" );
     return createMatrixExpression<typename ExpressionA::value_type,
                                   ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return a( i, j ) - b( i, j ); } );
+        [&]( const int i, const int j ) { return a( i, j ) - b( i, j ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3913,7 +3913,7 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
                    "extent must match" );
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) + y( i ); } );
+        [&]( const int i ) { return x( i ) + y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3933,7 +3933,7 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
                    "extent must match" );
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) - y( i ); } );
+        [&]( const int i ) { return x( i ) - y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3953,7 +3953,7 @@ KOKKOS_INLINE_FUNCTION auto operator+( const ExpressionX& x,
                    "extent must match" );
     return createQuaternionExpression<typename ExpressionX::value_type,
                                       ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) + y( i ); } );
+        [&]( const int i ) { return x( i ) + y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -3973,7 +3973,7 @@ KOKKOS_INLINE_FUNCTION auto operator-( const ExpressionX& x,
                    "extent must match" );
     return createQuaternionExpression<typename ExpressionX::value_type,
                                       ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) - y( i ); } );
+        [&]( const int i ) { return x( i ) - y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -4136,7 +4136,7 @@ KOKKOS_INLINE_FUNCTION auto operator&( const ExpressionX& x,
                    "extent_0 must match" );
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) * y( i ); } );
+        [&]( const int i ) { return x( i ) * y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -4155,7 +4155,7 @@ KOKKOS_INLINE_FUNCTION auto operator|( const ExpressionX& x,
                    "extent must match" );
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
-        [=]( const int i ) { return x( i ) / y( i ); } );
+        [&]( const int i ) { return x( i ) / y( i ); } );
 }
 
 //---------------------------------------------------------------------------//
@@ -4170,7 +4170,7 @@ operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
     return createTensor4Expression<
         typename ExpressionA::value_type, ExpressionA::extent_0,
         ExpressionA::extent_1, ExpressionA::extent_2, ExpressionA::extent_3>(
-        [=]( const int i, const int j, const int k, const int l )
+        [&]( const int i, const int j, const int k, const int l )
         { return s * a( i, j, k, l ); } );
 }
 
@@ -4191,7 +4191,7 @@ operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
     return createTensor3Expression<typename ExpressionA::value_type,
                                    ExpressionA::extent_0, ExpressionA::extent_1,
                                    ExpressionA::extent_2>(
-        [=]( const int i, const int j, const int k )
+        [&]( const int i, const int j, const int k )
         { return s * a( i, j, k ); } );
 }
 
@@ -4211,7 +4211,7 @@ operator*( const typename ExpressionA::value_type& s, const ExpressionA& a )
 {
     return createMatrixExpression<typename ExpressionA::value_type,
                                   ExpressionA::extent_0, ExpressionA::extent_1>(
-        [=]( const int i, const int j ) { return s * a( i, j ); } );
+        [&]( const int i, const int j ) { return s * a( i, j ); } );
 }
 
 template <class ExpressionA,
@@ -4231,7 +4231,7 @@ operator*( const typename ExpressionX::value_type& s, const ExpressionX& x )
 {
     return createVectorExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0>(
-        [=]( const int i ) { return s * x( i ); } );
+        [&]( const int i ) { return s * x( i ); } );
 }
 
 template <class ExpressionX,
@@ -4250,7 +4250,7 @@ KOKKOS_INLINE_FUNCTION auto
 operator*( const typename ExpressionX::value_type& s, const ExpressionX& x )
 {
     return createQuaternionExpression<typename ExpressionX::value_type>(
-        [=]( const int i ) { return s * x( i ); } );
+        [&]( const int i ) { return s * x( i ); } );
 }
 
 template <class ExpressionX,
@@ -4452,7 +4452,7 @@ KOKKOS_INLINE_FUNCTION auto diagonal( const ExpressionX& x )
 {
     return createMatrixExpression<typename ExpressionX::value_type,
                                   ExpressionX::extent_0, ExpressionX::extent_0>(
-        [=]( const int i, const int j )
+        [&]( const int i, const int j )
         {
             return ( i == j )
                        ? x( i )
