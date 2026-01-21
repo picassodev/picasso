@@ -4550,6 +4550,34 @@ KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
 }
 
 template <class ExpressionT, class ExpressionM,
+          typename std::enable_if_t<is_tensor3<ExpressionT>::value &&
+                                        is_matrix<ExpressionM>::value,
+                                    int> = 0>
+KOKKOS_INLINE_FUNCTION auto contract( const ExpressionT& t,
+                                      const ExpressionM& m )
+{
+    static_assert( ExpressionT::extent_1 == ExpressionM::extent_0,
+                   "Inner extents must match" );
+    static_assert( ExpressionT::extent_2 == ExpressionM::extent_1,
+                   "Inner extents must match " );
+
+    typename ExpressionT::eval_type t_eval = t;
+    typename ExpressionM::eval_type m_eval = m;
+    Vector<typename ExpressionT::value_type, ExpressionT::extent_0> res =
+        static_cast<typename ExpressionT::value_type>( 0 );
+
+    for ( int i = 0; i < ExpressionT::extent_0; ++i )
+#if defined( KOKKOS_ENABLE_PRAGMA_UNROLL )
+#pragma unroll
+#endif
+        for ( int j = 0; j < ExpressionM::extent_0; ++j )
+            for ( int k = 0; k < ExpressionM::extent_1; ++k )
+                res( i ) += t_eval( i, j, k ) * m_eval( j, k );
+
+    return res;
+}
+
+template <class ExpressionT, class ExpressionM,
           typename std::enable_if_t<is_tensor4<ExpressionT>::value &&
                                         is_matrix<ExpressionM>::value,
                                     int> = 0>
