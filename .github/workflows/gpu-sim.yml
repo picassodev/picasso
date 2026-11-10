@@ -1,0 +1,160 @@
+name: GPU Simulator
+
+# Optional, non-required check. The hosted runners have no GPU, so the HIP job
+# in CI.yml only builds. This builds Kokkos, ArborX and Cabana for gfx942 and
+# runs the Picasso HIP unit tests (ctest) on a simulated AMD Instinct MI300X
+# (https://github.com/pantheongpu/pantheonsim). A simulator cannot reproduce
+# hardware-specific behavior or timing, so it complements real-GPU testing and
+# does not replace it.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - "src/**"
+      - "unit_test/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hip-tests:
+    name: HIP tests (ROCm 7.1 and simulated MI300X)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: picasso
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and ROCm
+        uses: pantheongpu/setup-pantheonsim@ca87fe3143b29166822b923d6050945c5179408c # v0.1.5
+        with:
+          gpu: amd/mi300x
+          cuda-toolkit: none
+          rocm: "7.1"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build libopenmpi-dev openmpi-bin libgtest-dev
+
+      # Same versions as the HIP job in CI.yml, except Kokkos: 4.2.00 predates
+      # ROCm 7, so a newer 4.x release is used (not 5.x, which needs C++20).
+      - name: Checkout Kokkos
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: kokkos/kokkos
+          ref: 4.7.01
+          path: kokkos
+          persist-credentials: false
+
+      - name: Checkout ArborX
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: arborx/ArborX
+          ref: v1.7
+          path: arborx
+          persist-credentials: false
+
+      - name: Checkout Cabana
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ECP-CoPA/Cabana
+          # The version CI.yml uses (post-release 0.6)
+          ref: f99c7db9d54c57373ada6b16132c20d89d1ebb8e
+          path: cabana
+          persist-credentials: false
+
+      - name: Checkout nlohmann/json
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: nlohmann/json
+          ref: v3.11.2
+          path: json
+          persist-credentials: false
+
+      # hipcc does not use the MPI compiler wrappers, so the MPI paths are
+      # passed by hand, as in CI.yml. gfx942 is the MI300X target and Release
+      # keeps the device code optimized.
+      - name: Build the dependencies
+        run: |
+          export PATH=/opt/rocm/bin:$PATH
+          MPI_LOCATION=/usr/lib/x86_64-linux-gnu/openmpi
+          PREFIX=$HOME/deps
+          cmake -S json -B json/build -G Ninja -DCMAKE_INSTALL_PREFIX=$PREFIX \
+            -DCMAKE_BUILD_TYPE=Release -DJSON_BuildTests=OFF
+          cmake --build json/build -j3
+          cmake --install json/build
+          cmake -S kokkos -B kokkos/build -G Ninja -DCMAKE_INSTALL_PREFIX=$PREFIX \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=hipcc \
+            -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_AMD_GFX942=ON \
+            -DKokkos_ENABLE_ROCTHRUST=OFF
+          cmake --build kokkos/build -j3
+          cmake --install kokkos/build
+          cmake -S arborx -B arborx/build -G Ninja -DCMAKE_INSTALL_PREFIX=$PREFIX \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=hipcc \
+            -DCMAKE_PREFIX_PATH=$PREFIX -DARBORX_ENABLE_ROCTHRUST=OFF
+          cmake --build arborx/build -j3
+          cmake --install arborx/build
+          cmake -S cabana -B cabana/build -G Ninja -DCMAKE_INSTALL_PREFIX=$PREFIX \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=hipcc \
+            -DCMAKE_PREFIX_PATH=$PREFIX \
+            -DCMAKE_CXX_FLAGS="-I${MPI_LOCATION}/include" \
+            -DCMAKE_EXE_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DCabana_DISABLE_CAJITA_DEPRECATION_WARNINGS=ON \
+            -DCabana_REQUIRE_MPI=ON
+          cmake --build cabana/build -j3
+          cmake --install cabana/build
+
+      - name: Configure Picasso
+        run: |
+          export PATH=/opt/rocm/bin:$PATH
+          MPI_LOCATION=/usr/lib/x86_64-linux-gnu/openmpi
+          cmake -S picasso -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=hipcc \
+            -DCMAKE_PREFIX_PATH=$HOME/deps \
+            -DCMAKE_CXX_FLAGS="-I${MPI_LOCATION}/include" \
+            -DCMAKE_EXE_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-L${MPI_LOCATION}/lib -lmpi" \
+            -DMPIEXEC_MAX_NUMPROCS=2 \
+            -DMPIEXEC_PREFLAGS="--oversubscribe" \
+            -DPicasso_ENABLE_TESTING=ON
+
+      # Kokkos also enables its Serial backend, which gives each test a second
+      # (host) executable. Only the HIP executables and Version_test are built
+      # here, since the CPU backends are covered by CI.yml.
+      - name: Build the HIP tests
+        run: |
+          export PATH=/opt/rocm/bin:$PATH
+          targets=$(ninja -C build -t targets all | sed -n 's/^\([A-Za-z0-9]*_test_HIP\):.*/\1/p')
+          echo "$targets"
+          cmake --build build -j3 --target Version_test $targets
+
+      # These tests exchange halos with MPI_Isend and MPI_Irecv on device
+      # buffers (Cabana passes the device pointers straight to MPI), which
+      # needs a GPU-aware MPI. The runner's OpenMPI is not, and the simulated
+      # device memory is not addressable by the host, so they segfault inside
+      # MPI. They are excluded here, and still built above. The ParticleLevelSet
+      # tests are commented out upstream, so that executable runs 0 tests.
+      - name: Test
+        run: |
+          set -o pipefail
+          vgpu run ctest --test-dir build --output-on-failure --no-tests=error \
+            -R 'HIP|Version' \
+            -E 'FieldManager|GridOperator3d|ParticleInterpolation|LevelSetRedistance|MarchingCubes' \
+            -V | tee ctest.log
+          echo "gtest results:"
+          grep -E '^[0-9]+: \[  (PASSED|FAILED|SKIPPED)  \]|Running [0-9]+ tests' ctest.log
